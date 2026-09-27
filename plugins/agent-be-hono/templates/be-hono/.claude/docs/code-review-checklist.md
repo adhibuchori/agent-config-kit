@@ -154,4 +154,10 @@ read the query code yourself anyway.
 - [ ] A new environment variable is read only in `src/env.ts` (§F Rule 22) and lands in
       `.env.<target>.example` and SSOT.md § Env Variables in the same change
 
+- [ ] A route that needs a signed-in caller declares its guard on the route
+      (`createRoute({ middleware: [...] })`). A path-scoped `use()` guard also catches a public
+      GET that shares the path, or misses a route mounted beside it
+- [ ] Where the payload contract is adopted: every new route is in the registry, with a reason when
+      it is not `strict` (`.claude/PAYLOAD-CONTRACT.md`)
+
 </stack-block>

@@ -46,6 +46,30 @@
       "recommended": "no",
       "detect": ".mcp.json runs Serena and a .serena/project.yml above this repo lists several folders, or AGENT_WORKSPACE_ROOT is set",
       "install": { "yes": [".claude/SERENA-WORKSPACE.example.md"] }
+    },
+    {
+      "id": "payload-encryption",
+      "ask": "Seal request and response bodies between this API and its callers (the payload contract: encrypted envelopes, one endpoint registry, checked before merge)?",
+      "why": "Yes installs the payload contract: a reference implementation in src/lib/payload/ (AES-256-GCM envelopes bound to method, route and status; pre-shared key rings; browser key agreement; a Hono middleware; the strict/off switch) with its tests at 100%, the endpoint registry and its generator, check:endpoints (registry drift, route literals, reasons, the committed switch) and check:crypto-interop (the shared test vectors, and peers checked out beside this repo), the contract document and a rule that loads when you touch the middleware, the registry or payload.config.json. Wiring it into the app stays yours: the contract document shows where. No new dependency (WebCrypto). Answer no when bodies need no sealing beyond TLS.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "payload.config.json or src/lib/payload/ already exists, or the frontends that call this API seal their bodies",
+      "install": {
+        "yes": [
+          ".claude/PAYLOAD-CONTRACT.md",
+          ".claude/rules/common/payload-contract.md",
+          "payload.config.json",
+          "scripts/check/endpoints.ts",
+          "scripts/check/crypto-interop.ts",
+          "scripts/check/payload-vectors.json",
+          "scripts/generate/endpoints.ts",
+          "scripts/lib/openapi-endpoints.ts",
+          "src/lib/payload/**",
+          "src/lib/endpoints/**",
+          "src/middlewares/payload.middleware.ts",
+          "src/middlewares/__tests__/payload.middleware.test.ts"
+        ]
+      }
     }
   ],
   "seed": [
@@ -61,9 +85,14 @@
     ".oxlintrc.json",
     "bunfig.toml",
     "knip.ts",
+    "payload.config.json",
     "scripts/check/constants.config.json",
     "scripts/check/gates.list",
-    "scripts/check/module-mocks.ts"
+    "scripts/check/module-mocks.ts",
+    "src/lib/endpoints/**",
+    "src/lib/payload/**",
+    "src/middlewares/__tests__/payload.middleware.test.ts",
+    "src/middlewares/payload.middleware.ts"
   ],
   "snippets": {},
   "gitignore": [
@@ -84,6 +113,7 @@
   ],
   "packageScripts": {
     "check:constants": "bun scripts/check/constants.ts",
+    "check:dockerfile": "bun scripts/check/dockerfile.ts",
     "check:coverage-policy": "node scripts/check/coverage-policy.mjs",
     "check:dead-code": "knip",
     "check:folder-shape": "node scripts/check/folder-shape.mjs",
@@ -95,6 +125,11 @@
     "format:check": "oxfmt --check src scripts",
     "lint": "oxlint --type-aware src scripts",
     "test:coverage": "bun test src --coverage && node scripts/check/coverage-files.mjs",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "check:crypto-interop": "if [ -f scripts/check/crypto-interop.ts ]; then bun scripts/check/crypto-interop.ts ; else echo 'check:crypto-interop skipped: setup did not install the payload module'; fi",
+    "check:endpoints": "if [ -f scripts/check/endpoints.ts ]; then bun scripts/check/endpoints.ts ; else echo 'check:endpoints skipped: setup did not install the payload module'; fi",
+    "check:openapi": "bun scripts/check/openapi.ts",
+    "generate:endpoints": "bun scripts/generate/endpoints.ts",
+    "spec:export": "bun scripts/generate/openapi.ts"
   }
 }

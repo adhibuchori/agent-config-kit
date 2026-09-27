@@ -1,7 +1,7 @@
 {
   "name": "agent-fe-nextjs",
   "displayName": "Agent for Next.js apps",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Next.js web-app rules, reviewers and checks for Claude Code, on top of agent-core. Hook: generated-guard refuses hand edits to generated output such as an API client built from an OpenAPI spec (paths in .claude/agent-config.json). Commands: setup and sync install and verify the TypeScript and web rules, anti-patterns, quality-gate check scripts, lint configs, a pull-request-only CI caller and an optional DeepSeek review of each pull request; a11y-audit, review-soc and plan-fullstack. Agents: reviewer, i18n-guard and seo-validator. Skills: skeleton, and react-doctor, which you start yourself: it uses the project's own React Doctor CLI, or downloads the pinned version from npm once after you agree, with the CLI's telemetry turned off. The hook runs on your machine, opens no network connection and stays silent until the project opts in. License: MIT, plus the vendor's Modified MIT for the adapted react-doctor skill.",
   "author": {
     "name": "Mochammad Adhi Buchori",

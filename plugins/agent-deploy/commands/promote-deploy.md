@@ -326,6 +326,11 @@ migrations match its own `prod` branch, and promote the backend first if they do
 
 Run the adapter's `trigger`. It performs the same action the CI deploy would have, without a runner.
 
+A static site deployed by upload (the files, not a container): build first when the deploy command
+does not build, because an upload of a stale output folder publishes silently; after the upload,
+load a page this change touched and confirm its content changed, because an upload of an unchanged
+bundle looks exactly like a successful one.
+
 If the trigger is a deploy webhook, it is `bash scripts/deploy/trigger-deploy.sh refs/heads/prod`.
 The webhook URL is a secret: ask the user to run the script in their own terminal, where
 `DEPLOY_WEBHOOK_URL` is exported, and to paste its output. Never ask for the URL, and never put it in
@@ -354,7 +359,10 @@ It uses the network (the live site and, for its deploy check, the GitHub API), s
 prompt is expected; the user approves it. Where the host does not report deployments to GitHub, add
 `--skip deploy`: 3.2 is then the only deployment evidence. Every FAIL is a finding for the report.
 
-Then exercise the change itself, not just that the process is up. For anything touching CORS, test
+Then exercise the change itself, not just that the process is up. When the change touches sign-in,
+sessions or checkout, walk the browser pass from `/agent-core:promote` §2.3 against the live site
+with a test account; after a change to third-party sign-in, start it: it must reach the provider's
+account chooser, not a redirect-URI error. For anything touching CORS, test
 with the **actual frontend origin**. Rejecting `evil.example` proves nothing: an origin allowlist that
 is unset and falls back to a development origin rejects that too, while breaking every real browser.
 

@@ -55,6 +55,24 @@
       "recommended": "no",
       "detect": ".mcp.json runs Serena and a .serena/project.yml above this repo lists several folders, or AGENT_WORKSPACE_ROOT is set",
       "install": { "yes": [".claude/SERENA-WORKSPACE.example.md"] }
+    },
+    {
+      "id": "payload-encryption",
+      "ask": "Seal request and response bodies between this service and the servers that call it (the payload contract: encrypted envelopes with a pre-shared key per hop)?",
+      "why": "Yes installs the payload contract for Python: a reference implementation in src/app/core/payload/ (AES-256-GCM envelopes bound to method, route and status, key rings, the strict/off switch, and a plain ASGI middleware) with tests at 100% branch coverage, including the shared test vectors every other implementation reads, plus the contract document and a rule that loads when you touch it. It needs the cryptography package in your dependencies (uv add cryptography). Wiring the middleware into the app stays yours. Answer no when bodies need no sealing beyond TLS.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "payload.config.json or src/app/core/payload/ already exists, or the backend that calls this service seals its bodies",
+      "install": {
+        "yes": [
+          ".claude/PAYLOAD-CONTRACT.md",
+          ".claude/rules/common/payload-contract.md",
+          "payload.config.json",
+          "scripts/check/payload-vectors.json",
+          "src/app/core/payload/**",
+          "tests/unit/core/payload/**"
+        ]
+      }
     }
   ],
   "seed": [
@@ -67,8 +85,11 @@
     ".github/CODEOWNERS",
     ".github/PULL_REQUEST_TEMPLATE/*.md",
     ".pre-commit-config.yaml",
+    "payload.config.json",
     "scripts/check/gates.list",
-    "scripts/vulture/whitelist.py"
+    "scripts/vulture/whitelist.py",
+    "src/app/core/payload/**",
+    "tests/unit/core/payload/**"
   ],
   "snippets": { "pyproject.toml": "snippets/pyproject.tools.toml" },
   "gitignore": [

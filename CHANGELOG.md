@@ -46,7 +46,7 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 - `scripts/catalog.mjs` lists every workflow a plugin's setup installs as a component, with a docs
   page, in the README catalogs.
 
-### agent-core 1.0.5
+### agent-core 1.1.0
 
 #### Changed
 
@@ -55,8 +55,34 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
   the kit's CI policy does not use.
 - The README catalog lists the CodeQL, dependency-review and workflows-lint workflows, each with a
   docs page.
+- `/agent-core:review` runs the installed i18n guard, SEO validator and accessibility audit on the
+  parts of the diff they own, starts with the cheap scans (staged secrets, a real env file, eval and
+  raw-HTML sinks, secret-shaped assignments), reports the gates it ran, and ends by offering the
+  fixes.
+- `/agent-core:resolve-pr-review` reads the review threads, skips resolved ones, shows a fix plan
+  before a larger change, and resolves each thread it answered, so the readiness check can pass.
+- `/agent-core:merge-pr` never uses `--auto`, and deletes an `internal/*` head only once the pull
+  request reads `MERGED`. `/agent-core:create-pr` refuses a protected branch, runs the gates first,
+  asks once for what is missing, and redrafts on request. `/agent-core:plan` adds UNKNOWNS, timed
+  tasks, rated risks, phases past 50 tasks and per-stack layers.
+- `/agent-core:promote` compares an Alembic head (not a count) and lists the browser pass it means.
+- `DATABASE.example.md` says which query tools run the SQL they are given and when to widen the
+  write guard; the working agreements add three lines (a green suite and an untested transport,
+  another session's authorisation, the zsh array trap).
 
-### agent-ai-fastapi 1.1.0
+#### Added
+
+- `/agent-core:check-fix`: runs the repo's gates, fixes each failure at its cause (format and lint
+  twice, types, build, tests in CI's environment, schema and stack checks) and re-runs until green;
+  it never silences a finding and never commits.
+- The security guard checks web response headers where a repo renders pages: the header set, an
+  unjustified `'unsafe-inline'` or `'unsafe-eval'`, a nonce CSP frozen into static config, raw HTML
+  without a safety note, and the payload contract where a repo adopted it.
+- `OPERATIONS.example.md` gains how the guards fail (closed, one deadline, the Linux argument cap)
+  and why the shell cannot rewrite them, and sections on the unlock, the staged secret scan, server
+  access with a break-glass order, and client IP behind a CDN or proxy.
+
+### agent-ai-fastapi 1.2.0
 
 #### Added
 
@@ -65,8 +91,18 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
   revisions. Needs the `DEEPSEEK_API_KEY` secret. Held until a release pins it.
 - A `.github/CODEOWNERS` starter, seeded once: CI, the guardrails, startup, settings and the
   database.
+- The payload contract, an opt-in setup answer (`payload-encryption`): a Python implementation in
+  `src/app/core/payload/` (the same envelope, AAD and freshness as the TypeScript stacks, key rings,
+  the switch, and a plain ASGI middleware that replays the opened body and never invents a
+  disconnect) with tests at 100% branch coverage, including the shared test vectors. It needs the
+  `cryptography` package.
 
-### agent-be-hono 1.1.0
+#### Changed
+
+- The starter adds §P; the review checklist and the reviewer add input size caps, corpus changes,
+  pipeline data integrity and the ways around the `Any` ban.
+
+### agent-be-hono 1.2.0
 
 #### Added
 
@@ -75,8 +111,28 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
   drizzle-kit migrations and the exported spec. Needs the `DEEPSEEK_API_KEY` secret. Held until a
   release pins it.
 - A `.github/CODEOWNERS` starter, seeded once: CI, the guardrails, startup, env and the database.
+- The payload contract, an opt-in setup answer (`payload-encryption`): a reference implementation
+  in `src/lib/payload/` (AES-256-GCM envelopes bound to method, route pattern, status and key id,
+  a two-minute freshness window, pre-shared key rings with `_NEXT` rotation, browser key agreement,
+  the committed strict/off switch refused in production) and a Hono middleware, with tests at 100%;
+  the endpoint registry and `generate:endpoints`; `check:endpoints` (registry drift, reasons for
+  every exemption, route literals, the committed switch, peer spec and policy parity) and
+  `check:crypto-interop` (shared known-answer vectors and peers checked out beside the repo);
+  `.claude/PAYLOAD-CONTRACT.md` and a rule that loads with the transport. Key material stays out
+  of the repo.
+- `check:openapi` and `spec:export`: the document the app declares builds, describes a route, and
+  equals the committed `openapi.json`. `check:dockerfile`: the image builds what the gate validated.
+- Anti-patterns: a cookie cache that outlives revocation, account endpoints the client cannot
+  reach, passkey cancellation and user verification, a plugin list option that replaces its
+  defaults, and a gateway cancel whose result is not the state.
 
-### agent-deploy 1.1.0
+#### Changed
+
+- The starters add §P (the payload contract, where adopted), a transactional-email section and a
+  known `zod-openapi` typing trap; the review checklist adds per-route guards; the Hono rule adds a
+  switch for the public spec routes.
+
+### agent-deploy 1.1.1
 
 #### Added
 
@@ -87,7 +143,12 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
   config from `prod` after each merge, merges back into `dev` and verifies both.
 - Both callers are held until a release pins them.
 
-### agent-docs-nextra 1.1.0
+#### Changed
+
+- `/agent-deploy:promote-deploy` builds a static site before uploading it, confirms the content
+  changed after, and walks the browser pass and a third-party sign-in on the live site.
+
+### agent-docs-nextra 1.1.1
 
 #### Added
 
@@ -97,7 +158,13 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 - A `.github/CODEOWNERS` starter, seeded once: CI, the deploy target, the generators and the
   guardrails.
 
-### agent-fe-nextjs 1.1.0
+#### Changed
+
+- The security guard checks third-party embeds and `javascript:`/`data:` URLs in MDX; the SEO
+  validator gains a private-site mode; the starter says the reference generator needs the
+  documented app checked out beside the docs repo.
+
+### agent-fe-nextjs 1.2.0
 
 #### Added
 
@@ -105,13 +172,30 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
   DeepSeek review of each pull request with notes about a Next.js app, leaving out the generated
   API client and the translation catalogues. Needs the `DEEPSEEK_API_KEY` secret. Held until a
   release pins it.
+- The payload contract, an opt-in setup answer (`payload-encryption`): the same reference cipher as
+  the backend in `src/lib/payload/`, a browser transport (one agreed key per tab, a handshake, a
+  refusal of plaintext successes on sealed routes) and a server bridge between the browser hop and
+  the backend hop, with tests at 100%; the endpoint registry, `generate:endpoints`,
+  `check:endpoints` (including raw `fetch` outside the transport and unregistered generated-client
+  URLs) and `check:crypto-interop`; the contract document and its rule.
+- `check:dockerfile`, and `check:skeleton-pairs` in the skeletons module: a skeleton a screen
+  renders is measured in the harness or listed with a reason. `check:i18n` fails on a literal key a
+  scoped translator uses that its namespace does not hold; `check:soc` flags a render loop in a
+  component.
+- Anti-patterns: a cookie cache that outlives revocation, gated account endpoints, passkey quirks,
+  a prefixed `backdrop-filter` left alone by the CSS pipeline, and a cropper that letterboxes.
 
 #### Changed
 
 - The seeded `.github/CODEOWNERS` starter explains itself in the same words as the other stacks'
   and names the setup lock.
+- The starters add §M (session and authorization boundary), §N (data surfaces) and §P (the payload
+  contract), and SSOT §5.2, §5.4 and §5.5 (service-hook conventions, fixtures before the backend,
+  three states). The reviewer checks them; the SEO validator gains an app-behind-sign-in mode;
+  `plan-fullstack` carries authorization, states and fixtures; `serena-errors.md` starts with the
+  known tool failures; the UI conventions add parity across sibling apps.
 
-### agent-fe-nextjs-static 1.1.0
+### agent-fe-nextjs-static 1.1.1
 
 #### Added
 
@@ -122,6 +206,15 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
   `DEEPSEEK_API_KEY` secret. Held until a release pins it.
 - A `.github/CODEOWNERS` starter, seeded once: CI, the headers, the build config, the budgets and
   the guardrails.
+- Anti-pattern: a prefixed `backdrop-filter` the CSS pipeline keeps while dropping the standard
+  one.
+
+### agent-fe-threejs 1.0.2
+
+#### Changed
+
+- The 3D rule warns about unscoped `npx` package names in skills and checks the renderer's React
+  peer range before a React upgrade.
 
 ## [1.1.0] - 2026-09-27
 

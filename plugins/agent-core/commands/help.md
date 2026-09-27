@@ -53,6 +53,7 @@ context), and say which plugin adds it.
 | `/agent-core:promote` | A branch should reach production: PR to `dev`, promotion PR to `prod`, deploy verified |
 | `/agent-core:branch-cleanup` | After a promotion, to delete merged branches (after you confirm the list) |
 | `/agent-core:rca` | A bug needs its root cause: reproduce first, fix with a test that fails without it (`/debug` means this) |
+| `/agent-core:check-fix` | A gate is red: run the gates, fix each failure at its cause, re-run until green |
 | `/agent-core:checkpoint` | Before a risky change: a local safety commit of this session's files |
 | `/agent-core:checkpoint-summary` | Handing the session over: what was done, what is pending |
 | `/agent-core:learn-session` | The session taught something that should change next time |

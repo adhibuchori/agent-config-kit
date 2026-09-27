@@ -153,6 +153,18 @@ The fix is always the same shape: move it into `<module>/service.py`.
 - A middleware that replays the request body and answers `http.disconnect` itself instead of
   delegating `receive` to the original — it ends every streaming response before its first event
 
+### Rule evasions and the payload contract (no rule number)
+
+- A way around the `Any` ban: `# noqa: TID251` or `# noqa: ANN401` (a reason on the line does not
+  make it right), `typing_extensions.Any`, or an `object` used without `isinstance` narrowing.
+- Before citing a rule number, check the rule's title says what you claim; a number that exists but
+  names another rule misleads the fix.
+- Where `payload.config.json` exists: the payload middleware stays the first one added (innermost),
+  a new route is in the registry, no handler or service imports `app.core.payload`, and no key or
+  opened body reaches a log line (`.claude/PAYLOAD-CONTRACT.md`).
+- In a pipeline repo: an unchanged re-run writes zero rows, the failure path still records the run,
+  and a migration ships with every model change (`alembic upgrade head && alembic check`).
+
 ### Pipeline shape (only in a repo that has `alembic.ini`)
 
 Cite the repo's `AGENTS.md` §H rule by name, or `.claude/rules/backend/pipeline.md` and

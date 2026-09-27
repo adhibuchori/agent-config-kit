@@ -21,9 +21,17 @@ The base branch is **`dev`**, never `main`: work goes `internal/{scope}` → `de
 branch model in CLAUDE.md § Branching). A promotion into `prod` is `/agent-core:promote`'s job. A
 repo with no `dev` branch on the remote uses its default branch as the base; say so.
 
+Stop when the current branch is `dev`, `prod` or the default branch: a pull request starts from a
+work branch.
+
+Run the gates before drafting (`bash scripts/check/gates.sh`, or CLAUDE.md § Quality Gates); never
+open a pull request from a red gate. Infer the scope from the branch name (`internal/<scope>`) and
+the summary from the commit list.
+
 ## Step 1: Collect What Is Missing
 
-Ticket ID (optional), one-sentence feature description, any breaking change or migration note.
+Ticket ID (optional), one-sentence feature description, any breaking change or migration note, and
+whether a companion docs repo needs its own pull request. Ask for everything missing in one question.
 
 ## Step 2: Draft
 
@@ -37,7 +45,8 @@ workflow is the list, and a second copy of it here is the part that goes stale.
 
 ## Step 3: Confirm
 
-Show title and body. Ask whether they are correct before creating.
+Show title and body in a fenced block. Ask whether they are correct before creating; on "no", ask
+what to change, redraft, and show it again.
 
 ## Step 4: Create
 

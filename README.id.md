@@ -37,6 +37,7 @@ Anda, sehingga agen bekerja seperti tim Anda bekerja: rencana, review, commit, b
 - [Sehari bekerja dengan kit ini](#sehari-bekerja-dengan-kit-ini)
 - [Apa saja yang dipasang](#apa-saja-yang-dipasang)
 - [Bagaimana bagian-bagiannya saling terhubung](#bagaimana-bagian-bagiannya-saling-terhubung)
+- [Cakupan aturan](#cakupan-aturan)
 - [Semua isi kit](#semua-isi-kit)
 - [Konfigurasi](#konfigurasi)
 - [Apa yang diblokir, dan cara mematikannya](#apa-yang-diblokir-dan-cara-mematikannya)
@@ -417,6 +418,78 @@ bernomor yang bisa dikutip saat review, `SSOT.md` memuat fakta tentang codebase,
 menegakkan (dengan plugin, hook tinggal di plugin dan aturan di `.claude/rules/`), dan gate
 menentukan apa yang boleh di-merge.
 
+## Cakupan aturan
+
+Hook menghentikan segelintir hal yang mahal untuk dibatalkan. Aturan mengurus sisanya: cara kode di
+tiap stack ditulis, direview, dites, dan dirilis, dituliskan di tempat Claude membacanya dan diubah
+menjadi gate di mana pun mesin bisa memutuskan. Hampir setiap aturan hanya dimuat saat Claude
+menyentuh berkas yang diaturnya, jadi seluruh perangkat ini tidak memakan apa-apa sampai dibutuhkan.
+
+### Enkripsi payload: body tersegel dan satu registri endpoint
+
+Modul andalan, dan opsional: jawab `payload-encryption=yes` saat setup agent-fe-nextjs,
+agent-be-hono, atau agent-ai-fastapi. Setiap body request dan response yang melintasi batas layanan
+lalu dikirim sebagai amplop AES-256-GCM yang terikat pada method, pola rute, status, dan kuncinya,
+dalam jendela dua menit; setiap endpoint dideklarasikan di satu registri dengan kebijakannya di
+samping path-nya; dan dua pemeriksa menjaga keduanya tetap benar sebelum apa pun di-merge. Frontend,
+backend, dan layanan Python memakai format kabel yang sama, dibuktikan dengan satu set vektor uji
+bersama. [Panduan lengkapnya](docs/payload-encryption.md) menjelaskan cara memasangnya dan apa yang
+tidak dilindunginya.
+
+1. **Sebuah `fetch` tulisan tangan mengirim plaintext melewati transport.**
+   *Masalahnya:* satu layar memanggil API langsung, dan body serta jawabannya berjalan tanpa
+   enkripsi sementara request lain tersegel; tidak ada yang sadar, karena tetap berfungsi.
+   *Perbaikannya:* transport menolak rute yang tidak ada di registri, backend menolak body plaintext
+   di rute tersegel (`ENVELOPE_REQUIRED`), dan `check:endpoints` gagal pada `fetch` di luar
+   transport dan pada path rute yang diketik di luar registri.
+   *Ditangani oleh:* `src/lib/payload/`, registri, `check:endpoints`.
+2. **Dua salinan cipher berjalan menjauh.**
+   *Masalahnya:* salinan frontend mengubah cara membangun data terautentikasi; tes di kedua repo
+   tetap hijau, dan setiap request gagal di browser dengan galat yang tidak menjelaskan apa-apa.
+   *Perbaikannya:* setiap salinan membuka ciphertext yang sama yang sudah di-commit dan menolak
+   replay yang sama, dan `check:crypto-interop` menyegel dengan satu salinan lalu membuka dengan
+   salinan lain saat repo peer ada di samping.
+   *Ditangani oleh:* `payload-vectors.json`, `check:crypto-interop`, `test_vectors.py` di Python.
+3. **Sakelar debugging ikut ke produksi.**
+   *Masalahnya:* seseorang mematikan enkripsi untuk mengejar bug, dan branch-nya ter-merge begitu.
+   *Perbaikannya:* sakelar yang di-commit wajib `strict` (`check:endpoints`), setiap layanan menolak
+   berjalan dengan `off` di produksi, dan debugging memakai variabel lingkungan di shell Anda sendiri.
+   *Ditangani oleh:* `payload.config.json`, `resolveEncryptionMode`, `check:endpoints`.
+4. **Request yang tertangkap diputar ulang di rute lain.**
+   *Masalahnya:* amplop yang diambil dari log dikirim ke endpoint yang lebih berbahaya.
+   *Perbaikannya:* data terautentikasi menyebut method, pola rute, id kunci, dan waktunya, jadi
+   amplop tidak terbuka di tempat lain, dan yang lebih tua dari dua menit ditolak sebelum cipher jalan.
+   *Ditangani oleh:* `envelope.ts`, `codec.ts` (dan kembarannya di Python).
+
+| Bagian | Fungsinya | Cara pakai | Manfaatnya |
+| --- | --- | --- | --- |
+| Jawaban setup `payload-encryption` (fe-nextjs, be-hono, ai-fastapi) | Memasang modul; tidak ada yang berubah sampai Anda menjawab yes | `/agent-be-hono:setup`, jawab `yes` | Opsional, dan draft menampilkan setiap berkas lebih dulu |
+| `src/lib/payload/` (TypeScript) | Cipher, key ring, kesepakatan kunci browser, sakelar, pencocok endpoint; tes 100% | backend memasang `createPayloadMiddleware`, transport frontend memanggil `createBrowserPayload` | Referensi yang sudah direview, bukan kripto buatan sendiri |
+| `src/app/core/payload/` (Python) | Amplop yang sama sebagai middleware ASGI polos; tes 100% cakupan cabang | `app.add_middleware(PayloadMiddleware, …)`, ditambahkan pertama | Layanan Python berbicara format yang sama |
+| Registri endpoint dan `generate:endpoints` | Setiap rute beserta kebijakannya; separuh turunan spec dihasilkan otomatis | `bun run generate:endpoints` setelah spec berubah | Setiap rute punya kebijakan yang sudah diputuskan |
+| `check:endpoints` | Drift registri, alasan pengecualian, literal rute, `fetch` mentah, sakelar yang di-commit, paritas peer | di `gates.list` | Plaintext tidak bisa menyelinap lewat kode baru |
+| `check:crypto-interop` dan `payload-vectors.json` | Membuka vektor bersama, menolak replay, memeriksa silang salinan peer | di `gates.list` | Salinan cipher tidak bisa menjauh tanpa terlihat |
+| `.claude/PAYLOAD-CONTRACT.md` dan `rules/common/payload-contract.md` | Kontrak, model ancaman, dan cara memasang; versi ringkasnya dimuat bersama transport | dibaca sesuai kebutuhan | Claude mengikuti kontrak saat mengedit transport |
+
+Lompatan dari browser bukan enkripsi end-to-end: orang yang memakai browser memegang kuncinya. Yang
+didapat adalah integritas, ikatan ke rute, ketahanan terhadap replay, dan ciphertext di setiap log dan
+berkas HAR; kerahasiaan tetap dibawa TLS, cookie httpOnly, dan proxy di sisi server. Dokumen kontrak
+menyatakan ini paling awal.
+
+### Sisa perangkat aturan
+
+| Area | Yang dijaga aturan dan pemeriksa | Di mana |
+| --- | --- | --- |
+| Komponen dan data | Komponen hanya me-render tanpa logika; tanpa waterfall request; hook dan layar tinggal bersama fiturnya; tiga keadaan di setiap layar; fixture tetap di tes | aturan fe-nextjs, `AGENTS.md` §B, §D, §N; `check:soc`, `check:hooks` |
+| Sesi dan galat | Frontend tidak pernah memutuskan otorisasi atau menyimpan sesi; setiap kode galat punya pesan; pesan mentah backend tidak sampai ke layar | `AGENTS.md` §M, `common/error-codes.md`; `check:error-codes` |
+| Tipe, kode mati, satu rumah | Tanpa `any`, tanpa asersi ganda, tanpa kode tak terpakai, satu rumah per identifier bersama | aturan inti; `double-assertion.sh`, knip atau vulture, `check:constants` |
+| Tes dan cakupan | Batas bawah 100% di lapisan logika, tes di lingkungan CI, mock yang menolak apa yang ditolak klien sungguhan | aturan cakupan; `coverage-policy.mjs`, `ci-env.sh`, `check:mocks` |
+| Database | Migrasi dihasilkan, tidak ditulis tangan; setiap foreign key diindeks; transaksi singkat | aturan be-hono dan pipeline; `migrations.sh`, `index-coverage.sh` |
+| API dan image | Spec terbangun dan di-commit; image membangun apa yang divalidasi gate | `hono.md`; `check:openapi`, `check:dockerfile` |
+| UI | Diukur, bukan ditebak; satu komponen per peran; skeleton diukur terhadap layarnya | aturan UI dan skeleton; `check:skeleton-pairs`, `check:responsive` |
+| Operasional | Cara guard gagal, unlock, akses server dan break-glass, IP klien di balik CDN, deploy dibuktikan dengan waktu | `OPERATIONS.example.md`, `DATABASE.example.md`, `CI-RUNNERS.example.md` |
+| Jebakan yang dikenal | Satu berkas per jebakan yang benar-benar memakan waktu: sesi auth, passkey, pipeline CSS, test runner, alat cakupan | `.claude/anti-patterns/` (34 frontend, 12 backend, 12 situs statis, 9 docs, 6 Python) |
+
 ## Semua isi kit
 
 Setiap tabel menjawab tiga hal untuk tiap bagian: apa fungsinya, cara memakainya, dan mengapa
@@ -460,6 +533,7 @@ berjalan saat Anda mengetiknya: Claude tidak bisa memulainya sendiri (`disable-m
 | [/agent-core:promote](docs/agent-core/promote.md) | PR ke `dev`, promosi ke `prod`, deploy diverifikasi berdasarkan waktu | `/agent-core:promote` | "Sudah di-merge" tidak tertukar dengan "sudah live" |
 | [/agent-core:branch-cleanup](docs/agent-core/branch-cleanup.md) | Menghapus branch yang sudah di-merge setelah Anda konfirmasi | `/agent-core:branch-cleanup` | Remote rapi, tidak ada yang belum di-merge yang hilang |
 | [/agent-core:rca](docs/agent-core/rca.md) | Reproduksi, temukan penyebab, perbaiki dengan tes yang gagal tanpa perbaikannya | `/agent-core:rca checkout returns 500` | Perbaikan yang tidak kambuh |
+| [/agent-core:check-fix](docs/agent-core/check-fix.md) | Menjalankan gate, memperbaiki tiap kegagalan pada penyebabnya, mengulang sampai hijau | `/agent-core:check-fix` | Gate hijau tanpa temuan yang dibungkam |
 | [/agent-core:checkpoint](docs/agent-core/checkpoint.md) | Commit pengaman lokal untuk file sesi ini | `/agent-core:checkpoint before refactor` | Jalan pulang yang murah |
 | [/agent-core:checkpoint-summary](docs/agent-core/checkpoint-summary.md) | Ringkasan serah terima sesi | `/agent-core:checkpoint-summary` | Sesi berikutnya mulai dari titik akhir sesi ini |
 | [/agent-core:learn-session](docs/agent-core/learn-session.md) | Menulis pelajaran ke aturan, pemeriksa, atau anti-pattern | `/agent-core:learn-session` | Jebakan yang sama tidak terulang |
@@ -511,7 +585,7 @@ aturan dengan mengedit filenya (file itu milik Anda; sync melaporkannya sebagai 
 `agent-sync own` mempertahankannya).
 
 <details>
-<summary><strong>Ke-48 file aturan, per plugin</strong></summary>
+<summary><strong>Ke-51 file aturan, per plugin</strong></summary>
 
 | File aturan | Isinya | Dimuat saat Claude menyentuh | Mengapa berguna |
 | --- | --- | --- | --- |
@@ -544,6 +618,7 @@ aturan dengan mengedit filenya (file itu milik Anda; sync melaporkannya sebagai 
 | `backend/fastapi.md`, `backend/providers.md` (ai-fastapi) | Pola FastAPI, lapisan penyedia | api, modul, penyedia | Penyedia LLM bisa ditukar |
 | `backend/performance.md`, `backend/testing.md` (ai-fastapi) | Performa async, tes | app, tes | Tidak ada panggilan blocking di kode async |
 | `common/coding-style.md`, `common/patterns.md`, `common/testing.md`, `python/coverage.md` (ai-fastapi) | Gaya Python, pola, cakupan | `*.py`, tes, konfigurasi | Python yang konsisten |
+| `common/payload-contract.md` (fe-nextjs, be-hono, ai-fastapi, opsional) | Body tersegel, registri endpoint, kunci, penolakan | transport, registri, middleware, `payload.config.json` | Plaintext dan drift tertangkap saat kode ditulis |
 | `docs-site/content.md` (docs-nextra) | Konvensi konten dokumentasi | konten, komponen, generator | Halaman yang konsisten |
 | `web/3d.md` (fe-threejs) | Gating scene, fallback, reduced motion, pembersihan GPU, anggaran | shader, file 3D dan scene | 3D yang tidak menenggelamkan halaman |
 
@@ -588,6 +663,10 @@ Pemeriksa adalah skrip yang dipasang setup di `scripts/check/`. Gate pre-commit
 | `ci-env.sh`, `.env.ci.example` (be-hono) | Menjalankan tes unit persis dengan variabel CI (file env yang diteruskan pemanggil CI, bawaannya `.env.ci.example`) tanpa apa pun dari shell Anda atau file `.env` | di `gates.list`; satu file: `bash scripts/check/ci-env.sh bun test <path>` | Tes yang hanya lolos dengan kredensial lokal Anda gagal sebelum CI |
 | `coverage-policy.mjs`, `.pre-commit-config.yaml` (ai-fastapi) | Batas cakupan; ruff, mypy, pytest, vulture, import-linter | `uv run pre-commit run` | Gate Python |
 | `audit.ts`, `.github/scripts/check-comment-*` (docs-nextra, fe-nextjs) | Audit dependensi, gaya komentar | di `gates.list` | Advisory dan komentar berlebih tertangkap |
+| `endpoints.ts`, `crypto-interop.ts`, `payload-vectors.json`, `generate/endpoints.ts` (fe-nextjs, be-hono, opsional) | Pemeriksa registri, drift, dan interop kontrak payload, serta generator registri | `bun run check:endpoints`, `bun run check:crypto-interop` | Yang tersegel tetap tersegel, dan salinan cipher tetap sepakat |
+| `openapi.ts`, `generate/openapi.ts` (be-hono) | Spec terbangun, menjelaskan minimal satu rute, dan sama dengan `openapi.json` yang di-commit; `spec:export` menuliskannya | `bun run check:openapi`, `bun run spec:export` | Frontend membuat klien dari spec yang terkini |
+| `dockerfile.ts` (fe-nextjs, be-hono) | Image membuat kliennya sebelum build, mem-pin digest berversi, menjalankan Bun yang dipakai gate | `bun run check:dockerfile` | Gate hijau berarti image yang berfungsi |
+| `skeleton-pairs.ts` (fe-nextjs, opsional) | Skeleton yang di-render layar diukur di harness, atau dicatat beserta alasannya | `bun run check:skeleton-pairs` | Skeleton diukur, bukan ditebak |
 | `3d-budget.mjs` (fe-threejs) | Anggaran model, segitiga, dan tekstur untuk glTF/GLB | `node scripts/check/3d-budget.mjs` | Aset 3D yang tetap termuat di ponsel |
 | `verify-deploy.sh`, `trigger-deploy.sh` (deploy) | Smoke test dari luar; pemicu webhook yang menganggap 3xx sebagai kegagalan | lewat perintah deploy | Deploy dibuktikan, bukan diasumsikan |
 
@@ -652,7 +731,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | --- | --- | --- |
 | `.claude/CI-RUNNERS.example.md` | selalu; sync menjaganya tetap terbaru | CI Runners — Two Pools Behind Repository Variables |
 | `.claude/DATABASE.example.md` | selalu; sync menjaganya tetap terbaru | Postgres — MCP Access for Debugging |
-| `.claude/OPERATIONS.example.md` | selalu; sync menjaganya tetap terbaru | Operations — Hooks, GitHub and CI, Reviews, MCP, Deploys |
+| `.claude/OPERATIONS.example.md` | selalu; sync menjaganya tetap terbaru | Operations — Hooks, GitHub and CI, Reviews, MCP, Deploys, Access |
 | `.claude/agent-config.example.json` | selalu; sync menjaganya tetap terbaru | Setiap pengaturan hook beserta default-nya; salin key yang Anda ubah ke agent-config.json |
 | `.claude/mcp/cloudflare.example.json` | selalu; sync menjaganya tetap terbaru | Server MCP Cloudflare sesuai kebutuhan, dimuat untuk satu sesi dengan --mcp-config |
 | `.claude/mcp/deploy-platform.example.json` | selalu; sync menjaganya tetap terbaru | Server MCP platform deploy sesuai kebutuhan, untuk diisi dan di-pin |
@@ -693,11 +772,12 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-ai-fastapi</strong>: 40 berkas</summary>
+<summary><strong>agent-ai-fastapi</strong>: 60 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
 | `.claude/ANALYTICS.example.md` | jika `analytics=yes`; sekali; lalu milik Anda | Analytics — Read API Access |
+| `.claude/PAYLOAD-CONTRACT.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Payload Contract: Sealed Bodies and One Endpoint Registry |
 | `.claude/SERENA-WORKSPACE.example.md` | jika `serena-workspace=yes`; sekali; lalu milik Anda | Serena — Multi-Repo Workspace Scoping |
 | `.claude/anti-patterns/INDEX.md` | sekali; lalu milik Anda | Anti-Patterns Index |
 | `.claude/anti-patterns/a-check-that-matches-nothing-passes.md` | selalu; sync menjaganya tetap terbaru | A check whose scanner matches nothing reports success |
@@ -717,6 +797,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.claude/rules/backend/testing.md` | selalu; sync menjaganya tetap terbaru | Testing Conventions |
 | `.claude/rules/common/coding-style.md` | selalu; sync menjaganya tetap terbaru | Coding Style |
 | `.claude/rules/common/patterns.md` | selalu; sync menjaganya tetap terbaru | Common Patterns |
+| `.claude/rules/common/payload-contract.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Payload Contract (short form) |
 | `.claude/rules/common/testing.md` | selalu; sync menjaganya tetap terbaru | Testing Requirements |
 | `.claude/rules/python/coverage.md` | selalu; sync menjaganya tetap terbaru | COVER — Test Coverage (Python) |
 | `.claude/settings.json` | digabung ke milik Anda (hanya menambah; nilai Anda yang menang) | Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash |
@@ -730,10 +811,28 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `AGENTS.md` | sekali, jika belum ada; lalu milik Anda | AGENTS.md — &lt;repo-name&gt; |
 | `CLAUDE.md` | starter-nya, jika repo belum punya CLAUDE.md | &lt;Project Name&gt; — Claude Code Config |
 | `SSOT.md` | sekali, jika belum ada; lalu milik Anda | SSOT.md — &lt;repo-name&gt; |
+| `payload.config.json` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Sakelar kontrak payload (strict, di-commit), pengecualian rute beserta alasannya, dan repo peer yang ikut diperiksa |
 | `pyproject.toml` | sekali, jika belum ada; lalu milik Anda | Pengaturan proyek Python dan tool-nya: ruff, mypy, pytest, coverage, vulture |
 | `scripts/check/coverage-policy.mjs` | selalu; sync menjaganya tetap terbaru | COVER: refuses a coverage gate that was weakened. |
 | `scripts/check/gates.list` | sekali; lalu milik Anda | This repo's gates. |
+| `scripts/check/payload-vectors.json` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope; tidak pernah dibuat ulang agar lolos |
 | `scripts/vulture/whitelist.py` | sekali; lalu milik Anda | Nama yang tidak boleh dilaporkan vulture sebagai dead code |
+| `src/app/core/payload/__init__.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The payload contract package. |
+| `src/app/core/payload/codec.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Sealing and opening JSON envelopes with AES-256-GCM. |
+| `src/app/core/payload/envelope.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The envelope format, freshness and AAD builders. |
+| `src/app/core/payload/errors.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The payload error codes. |
+| `src/app/core/payload/keys.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Pre-shared key rings for server-to-server hops. |
+| `src/app/core/payload/middleware.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The payload contract as plain ASGI middleware. |
+| `src/app/core/payload/mode.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The strict/off switch of the payload contract. |
+| `src/app/core/payload/policy.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The route registry types and the policy decisions. |
+| `tests/unit/core/payload/__init__.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests for the payload contract; a package so their module names never collide. |
+| `tests/unit/core/payload/test_codec.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for app.core.payload.codec: part of the payload contract. |
+| `tests/unit/core/payload/test_envelope.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for app.core.payload.envelope: part of the payload contract. |
+| `tests/unit/core/payload/test_keys.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for app.core.payload.keys: part of the payload contract. |
+| `tests/unit/core/payload/test_middleware.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for app.core.payload.middleware: part of the payload contract. |
+| `tests/unit/core/payload/test_mode.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for app.core.payload.mode: part of the payload contract. |
+| `tests/unit/core/payload/test_policy.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for app.core.payload.policy: part of the payload contract. |
+| `tests/unit/core/payload/test_vectors.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for app.core.payload.vectors: part of the payload contract. |
 | `CLAUDE.md` | satu blok terkelola, ditambahkan di akhir | `## Agent config kit` |
 | `.gitignore` | satu blok terkelola (18 baris) | `.serena/`, `.skillspector/`, `.env`, `.env.*`, `!.env.example`, `!.env.*.example`, `.venv/`, `__pycache__/`, `*.pyc`, `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/`, `.import_linter_cache/`, `.coverage`, `htmlcov/`, `dist/`, `build/`, `*.egg-info/` |
 | `pyproject.toml` | manual: draft menyebut `_kit/snippets/pyproject.tools.toml` | |
@@ -741,16 +840,22 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-be-hono</strong>: 50 berkas</summary>
+<summary><strong>agent-be-hono</strong>: 92 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
 | `.claude/ANALYTICS.example.md` | jika `analytics=yes`; sync menjaganya tetap terbaru | Analytics — Read API Access |
+| `.claude/PAYLOAD-CONTRACT.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Payload Contract: Sealed Bodies and One Endpoint Registry |
 | `.claude/SERENA-WORKSPACE.example.md` | jika `serena-workspace=yes`; sync menjaganya tetap terbaru | Serena — Multi-Repo Workspace Scoping |
 | `.claude/anti-patterns/INDEX.md` | sekali; lalu milik Anda | Anti-Patterns Index |
 | `.claude/anti-patterns/a-check-that-matches-nothing-passes.md` | selalu; sync menjaganya tetap terbaru | A check whose scanner matches nothing reports success |
+| `.claude/anti-patterns/auth-cookie-cache-outlives-revocation.md` | selalu; sync menjaganya tetap terbaru | A revoked session keeps working until its cookie cache ages out |
+| `.claude/anti-patterns/better-auth-account-endpoints-are-gated.md` | selalu; sync menjaganya tetap terbaru | Better Auth's account endpoints are gated in ways the client does not show |
+| `.claude/anti-patterns/better-auth-list-option-replaces-defaults.md` | selalu; sync menjaganya tetap terbaru | A Better Auth plugin's list option replaces its defaults, it does not extend them |
+| `.claude/anti-patterns/better-auth-passkey-quirks.md` | selalu; sync menjaganya tetap terbaru | Passkeys: a dismissed prompt is an error, and user verification is not enforced |
 | `.claude/anti-patterns/better-auth-user-hook-runs-first.md` | selalu; sync menjaganya tetap terbaru | better-auth runs your `hooks.after` first, then lets a plugin overwrite it |
 | `.claude/anti-patterns/bun-mock-module-is-process-wide.md` | selalu; sync menjaganya tetap terbaru | `mock.module` is process-wide, and bun versions disagree on file order |
+| `.claude/anti-patterns/gateway-cancel-result-is-not-the-state.md` | selalu; sync menjaganya tetap terbaru | A payment gateway's cancel result is not the state of the payment |
 | `.claude/anti-patterns/postgres-max-1-pool.md` | selalu; sync menjaganya tetap terbaru | `postgres(url, { max: 1 })` outside a migration runner |
 | `.claude/anti-patterns/queue-job-id-cannot-contain-colon.md` | selalu; sync menjaganya tetap terbaru | A custom BullMQ job id with a `:` in it is never queued |
 | `.claude/anti-patterns/rate-limit-double-next.md` | selalu; sync menjaganya tetap terbaru | `await next()` inside a middleware's own try/catch |
@@ -763,6 +868,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.claude/rules/backend/testing.md` | selalu; sync menjaganya tetap terbaru | Backend Testing Conventions |
 | `.claude/rules/common/error-codes.md` | selalu; sync menjaganya tetap terbaru | Error codes |
 | `.claude/rules/common/patterns.md` | selalu; sync menjaganya tetap terbaru | Common Patterns |
+| `.claude/rules/common/payload-contract.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Payload Contract (short form) |
 | `.claude/rules/common/testing.md` | selalu; sync menjaganya tetap terbaru | Testing Requirements |
 | `.claude/rules/typescript/coverage.md` | selalu; sync menjaganya tetap terbaru | COVER — Test Coverage (TypeScript) |
 | `.claude/settings.json` | digabung ke milik Anda (hanya menambah; nilai Anda yang menang) | Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash |
@@ -783,18 +889,53 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `SSOT.md` | sekali, jika belum ada; lalu milik Anda | SSOT.md — `&lt;repo-name&gt;` |
 | `bunfig.toml` | sekali; lalu milik Anda | Pengaturan tes Bun, termasuk preload tes |
 | `knip.ts` | sekali; lalu milik Anda | Pengaturan dead code untuk knip |
+| `payload.config.json` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Sakelar kontrak payload (strict, di-commit), pengecualian rute beserta alasannya, dan repo peer yang ikut diperiksa |
 | `scripts/check/ci-env.sh` | selalu; sync menjaganya tetap terbaru | Runs a command with the environment CI's unit tests get, and nothing else: PATH, HOME, TMPDIR, the locale, CI=true and CI's test variables. |
 | `scripts/check/constants.config.json` | sekali; lalu milik Anda | Tempat tiap jenis identifier berada, untuk pemeriksa konstanta |
 | `scripts/check/constants.ts` | selalu; sync menjaganya tetap terbaru | One home per identifier, enforced (AGENTS.md § G, "One home per identifier"). |
 | `scripts/check/coverage-files.mjs` | selalu; sync menjaganya tetap terbaru | Every source file must be loaded by at least one test. |
 | `scripts/check/coverage-policy.mjs` | selalu; sync menjaganya tetap terbaru | COVER: refuses a coverage gate that was weakened. |
+| `scripts/check/crypto-interop.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Proves this repo's payload cipher still speaks the shared wire format (.claude/PAYLOAD-CONTRACT.md § Tests and interop). |
+| `scripts/check/dockerfile.ts` | selalu; sync menjaganya tetap terbaru | The production image builds what the quality gate validated. |
+| `scripts/check/endpoints.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | The static half of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `scripts/check/gates.list` | sekali; lalu milik Anda | This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .husky/pre-commit. |
 | `scripts/check/index-coverage.sh` | selalu; sync menjaganya tetap terbaru | Foreign-key index gate (AGENTS.md §H Rule 32). |
 | `scripts/check/migrations.sh` | selalu; sync menjaganya tetap terbaru | Migration drift gate. |
 | `scripts/check/module-mocks.ts` | sekali; lalu milik Anda | MOCK — a module replacement must not reach the files that did not ask for one. |
+| `scripts/check/openapi.ts` | selalu; sync menjaganya tetap terbaru | The OpenAPI document builds, describes at least one route, and equals the committed openapi.json. |
+| `scripts/check/payload-vectors.json` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope; tidak pernah dibuat ulang agar lolos |
+| `scripts/generate/endpoints.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Writes the generated half of the endpoint registry from the OpenAPI spec and the exemptions in payload.config.json (.claude/PAYLOAD-CONTRACT.md § Registry). |
+| `scripts/generate/openapi.ts` | selalu; sync menjaganya tetap terbaru | Writes the OpenAPI document the app declares to openapi.json (`bun run spec:export`). |
+| `scripts/lib/openapi-document.ts` | selalu; sync menjaganya tetap terbaru | The OpenAPI document the app declares, built from `src/app.ts` without starting a server. |
+| `scripts/lib/openapi-endpoints.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | The payload contract's configuration, and the endpoint registry an OpenAPI document implies. |
+| `scripts/lib/source-scan.ts` | selalu; sync menjaganya tetap terbaru | Reading a source tree the way the payload checks need it: every TypeScript file, with comments and API prose blanked so a sentence that names a route is never read as code, and JSON compared by meaning rather than by formatting. |
+| `src/lib/endpoints/__tests__/endpoints.test.ts` | selalu; sync menjaganya tetap terbaru | Unit tests for the endpoint registry: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/endpoints/endpoints.generated.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Generated from `openapi.json` by `scripts/generate/endpoints.ts`. |
+| `src/lib/endpoints/endpoints.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Every route this service serves, and what happens to its payload (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/aes-gcm.test.ts` | selalu; sync menjaganya tetap terbaru | Unit tests for the AES-256-GCM layer: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/base64url.test.ts` | selalu; sync menjaganya tetap terbaru | Unit tests for base64url and UTF-8 helpers: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/codec.test.ts` | selalu; sync menjaganya tetap terbaru | Unit tests for sealing and opening JSON envelopes: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/ecdh.test.ts` | selalu; sync menjaganya tetap terbaru | Unit tests for browser key agreement: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/envelope.test.ts` | selalu; sync menjaganya tetap terbaru | Unit tests for the envelope shape, freshness and AAD builders: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/errors.test.ts` | selalu; sync menjaganya tetap terbaru | Unit tests for the payload error codes: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/key-ring.test.ts` | selalu; sync menjaganya tetap terbaru | Unit tests for pre-shared key rings: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/mode.test.ts` | selalu; sync menjaganya tetap terbaru | Unit tests for the strict/off switch: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/policy.test.ts` | selalu; sync menjaganya tetap terbaru | Unit tests for policies and the endpoint matcher: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/vectors.test.ts` | selalu; sync menjaganya tetap terbaru | Unit tests for this copy against the shared test vectors: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/aes-gcm.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The one cipher on the wire: AES-256-GCM through WebCrypto. |
+| `src/lib/payload/base64url.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Bytes on the wire: base64url and UTF-8, the same way in the browser, on Node and on Bun. |
+| `src/lib/payload/codec.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | A JSON body into an envelope and back: the one place that decides the order of operations. |
+| `src/lib/payload/ecdh.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Key agreement for the browser hop, where there is no secret the browser could hold. |
+| `src/lib/payload/envelope.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The wire format: what an envelope is, and what its ciphertext is bound to. |
+| `src/lib/payload/errors.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The closed set of ways an envelope can fail to become a payload. |
+| `src/lib/payload/key-ring.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Pre-shared keys for server-to-server hops, which never reach a browser. |
+| `src/lib/payload/mode.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The switch: whether this service enforces the payload contract. |
+| `src/lib/payload/policy.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The endpoint registry's types, and the one place that decides what a policy seals. |
+| `src/middlewares/__tests__/payload.middleware.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for the Hono payload middleware: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/middlewares/payload.middleware.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The payload contract at this service's edge (.claude/PAYLOAD-CONTRACT.md). |
 | `CLAUDE.md` | satu blok terkelola, ditambahkan di akhir | `## Agent config kit` |
 | `.gitignore` | satu blok terkelola (14 baris) | `.env`, `.env.*.local`, `.env.development`, `.env.local`, `.env.production`, `.env.staging`, `.env.test`, `.envrc`, `.serena/`, `.skillspector/`, `/coverage`, `build/`, `dist/`, `node_modules/` |
-| `package.json` | hanya script yang belum ada: check:constants, check:coverage-policy, check:dead-code, check:folder-shape, check:mocks, db:generate, fl, fl:ci, format, format:check, lint, test:coverage, type-check | `scripts` |
+| `package.json` | hanya script yang belum ada: check:constants, check:dockerfile, check:coverage-policy, check:dead-code, check:folder-shape, check:mocks, db:generate, fl, fl:ci, format, format:check, lint, test:coverage, type-check, check:crypto-interop, check:endpoints, check:openapi, generate:endpoints, spec:export | `scripts` |
 
 </details>
 
@@ -863,23 +1004,29 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-fe-nextjs</strong>: 99 berkas</summary>
+<summary><strong>agent-fe-nextjs</strong>: 141 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
 | `.claude/ANALYTICS.example.md` | sekali; lalu milik Anda | Analytics — Read API Access |
+| `.claude/PAYLOAD-CONTRACT.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Payload Contract: Sealed Bodies and One Endpoint Registry |
 | `.claude/SERENA-WORKSPACE.example.md` | sekali; lalu milik Anda | Serena — Shared Multi-Repo Workspace Scoping |
 | `.claude/agent-config.json` | jika `i18n=yes`; sekali; lalu milik Anda | Pengaturan hook untuk stack ini, seperti generatedPaths atau migrationsDirs |
 | `.claude/anti-patterns/INDEX.md` | sekali; lalu milik Anda | Anti-Patterns Index |
+| `.claude/anti-patterns/auth-cookie-cache-outlives-revocation.md` | selalu; sync menjaganya tetap terbaru | A revoked session keeps working until its cookie cache ages out |
+| `.claude/anti-patterns/better-auth-account-endpoints-are-gated.md` | selalu; sync menjaganya tetap terbaru | Better Auth's account endpoints are gated in ways the client does not show |
+| `.claude/anti-patterns/better-auth-passkey-quirks.md` | selalu; sync menjaganya tetap terbaru | Passkeys: a dismissed prompt is an error, and user verification is not enforced |
 | `.claude/anti-patterns/bodiless-request-is-an-empty-stream.md` | selalu; sync menjaganya tetap terbaru | A bodiless request arrives as an empty stream, not `null` |
 | `.claude/anti-patterns/bun-build-vs-bun-run-build.md` | selalu; sync menjaganya tetap terbaru | `bun &lt;name&gt;` ≠ `bun run &lt;name&gt;` — build **and** test |
 | `.claude/anti-patterns/coverage-allowlist-hides-files.md` | selalu; sync menjaganya tetap terbaru | A named-file coverage allowlist cannot report what is missing from it |
+| `.claude/anti-patterns/cropper-letterboxes-and-caps-the-crop-area.md` | selalu; sync menjaganya tetap terbaru | An image cropper's crop circle will not sit flush with its stage |
 | `.claude/anti-patterns/deploy-platform-env-is-encrypted-at-rest.md` | selalu; sync menjaganya tetap terbaru | A deploy platform that stores app env encrypted: never write it with SQL |
 | `.claude/anti-patterns/dialog-inline-maxwidth-drops-ua-gutter.md` | selalu; sync menjaganya tetap terbaru | An inline `maxWidth` on `&lt;dialog&gt;` removes the browser's edge gutter |
 | `.claude/anti-patterns/fixed-popover-in-contained-ancestor-lands-offset.md` | selalu; sync menjaganya tetap terbaru | A `position: fixed` pop-up inside a contained or transformed ancestor lands offset |
 | `.claude/anti-patterns/git-apply-check-passes-then-deletes.md` | selalu; sync menjaganya tetap terbaru | `git apply --check` passes, then the patch deletes the files |
 | `.claude/anti-patterns/i18n-template-key-blinds-namespace.md` | selalu; sync menjaganya tetap terbaru | One template key blinds the unused-key check for a whole namespace |
 | `.claude/anti-patterns/jsdom-min-in-inline-style-breaks-getbyrole.md` | selalu; sync menjaganya tetap terbaru | jsdom throws on `min()` in an inline style, and every `getByRole` in that tree fails |
+| `.claude/anti-patterns/lightningcss-keeps-only-the-prefixed-backdrop-filter.md` | selalu; sync menjaganya tetap terbaru | Writing both `backdrop-filter` forms can leave only the `-webkit-` one |
 | `.claude/anti-patterns/live-session-flip-skips-flow-steps.md` | selalu; sync menjaganya tetap terbaru | A live session refetch skips the auth flow's own steps |
 | `.claude/anti-patterns/max-lines-skips-blanks-and-comments.md` | selalu; sync menjaganya tetap terbaru | `wc -l` disagrees with the `max-lines` gate, and only the gate decides |
 | `.claude/anti-patterns/nextjs-page-level-shell-loading-flashes-chrome.md` | selalu; sync menjaganya tetap terbaru | A shell rendered by `page.tsx` turns every `loading.tsx` into a chrome flash |
@@ -908,6 +1055,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.claude/docs/standards/responsive.md` | jika `responsive=yes`; sync menjaganya tetap terbaru | RESP — Responsive Layout Standard |
 | `.claude/docs/standards/skeletons.md` | jika `skeletons=yes`; sync menjaganya tetap terbaru | SKEL — Loading Skeleton Standard |
 | `.claude/rules/common/error-codes.md` | selalu; sync menjaganya tetap terbaru | Error codes |
+| `.claude/rules/common/payload-contract.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Payload Contract (short form) |
 | `.claude/rules/typescript/conventions.md` | selalu; sync menjaganya tetap terbaru | TypeScript Conventions |
 | `.claude/rules/typescript/coverage.md` | selalu; sync menjaganya tetap terbaru | COVER — Test Coverage (TypeScript) |
 | `.claude/rules/web/data-fetching.md` | selalu; sync menjaganya tetap terbaru | FETCH — No Request Waterfalls |
@@ -943,9 +1091,13 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `doctor.config.json` | sekali; lalu milik Anda | Pengaturan React Doctor (dead code diserahkan ke knip) |
 | `knip.ts` | sekali; lalu milik Anda | Pengaturan dead code untuk knip |
 | `oxlint.json` | sekali; lalu milik Anda | Aturan lint oxlint; alasannya ada di .claude/docs/lint-config.md |
+| `payload.config.json` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Sakelar kontrak payload (strict, di-commit), pengecualian rute beserta alasannya, dan repo peer yang ikut diperiksa |
 | `scripts/check/audit.ts` | selalu; sync menjaganya tetap terbaru | Security audit gate — wraps `bun audit --json`. |
 | `scripts/check/coverage-policy.mjs` | selalu; sync menjaganya tetap terbaru | COVER: refuses a coverage gate that was weakened. |
+| `scripts/check/crypto-interop.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Proves this repo's payload cipher still speaks the shared wire format (.claude/PAYLOAD-CONTRACT.md § Tests and interop). |
 | `scripts/check/dialog-desc.ts` | jika `dialogs=yes`; sync menjaganya tetap terbaru | DESC — dialog description standard. |
+| `scripts/check/dockerfile.ts` | selalu; sync menjaganya tetap terbaru | The production image builds what the quality gate validated. |
+| `scripts/check/endpoints.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | The static half of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `scripts/check/error-catch.ts` | selalu; sync menjaganya tetap terbaru | No failure is swallowed without saying so (.claude/rules/common/error-codes.md). |
 | `scripts/check/error-codes.ts` | selalu; sync menjaganya tetap terbaru | Every error code the API can send has a message here (.claude/rules/common/error-codes.md). |
 | `scripts/check/gates.list` | sekali; lalu milik Anda | This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .husky/pre-commit. |
@@ -953,24 +1105,55 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/i18n-casing.ts` | jika `i18n=yes`; sync menjaganya tetap terbaru | Title Case check for the words a button shows, in every locale (.claude/rules/web/ui-conventions.md § Copy). |
 | `scripts/check/i18n.ts` | jika `i18n=yes`; sync menjaganya tetap terbaru | Checks for: 1. |
 | `scripts/check/no-reexport.ts` | selalu; sync menjaganya tetap terbaru | Refuses re-exports: a module may export only what it declares (AGENTS.md Rule 34). |
+| `scripts/check/payload-vectors.json` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope; tidak pernah dibuat ulang agar lolos |
 | `scripts/check/responsive.ts` | jika `responsive=yes`; sync menjaganya tetap terbaru | RESP — responsive layout. |
+| `scripts/check/skeleton-pairs.ts` | jika `skeletons=yes`; sync menjaganya tetap terbaru | Every loading skeleton a screen renders is measured against that screen, or named as not yet. |
 | `scripts/check/skeleton-switch.sh` | jika `skeletons=yes`; sync menjaganya tetap terbaru | IS_SKELETON_SHOWN and its twin IS_LOADER_SHOWN hold wired screens on their loading state, for comparing a placeholder with the real layout; IS_ERROR_SHOWN holds wired lists on their error state. |
 | `scripts/check/soc.allow.json` | sekali; lalu milik Anda | Pengecualian yang sudah di-review untuk pemeriksa separation of concerns |
 | `scripts/check/soc.ts` | selalu; sync menjaganya tetap terbaru | SOC — refuses logic in the presentation layer (AGENTS.md Rule 32). |
 | `scripts/check/tailwind-classes.ts` | selalu; sync menjaganya tetap terbaru | Refuses a Tailwind class that is not in its canonical form (AGENTS.md Rule 33). |
+| `scripts/generate/endpoints.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Writes the generated half of the endpoint registry from the OpenAPI spec and the exemptions in payload.config.json (.claude/PAYLOAD-CONTRACT.md § Registry). |
+| `scripts/lib/openapi-endpoints.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | The payload contract's configuration, and the endpoint registry an OpenAPI document implies. |
+| `scripts/lib/source-scan.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Reading a source tree the way the payload checks need it: every TypeScript file, with comments and API prose blanked so a sentence that names a route is never read as code, and JSON compared by meaning rather than by formatting. |
 | `scripts/lib/stylesheets.ts` | jika `responsive=yes`; sync menjaganya tetap terbaru | Loading the stylesheets `scripts/check/responsive.ts` validates. |
 | `scripts/measure/waterfall.ts` | selalu; sync menjaganya tetap terbaru | `bun run measure:waterfall --path '/en/projects/42'`: one fresh load of a URL, with every API request and image it made, when each started and when it ended. |
 | `scripts/next/env.ts` | selalu; sync menjaganya tetap terbaru | Environment file bootstrap and preflight. |
+| `src/lib/api/endpoints/endpoints.generated.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Generated from `openapi.json` by `scripts/generate/endpoints.ts`. |
+| `src/lib/api/endpoints/endpoints.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Every route this app calls, and what happens to its payload (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/aes-gcm.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The one cipher on the wire: AES-256-GCM through WebCrypto. |
+| `src/lib/payload/base64url.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Bytes on the wire: base64url and UTF-8, the same way in the browser, on Node and on Bun. |
+| `src/lib/payload/bridge.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The frontend server's crypto boundary, where the browser hop meets the backend hop. |
+| `src/lib/payload/client.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The browser's half of the payload contract: one agreed key per tab, and the sealing and opening the API client's transport calls around each request (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/codec.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | A JSON body into an envelope and back: the one place that decides the order of operations. |
+| `src/lib/payload/ecdh.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Key agreement for the browser hop, where there is no secret the browser could hold. |
+| `src/lib/payload/envelope.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The wire format: what an envelope is, and what its ciphertext is bound to. |
+| `src/lib/payload/errors.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The closed set of ways an envelope can fail to become a payload. |
+| `src/lib/payload/key-ring.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Pre-shared keys for server-to-server hops, which never reach a browser. |
+| `src/lib/payload/mode.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The switch: whether this service enforces the payload contract. |
+| `src/lib/payload/policy.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The endpoint registry's types, and the one place that decides what a policy seals. |
+| `src/testing/lib/api/endpoints/endpoints.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for the endpoint registry: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/aes-gcm.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for the AES-256-GCM layer: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/base64url.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for base64url and UTF-8 helpers: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/bridge.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for the frontend server bridge between hops: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/client.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for the browser transport calls: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/codec.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for sealing and opening JSON envelopes: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/ecdh.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for browser key agreement: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/envelope.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for the envelope shape, freshness and AAD builders: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/errors.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for the payload error codes: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/key-ring.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for pre-shared key rings: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/mode.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for the strict/off switch: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/policy.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for policies and the endpoint matcher: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/vectors.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for this copy against the shared test vectors: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `CLAUDE.md` | satu blok terkelola, ditambahkan di akhir | `## Agent config kit` |
 | `.gitignore` | satu blok terkelola (13 baris) | `*.tsbuildinfo`, `.env`, `.env.*.local`, `.env.development`, `.env.local`, `.env.production`, `.env.test`, `.envrc`, `.next/`, `.serena/`, `coverage/`, `next-env.d.ts`, `node_modules/` |
-| `package.json` | hanya script yang belum ada: format, format:check, lint, fl, fl:ci, type-check, test, test:coverage, env:init, env:check, check:dead-code, check:hooks, check:reexport, check:soc, check:tailwind, check:error-codes, check:error-catch, check:i18n, check:dialog-desc, check:responsive, check:skeleton-switch, measure:waterfall | `scripts` |
+| `package.json` | hanya script yang belum ada: format, format:check, lint, fl, fl:ci, type-check, test, test:coverage, env:init, env:check, check:dead-code, check:hooks, check:reexport, check:soc, check:tailwind, check:error-codes, check:error-catch, check:i18n, check:dialog-desc, check:responsive, check:skeleton-switch, measure:waterfall, check:skeleton-pairs, check:dockerfile, check:endpoints, check:crypto-interop, generate:endpoints | `scripts` |
 | `tsconfig.json` | manual: draft menyebut `_kit/snippets/tsconfig.scripts.jsonc` | |
 | `vitest.config.ts` | manual: draft menyebut `_kit/snippets/vitest.coverage.ts` | |
 
 </details>
 
 <details>
-<summary><strong>agent-fe-nextjs-static</strong>: 61 berkas</summary>
+<summary><strong>agent-fe-nextjs-static</strong>: 62 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -981,6 +1164,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.claude/anti-patterns/git-apply-check-passes-then-deletes.md` | selalu; sync menjaganya tetap terbaru | `git apply --check` passes, then the patch deletes the files |
 | `.claude/anti-patterns/hash-csp-goes-stale-on-every-build.md` | selalu; sync menjaganya tetap terbaru | A hash-based CSP pasted once breaks the next build |
 | `.claude/anti-patterns/in-memory-rate-limit-on-serverless.md` | selalu; sync menjaganya tetap terbaru | A rate limit kept in memory does not limit a serverless endpoint |
+| `.claude/anti-patterns/lightningcss-keeps-only-the-prefixed-backdrop-filter.md` | selalu; sync menjaganya tetap terbaru | Writing both `backdrop-filter` forms can leave only the `-webkit-` one |
 | `.claude/anti-patterns/nodejs-25-webstorage-ssr.md` | selalu; sync menjaganya tetap terbaru | Node.js 25 — Broken localStorage breaks Next.js SSR |
 | `.claude/anti-patterns/opengraph-image-has-no-extension-in-export.md` | selalu; sync menjaganya tetap terbaru | A generated share image lands in `out/` without a file extension |
 | `.claude/anti-patterns/page-opengraph-drops-the-site-share-image.md` | selalu; sync menjaganya tetap terbaru | A page's own `openGraph` drops the site's share image |
@@ -1073,6 +1257,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `post-commit` | Hook (PostToolUse pada `Bash`) | Menunjukkan apa yang benar-benar dibawa sebuah commit | Berjalan sendiri setelah commit | Perubahan staged milik sesi lain tidak bisa ikut diam-diam | [post-commit](docs/agent-core/post-commit.md) |
 | `post-edit` | Hook (PostToolUse pada edit berkas) | Memformat lalu me-lint setiap file yang ditulis, dengan tool proyek Anda sendiri | Berjalan sendiri setelah setiap penulisan file | Temuan diperbaiki di edit berikutnya, bukan saat commit | [post-edit](docs/agent-core/post-edit.md) |
 | `/agent-core:branch-cleanup` | Perintah (Anda yang memulai) | Menghapus branch yang sudah di-merge setelah Anda mengonfirmasi daftarnya | `/agent-core:branch-cleanup` | Remote rapi, tidak ada yang belum di-merge yang hilang | [branch-cleanup](docs/agent-core/branch-cleanup.md) |
+| `/agent-core:check-fix` | Perintah | Menjalankan gate kualitas, memperbaiki tiap kegagalan pada penyebabnya, lalu mengulang sampai semuanya lolos | `/agent-core:check-fix` saat ada gate yang merah | Gate hijau tanpa temuan yang dibungkam | [check-fix](docs/agent-core/check-fix.md) |
 | `/agent-core:checkpoint-summary` | Perintah | Ringkasan serah terima sesi: yang selesai, yang tertunda, dan langkah berikutnya | `/agent-core:checkpoint-summary` | Sesi berikutnya mulai dari titik akhir sesi ini | [checkpoint-summary](docs/agent-core/checkpoint-summary.md) |
 | `/agent-core:checkpoint` | Perintah (Anda yang memulai) | Commit pengaman lokal untuk file sesi ini; tidak pernah push | `/agent-core:checkpoint before refactor` | Jalan pulang yang murah | [checkpoint](docs/agent-core/checkpoint.md) |
 | `/agent-core:commit` | Perintah (Anda yang memulai) | Menjalankan gate dan menyusun pesan commit; Anda sendiri yang commit | `/agent-core:commit` | Gate yang merah tidak pernah jadi commit | [commit](docs/agent-core/commit.md) |

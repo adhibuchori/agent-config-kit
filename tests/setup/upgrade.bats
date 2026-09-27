@@ -26,11 +26,11 @@ PY
 
 @test "a new plugin version is version drift (exit 1) until sync records it" {
   setup_now
-  bump 1.1.0
+  bump 99.0.0
   run -1 --separate-stderr sync_cli check "${ARGS[@]}"
-  [[ "$output" == *"version  .claude/agent-config-kit.lock  agent-core: set up with $CORE_VERSION, 1.1.0 installed"* ]]
+  [[ "$output" == *"version  .claude/agent-config-kit.lock  agent-core: set up with $CORE_VERSION, 99.0.0 installed"* ]]
   sync_now
-  [ "$(json_q "$P/.claude/agent-config-kit.lock" 'd["plugins"]["agent-core"]["version"]')" = 1.1.0 ]
+  [ "$(json_q "$P/.claude/agent-config-kit.lock" 'd["plugins"]["agent-core"]["version"]')" = 99.0.0 ]
   run -0 --separate-stderr sync_cli check "${ARGS[@]}"
 }
 
