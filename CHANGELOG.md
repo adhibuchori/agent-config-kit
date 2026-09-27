@@ -17,6 +17,41 @@ guard scripts are out of the shell's reach, every stack gets a staged secret sca
 stack runs its tests with CI's environment only. The reusable workflows and actions are unchanged
 since 1.0.0, so the CI callers stay pinned to its commit.
 
+### agent-core 1.0.4
+
+#### Changed
+
+- The README catalog names a long hook matcher in plain words (for example "file edits"), so the
+  Kind column stays narrow. The exact matcher is still in `hooks/hooks.json`.
+
+### agent-ai-fastapi 1.0.3
+
+#### Changed
+
+- The README catalog names a long hook matcher in plain words (for example "file edits"), so the
+  Kind column stays narrow. The exact matcher is still in `hooks/hooks.json`.
+
+### agent-be-hono 1.0.3
+
+#### Changed
+
+- The README catalog names a long hook matcher in plain words (for example "file edits"), so the
+  Kind column stays narrow. The exact matcher is still in `hooks/hooks.json`.
+
+### agent-docs-nextra 1.0.3
+
+#### Changed
+
+- The README catalog names a long hook matcher in plain words (for example "file edits"), so the
+  Kind column stays narrow. The exact matcher is still in `hooks/hooks.json`.
+
+### agent-fe-nextjs 1.0.3
+
+#### Changed
+
+- The README catalog names a long hook matcher in plain words (for example "file edits"), so the
+  Kind column stays narrow. The exact matcher is still in `hooks/hooks.json`.
+
 ### agent-core 1.0.3
 
 #### Fixed
