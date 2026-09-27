@@ -1,0 +1,16 @@
+{
+  "name": "toy-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build"
+  },
+  "dependencies": {
+    "next": "15.5.4",
+    "nextra": "4.5.1",
+    "nextra-theme-docs": "4.5.1",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  }
+}

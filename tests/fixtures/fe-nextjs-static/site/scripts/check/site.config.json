@@ -1,0 +1,5 @@
+{
+  "//": "Toy fixture for the agent-fe-nextjs-static checks. example.com is reserved for examples (RFC 2606).",
+  "siteUrl": "https://example.com",
+  "fonts": { "maxFamilies": 2 }
+}
