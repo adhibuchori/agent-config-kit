@@ -24,6 +24,41 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
   probes or the unlock script, and lists the write routes the analyzer reads (`sed` and `awk`
   programs, inline code, paths handed over by `xargs`, `$( )` or `find -exec`).
 
+### agent-ai-fastapi 1.0.1
+
+#### Fixed
+
+- The CI caller template pins the reusable quality gate to the v1.0.0 release commit, so setup
+  installs it with the rest instead of holding it back.
+
+### agent-be-hono 1.0.1
+
+#### Fixed
+
+- The CI caller template pins the reusable quality gate to the v1.0.0 release commit, so setup
+  installs it with the rest instead of holding it back.
+
+### agent-docs-nextra 1.0.1
+
+#### Fixed
+
+- The CI caller template pins the reusable quality gate to the v1.0.0 release commit, so setup
+  installs it with the rest instead of holding it back.
+
+### agent-fe-nextjs 1.0.1
+
+#### Fixed
+
+- The CI caller template pins the reusable quality gate to the v1.0.0 release commit, so setup
+  installs it with the rest instead of holding it back.
+
+### agent-fe-nextjs-static 1.0.1
+
+#### Fixed
+
+- The CI caller template pins the reusable quality gate to the v1.0.0 release commit, so setup
+  installs it with the rest instead of holding it back.
+
 ## [1.0.0] - 2026-09-26
 
 First release.

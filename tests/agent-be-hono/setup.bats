@@ -45,7 +45,7 @@ assert all(q["recommended"] in q["choices"] for q in d["questions"])
   local before
   before="$(git -C "$APP" status --porcelain)"
   run -0 setup_cli plan "${ANSWERS[@]}"
-  [[ "$output" == *"agent-be-hono 1.0.0 + agent-core $CORE_VERSION"* ]] || false
+  [[ "$output" == *"agent-be-hono $PLUGIN_VERSION + agent-core $CORE_VERSION"* ]] || false
   [[ "$output" == *"digest sha256:"* ]] || false
   [ "$(git -C "$APP" status --porcelain)" = "$before" ]
   run -3 setup_cli apply "${ANSWERS[@]}" --digest "sha256:$(printf '0%.0s' {1..64})"

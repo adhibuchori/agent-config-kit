@@ -39,7 +39,7 @@ print("ok")' "$output"
 
 @test "the draft: pyproject.toml kept with a by-hand line, no package.json, CLAUDE.md from the starter" {
   run -0 --separate-stderr "$SETUP_BIN" plan "${ARGS[@]}" --answer language=python
-  [[ "$output" == *"agent-setup plan · agent-ai-fastapi 1.0.0 + agent-core $CORE_VERSION · project "* ]] || false
+  [[ "$output" == *"agent-setup plan · agent-ai-fastapi $PLUGIN_VERSION + agent-core $CORE_VERSION · project "* ]] || false
   grep -qE '^  keep +pyproject\.toml +\(exists; left alone; compare with agent-ai-fastapi templates/ai-fastapi/pyproject\.toml\.starter\)$' <<<"$output"
   grep -qE '^  by-hand +pyproject\.toml +add what .*/templates/ai-fastapi/_kit/snippets/pyproject\.tools\.toml holds' <<<"$output"
   grep -qE '^  note +package\.json +none here, so no unlock script is added; unlock runs as \./scripts/ops/unlock\.sh$' <<<"$output"
@@ -100,7 +100,8 @@ for rule in ("Edit(SSOT.md)", "Edit(AGENTS.md)"):
     assert rule in s["permissions"]["deny"], rule
 lock = json.load(open(root + "/.claude/agent-config-kit.lock"))
 me = lock["plugins"]["agent-ai-fastapi"]
-assert me["stack"] == "ai-fastapi" and me["version"] == "1.0.0", me
+version = json.load(open(tpl + "/../../.claude-plugin/plugin.json"))["version"]
+assert me["stack"] == "ai-fastapi" and me["version"] == version, me
 assert me["answers"] == {"pipeline": "no", "ci-gate": "yes", "pr-templates": "yes", "analytics": "no",
                          "serena-workspace": "no"}, me["answers"]
 assert me["kept"] == ["pyproject.toml"], me["kept"]
@@ -237,7 +238,7 @@ JSON
   local lock
   lock="$(shasum -a 256 "$PROJ/.claude/agent-config-kit.lock")"
   run -0 --separate-stderr "$SETUP_BIN" plan "${ARGS[@]}"
-  [ "$output" = "already set up (agent-ai-fastapi 1.0.0); run /agent-ai-fastapi:sync" ]
+  [ "$output" = "already set up (agent-ai-fastapi $PLUGIN_VERSION); run /agent-ai-fastapi:sync" ]
   run -0 --separate-stderr "$SYNC_BIN" plan "${ARGS[@]}"
   [[ "$output" == *"(nothing to write)"* ]] || false
   [ "$(shasum -a 256 "$PROJ/.claude/agent-config-kit.lock")" = "$lock" ]

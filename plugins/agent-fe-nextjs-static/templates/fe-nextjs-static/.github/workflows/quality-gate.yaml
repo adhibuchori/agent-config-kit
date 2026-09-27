@@ -22,4 +22,4 @@ jobs:
     name: Quality Gate
     permissions:
       contents: read
-    uses: adhibuchori/agent-config-kit/.github/workflows/fe-nextjs-static-quality-gate.yml@0000000000000000000000000000000000000000 # v1.0.0
+    uses: adhibuchori/agent-config-kit/.github/workflows/fe-nextjs-static-quality-gate.yml@7f6b06dcd61a46512f1f3b00deecb93375a96a13 # v1.0.0
