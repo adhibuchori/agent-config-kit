@@ -79,4 +79,5 @@ pass; leave a thread open only when you asked the reviewer a question in it:
 gh api graphql -F id={THREAD_ID} -f query='mutation($id: ID!) { resolveReviewThread(input: { threadId: $id }) { thread { isResolved } } }'
 ```
 
-Commit the fixes with `/agent-core:commit` and push them before replying "applied in" with the commit hash.
+Commit the fixes with `/agent-core:commit` and push them before replying "applied in" with the
+commit hash.

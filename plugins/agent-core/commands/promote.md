@@ -169,11 +169,7 @@ turns a missing key into a quiet wrong address rather than a crash, so a key tha
 still a placeholder, or holding a development value counts as missing. The live values include
 every secret in clear, so they go to a file that is removed on exit, and only key names with a
 verdict reach the transcript. A repo without `.env.production.example` cannot be audited this way:
-write it first (every key, placeholder values only), or report the audit as not run. The usual list: a one-time code never appears in the URL; a reset link opened in a fresh tab
-offers a new code; signing out and pressing Back lands on the sign-in page; pressing Pay twice raises
-one payment; a stopped backend shows an error, not a spinner; the flow works with the keyboard alone
-and with reduced motion on. After a change to third-party sign-in, start it on the deployed site:
-it must reach the provider's account chooser, not a redirect-URI error.
+write it first (every key, placeholder values only), or report the audit as not run.
 
 ```bash
 live="$(mktemp)"
@@ -247,7 +243,11 @@ also one of `migrationsDirs` in `.claude/agent-config.json`.
 **Browser pass for what jsdom cannot prove.** When this promotion changes sign-in, sessions, or
 another flow that only a browser shows, walk it against `dev` with a test account (never a real
 person's), in every locale the app ships, before merging. Report each step as passed, failed or not
-run.
+run. The usual list: a one-time code never appears in the URL; a reset link opened in a fresh tab
+offers a new code; signing out and pressing Back lands on the sign-in page; pressing Pay twice
+raises one payment; a stopped backend shows an error, not a spinner; the flow works with the
+keyboard alone and with reduced motion on. After a change to third-party sign-in, start it on the
+deployed site: it must reach the provider's account chooser, not a redirect-URI error.
 
 ### 2.4 Merge — never with `--delete-branch`
 

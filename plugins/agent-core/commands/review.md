@@ -84,7 +84,8 @@ generated registry (`bun run check:endpoints` decides the last three).
 ## Step 5: Report
 
 Group findings as CRITICAL / HIGH / MEDIUM / LOW, each with file, line, the rule it breaks and the
-fix. CRITICAL blocks the merge; HIGH should be fixed before it. approved, approved with warnings, or blocked. Name any step you could not run, and list the gates
+fix. CRITICAL blocks the merge; HIGH should be fixed before it. State clearly whether the change is
+approved, approved with warnings, or blocked. Name any step you could not run, and list the gates
 you ran with their result.
 
 Then offer the fixes: apply all, go one by one, or leave them. Apply nothing before the user
