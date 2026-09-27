@@ -119,6 +119,31 @@ sync() { run --separate-stderr node "$KIT_ROOT/scripts/version-sync.mjs" --root 
   [[ "$output" == *"pins # v1.2.0, which is not a release in CHANGELOG.md"* ]]
 }
 
+@test "version-sync: a placeholder pin names the coming release, never one that already shipped" {
+  local f="$K/plugins/agent-demo/templates/demo/.github/workflows/quality-gate.yml"
+  sed -i.bak "s/@$SHA # v1.0.0/@$(printf '0%.0s' {1..40}) # v1.1.0/" "$f"
+  sync --check
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WARN: "*"placeholder pin for v1.1.0; the release commit replaces it"* ]]
+  sed -i.bak 's/# v1.1.0/# v1.0.0/' "$f"
+  sync --check
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"the placeholder pin names # v1.0.0; it must name the coming release, newer than v1.0.0"* ]]
+}
+
+@test "version-sync --base: any reusable workflow change needs a changelog entry, a workflow that is not called does not" {
+  printf 'on:\n  workflow_call:\njobs: {}\n' >"$K/.github/workflows/review.yml"
+  git -C "$K" add -A && git -C "$K" commit -q -m reusable
+  sync --check --base HEAD~1
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"a plugin, an action or a reusable workflow changed"* ]]
+  git -C "$K" reset -q --hard HEAD~1
+  printf 'on:\n  pull_request:\njobs: {}\n' >"$K/.github/workflows/self-test.yml"
+  git -C "$K" add -A && git -C "$K" commit -q -m own-ci
+  sync --check --base HEAD~1
+  [ "$status" -eq 0 ]
+}
+
 @test "version-sync: a plugin tag newer than plugin.json fails" {
   git -C "$K" tag agent-demo--v1.0.0
   sync --check

@@ -1,0 +1,57 @@
+# agent-config-kit deploy webhook: starts a deploy by POSTing to the deploy platform's webhook, and
+# fails when the platform declines it. Optionally tells a docs site that the application shipped.
+# README.md next to this file has the inputs and the caller.
+#
+# scripts/trigger-deploy.sh is the same file agent-deploy's setup installs as
+# scripts/deploy/trigger-deploy.sh (a test keeps the two identical): https only, a 3xx or 4xx is a
+# refusal and never retried, no answer or a 5xx is retried, and the URL is never printed.
+#
+# No checkout and no write permission are needed. The reusable workflow
+# .github/workflows/deploy-webhook.yml is the supported caller: it runs this only after a merge.
+name: agent-config-kit deploy webhook
+description: POSTs to a deploy webhook for one branch, treats any 3xx or 4xx as a refusal, retries while the platform is busy, and can send app-deployed to a docs repository.
+author: Mochammad Adhi Buchori
+
+inputs:
+  webhook-url:
+    description: The deploy webhook URL (https). A secret; whoever holds it can deploy. Required.
+    required: true
+  ref:
+    description: What to deploy, refs/heads/<branch> or refs/tags/<tag>.
+    required: true
+  retry-delays:
+    description: Seconds to wait before each retry when the platform does not answer or answers 5xx, separated by spaces. Empty turns retries off.
+    required: false
+    default: 30 90 180
+  webhook-timeout:
+    description: Seconds per attempt.
+    required: false
+    default: '60'
+  docs-repository:
+    description: owner/name of a docs repository to send the app-deployed event to after the deploy is accepted. Empty sends nothing.
+    required: false
+    default: ''
+  docs-token:
+    description: A token that may send events to docs-repository.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Trigger the Deploy
+      shell: bash
+      env:
+        DEPLOY_WEBHOOK_URL: ${{ inputs.webhook-url }}
+        DEPLOY_REF: ${{ inputs.ref }}
+        DEPLOY_RETRY_DELAYS: ${{ inputs.retry-delays }}
+        DEPLOY_WEBHOOK_TIMEOUT: ${{ inputs.webhook-timeout }}
+      run: bash "${GITHUB_ACTION_PATH}/scripts/trigger-deploy.sh"
+
+    - name: Tell the Docs Site
+      if: inputs.docs-repository != ''
+      shell: bash
+      env:
+        DOCS_REPOSITORY: ${{ inputs.docs-repository }}
+        DOCS_DISPATCH_TOKEN: ${{ inputs.docs-token }}
+      run: bash "${GITHUB_ACTION_PATH}/scripts/notify-docs.sh"

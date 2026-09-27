@@ -1,6 +1,7 @@
 # shellcheck shell=bash
 # Helpers for the agent-deploy tests: a local HTTPS server (mock_server.py) that plays the live
-# site, the deploy webhook and the GitHub API. No test touches the network.
+# site, the deploy webhook and the GitHub API. No test touches the network. tests/ci loads them too,
+# for the actions that call a webhook or an API.
 
 bats_require_minimum_version 1.5.0
 
@@ -33,7 +34,7 @@ mock_start() {
     skip "openssl could not make a test certificate"
   printf '{}\n' >"$MOCK_DIR/config.json"
   : >"$MOCK_DIR/log.jsonl"
-  python3 "$BATS_TEST_DIRNAME/mock_server.py" "$MOCK_DIR/config.json" "$MOCK_DIR/port" \
+  python3 "$REPO_ROOT/tests/agent-deploy/mock_server.py" "$MOCK_DIR/config.json" "$MOCK_DIR/port" \
     "$MOCK_DIR/log.jsonl" "$MOCK_DIR/cert.pem" "$MOCK_DIR/key.pem" 3>&- >/dev/null 2>"$MOCK_DIR/server.err" &
   printf '%s\n' "$!" >"$MOCK_DIR/pid"
   local i=0

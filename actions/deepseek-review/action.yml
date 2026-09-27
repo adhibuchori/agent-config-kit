@@ -1,0 +1,79 @@
+# agent-config-kit DeepSeek review: asks DeepSeek's chat API to review one pull request's diff and
+# posts the answer as one comment, which later runs update in place. README.md next to this file has
+# the inputs, the cost and the caller.
+#
+# It reads the pull request and its changed files over the GitHub REST API and never checks the code
+# out, so nothing from the pull request runs. That is what makes it safe behind a `/ask-deepseek`
+# comment. It skips, and passes, when the API key is empty, the pull request comes from a fork, is a
+# draft (on a pull_request event), is closed, or has nothing left to review.
+#
+# The caller's job needs `contents: read` and `pull-requests: write`, nothing else. The reusable
+# workflow .github/workflows/deepseek-review.yml is the supported caller.
+name: agent-config-kit DeepSeek review
+description: Reviews a pull request's diff with DeepSeek and posts one comment that later runs update; reads the diff over the API and runs no pull-request code.
+author: Mochammad Adhi Buchori
+
+inputs:
+  api-key:
+    description: The DeepSeek API key. Empty skips the review with a notice and passes.
+    required: false
+    default: ''
+  github-token:
+    description: A token that may read the pull request and write its comments.
+    required: false
+    default: ${{ github.token }}
+  pull-request:
+    description: The pull request number. Empty uses the event's pull request, or the pull request a comment was made on.
+    required: false
+    default: ${{ github.event.pull_request.number || github.event.issue.number }}
+  model:
+    description: The DeepSeek model, such as deepseek-v4-pro or the cheaper deepseek-flash.
+    required: false
+    default: deepseek-v4-pro
+  base-url:
+    description: The API's base URL (https only). The key is sent to this host and nowhere else.
+    required: false
+    default: https://api.deepseek.com
+  instructions:
+    description: Notes about the project for the reviewer (the stack, rules the gate cannot check). Written by you, never taken from the pull request.
+    required: false
+    default: ''
+  exclude:
+    description: More file patterns to leave out, separated by commas, spaces or newlines. Lockfiles, minified files and source maps are always left out. A pattern with a slash matches the path; without one, the file name in any folder; * matches anything, / included.
+    required: false
+    default: ''
+  max-diff-bytes:
+    description: The most diff to send, in bytes. Whole files are added until the next would pass it; the comment lists the rest.
+    required: false
+    default: '100000'
+  max-tokens:
+    description: The most the model may write, its reasoning included. It bounds the cost of the answer.
+    required: false
+    default: '16384'
+  reasoning-effort:
+    description: none, low, high or max; empty leaves the API's default. Reasoning tokens are billed as output.
+    required: false
+    default: low
+  request-timeout:
+    description: Seconds to wait for DeepSeek's answer.
+    required: false
+    default: '300'
+
+runs:
+  using: composite
+  steps:
+    - name: DeepSeek Review
+      shell: bash
+      env:
+        DEEPSEEK_API_KEY: ${{ inputs.api-key }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        REVIEW_PR: ${{ inputs.pull-request }}
+        REVIEW_MODEL: ${{ inputs.model }}
+        REVIEW_BASE_URL: ${{ inputs.base-url }}
+        REVIEW_INSTRUCTIONS: ${{ inputs.instructions }}
+        REVIEW_EXCLUDE: ${{ inputs.exclude }}
+        REVIEW_MAX_DIFF_BYTES: ${{ inputs.max-diff-bytes }}
+        REVIEW_MAX_TOKENS: ${{ inputs.max-tokens }}
+        REVIEW_EFFORT: ${{ inputs.reasoning-effort }}
+        REVIEW_TIMEOUT: ${{ inputs.request-timeout }}
+      run: bash "${GITHUB_ACTION_PATH}/scripts/review.sh"

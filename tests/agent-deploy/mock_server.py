@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""HTTPS stand-in for a live site, a deploy webhook and the GitHub API, for the agent-deploy tests.
+"""HTTPS stand-in for a live site, a deploy webhook, the GitHub API and a chat API, for the agent-deploy
+tests and the tests of actions/deepseek-review and actions/deploy-webhook.
 
 usage: mock_server.py CONFIG PORTFILE LOGFILE CERT KEY
 
@@ -79,7 +80,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if short:
             self.close_connection = True
 
-    do_GET = do_POST = do_HEAD = answer
+    do_GET = do_POST = do_HEAD = do_PATCH = answer
 
 
 server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
