@@ -10,6 +10,14 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+### agent-core 1.0.3
+
+#### Fixed
+
+- The README said deleting the lock and `.claude/agent-config.json` silences the hooks for
+  everyone. The opt-in sticks on every machine that has seen it, so it now says how to turn the
+  hooks off there.
+
 ### agent-core 1.0.2
 
 #### Fixed

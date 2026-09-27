@@ -158,7 +158,11 @@ claude plugin disable agent-core@agent-config-kit                 # everywhere
 claude plugin enable agent-core@agent-config-kit                  # back on
 ```
 
-agent-core cannot be disabled while a stack plugin that depends on it is enabled: disable the stack plugin first. To silence every kit hook in one repo for everyone, delete `.claude/agent-config-kit.lock` and `.claude/agent-config.json` and commit that.
+agent-core cannot be disabled while a stack plugin that depends on it is enabled: disable the stack plugin first. Deleting `.claude/agent-config-kit.lock` and `.claude/agent-config.json` is not an off switch:
+the hooks stay quiet only on machines that never saw this repo opted in. A machine that did keeps
+guarding the repo with the defaults and says so. To stop them there, disable the plugin for this
+project (`--scope local` above) or remove the repo's line from `opted-in-projects` in the plugin's
+data folder.
 
 ## Privacy and data handling
 

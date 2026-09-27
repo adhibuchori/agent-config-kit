@@ -292,7 +292,7 @@ each repo.
 shortened with `…`):
 
 ```text
-agent-setup plan · agent-fe-nextjs 1.0.1 + agent-core 1.0.1 · project .
+agent-setup plan · agent-fe-nextjs 1.0.2 + agent-core 1.0.3 · project .
   create   .claude/rules/web/security.md
   …
   create   .claude/settings.json                   +$schema, +16 permissions.allow, +7 permissions.ask, +14 permissions.deny, +sandbox.enabled, …
