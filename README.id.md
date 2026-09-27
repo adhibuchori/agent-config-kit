@@ -10,7 +10,7 @@
 
 [![Self Test](https://github.com/adhibuchori/agent-config-kit/actions/workflows/self-test.yml/badge.svg)](https://github.com/adhibuchori/agent-config-kit/actions/workflows/self-test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-4f46e5)](LICENSE)
-[![Version 1.0.0](https://img.shields.io/badge/version-1.0.0-4f46e5)](CHANGELOG.md)
+[![Version 1.2.0](https://img.shields.io/badge/version-1.2.0-4f46e5)](CHANGELOG.md)
 
 Kumpulan plugin Claude Code yang mencegah agen AI melakukan hal yang akan Anda sesali: force-push
 ke `main`, menghapus `src/`, membaca `.env` ke dalam percakapan, atau menulis ke database produksi.
