@@ -1,0 +1,47 @@
+# sync
+
+Command · agent-be-hono · `/agent-be-hono:sync [--check]` · only you start it · `--check` reads only; otherwise writes after go · no network
+
+## What it does
+
+`/agent-be-hono:sync` compares your repo with what `/agent-be-hono:setup` installed, using the lock.
+With `--check` it only reports, deterministically, and exits non-zero on drift or double hook
+wiring. Without it, it shows a draft that brings unchanged files up to date and writes it on **go**.
+It never touches a file you edited.
+
+## When to reach for it
+
+After you update the plugin, or any time you want to know whether the repo still matches:
+
+```text
+/agent-be-hono:sync --check
+/agent-be-hono:sync
+```
+
+Exit codes of `--check`: 0 in sync, 1 drift, 4 double wiring, 5 both, 2 a usage or read error.
+Each finding is one line, `<kind>  <path>  <detail>`: `missing`, `modified`, `mode`, `stale`, `new`,
+`removed-upstream`, `settings-missing`, `block-modified`, `block-stale`, `block-missing`,
+`alias-missing`, `version`, `no-lock` and `double-wired`, plus the information-only `kept`, `owned`,
+`seeded` and `unchecked`.
+
+**Not for:** a repo where setup never ran (it reports `no-lock`); use
+[/agent-be-hono:setup](setup.md) instead.
+
+## Common questions
+
+**It says `modified` for a file I changed on purpose.**
+Keep your copy as the repo's own with `agent-sync own <path>` (the draft shows the full command); `own --undo` hands it back. Or delete your copy and sync again to take the kit's.
+
+**Can CI run the check?**
+Yes. `agent-sync check` runs from a checkout of this repo without Claude Code: `plugins/agent-core/bin/agent-sync check --templates plugins/agent-be-hono/templates --stack be-hono --project <repo>`.
+
+**Does sync ever overwrite my work?**
+It replaces a file only while its bytes still equal what the kit wrote (`stale`), so no edit of yours is lost.
+
+## It's working if
+
+- `/agent-be-hono:sync --check` prints `result: in sync (0 findings; exit 0)`, or only information lines.
+
+## Where it fits
+
+The partner of [/agent-be-hono:setup](setup.md) in [agent-be-hono](../../plugins/agent-be-hono/README.md). See [upgrading](../../README.md#upgrade-and-uninstall).

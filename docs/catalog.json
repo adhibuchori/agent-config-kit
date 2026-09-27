@@ -1,0 +1,691 @@
+{
+  "//": "How to use and why it helps, for every hook, command, agent and skill, in English and Bahasa Indonesia (id). scripts/catalog.mjs builds the README catalogs from this file, the plugin manifests and docs/, and fails when a component has no entry or an entry has no component. Keys are docs pages: <plugin>/<page name>. \"files\" describes an installed file that has no heading or first comment of its own, by its path or its name.",
+  "components": {
+    "agent-ai-fastapi/ai-reviewer": {
+      "use": "Via `/agent-core:review`",
+      "why": "LLM-service mistakes no gate sees",
+      "id": {
+        "what": "Indireksi penyedia, streaming, problem+json, dan tipe dalam layanan FastAPI + LLM",
+        "use": "Lewat `/agent-core:review`",
+        "why": "Kesalahan layanan LLM yang tidak terlihat oleh gate"
+      }
+    },
+    "agent-ai-fastapi/migration-guard": {
+      "use": "Runs by itself before file writes",
+      "why": "The database, the migration log and the schema keep agreeing",
+      "id": {
+        "what": "Menolak edit tangan pada revisi Alembic hasil generator",
+        "use": "Berjalan sendiri sebelum penulisan file",
+        "why": "Database, log migrasi, dan skema tetap selaras"
+      }
+    },
+    "agent-ai-fastapi/setup": {
+      "use": "`/agent-ai-fastapi:setup`, once per repo",
+      "why": "Plugins cannot ship permissions or rules; you see every write first",
+      "id": {
+        "what": "Memasang aturan backend dan Python, anti-pattern, konfigurasi pre-commit dan gate, contoh pipeline, dan CI pull request untuk repo FastAPI + uv setelah dry run yang Anda setujui",
+        "use": "`/agent-ai-fastapi:setup`, sekali per repo",
+        "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-ai-fastapi/sync": {
+      "use": "`/agent-ai-fastapi:sync --check`",
+      "why": "Drift and double hook wiring show up with an exit code",
+      "id": {
+        "what": "Memeriksa repo terhadap file yang dipasang agent-ai-fastapi (`--check`), atau memperbaruinya setelah dry run",
+        "use": "`/agent-ai-fastapi:sync --check`",
+        "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
+      }
+    },
+    "agent-be-hono/migration-guard": {
+      "use": "Runs by itself before file writes",
+      "why": "The database, the migration log and the schema keep agreeing",
+      "id": {
+        "what": "Menolak edit tangan pada migrasi Drizzle hasil generator",
+        "use": "Berjalan sendiri sebelum penulisan file",
+        "why": "Database, log migrasi, dan skema tetap selaras"
+      }
+    },
+    "agent-be-hono/reviewer": {
+      "use": "Via `/agent-core:review`",
+      "why": "Slow queries and leaky errors are caught in review",
+      "id": {
+        "what": "Lapisan, kontrak error, akses database, bentuk query, dan indeks",
+        "use": "Lewat `/agent-core:review`",
+        "why": "Query lambat dan error yang bocor tertangkap saat review"
+      }
+    },
+    "agent-be-hono/setup": {
+      "use": "`/agent-be-hono:setup`, once per repo",
+      "why": "Plugins cannot ship permissions or rules; you see every write first",
+      "id": {
+        "what": "Memasang aturan backend, anti-pattern, skrip gate, konfigurasi lint dan tes, serta CI pull request untuk repo Bun + Hono + Drizzle setelah dry run yang Anda setujui",
+        "use": "`/agent-be-hono:setup`, sekali per repo",
+        "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-be-hono/sync": {
+      "use": "`/agent-be-hono:sync --check`",
+      "why": "Drift and double hook wiring show up with an exit code",
+      "id": {
+        "what": "Memeriksa repo terhadap file yang dipasang agent-be-hono (`--check`), atau memperbaruinya setelah dry run",
+        "use": "`/agent-be-hono:sync --check`",
+        "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
+      }
+    },
+    "agent-core/branch-cleanup": {
+      "use": "`/agent-core:branch-cleanup`",
+      "why": "A tidy remote, nothing unmerged lost",
+      "id": {
+        "what": "Menghapus branch yang sudah di-merge setelah Anda mengonfirmasi daftarnya",
+        "use": "`/agent-core:branch-cleanup`",
+        "why": "Remote rapi, tidak ada yang belum di-merge yang hilang"
+      }
+    },
+    "agent-core/checkpoint": {
+      "use": "`/agent-core:checkpoint before refactor`",
+      "why": "A cheap way back",
+      "id": {
+        "what": "Commit pengaman lokal untuk file sesi ini; tidak pernah push",
+        "use": "`/agent-core:checkpoint before refactor`",
+        "why": "Jalan pulang yang murah"
+      }
+    },
+    "agent-core/checkpoint-summary": {
+      "use": "`/agent-core:checkpoint-summary`",
+      "why": "The next session starts where this one ended",
+      "id": {
+        "what": "Ringkasan serah terima sesi: yang selesai, yang tertunda, dan langkah berikutnya",
+        "use": "`/agent-core:checkpoint-summary`",
+        "why": "Sesi berikutnya mulai dari titik akhir sesi ini"
+      }
+    },
+    "agent-core/commit": {
+      "use": "`/agent-core:commit`",
+      "why": "A red gate never becomes a commit",
+      "id": {
+        "what": "Menjalankan gate dan menyusun pesan commit; Anda sendiri yang commit",
+        "use": "`/agent-core:commit`",
+        "why": "Gate yang merah tidak pernah jadi commit"
+      }
+    },
+    "agent-core/create-pr": {
+      "use": "`/agent-core:create-pr`",
+      "why": "Consistent PRs, never a push to `main`",
+      "id": {
+        "what": "Menyusun PR dari template Anda, meminta konfirmasi, lalu push dan membukanya",
+        "use": "`/agent-core:create-pr`",
+        "why": "PR konsisten, tidak pernah push ke `main`"
+      }
+    },
+    "agent-core/db-guard": {
+      "use": "Runs by itself before the production SQL tool",
+      "why": "No surprise `DELETE` in production",
+      "id": {
+        "what": "Meloloskan satu pernyataan SQL baca-saja; menahan penulisan sampai Anda membuka `db`",
+        "use": "Berjalan sendiri sebelum tool SQL produksi",
+        "why": "Tidak ada `DELETE` mendadak di produksi"
+      }
+    },
+    "agent-core/help": {
+      "use": "`/agent-core:help`",
+      "why": "No need to memorise commands",
+      "id": {
+        "what": "Memberi tahu perintah berikutnya dan mendaftar semua perintah kit",
+        "use": "`/agent-core:help`",
+        "why": "Tidak perlu menghafal perintah"
+      }
+    },
+    "agent-core/learn-session": {
+      "use": "`/agent-core:learn-session`",
+      "why": "The same trap is not hit twice",
+      "id": {
+        "what": "Menulis pelajaran sesi ke aturan, pemeriksa, referensi, atau anti-pattern",
+        "use": "`/agent-core:learn-session`",
+        "why": "Jebakan yang sama tidak terulang"
+      }
+    },
+    "agent-core/mcp-guard": {
+      "use": "Runs by itself before four GitHub MCP write tools",
+      "why": "Closes the route around the shell guard",
+      "id": {
+        "what": "Menolak penulisan MCP GitHub ke branch yang dilindungi",
+        "use": "Berjalan sendiri sebelum empat tool MCP GitHub yang menulis",
+        "why": "Menutup jalan memutar di luar guard shell"
+      }
+    },
+    "agent-core/merge-pr": {
+      "use": "`/agent-core:merge-pr 42`",
+      "why": "Skipped checks and open threads are caught",
+      "id": {
+        "what": "Memeriksa kesiapan PR, lalu merge dengan merge commit setelah Anda konfirmasi",
+        "use": "`/agent-core:merge-pr 42`",
+        "why": "Pemeriksaan yang dilewati dan thread terbuka ketahuan"
+      }
+    },
+    "agent-core/plan": {
+      "use": "`/agent-core:plan add password reset`",
+      "why": "Scope and risks are agreed before work starts",
+      "id": {
+        "what": "Menulis rencana sebelum kode dan menunggu persetujuan Anda",
+        "use": "`/agent-core:plan add password reset`",
+        "why": "Cakupan dan risiko disepakati sebelum kerja dimulai"
+      }
+    },
+    "agent-core/post-commit": {
+      "use": "Runs by itself after a commit",
+      "why": "Another session's staged work cannot ride along unseen",
+      "id": {
+        "what": "Menunjukkan apa yang benar-benar dibawa sebuah commit",
+        "use": "Berjalan sendiri setelah commit",
+        "why": "Perubahan staged milik sesi lain tidak bisa ikut diam-diam"
+      }
+    },
+    "agent-core/post-edit": {
+      "use": "Runs by itself after each file write",
+      "why": "Findings are fixed in the next edit, not at commit time",
+      "id": {
+        "what": "Memformat lalu me-lint setiap file yang ditulis, dengan tool proyek Anda sendiri",
+        "use": "Berjalan sendiri setelah setiap penulisan file",
+        "why": "Temuan diperbaiki di edit berikutnya, bukan saat commit"
+      }
+    },
+    "agent-core/promote": {
+      "use": "`/agent-core:promote`",
+      "why": "\"Merged\" and \"live\" are not confused",
+      "id": {
+        "what": "PR ke `dev`, promosi ke `prod`, audit env dan migrasi, lalu verifikasi deploy berdasarkan waktu",
+        "use": "`/agent-core:promote`",
+        "why": "\"Sudah di-merge\" tidak tertukar dengan \"sudah live\""
+      }
+    },
+    "agent-core/prompt-intent": {
+      "use": "Type `/debug <symptom>`",
+      "why": "Debugging starts from a reproduction, not a guess",
+      "id": {
+        "what": "Mengarahkan singkatan `/debug` ke debugging yang dimulai dari reproduksi, dan membersihkan state hook yang lama",
+        "use": "Ketik `/debug <gejala>`",
+        "why": "Debugging dimulai dari reproduksi, bukan tebakan"
+      }
+    },
+    "agent-core/rca": {
+      "use": "`/agent-core:rca checkout returns 500`",
+      "why": "Fixes that stay fixed",
+      "id": {
+        "what": "Reproduksi, temukan baris penyebabnya, perbaiki dengan tes yang gagal tanpa perbaikannya",
+        "use": "`/agent-core:rca checkout returns 500`",
+        "why": "Perbaikan yang tidak kambuh"
+      }
+    },
+    "agent-core/resolve-pr-review": {
+      "use": "`/agent-core:resolve-pr-review 42`",
+      "why": "Bot suggestions that break your rules are declined with a reason",
+      "id": {
+        "what": "Memilah komentar review terhadap aturan Anda, menerapkan yang Anda terima, dan menjawab tiap thread",
+        "use": "`/agent-core:resolve-pr-review 42`",
+        "why": "Saran bot yang melanggar aturan Anda ditolak beserta alasannya"
+      }
+    },
+    "agent-core/review": {
+      "use": "`/agent-core:review`",
+      "why": "The stack's rules are checked line by line",
+      "id": {
+        "what": "Me-review perubahan staged atau branch lewat reviewer stack, menurut tingkat keparahan",
+        "use": "`/agent-core:review`",
+        "why": "Aturan stack diperiksa baris demi baris"
+      }
+    },
+    "agent-core/reviewer": {
+      "use": "Via `/agent-core:review` when no stack reviewer is installed",
+      "why": "Rule-cited findings in any stack",
+      "id": {
+        "what": "Memeriksa diff terhadap `AGENTS.md` dan `.claude/rules/`",
+        "use": "Lewat `/agent-core:review` jika tidak ada reviewer stack",
+        "why": "Temuan yang mengutip aturan, di stack apa pun"
+      }
+    },
+    "agent-core/safety-check": {
+      "use": "Runs by itself before every `Bash` call",
+      "why": "The one command you would regret never runs",
+      "id": {
+        "what": "Menolak perintah shell yang merusak atau tak bisa dibatalkan, push ke branch yang dilindungi, melewati gate, dan setiap pembacaan shell atas file `.env*` asli",
+        "use": "Berjalan sendiri sebelum setiap panggilan `Bash`",
+        "why": "Perintah yang akan Anda sesali tidak pernah berjalan"
+      }
+    },
+    "agent-core/security-guard": {
+      "use": "Via `/agent-core:review`, or ask for it",
+      "why": "Security regressions are flagged before commit",
+      "id": {
+        "what": "Rahasia, injeksi, otorisasi, dan perubahan pada pagar pengaman agen",
+        "use": "Lewat `/agent-core:review`, atau minta langsung",
+        "why": "Kemunduran keamanan ditandai sebelum commit"
+      }
+    },
+    "agent-core/session-start": {
+      "use": "Runs by itself at session start",
+      "why": "Fewer confusing shell failures",
+      "id": {
+        "what": "Membuat zsh milik Claude berperilaku seperti bash untuk glob, `=word`, dan pemisahan kata",
+        "use": "Berjalan sendiri saat sesi dimulai",
+        "why": "Lebih sedikit kegagalan shell yang membingungkan"
+      }
+    },
+    "agent-core/setup": {
+      "use": "`/agent-core:setup`, once per repo",
+      "why": "Plugins cannot ship permissions or rules; you see every write first",
+      "id": {
+        "what": "Memasang izin, aturan, skrip pemeriksa, serta helper unlock dan `.env` milik agent-core setelah dry run yang Anda setujui",
+        "use": "`/agent-core:setup`, sekali per repo",
+        "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-core/ship": {
+      "use": "`/agent-core:ship`",
+      "why": "Finished work leaves the machine reviewed",
+      "id": {
+        "what": "Review, perbaiki setiap temuan Medium ke atas, commit, dan push sekali jalan",
+        "use": "`/agent-core:ship`",
+        "why": "Pekerjaan yang selesai meninggalkan mesin dalam keadaan sudah di-review"
+      }
+    },
+    "agent-core/sync": {
+      "use": "`/agent-core:sync --check`",
+      "why": "Drift and double hook wiring show up with an exit code",
+      "id": {
+        "what": "Membandingkan repo dengan yang dipasang setup; `--check` melaporkan pergeseran, selain itu menulis setelah draft",
+        "use": "`/agent-core:sync --check`",
+        "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
+      }
+    },
+    "agent-deploy/promote-deploy": {
+      "use": "`/agent-deploy:promote-deploy internal/x`",
+      "why": "Production does not go stale during a CI outage",
+      "id": {
+        "what": "Promosi cadangan saat CI tidak bisa berjalan; Anda sendiri yang push",
+        "use": "`/agent-deploy:promote-deploy internal/x`",
+        "why": "Produksi tidak basi saat CI mati"
+      }
+    },
+    "agent-deploy/setup": {
+      "use": "`/agent-deploy:setup`, once per repo",
+      "why": "Plugins cannot ship permissions or rules; you see every write first",
+      "id": {
+        "what": "Memasang skrip smoke test setelah deploy, pemicu webhook deploy opsional, dan izin tanya-dulu untuk keduanya setelah dry run yang Anda setujui",
+        "use": "`/agent-deploy:setup`, sekali per repo",
+        "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-deploy/sync": {
+      "use": "`/agent-deploy:sync --check`",
+      "why": "Drift and double hook wiring show up with an exit code",
+      "id": {
+        "what": "Memeriksa repo terhadap file yang dipasang agent-deploy (`--check`), atau memperbaruinya setelah dry run",
+        "use": "`/agent-deploy:sync --check`",
+        "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
+      }
+    },
+    "agent-deploy/verify-deploy": {
+      "use": "`/agent-deploy:verify-deploy https://… --pr 42`",
+      "why": "Proof the deploy reached production",
+      "id": {
+        "what": "Smoke test deploy live dari luar: HTTP 200, URL canonical, robots, sitemap, header keamanan, deploy yang lebih baru dari merge",
+        "use": "`/agent-deploy:verify-deploy https://… --pr 42`",
+        "why": "Bukti deploy sampai ke produksi"
+      }
+    },
+    "agent-docs-nextra/generated-guard": {
+      "use": "Runs by itself before file writes",
+      "why": "Edits go to the source, not to a file the generator will overwrite",
+      "id": {
+        "what": "Menolak edit tangan pada halaman dan data hasil generator",
+        "use": "Berjalan sendiri sebelum penulisan file",
+        "why": "Perubahan masuk ke sumbernya, bukan ke file yang akan ditimpa generator"
+      }
+    },
+    "agent-docs-nextra/security-guard": {
+      "use": "Ask on config changes",
+      "why": "The public export leaks nothing",
+      "id": {
+        "what": "Header, CSP, rahasia di hasil export, dan HTML mentah",
+        "use": "Minta saat konfigurasi berubah",
+        "why": "Export publik tidak membocorkan apa pun"
+      }
+    },
+    "agent-docs-nextra/seo-validator": {
+      "use": "Ask on content changes",
+      "why": "Docs stay searchable",
+      "id": {
+        "what": "Metadata halaman, struktur heading, robots, dan sitemap",
+        "use": "Minta saat konten berubah",
+        "why": "Dokumentasi tetap mudah dicari"
+      }
+    },
+    "agent-docs-nextra/setup": {
+      "use": "`/agent-docs-nextra:setup`, once per repo",
+      "why": "Plugins cannot ship permissions or rules; you see every write first",
+      "id": {
+        "what": "Memasang aturan konten docs, anti-pattern, skrip gate, konfigurasi lint, dan CI pull request untuk repo docs Nextra setelah dry run yang Anda setujui",
+        "use": "`/agent-docs-nextra:setup`, sekali per repo",
+        "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-docs-nextra/sync": {
+      "use": "`/agent-docs-nextra:sync --check`",
+      "why": "Drift and double hook wiring show up with an exit code",
+      "id": {
+        "what": "Memeriksa repo terhadap file yang dipasang agent-docs-nextra (`--check`), atau memperbaruinya setelah dry run",
+        "use": "`/agent-docs-nextra:sync --check`",
+        "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
+      }
+    },
+    "agent-fe-nextjs-static/a11y-audit": {
+      "use": "`/agent-fe-nextjs-static:a11y-audit`",
+      "why": "Tests what visitors get",
+      "id": {
+        "what": "Audit aksesibilitas halaman hasil build di browser sungguhan",
+        "use": "`/agent-fe-nextjs-static:a11y-audit`",
+        "why": "Menguji apa yang diterima pengunjung"
+      }
+    },
+    "agent-fe-nextjs-static/i18n-guard": {
+      "use": "Ask after i18n changes",
+      "why": "Languages work without middleware",
+      "id": {
+        "what": "Routing locale statis, kesetaraan key, dan hreflang",
+        "use": "Minta setelah perubahan i18n",
+        "why": "Bahasa berjalan tanpa middleware"
+      }
+    },
+    "agent-fe-nextjs-static/launch-checklist": {
+      "use": "`/agent-fe-nextjs-static:launch-checklist https://…`",
+      "why": "Nothing is forgotten on launch day",
+      "id": {
+        "what": "Tabel PASS / FAIL / MANUAL sebelum peluncuran",
+        "use": "`/agent-fe-nextjs-static:launch-checklist https://…`",
+        "why": "Tidak ada yang terlupa di hari peluncuran"
+      }
+    },
+    "agent-fe-nextjs-static/review": {
+      "use": "`/agent-fe-nextjs-static:review`",
+      "why": "Catches what an app review misses",
+      "id": {
+        "what": "Review situs statis: keamanan export, SEO, a11y, Core Web Vitals, header, dan desain",
+        "use": "`/agent-fe-nextjs-static:review`",
+        "why": "Menangkap yang terlewat oleh review aplikasi"
+      }
+    },
+    "agent-fe-nextjs-static/security-guard": {
+      "use": "Via `/agent-fe-nextjs-static:review`",
+      "why": "Static hosting has its own traps",
+      "id": {
+        "what": "Header host, CSP berbasis hash, formulir, dan skrip pihak ketiga",
+        "use": "Lewat `/agent-fe-nextjs-static:review`",
+        "why": "Hosting statis punya jebakannya sendiri"
+      }
+    },
+    "agent-fe-nextjs-static/seo-audit": {
+      "use": "`/agent-fe-nextjs-static:seo-audit`",
+      "why": "The site is findable and previews stay hidden",
+      "id": {
+        "what": "Robots, sitemap, canonical, hreflang, gambar share, dan JSON-LD dari hasil build",
+        "use": "`/agent-fe-nextjs-static:seo-audit`",
+        "why": "Situs mudah ditemukan dan preview tetap tersembunyi"
+      }
+    },
+    "agent-fe-nextjs-static/seo-validator": {
+      "use": "Via `/agent-fe-nextjs-static:seo-audit`",
+      "why": "Judges what scripts cannot",
+      "id": {
+        "what": "Metadata pencarian dan berbagi situs statis, plus pengindeksan preview",
+        "use": "Lewat `/agent-fe-nextjs-static:seo-audit`",
+        "why": "Menilai hal yang tidak bisa dinilai skrip"
+      }
+    },
+    "agent-fe-nextjs-static/setup": {
+      "use": "`/agent-fe-nextjs-static:setup`, once per repo",
+      "why": "Plugins cannot ship permissions or rules; you see every write first",
+      "id": {
+        "what": "Memasang izin, aturan situs statis, skrip pemeriksa, konfigurasi lint dan anggaran, serta pemanggil CI pull request untuk situs Next.js setelah dry run yang Anda setujui",
+        "use": "`/agent-fe-nextjs-static:setup`, sekali per repo",
+        "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-fe-nextjs-static/sync": {
+      "use": "`/agent-fe-nextjs-static:sync --check`",
+      "why": "Drift and double hook wiring show up with an exit code",
+      "id": {
+        "what": "Memeriksa repo terhadap file yang dipasang agent-fe-nextjs-static (`--check`), atau memperbaruinya setelah dry run",
+        "use": "`/agent-fe-nextjs-static:sync --check`",
+        "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
+      }
+    },
+    "agent-fe-nextjs/a11y-audit": {
+      "use": "`/agent-fe-nextjs:a11y-audit src/`",
+      "why": "Missing names, alt text and focus styles are found before release",
+      "id": {
+        "what": "Audit aksesibilitas file `.tsx`, dilaporkan menurut tingkat keparahan",
+        "use": "`/agent-fe-nextjs:a11y-audit src/`",
+        "why": "Nama aksesibel, alt text, dan gaya fokus yang hilang ketahuan sebelum rilis"
+      }
+    },
+    "agent-fe-nextjs/generated-guard": {
+      "use": "Runs by itself before file writes",
+      "why": "Edits go to the source, not to a file the generator will overwrite",
+      "id": {
+        "what": "Menolak edit tangan pada keluaran generator, seperti klien API dari spesifikasi OpenAPI",
+        "use": "Berjalan sendiri sebelum penulisan file",
+        "why": "Perubahan masuk ke sumbernya, bukan ke file yang akan ditimpa generator"
+      }
+    },
+    "agent-fe-nextjs/i18n-guard": {
+      "use": "Ask after touching message catalogues",
+      "why": "No half-translated screens",
+      "id": {
+        "what": "Kesetaraan key next-intl dan string yang ditulis langsung",
+        "use": "Minta setelah menyentuh katalog pesan",
+        "why": "Tidak ada layar yang setengah diterjemahkan"
+      }
+    },
+    "agent-fe-nextjs/plan-fullstack": {
+      "use": "`/agent-fe-nextjs:plan-fullstack invites`",
+      "why": "Contract changes are planned, not discovered",
+      "id": {
+        "what": "Merencanakan fitur lintas frontend dan API-nya sebelum kode ditulis",
+        "use": "`/agent-fe-nextjs:plan-fullstack invites`",
+        "why": "Perubahan kontrak direncanakan, bukan ditemukan belakangan"
+      }
+    },
+    "agent-fe-nextjs/react-doctor": {
+      "use": "`/agent-fe-nextjs:react-doctor`",
+      "why": "Security, performance and a11y issues before commit",
+      "id": {
+        "what": "Memindai kode React dengan React Doctor CLI milik proyek, atau mengunduh versi yang di-pin sekali setelah Anda setuju; telemetri dimatikan",
+        "use": "`/agent-fe-nextjs:react-doctor`",
+        "why": "Masalah keamanan, performa, dan a11y ketahuan sebelum commit"
+      }
+    },
+    "agent-fe-nextjs/review-soc": {
+      "use": "`/agent-fe-nextjs:review-soc`",
+      "why": "Components stay easy to change",
+      "id": {
+        "what": "Memindahkan logika keluar dari komponen, berdasarkan temuan gate",
+        "use": "`/agent-fe-nextjs:review-soc`",
+        "why": "Komponen tetap mudah diubah"
+      }
+    },
+    "agent-fe-nextjs/reviewer": {
+      "use": "Via `/agent-core:review`",
+      "why": "Your `AGENTS.md` rules, checked",
+      "id": {
+        "what": "Lapisan Next.js, komponen tanpa logika, lapisan data, dan struktur",
+        "use": "Lewat `/agent-core:review`",
+        "why": "Aturan `AGENTS.md` Anda diperiksa"
+      }
+    },
+    "agent-fe-nextjs/seo-validator": {
+      "use": "Ask after metadata changes",
+      "why": "Pages stay findable and shareable",
+      "id": {
+        "what": "Metadata, canonical, sitemap, gambar OG, dan JSON-LD",
+        "use": "Minta setelah perubahan metadata",
+        "why": "Halaman tetap mudah ditemukan dan dibagikan"
+      }
+    },
+    "agent-fe-nextjs/setup": {
+      "use": "`/agent-fe-nextjs:setup`, once per repo",
+      "why": "Plugins cannot ship permissions or rules; you see every write first",
+      "id": {
+        "what": "Memasang izin, aturan TypeScript dan web, anti-pattern, skrip gate, konfigurasi lint, dan pemanggil CI pull request untuk aplikasi Next.js setelah dry run yang Anda setujui",
+        "use": "`/agent-fe-nextjs:setup`, sekali per repo",
+        "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-fe-nextjs/skeleton": {
+      "use": "\"the skeleton jumps\", or `/agent-fe-nextjs:skeleton`",
+      "why": "No layout shift when data arrives",
+      "id": {
+        "what": "Membangun skeleton loading dari komponen asli dan mengukurnya di empat lebar layar",
+        "use": "\"the skeleton jumps\", atau `/agent-fe-nextjs:skeleton`",
+        "why": "Tidak ada pergeseran layout saat data datang"
+      }
+    },
+    "agent-fe-nextjs/sync": {
+      "use": "`/agent-fe-nextjs:sync --check`",
+      "why": "Drift and double hook wiring show up with an exit code",
+      "id": {
+        "what": "Memeriksa repo terhadap file yang dipasang agent-fe-nextjs (`--check`), atau memperbaruinya setelah dry run",
+        "use": "`/agent-fe-nextjs:sync --check`",
+        "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
+      }
+    },
+    "agent-fe-threejs/setup": {
+      "use": "`/agent-fe-threejs:setup`, once per repo",
+      "why": "Plugins cannot ship permissions or rules; you see every write first",
+      "id": {
+        "what": "Memasang aturan scene 3D, pemeriksa anggaran aset, dan panduan menambah skill 3D lewat referensi setelah dry run yang Anda setujui",
+        "use": "`/agent-fe-threejs:setup`, sekali per repo",
+        "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-fe-threejs/sync": {
+      "use": "`/agent-fe-threejs:sync --check`",
+      "why": "Drift and double hook wiring show up with an exit code",
+      "id": {
+        "what": "Memeriksa repo terhadap file yang dipasang agent-fe-threejs (`--check`), atau memperbaruinya setelah dry run",
+        "use": "`/agent-fe-threejs:sync --check`",
+        "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
+      }
+    }
+  },
+  "files": {
+    ".claude/agent-config.example.json": {
+      "en": "Every hook setting with its default; copy the keys you change to agent-config.json",
+      "id": "Setiap pengaturan hook beserta default-nya; salin key yang Anda ubah ke agent-config.json"
+    },
+    ".claude/agent-config.json": {
+      "en": "This stack's hook settings, such as generatedPaths or migrationsDirs",
+      "id": "Pengaturan hook untuk stack ini, seperti generatedPaths atau migrationsDirs"
+    },
+    ".claude/mcp/cloudflare.example.json": {
+      "en": "An on-demand Cloudflare MCP server, loaded for one session with --mcp-config",
+      "id": "Server MCP Cloudflare sesuai kebutuhan, dimuat untuk satu sesi dengan --mcp-config"
+    },
+    ".claude/mcp/deploy-platform.example.json": {
+      "en": "An on-demand deploy-platform MCP server to fill in and pin",
+      "id": "Server MCP platform deploy sesuai kebutuhan, untuk diisi dan di-pin"
+    },
+    ".claude/mcp/vps-provider.example.json": {
+      "en": "An on-demand VPS-provider MCP server to fill in and pin",
+      "id": "Server MCP penyedia VPS sesuai kebutuhan, untuk diisi dan di-pin"
+    },
+    ".claude/settings.json": {
+      "en": "Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox",
+      "id": "Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash"
+    },
+    ".github/PULL_REQUEST_TEMPLATE/dev.md": {
+      "en": "The pull-request template for work going into dev",
+      "id": "Template pull request untuk pekerjaan yang masuk ke dev"
+    },
+    ".github/PULL_REQUEST_TEMPLATE/promotion.md": {
+      "en": "The pull-request template for a dev to prod promotion",
+      "id": "Template pull request untuk promosi dev ke prod"
+    },
+    ".husky/pre-commit": {
+      "en": "Runs the gates on staged files before each commit",
+      "id": "Menjalankan gate pada file yang di-stage sebelum setiap commit"
+    },
+    ".mcp.json": {
+      "en": "Project MCP servers, each pinned: Serena, GitHub, Context7, read-only databases",
+      "id": "Server MCP proyek, masing-masing di-pin: Serena, GitHub, Context7, database baca-saja"
+    },
+    ".oxfmtrc.json": {
+      "en": "Formatter settings for oxfmt",
+      "id": "Pengaturan formatter oxfmt"
+    },
+    ".oxlintignore": {
+      "en": "Paths the linter skips",
+      "id": "Path yang dilewati linter"
+    },
+    ".oxlintrc.json": {
+      "en": "Lint rules for oxlint; the reasons are in .claude/docs/lint-config.md",
+      "id": "Aturan lint oxlint; alasannya ada di .claude/docs/lint-config.md"
+    },
+    "bunfig.toml": {
+      "en": "Bun's test settings, including the test preload",
+      "id": "Pengaturan tes Bun, termasuk preload tes"
+    },
+    "doctor.config.json": {
+      "en": "React Doctor settings (dead code is left to knip)",
+      "id": "Pengaturan React Doctor (dead code diserahkan ke knip)"
+    },
+    "knip.json": {
+      "en": "Dead-code settings for knip",
+      "id": "Pengaturan dead code untuk knip"
+    },
+    "knip.ts": {
+      "en": "Dead-code settings for knip",
+      "id": "Pengaturan dead code untuk knip"
+    },
+    "lighthouserc.json": {
+      "en": "Lighthouse CI budgets: LCP, CLS and TBT",
+      "id": "Anggaran Lighthouse CI: LCP, CLS, dan TBT"
+    },
+    "oxlint.json": {
+      "en": "Lint rules for oxlint; the reasons are in .claude/docs/lint-config.md",
+      "id": "Aturan lint oxlint; alasannya ada di .claude/docs/lint-config.md"
+    },
+    "pyproject.toml": {
+      "en": "Python project and tool settings: ruff, mypy, pytest, coverage, vulture",
+      "id": "Pengaturan proyek Python dan tool-nya: ruff, mypy, pytest, coverage, vulture"
+    },
+    "scripts/check/3d-budget.json": {
+      "en": "Model, triangle and texture limits, with reasoned exceptions",
+      "id": "Batas model, segitiga, dan tekstur, dengan pengecualian beralasan"
+    },
+    "scripts/check/constants.config.json": {
+      "en": "Where each kind of identifier lives, for the constants check",
+      "id": "Tempat tiap jenis identifier berada, untuk pemeriksa konstanta"
+    },
+    "scripts/check/site.config.json": {
+      "en": "Site URL, mode and budgets the site checks read",
+      "id": "URL situs, mode, dan anggaran yang dibaca pemeriksa situs"
+    },
+    "scripts/check/soc.allow.json": {
+      "en": "Reviewed exceptions for the separation-of-concerns check",
+      "id": "Pengecualian yang sudah di-review untuk pemeriksa separation of concerns"
+    },
+    "scripts/env/envfile.py": {
+      "en": "Reads and writes one .env key for show.sh and set.sh, values masked",
+      "id": "Membaca dan menulis satu key .env untuk show.sh dan set.sh, nilainya tersamar"
+    },
+    "scripts/next/run.mjs": {
+      "en": "Starts the local Next.js binary, adding --no-experimental-webstorage only on the Node versions that have the flag",
+      "id": "Menjalankan binary Next.js lokal, menambahkan --no-experimental-webstorage hanya pada versi Node yang punya flag itu"
+    },
+    "scripts/vulture/whitelist.py": {
+      "en": "Names vulture must not report as dead code",
+      "id": "Nama yang tidak boleh dilaporkan vulture sebagai dead code"
+    }
+  }
+}
