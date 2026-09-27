@@ -21,9 +21,10 @@ A Claude Code plugin marketplace: eight plugins under `plugins/`, reusable CI un
   network and no downloads.
 - Templates never contain `package.json`, `.gitignore`, a real `CLAUDE.md`/`AGENTS.md` (use
   `*.starter`), `.claude/hooks|commands|agents|skills/`, or a `hooks` key in `settings.json`.
-- Workflows: pull-request events and `workflow_call` only (one exception, named in
+- Workflows: pull-request events and `workflow_call` only (two exceptions, named in
   `scripts/workflow-policy.py` and ADR 0004: docs-nextra's `changelog.yaml` also takes
-  `repository_dispatch`). No `push:`, `schedule:`, `issue_comment` or Dependabot.
+  `repository_dispatch`, and a template's `deepseek-review.yml` takes `issue_comment` in its one
+  checked shape). No `push:`, `schedule:` or Dependabot.
   Every `uses:` pinned to a full SHA with `# vX.Y.Z`; `contents: read`; `persist-credentials:
   false`; no `secrets: inherit`; no event data in `${{ }}` inside `run:`.
 - `README.md` and `README.id.md` change together in the same pull request.

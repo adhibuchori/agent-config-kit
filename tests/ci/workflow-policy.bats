@@ -70,7 +70,7 @@ policy() { run --separate-stderr "${PY[@]}" "$KIT_ROOT/scripts/workflow-policy.p
   done
 }
 
-@test "workflow-policy: issue_comment and repository_dispatch are refused outside the one exception" {
+@test "workflow-policy: issue_comment and repository_dispatch are refused outside their exceptions" {
   printf 'on:\n  issue_comment:\n  repository_dispatch:\npermissions: {}\njobs: {}\n' >"$K/.github/workflows/chatops.yml"
   policy
   [ "$status" -eq 1 ]
@@ -90,6 +90,105 @@ policy() { run --separate-stderr "${PY[@]}" "$KIT_ROOT/scripts/workflow-policy.p
   [ "$status" -eq 1 ]
   [[ "$output" == *"other.yaml: trigger \`repository_dispatch\` is not allowed"* ]]
   [[ "$output" != *"changelog.yaml: trigger"* ]]
+}
+
+# A template's DeepSeek review caller, and the reusable workflow it calls: the one shape in which
+# issue_comment is allowed. $1 names the caller file (default: deepseek-review.yml).
+comment_caller() {
+  cat >"$K/.github/workflows/deepseek-review.yml" <<'EOF'
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: $/actions/deepseek-review
+EOF
+  cat >"$T/${1:-deepseek-review.yml}" <<EOF
+on:
+  pull_request:
+    types: [opened]
+  issue_comment:
+    types: [created]
+permissions:
+  contents: read
+jobs:
+  deepseek-review:
+    if: >-
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/ask-deepseek') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: adhibuchori/agent-config-kit/.github/workflows/deepseek-review.yml@$SHA # v1.0.0
+EOF
+}
+
+# replace_in FILE OLD NEW: a literal replacement, the same with BSD and GNU tools.
+replace_in() {
+  python3 -c 'import sys; p, a, b = sys.argv[1:4]; s = open(p).read(); assert a in s, a; open(p, "w").write(s.replace(a, b))' "$@"
+}
+
+@test "workflow-policy: a template's deepseek-review.yml may take issue_comment in the safe shape, no other file may" {
+  comment_caller
+  policy
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"0 problem(s)"* ]]
+  comment_caller other.yml
+  policy
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"other.yml: trigger \`issue_comment\` is not allowed"* ]]
+  [[ "$output" != *"deepseek-review.yml: trigger"* ]]
+}
+
+@test "workflow-policy: the comment trigger fails without the trust guard, with more types, or with a wider token" {
+  local f="$T/deepseek-review.yml"
+  comment_caller
+  replace_in "$f" '"COLLABORATOR"]' '"COLLABORATOR","CONTRIBUTOR"]'
+  policy
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"job \`deepseek-review\` must run on a comment only for a pull request and an OWNER, MEMBER or COLLABORATOR (also allows CONTRIBUTOR)"* ]]
+  comment_caller
+  replace_in "$f" "'issue_comment' && github.event.issue.pull_request &&" "'issue_comment' &&"
+  policy
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"(missing github.event.issue.pull_request)"* ]]
+  comment_caller
+  replace_in "$f" 'types: [created]' 'types: [created, edited]'
+  policy
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"issue_comment must be limited to \`types: [created]\`"* ]]
+  comment_caller
+  replace_in "$f" '      pull-requests: write' $'      pull-requests: write\n      issues: write'
+  policy
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"job \`deepseek-review\` may hold \`contents: read\` and \`pull-requests: write\` only"* ]]
+  comment_caller
+  replace_in "$f" $'permissions:\n  contents: read\njobs:' $'permissions:\n  contents: write\njobs:'
+  policy
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"needs top-level \`permissions: contents: read\` and nothing more"* ]]
+}
+
+@test "workflow-policy: a comment-triggered job only calls the review, and the review never checks out" {
+  comment_caller
+  replace_in "$T/deepseek-review.yml" 'workflows/deepseek-review.yml@' 'workflows/demo-quality-gate.yml@'
+  policy
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"job \`deepseek-review\` must be a call to this repository's deepseek-review.yml and nothing else"* ]]
+  comment_caller
+  printf '      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n' \
+    >>"$K/.github/workflows/deepseek-review.yml"
+  policy
+  [ "$status" -eq 1 ]
+  [[ "$output" == *".github/workflows/deepseek-review.yml: job \`review\` checks out code"* ]]
 }
 
 @test "workflow-policy: a closed pull request job needs a merge guard, directly or through needs" {
