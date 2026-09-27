@@ -1,0 +1,85 @@
+{
+  "stack": "ai-fastapi",
+  "conflictsWith": ["agent-be-hono", "agent-docs-nextra", "agent-fe-nextjs", "agent-fe-nextjs-static"],
+  "questions": [
+    {
+      "id": "pipeline",
+      "ask": "Does this service own its database schema and run Alembic migrations here (the pipeline shape)?",
+      "why": "Yes adds .claude/examples/pipeline/: rules for pipeline stages, Alembic and pipeline tests, and the AGENTS.md, SSOT.md, pyproject.toml and gate changes to adopt by hand. Nothing there loads until you copy it into .claude/rules/. A service that reads a schema another repo owns, or has no database, answers no. The migration-guard hook is wired either way and stays inert until a migrations folder exists.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "alembic.ini exists; alembic/versions, migrations/versions or src/app/db/migrations/versions exists; pyproject.toml depends on alembic",
+      "install": { "yes": [".claude/examples/pipeline/**"] }
+    },
+    {
+      "id": "ci-gate",
+      "ask": "Run agent-config-kit's FastAPI quality gate on every pull request into dev, prod, main or master (.github/workflows/quality-gate.yml)?",
+      "why": "Installs a small caller of the kit's ai-fastapi-quality-gate workflow, pinned to one commit, with a read-only token and no secrets; /agent-ai-fastapi:sync brings the next pin with a new plugin version. It needs GitHub Actions; an existing quality-gate.yml is kept either way.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "the repo is on GitHub (a github.com remote or a .github/ folder); .github/workflows/quality-gate.yml already exists",
+      "install": { "yes": [".github/workflows/quality-gate.yml"] }
+    },
+    {
+      "id": "pr-templates",
+      "ask": "Add pull-request templates for work pull requests and dev → prod promotions (.github/PULL_REQUEST_TEMPLATE/)?",
+      "why": "They list only what the gate cannot decide: layer boundaries, provider and streaming checks, the schema contract, and the env, migration and deploy checks of a promotion. They assume dev and prod branches.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "branches dev and prod exist (git branch --list dev prod); .github/PULL_REQUEST_TEMPLATE/ already has files",
+      "install": { "yes": [".github/PULL_REQUEST_TEMPLATE/*.md"] }
+    },
+    {
+      "id": "analytics",
+      "ask": "Does an agent need to read a self-hosted analytics API from this repo?",
+      "why": "Adds .claude/ANALYTICS.example.md, a template to fill in for that read API. An unfilled template is worse than none, because an agent will try to use it.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "the code or .env.*.example names an analytics client, or .claude/ANALYTICS.md exists",
+      "install": { "yes": [".claude/ANALYTICS.example.md"] }
+    },
+    {
+      "id": "serena-workspace",
+      "ask": "Do you open several repositories as one Serena workspace (for example this service and the repo that owns its schema)?",
+      "why": "Adds .claude/SERENA-WORKSPACE.example.md, which explains how to scope Serena's searches across repos. With a single repo the default needs no documentation.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": ".mcp.json runs Serena and a .serena/project.yml above this repo lists several folders, or AGENT_WORKSPACE_ROOT is set",
+      "install": { "yes": [".claude/SERENA-WORKSPACE.example.md"] }
+    }
+  ],
+  "seed": [
+    ".claude/ANALYTICS.example.md",
+    ".claude/SERENA-WORKSPACE.example.md",
+    ".claude/anti-patterns/INDEX.md",
+    ".claude/docs/code-review-checklist.md",
+    ".claude/examples/pipeline/**",
+    ".dockerignore",
+    ".github/PULL_REQUEST_TEMPLATE/*.md",
+    ".pre-commit-config.yaml",
+    "scripts/check/gates.list",
+    "scripts/vulture/whitelist.py"
+  ],
+  "snippets": { "pyproject.toml": "snippets/pyproject.tools.toml" },
+  "gitignore": [
+    ".serena/",
+    ".skillspector/",
+    ".env",
+    ".env.*",
+    "!.env.example",
+    "!.env.*.example",
+    ".venv/",
+    "__pycache__/",
+    "*.pyc",
+    ".pytest_cache/",
+    ".mypy_cache/",
+    ".ruff_cache/",
+    ".import_linter_cache/",
+    ".coverage",
+    "htmlcov/",
+    "dist/",
+    "build/",
+    "*.egg-info/"
+  ],
+  "packageScripts": {}
+}

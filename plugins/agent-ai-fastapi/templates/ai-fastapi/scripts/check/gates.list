@@ -1,0 +1,18 @@
+# This repo's gates. `bash scripts/check/gates.sh` runs every line (CLAUDE.md § Quality Gates);
+# .pre-commit-config.yaml runs the same set on each commit, and the quality gate that
+# .github/workflows/quality-gate.yml calls runs it again in CI. Each line is <kinds><TAB><command>;
+# gates.sh's header explains the kinds. List only gates whose tool or script this repo ships: a
+# missing one is a failing gate. The hook probes and the command mirror are not listed: the hooks
+# and commands live in the agent-config-kit plugins, which test them.
+code	uv run ruff format --check .
+code	uv run ruff check .
+code	env -u PYTHONPATH uv run mypy .
+code	uv run lint-imports
+code	uv run vulture
+code	uv run deptry src
+code	node scripts/check/folder-shape.mjs
+code	node scripts/check/coverage-policy.mjs
+code	env -u PYTHONPATH uv run pytest tests -q --cov
+all	gitleaks git --redact --no-banner --config .gitleaks.toml
+all	bash scripts/check/ai-config.sh
+commands,hooks	bash scripts/check/skills.sh

@@ -1,0 +1,31 @@
+# Quality Gate for a FastAPI + LLM service: every pull request into a protected branch runs the
+# FastAPI gate that agent-config-kit ships as a reusable workflow (ai-fastapi-quality-gate.yml; its
+# header lists the checks). Installed by /agent-ai-fastapi:setup.
+#
+# The gate is pinned to one commit of the kit, with its release in the trailing comment. A new pin
+# arrives with a new plugin version, through /agent-ai-fastapi:sync; nothing moves on its own. To
+# pin it yourself (`pinact run -u`) or change the branches, first make the file yours with
+# `/agent-ai-fastapi:sync own .github/workflows/quality-gate.yml`, or sync --check reports the edit
+# as drift. Nothing here runs on a push or on a schedule.
+name: Quality Gate
+
+on:
+  pull_request:
+    # The branches agent-core's guards protect by default (protectedBranches): work reaches them
+    # only by pull request. dev is the review gate; prod re-runs it as a safety net on promotion.
+    branches: [dev, prod, main, master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Quality Gate
+    permissions:
+      contents: read
+    # No secrets: the gate reads the checkout and nothing else.
+    uses: adhibuchori/agent-config-kit/.github/workflows/ai-fastapi-quality-gate.yml@0000000000000000000000000000000000000000 # v1.0.0

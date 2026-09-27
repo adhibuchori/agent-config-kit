@@ -1,0 +1,17 @@
+{
+  "description": "agent-ai-fastapi guard: refuse hand edits to generated Alembic revisions (migrationsDirs in .claude/agent-config.json; the defaults include alembic/versions, migrations/versions and src/app/db/migrations/versions). Inert in a repo without a migrations folder, and silent until the project opts in.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|mcp__serena__(replace_content|replace_symbol_body|insert_after_symbol|insert_before_symbol|replace_in_files|rename_symbol|safe_delete_symbol)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/migration-guard.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
