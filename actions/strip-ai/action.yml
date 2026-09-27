@@ -1,0 +1,70 @@
+# agent-config-kit strip AI config: after a pull request merges into the production branch, removes
+# the agent config (.claude/, AGENTS.md, CLAUDE.md, .mcp.json and the rest in
+# scripts/strip-paths.sh) from that branch, merges the result back into the development branch so
+# the development branch keeps its copy, and verifies both. For teams that keep agent config out of
+# what they deploy. README.md next to this file has the full caller workflow.
+#
+# The caller needs, and this action cannot set for it:
+#   - a trigger on the merged pull request only: `pull_request: types: [closed]`, `branches: [prod]`,
+#     and a job `if: github.event.pull_request.merged == true`;
+#   - `permissions: contents: write` on that job, the only permission it needs;
+#   - actions/checkout with `ref: <prod branch>`, `fetch-depth: 0` and `persist-credentials: true`:
+#     the scripts push with the token the checkout stores. This is the one kit job that keeps it, so
+#     the job must run nothing else and upload no artifact.
+name: agent-config-kit strip AI config
+description: Removes agent config from the production branch after a merge, back-merges so the development branch keeps it, and verifies both branches.
+author: Mochammad Adhi Buchori
+
+inputs:
+  prod-branch:
+    description: The branch that deploys and must not carry agent config.
+    required: false
+    default: prod
+  dev-branch:
+    description: The branch that keeps the agent config; the strip commit is merged back into it.
+    required: false
+    default: dev
+  paths:
+    description: Space-separated pathspecs to strip, replacing the default list in scripts/strip-paths.sh. Leave empty for the default.
+    required: false
+    default: ''
+  extra-paths:
+    description: Space-separated pathspecs to strip in addition to the list (globs such as debug*.config.ts are git pathspecs).
+    required: false
+    default: ''
+  back-merge:
+    description: true merges the production branch back into the development branch after the strip.
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Strip AI Config
+      shell: bash
+      env:
+        STRIP_AI_PROD_BRANCH: ${{ inputs.prod-branch }}
+        STRIP_AI_DEV_BRANCH: ${{ inputs.dev-branch }}
+        STRIP_AI_PATHS: ${{ inputs.paths }}
+        STRIP_AI_EXTRA_PATHS: ${{ inputs.extra-paths }}
+      run: bash "${GITHUB_ACTION_PATH}/scripts/strip-ai.sh"
+
+    - name: Back-merge Into the Development Branch
+      if: inputs.back-merge == 'true'
+      shell: bash
+      env:
+        STRIP_AI_PROD_BRANCH: ${{ inputs.prod-branch }}
+        STRIP_AI_DEV_BRANCH: ${{ inputs.dev-branch }}
+        STRIP_AI_PATHS: ${{ inputs.paths }}
+        STRIP_AI_EXTRA_PATHS: ${{ inputs.extra-paths }}
+      run: bash "${GITHUB_ACTION_PATH}/scripts/back-merge.sh"
+
+    - name: Verify the Strip
+      shell: bash
+      env:
+        STRIP_AI_PROD_BRANCH: ${{ inputs.prod-branch }}
+        STRIP_AI_DEV_BRANCH: ${{ inputs.dev-branch }}
+        STRIP_AI_PATHS: ${{ inputs.paths }}
+        STRIP_AI_EXTRA_PATHS: ${{ inputs.extra-paths }}
+        STRIP_AI_BACK_MERGE: ${{ inputs.back-merge }}
+      run: bash "${GITHUB_ACTION_PATH}/scripts/verify-strip.sh"

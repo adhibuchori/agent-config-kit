@@ -1,0 +1,40 @@
+# Dependency Review: fails a pull request that adds or bumps a dependency with a known
+# vulnerability of high or critical severity. It compares the dependency graph of the base and head
+# commits over the API: no checkout, no install, and no project code runs. The same file that
+# agent-core's setup installs for users, unchanged apart from this header.
+#
+# In this repository the graph holds the CI tool lockfiles (.github/tools/*/package-lock.json):
+# the Claude Code CLI and bats that self-test.yml installs.
+#
+# It stands in for Dependabot, which this repository does not use: nothing opens update pull
+# requests on a timer, and this gate checks every dependency change when a pull request makes it.
+#
+# A private repository also needs GitHub Code Security; without it this job cannot work, so it is
+# skipped until the repository variable CODE_SECURITY is `true`. Public repositories need nothing.
+name: Dependency Review
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    if: ${{ !github.event.repository.private || vars.CODE_SECURITY == 'true' }}
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Dependency Review
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          # CI tooling runs with this repository's permissions, and a lockfile that does not record
+          # scopes reports `unknown`. The default (runtime only) would wave both through.
+          fail-on-scopes: runtime, development, unknown

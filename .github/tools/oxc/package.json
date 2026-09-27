@@ -1,0 +1,9 @@
+{
+  "name": "agent-config-kit-ci-oxc",
+  "private": true,
+  "description": "The oxlint and oxfmt releases self-test.yml runs the agent-fe-nextjs-static lint-config tests with. npm ci installs exactly the lockfile.",
+  "dependencies": {
+    "oxfmt": "0.70.0",
+    "oxlint": "1.85.0"
+  }
+}

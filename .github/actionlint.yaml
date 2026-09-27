@@ -1,0 +1,13 @@
+# actionlint configuration. actionlint reads it from here on every run, including the one in
+# .github/workflows/workflows-lint.yml.
+#
+# The five reusable quality gates call their composite action as `uses: $/actions/quality-gate`,
+# GitHub's self-repository form: it resolves to this repository at the commit the workflow was
+# loaded from, which is what makes a caller's SHA pin cover the action's scripts too. actionlint
+# 1.7.12 predates the form and reports "ref is missing". That one message is ignored, for those five
+# files only; every other check still runs on them, and every other file still gets the error.
+# Delete this block once actionlint knows the form.
+paths:
+  .github/workflows/*-quality-gate.yml:
+    ignore:
+      - 'specifying action "\$/actions/quality-gate" in invalid format because ref is missing'

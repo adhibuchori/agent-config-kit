@@ -1,0 +1,16 @@
+# gitleaks configuration for this repository's own scans (self-test.yml passes it with --config).
+#
+# The default ruleset stays on; this file only narrows it where a rule misfires here. Keep every
+# exception to one exact value: a broad allowlist (a whole folder, every Markdown file, a key-name
+# pattern) turns the scanner into decoration.
+
+[extend]
+useDefault = true
+
+# agent-core's scripts/check/hook-probes.sh template hands the .env helpers fake secrets to prove
+# they are masked. One is shaped like a JWT: its payload is {"sub":"probe"} and its signature the
+# literal "probeSignatureValue9", so no service would accept it. The value is matched whole, not the
+# file: any other token of the same shape, in the same file, is still reported.
+[[allowlists]]
+description = "Hook-probe JWT fixture"
+regexes = ['''^eyJhbGciOiJIUzI1NiJ9\.eyJzdWIiOiJwcm9iZSJ9\.probeSignatureValue9$''']

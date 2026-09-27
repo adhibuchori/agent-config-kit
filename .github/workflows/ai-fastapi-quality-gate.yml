@@ -1,0 +1,142 @@
+# Quality gate for a FastAPI service on uv (agent-ai-fastapi), as a reusable workflow. The stack
+# plugin's setup installs a small caller in the user's repo (.github/workflows/quality-gate.y*ml).
+# Anyone can call it the same way from a pull_request workflow, pinned to one commit of
+# agent-config-kit:
+#
+#     on:
+#       pull_request:
+#     permissions:
+#       contents: read
+#     jobs:
+#       quality-gate:
+#         permissions:
+#           contents: read
+#         uses: adhibuchori/agent-config-kit/.github/workflows/ai-fastapi-quality-gate.yml@<40-hex sha> # v1.0.0
+#         with: # every input is optional
+#           coverage-threshold: 100
+#           integration-tests: true
+#         secrets: # optional, only for integration-tests
+#           DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+#
+# What it runs (actions/quality-gate/scripts/stacks/ai-fastapi.sh): uv sync --frozen; the repo's
+# scripts/check/gates.list (ruff, mypy, import boundaries, vulture, deptry, pytest with coverage);
+# the coverage floor from coverage.py's data; a committed .env; gitleaks over the pull request's
+# commits; pip-audit when it is a dev dependency; SkillSpector when a skill, command, subagent or
+# hook changed; docker build when there is a Dockerfile; pytest -m integration when
+# integration-tests is true. A check that cannot run fails the gate unless strict is false.
+#
+# Pinning: the step below names the action as $/actions/quality-gate, GitHub's self-repository form.
+# It resolves to this repository at the commit this workflow file was loaded from, so the caller's
+# SHA pin covers this file, the action and every script it runs; nothing moves until the caller
+# changes its pin. It needs github.com with runner 2.336.0 or newer (GitHub-hosted runners are);
+# GitHub Enterprise Server does not support it. actionlint 1.7.12 does not know the form yet, so
+# .github/actionlint.yaml ignores that one message for the five *-quality-gate.yml files.
+#
+# Permissions: contents: read only. No secret is needed (two optional ones feed the integration
+# tests); nothing is pushed or uploaded, and the checkout keeps no token.
+name: Quality Gate (ai-fastapi)
+
+on:
+  workflow_call:
+    inputs:
+      coverage-threshold:
+        description: Minimum coverage (0-100) read from the report the tests wrote; 0 turns the floor off.
+        type: number
+        required: false
+        default: 100
+      env-file:
+        description: A committed *.example file of dummy KEY=VALUE variables the tests and the build need. Never real secrets.
+        type: string
+        required: false
+        default: .env.ci.example
+      ignore-scripts:
+        description: Install dependencies without running their lifecycle scripts.
+        type: boolean
+        required: false
+        default: true
+      node-version:
+        description: Node.js version. The kit checks in scripts/check/*.mjs need it.
+        type: string
+        required: false
+        default: '22'
+      uv-version:
+        description: uv version.
+        type: string
+        required: false
+        default: '0.12.17'
+      python-version:
+        description: The Python uv should use; empty reads .python-version or requires-python.
+        type: string
+        required: false
+        default: ''
+      integration-tests:
+        description: Run pytest -m integration with RUN_INTEGRATION_TESTS=1. Pass a DATABASE_URL secret that reaches a database.
+        type: boolean
+        required: false
+        default: false
+      base-ref:
+        description: The branch the diff checks compare against; empty uses the pull request's base (github.base_ref).
+        type: string
+        required: false
+        default: ''
+      runs-on:
+        description: Runner label; empty uses the caller repository's CI_RUNNER_FAST, then CI_RUNNER, then ubuntu-latest.
+        type: string
+        required: false
+        default: ''
+      timeout-minutes:
+        description: Job timeout in minutes.
+        type: number
+        required: false
+        default: 30
+      strict:
+        description: Fail the gate when a check could not run (no gitleaks, no coverage report, no gates.list).
+        type: boolean
+        required: false
+        default: true
+    secrets:
+      DATABASE_URL:
+        description: Only for integration-tests. A database the runner can reach; it wins over the env-file's dummy.
+        required: false
+      REDIS_URL:
+        description: Only for integration-tests. A Redis the runner can reach; it wins over the env-file's dummy.
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gate:
+    name: Quality Gate (ai-fastapi)
+    # The job a developer waits on takes the fast pool first; vars come from the caller's repo.
+    runs-on: ${{ inputs.runs-on || vars.CI_RUNNER_FAST || vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    permissions:
+      contents: read
+
+    steps:
+      # Full history: the diff checks compare the pull request with its base branch.
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Quality Gate
+        uses: $/actions/quality-gate
+        # Empty unless the caller passes them; a value here wins over the env-file's dummy.
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+        with:
+          stack: ai-fastapi
+          base-ref: ${{ inputs.base-ref || github.base_ref }}
+          package-manager: uv
+          coverage-threshold: ${{ inputs.coverage-threshold }}
+          env-file: ${{ inputs.env-file }}
+          ignore-scripts: ${{ inputs.ignore-scripts }}
+          node-version: ${{ inputs.node-version }}
+          uv-version: ${{ inputs.uv-version }}
+          python-version: ${{ inputs.python-version }}
+          integration-tests: ${{ inputs.integration-tests }}
+          strict: ${{ inputs.strict }}

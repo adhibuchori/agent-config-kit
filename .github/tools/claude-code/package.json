@@ -1,0 +1,8 @@
+{
+  "name": "agent-config-kit-ci-claude-code",
+  "private": true,
+  "description": "The Claude Code CLI that self-test.yml runs claude plugin validate --strict with. npm ci installs exactly the lockfile.",
+  "dependencies": {
+    "@anthropic-ai/claude-code": "2.1.280"
+  }
+}

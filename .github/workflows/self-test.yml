@@ -1,0 +1,249 @@
+# Self Test: everything this repository promises, on every pull request. The last job, Self Test,
+# passes only when every other job did, so it is the one status check to require.
+#
+#   | Job                       | What it proves                                                      |
+#   | ------------------------- | ------------------------------------------------------------------- |
+#   | Manifests and Catalog     | claude plugin validate --strict on the marketplace and each plugin  |
+#   |                           | (the CLI pinned by .github/tools/claude-code/package-lock.json);    |
+#   |                           | scripts/catalog.mjs --check (README catalog, docs pages, layout);   |
+#   |                           | scripts/version-sync.mjs --check against the pull request's base;   |
+#   |                           | scripts/readme-pair.mjs (README.md and README.id.md change together)|
+#   | Shell Lint                | ShellCheck -x -S style on every *.sh and bin/ script (pinned image) |
+#   | Bats (macos-15, ubuntu)   | bash 3.2 syntax (/bin/bash -n on macOS) and every test in tests/    |
+#   | fe-nextjs-static Fixtures | the static-site checks against the toy site; a skipped test fails   |
+#   | Workflows Lint            | actionlint, zizmor, pinact and the trigger policy (a called file)   |
+#   | Secret Scan               | gitleaks over the full history and the tree (pinned image)          |
+#
+# Every tool is pinned: the actions by commit SHA, the images by digest, and the npm tools by the
+# lockfiles under .github/tools/, installed with npm ci. Nothing here needs a secret or a write
+# permission, and no job keeps the checkout's token.
+name: Self Test
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: self-test-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  manifests:
+    name: Manifests and Catalog
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      # Full history: version-sync compares every plugin with the pull request's base commit.
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      # npm ci installs exactly the lockfile, integrity hashes included. The package's postinstall
+      # copies the platform binary out of its optional dependency; it downloads nothing else.
+      - name: Install the Claude Code CLI
+        run: npm ci --prefix .github/tools/claude-code --no-audit --no-fund
+
+      # validate on the root reads the marketplace; validate on a plugin opens its hooks.json and
+      # the frontmatter of every command, agent and skill. --strict fails on a warning too.
+      - name: claude plugin validate --strict
+        env:
+          CLAUDE_CONFIG_DIR: ${{ runner.temp }}/claude-config
+        run: |
+          claude=.github/tools/claude-code/node_modules/.bin/claude
+          "$claude" --version
+          status=0
+          for target in . plugins/*/; do
+            echo "::group::claude plugin validate --strict ${target}"
+            "$claude" plugin validate --strict "$target" || status=1
+            echo "::endgroup::"
+          done
+          exit "$status"
+
+      - name: Catalog and layout invariants
+        run: node scripts/catalog.mjs --check
+
+      # The base commit comes through env, never as an expression inside the script.
+      - name: Version sync
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/version-sync.mjs --check --base "$BASE_SHA"
+
+      # README.md (English) and README.id.md (Bahasa Indonesia) are one document: a pull request
+      # that changes one must change the other.
+      - name: README translation pair
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/readme-pair.mjs --base "$BASE_SHA"
+
+  shell:
+    name: Shell Lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # ShellCheck 0.11.0 from the same pinned image workflows-lint.yml runs actionlint from.
+      - name: ShellCheck
+        run: |
+          files=()
+          while IFS= read -r -d '' f; do files+=("$f"); done < <(git ls-files -z -- '*.sh' 'plugins/*/bin/*')
+          echo "shellcheck: ${#files[@]} file(s)"
+          # -P SCRIPTDIR: a script sources its lib.sh from its own folder, not from the checkout root.
+          docker run --rm -v "$PWD:/repo:ro" -w /repo --entrypoint shellcheck \
+            rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 \
+            -x -P SCRIPTDIR -S style "${files[@]}"
+
+  bats:
+    name: Bats (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # macOS for its /bin/bash 3.2 and BSD tools, Ubuntu for bash 5 and GNU tools.
+        os: [macos-15, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    # The whole suite takes about 15 minutes on one core; the hook probes are most of it.
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      # bats, and the oxlint and oxfmt releases the agent-fe-nextjs-static lint-config tests use.
+      # Neither package has an install script.
+      - name: Install bats, oxlint and oxfmt
+        run: |
+          npm ci --prefix .github/tools/bats --ignore-scripts --no-audit --no-fund
+          npm ci --prefix .github/tools/oxc --ignore-scripts --no-audit --no-fund
+
+      # tests/ci/workflow-policy.bats runs the policy script with PyYAML at its pinned release.
+      - name: Setup uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: 0.12.17
+          enable-cache: false
+
+      # On macOS /bin/bash is 3.2, the oldest bash a hook or bin/ script may meet.
+      - name: Shell syntax (/bin/bash -n)
+        run: |
+          /bin/bash --version | head -1
+          count=0
+          while IFS= read -r -d '' f; do
+            /bin/bash -n "$f"
+            count=$((count + 1))
+          done < <(git ls-files -z -- '*.sh' '*.bash' 'plugins/*/bin/*')
+          echo "bash -n: ${count} file(s) parse"
+
+      - name: bats
+        shell: bash
+        run: |
+          export FE_STATIC_TOOLS_BIN="$PWD/.github/tools/oxc/node_modules/.bin"
+          bats=.github/tools/bats/node_modules/.bin/bats
+          "$bats" --version
+          "$bats" --recursive --timing --formatter tap tests | tee "$RUNNER_TEMP/bats.tap"
+          skipped=$(grep -c ' # skip' "$RUNNER_TEMP/bats.tap" || true)
+          echo "::notice title=bats on ${RUNNER_OS}::${skipped} test(s) skipped (see the # skip lines above)"
+
+  fixtures:
+    name: fe-nextjs-static Fixtures
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install bats, oxlint and oxfmt
+        run: |
+          npm ci --prefix .github/tools/bats --ignore-scripts --no-audit --no-fund
+          npm ci --prefix .github/tools/oxc --ignore-scripts --no-audit --no-fund
+
+      # The static-site checks and the shipped lint configs against tests/fixtures/fe-nextjs-static:
+      # the toy site passes every check, and each broken variant fails the check it should. Every
+      # tool is installed here, so a skipped test can only mean a check did not run: that fails.
+      - name: Static-site checks against the fixture
+        shell: bash
+        run: |
+          export FE_STATIC_TOOLS_BIN="$PWD/.github/tools/oxc/node_modules/.bin"
+          bats=.github/tools/bats/node_modules/.bin/bats
+          "$bats" --timing --formatter tap tests/agent-fe-nextjs-static | tee "$RUNNER_TEMP/fixtures.tap"
+          if grep -q ' # skip' "$RUNNER_TEMP/fixtures.tap"; then
+            echo "::error::a fixture check was skipped; every one must run here"
+            exit 1
+          fi
+
+  workflows:
+    name: Workflows Lint
+    permissions:
+      contents: read
+    # A local call already resolves at this run's commit. zizmor prefers the self-repository form
+    # `$/`, which actionlint 1.7.12 rejects for a reusable-workflow call, so `./` stays here.
+    uses: ./.github/workflows/workflows-lint.yml # zizmor: ignore[self-repository]
+
+  secrets:
+    name: Secret Scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      # Full history: a secret committed and later deleted is still in the history.
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # .github/gitleaks.toml keeps the default rules and allows one exact fixture value.
+      - name: gitleaks (history and tree)
+        run: |
+          image=ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          status=0
+          docker run --rm -v "$PWD:/repo:ro" -w /repo "$image" git . --no-banner --redact --config .github/gitleaks.toml || status=1
+          docker run --rm -v "$PWD:/repo:ro" -w /repo "$image" dir . --no-banner --redact --config .github/gitleaks.toml || status=1
+          exit "$status"
+
+  self-test:
+    name: Self Test
+    if: ${{ always() }}
+    needs: [manifests, shell, bats, fixtures, workflows, secrets]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      # A job skipped or cancelled is not a pass: every result must be success.
+      - name: Every job passed
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<<"$RESULTS"
+          jq -e 'all(.[]; .result == "success")' <<<"$RESULTS" >/dev/null

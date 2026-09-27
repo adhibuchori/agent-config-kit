@@ -1,0 +1,76 @@
+name: Bug report
+description: A command, agent, skill, setup or sync, the quality gate, or the docs does the wrong thing. For a hook, use "Hook bug".
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. A security problem (a bypass, a leak, code running where it should not) goes to a private advisory instead: the link is on the "New issue" page.
+        Remove secrets, hostnames and anything private from what you paste.
+  - type: dropdown
+    id: plugin
+    attributes:
+      label: Plugin
+      options:
+        - agent-core
+        - agent-fe-nextjs
+        - agent-fe-nextjs-static
+        - agent-be-hono
+        - agent-ai-fastapi
+        - agent-docs-nextra
+        - agent-fe-threejs
+        - agent-deploy
+        - a reusable workflow or action (.github/workflows, actions/)
+        - docs or README
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Plugin version
+      description: From `claude plugin list`, or the `version` in the plugin's plugin.json. For a workflow, the release in your caller's pin comment.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: claude-version
+    attributes:
+      label: Claude Code version
+      description: "`claude --version`"
+      placeholder: "2.1.280"
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: The command you ran or the step that failed, and what it did.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The smallest set of steps from a fresh repo. For setup or sync, include the output of `/<plugin>:sync --check`.
+      placeholder: |
+        1. claude plugin install agent-be-hono@agent-config-kit
+        2. /agent-be-hono:setup, answered "ok" to every question
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 15.5, Ubuntu 24.04, WSL2 Ubuntu 24.04
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output
+      description: The relevant output, with secrets and private names removed.
+      render: text

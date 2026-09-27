@@ -1,0 +1,120 @@
+# Quality gate for a Next.js web app (agent-fe-nextjs), as a reusable workflow. The stack plugin's
+# setup installs a small caller in the user's repo (.github/workflows/quality-gate.y*ml). Anyone can
+# call it the same way from a pull_request workflow, pinned to one commit of agent-config-kit:
+#
+#     on:
+#       pull_request:
+#     permissions:
+#       contents: read
+#     jobs:
+#       quality-gate:
+#         permissions:
+#           contents: read
+#         uses: adhibuchori/agent-config-kit/.github/workflows/fe-nextjs-quality-gate.yml@<40-hex sha> # v1.0.0
+#         with: # every input is optional
+#           coverage-threshold: 100
+#
+# What it runs (actions/quality-gate/scripts/stacks/fe-nextjs.sh): install exactly the lockfile;
+# generate the API client when the repo has an orval config; the repo's scripts/check/gates.list;
+# the coverage floor; a committed .env; the eval, raw-HTML and URL-scheme scans over the lines the
+# pull request adds; gitleaks over its commits; the audit (scripts/check/audit.ts); SkillSpector
+# when a skill, command, subagent or hook changed; the production build; no source maps in
+# .next/static. A check that cannot run fails the gate unless strict is false.
+#
+# Pinning: the step below names the action as $/actions/quality-gate, GitHub's self-repository form.
+# It resolves to this repository at the commit this workflow file was loaded from, so the caller's
+# SHA pin covers this file, the action and every script it runs; nothing moves until the caller
+# changes its pin. It needs github.com with runner 2.336.0 or newer (GitHub-hosted runners are);
+# GitHub Enterprise Server does not support it. actionlint 1.7.12 does not know the form yet, so
+# .github/actionlint.yaml ignores that one message for the five *-quality-gate.yml files.
+#
+# Permissions: contents: read only. No secret is needed; nothing is pushed or uploaded, and the
+# checkout keeps no token.
+name: Quality Gate (fe-nextjs)
+
+on:
+  workflow_call:
+    inputs:
+      package-manager:
+        description: auto (from the lockfile), bun, pnpm, npm or yarn.
+        type: string
+        required: false
+        default: auto
+      coverage-threshold:
+        description: Minimum coverage (0-100) read from the report the tests wrote; 0 turns the floor off.
+        type: number
+        required: false
+        default: 100
+      env-file:
+        description: A committed *.example file of dummy KEY=VALUE variables the tests and the build need. Never real secrets.
+        type: string
+        required: false
+        default: .env.ci.example
+      ignore-scripts:
+        description: Install dependencies without running their lifecycle scripts.
+        type: boolean
+        required: false
+        default: true
+      node-version:
+        description: Node.js version.
+        type: string
+        required: false
+        default: '22'
+      bun-version:
+        description: Bun version, used when the package manager is bun.
+        type: string
+        required: false
+        default: '1.4.2'
+      base-ref:
+        description: The branch the diff checks compare against; empty uses the pull request's base (github.base_ref).
+        type: string
+        required: false
+        default: ''
+      runs-on:
+        description: Runner label; empty uses the caller repository's CI_RUNNER_FAST, then CI_RUNNER, then ubuntu-latest.
+        type: string
+        required: false
+        default: ''
+      timeout-minutes:
+        description: Job timeout in minutes.
+        type: number
+        required: false
+        default: 30
+      strict:
+        description: Fail the gate when a check could not run (no gitleaks, no coverage report, no gates.list).
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gate:
+    name: Quality Gate (fe-nextjs)
+    # The job a developer waits on takes the fast pool first; vars come from the caller's repo.
+    runs-on: ${{ inputs.runs-on || vars.CI_RUNNER_FAST || vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    permissions:
+      contents: read
+
+    steps:
+      # Full history: the diff checks compare the pull request with its base branch.
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Quality Gate
+        uses: $/actions/quality-gate
+        with:
+          stack: fe-nextjs
+          base-ref: ${{ inputs.base-ref || github.base_ref }}
+          package-manager: ${{ inputs.package-manager }}
+          coverage-threshold: ${{ inputs.coverage-threshold }}
+          env-file: ${{ inputs.env-file }}
+          ignore-scripts: ${{ inputs.ignore-scripts }}
+          node-version: ${{ inputs.node-version }}
+          bun-version: ${{ inputs.bun-version }}
+          strict: ${{ inputs.strict }}

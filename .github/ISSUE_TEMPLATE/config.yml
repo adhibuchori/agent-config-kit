@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/adhibuchori/agent-config-kit/security/advisories/new
+    about: A guard that can be bypassed, a hook that leaks data, a way to run code through setup. Report it privately, never in a public issue; SECURITY.md has the timelines.

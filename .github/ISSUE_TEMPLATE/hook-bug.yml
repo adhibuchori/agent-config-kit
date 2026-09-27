@@ -1,0 +1,102 @@
+name: Hook bug
+description: A hook blocked something it should allow, allowed something it should block, crashed, or was slow.
+title: "hook: "
+labels: [bug, hook]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Hooks run in your shell with your tools, so the answer usually depends on them. The fields below are what it takes to reproduce a report in one try.
+        **A hook that lets a dangerous command through is a security issue:** report it privately (the link is on the "New issue" page), not here.
+        Remove secrets, hostnames and anything private from the hook input before you paste it.
+  - type: dropdown
+    id: hook
+    attributes:
+      label: Hook
+      options:
+        - safety-check (agent-core)
+        - db-guard (agent-core)
+        - mcp-guard (agent-core)
+        - post-commit (agent-core)
+        - post-edit (agent-core)
+        - prompt-intent (agent-core)
+        - session-start (agent-core)
+        - setup-check (agent-core)
+        - generated-guard (agent-fe-nextjs or agent-docs-nextra)
+        - migration-guard (agent-be-hono or agent-ai-fastapi)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Plugin version
+      description: From `claude plugin list`.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: claude-version
+    attributes:
+      label: Claude Code version
+      description: "`claude --version`"
+      placeholder: "2.1.280"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 15.5 (arm64), Ubuntu 24.04, WSL2 Ubuntu 24.04
+    validations:
+      required: true
+  - type: input
+    id: shell
+    attributes:
+      label: Shell
+      description: The shell Claude Code runs in (`echo $SHELL`).
+      placeholder: /bin/zsh
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Tool versions
+      description: Paste the output of this command.
+      value: |
+        bash --version | head -1; /bin/bash --version | head -1; jq --version; python3 --version; git --version; uname -sm
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: input
+    attributes:
+      label: Hook input JSON
+      description: |
+        The JSON the hook read on stdin. Rebuild it from the tool call, for example
+        `{"tool_name":"Bash","tool_input":{"command":"git push --force origin main"}}`, or copy it from `claude --debug` output. Replace secrets and private names.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      description: Block (exit 2) or allow (exit 0), and why.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+      description: |
+        What happened, with the exit code and stderr. From a clone of this repository you can run the hook directly:
+        `printf '%s' '<the JSON above>' | CLAUDE_PROJECT_DIR="$PWD" bash plugins/<plugin>/scripts/<hook>.sh; echo "exit=$?"`
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Project configuration
+      description: Your `.claude/agent-config.json`, if the project has one, and whether `.claude/agent-config-kit.lock` exists.
+      render: json

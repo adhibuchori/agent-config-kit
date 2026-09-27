@@ -1,0 +1,27 @@
+# Code owners: the reviewer GitHub requests on every pull request that touches a matching path.
+# The last matching line wins. Everything has an owner; the lines below name the paths where a
+# change runs code on a user's machine or in CI, so a ruleset can require their review even when
+# the catch-all is relaxed.
+
+*                                   @adhibuchori
+
+# CI of this repository, the reusable workflows users pin, and the actions those workflows call.
+/.github/                           @adhibuchori
+/actions/                           @adhibuchori
+
+# Code that runs inside a user's Claude Code session: hook wiring, hook scripts, bin/ and the
+# setup engine.
+/plugins/*/hooks/                   @adhibuchori
+/plugins/*/scripts/                 @adhibuchori
+/plugins/*/bin/                     @adhibuchori
+/plugins/*/libexec/                 @adhibuchori
+
+# What setup writes into a user's repository: permissions, rules, check scripts, CI callers.
+/plugins/*/templates/               @adhibuchori
+
+# Manifests: names, versions and the marketplace entries users install from.
+/.claude-plugin/                    @adhibuchori
+/plugins/*/.claude-plugin/          @adhibuchori
+
+# Maintainer scripts that CI trusts to judge every pull request.
+/scripts/                           @adhibuchori

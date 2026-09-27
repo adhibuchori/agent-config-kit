@@ -1,0 +1,50 @@
+name: Feature request
+description: A new check, rule, command, stack or option. Say what goes wrong without it.
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This kit adds a component when it prevents a failure someone met. Describe the failure first; the fix can come later. `.out-of-scope/` lists ideas that were considered and declined, with the reasons: check it before you ask.
+  - type: dropdown
+    id: plugin
+    attributes:
+      label: Where it belongs
+      options:
+        - agent-core
+        - agent-fe-nextjs
+        - agent-fe-nextjs-static
+        - agent-be-hono
+        - agent-ai-fastapi
+        - agent-docs-nextra
+        - agent-fe-threejs
+        - agent-deploy
+        - a new stack plugin
+        - a reusable workflow or action
+        - not sure
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: The failure it prevents
+      description: What went wrong, or what an agent did, that this would have stopped or caught. A real example beats a hypothetical one.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you propose
+      description: A hook that blocks, a check that fails, a rule, a command. How would it tell a right case from a wrong one?
+    validations:
+      required: true
+  - type: textarea
+    id: cost
+    attributes:
+      label: Cost and false positives
+      description: What it would wrongly block or slow down, and for whom. Every always-loaded rule and every hook costs every user something.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried instead

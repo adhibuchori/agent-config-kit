@@ -1,0 +1,122 @@
+# agent-config-kit quality gate: the steps behind the five <stack>-quality-gate.yml reusable
+# workflows. It runs the repo's own gates (scripts/check/gates.list, which the pre-commit hook runs
+# on staged files) and then only what needs a pull request: the coverage floor, a committed .env,
+# the diff scans, gitleaks over the pull request's commits, the audit, a changed skill, the
+# production build and the stack's post-build checks. README.md next to this file lists every check
+# per stack and every input.
+#
+# Check out the repository with fetch-depth: 0 and persist-credentials: false first. The scripts
+# ship inside this action (scripts/, reached through GITHUB_ACTION_PATH), so a caller pinned to one
+# commit runs exactly that commit's checks. Nothing here needs a secret or a write permission.
+name: agent-config-kit quality gate
+description: Runs a repository's agent-config-kit gates plus the pull-request checks for its stack (Next.js app or static site, Hono API, FastAPI service, Nextra docs).
+author: Mochammad Adhi Buchori
+
+inputs:
+  stack:
+    description: fe-nextjs, fe-nextjs-static, be-hono, ai-fastapi or docs-nextra.
+    required: true
+  base-ref:
+    description: The branch (or commit) the pull request merges into. The diff checks compare against it; a branch name resolves to origin/<name>.
+    required: true
+  package-manager:
+    description: auto (from the lockfile), bun, pnpm, npm or yarn. ai-fastapi always uses uv.
+    required: false
+    default: auto
+  coverage-threshold:
+    description: Minimum coverage, 0 to 100, that the gate reads from the report the tests wrote. 0 turns the floor off; the test runner's own thresholds still apply. Empty means the stack's default (100; 0 for fe-nextjs-static and docs-nextra).
+    required: false
+    default: ''
+  env-file:
+    description: A committed *.example file of dummy KEY=VALUE variables that the tests and the build need (a settings module that validates at import time, a NEXT_PUBLIC_ URL). Never real secrets. Empty to load none.
+    required: false
+    default: .env.ci.example
+  ignore-scripts:
+    description: true installs dependencies without running their lifecycle scripts; false runs them.
+    required: false
+    default: 'true'
+  integration-tests:
+    description: ai-fastapi only. true runs pytest -m integration with RUN_INTEGRATION_TESTS=1; the caller must provide a reachable DATABASE_URL.
+    required: false
+    default: 'false'
+  node-version:
+    description: Node.js version for setup-node.
+    required: false
+    default: '22'
+  bun-version:
+    description: Bun version for setup-bun, used when the package manager is bun.
+    required: false
+    default: 1.4.2
+  uv-version:
+    description: uv version for setup-uv, used by ai-fastapi and by the skill scan.
+    required: false
+    default: 0.12.17
+  python-version:
+    description: ai-fastapi only. The Python uv should use; empty lets uv read .python-version or requires-python.
+    required: false
+    default: ''
+  strict:
+    description: true fails the gate when a check could not run (no gitleaks, no coverage report, no gates.list); false reports it and passes.
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Plan
+      id: plan
+      shell: bash
+      env:
+        QG_STACK: ${{ inputs.stack }}
+        QG_BASE_REF: ${{ inputs.base-ref }}
+        QG_PACKAGE_MANAGER: ${{ inputs.package-manager }}
+        QG_COVERAGE_THRESHOLD: ${{ inputs.coverage-threshold }}
+        QG_STRICT: ${{ inputs.strict }}
+      run: bash "${GITHUB_ACTION_PATH}/scripts/plan.sh"
+
+    # No dependency caches: the gate installs exactly the lockfile every time, so nothing restored
+    # from an earlier run can change what it checks.
+    - name: Setup Node
+      if: steps.plan.outputs.node == 'true'
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        package-manager-cache: false
+
+    - name: Setup Bun
+      if: steps.plan.outputs.bun == 'true'
+      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      with:
+        bun-version: ${{ inputs.bun-version }}
+        no-cache: true
+
+    - name: Setup uv
+      if: steps.plan.outputs.uv == 'true'
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      with:
+        version: ${{ inputs.uv-version }}
+        python-version: ${{ inputs.python-version }}
+        enable-cache: false
+
+    # pnpm and yarn come from Corepack, at the version package.json's packageManager field names.
+    - name: Enable Corepack
+      if: steps.plan.outputs.corepack == 'true'
+      shell: bash
+      run: corepack enable
+
+    - name: Install gitleaks
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/scripts/install-gitleaks.sh"
+
+    - name: Quality Gate
+      shell: bash
+      env:
+        QG_STACK: ${{ steps.plan.outputs.stack }}
+        QG_BASE: ${{ steps.plan.outputs.base }}
+        QG_PM: ${{ steps.plan.outputs.pm }}
+        QG_COVERAGE_THRESHOLD: ${{ steps.plan.outputs.coverage-threshold }}
+        QG_ENV_FILE: ${{ inputs.env-file }}
+        QG_IGNORE_SCRIPTS: ${{ inputs.ignore-scripts }}
+        QG_INTEGRATION_TESTS: ${{ inputs.integration-tests }}
+        QG_STRICT: ${{ inputs.strict }}
+      run: bash "${GITHUB_ACTION_PATH}/scripts/gate.sh"

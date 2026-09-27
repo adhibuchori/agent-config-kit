@@ -1,0 +1,106 @@
+# Workflows Lint: static checks for every GitHub Actions file this repository holds or installs.
+# Adapted from the kit's workflows-lint.yml (which agent-core's setup installs for users) in three
+# ways for this repository:
+#   - It is called by self-test.yml on every pull request instead of running on a `paths:` filter,
+#     so the one required check (Self Test) always includes it and it never reports twice.
+#   - It lints what the plugins install too: plugins/*/templates/*/.github/workflows/, and the
+#     composite actions under actions/.
+#   - It runs scripts/workflow-policy.py: the trigger policy (pull-request events and workflow_call
+#     only), top-level permissions, no secrets: inherit, no Dependabot, and the pins of every
+#     template's call to this repository's reusable workflows.
+#
+# The checks:
+#   - actionlint (with ShellCheck, from the pinned image): syntax, expressions and contexts.
+#   - zizmor, pedantic persona, offline: security audits. It finds the template workflows and the
+#     actions/*/action.yml files by itself.
+#   - pinact: every `uses:` is a full commit SHA whose version comment names the release that SHA
+#     is. The templates' own calls to this repository are left to workflow-policy.py: until the
+#     release commit exists they carry a placeholder SHA (RELEASING.md).
+# Each check starts even when an earlier one failed, so one run reports all of them.
+name: Workflows Lint
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  workflows-lint:
+    name: Workflows Lint
+    # actionlint and zizmor run as pinned images, so this needs a Linux runner with Docker.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # This repository's workflows (with .github/actionlint.yaml), then each template's workflows
+      # as the repository setup installs them into. actionlint takes the project root from the
+      # nearest .git, so a template's local call such as ./.github/workflows/ci-cd.yaml only
+      # resolves inside a copy of that template that is its own git repository.
+      - name: actionlint (with ShellCheck)
+        run: |
+          image=rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+          status=0
+          echo "actionlint: this repository"
+          docker run --rm -v "$PWD:/repo:ro" -w /repo "$image" -color || status=1
+          for t in plugins/*/templates/*/; do
+            [ -d "${t}.github/workflows" ] || continue
+            root="$RUNNER_TEMP/actionlint/$(printf '%s' "$t" | tr '/' '_')"
+            mkdir -p "$root" && cp -R "${t}.github" "$root/" && git init -q "$root"
+            echo "actionlint: $t"
+            docker run --rm -v "$root:/repo:ro" -w /repo "$image" -color || status=1
+          done
+          exit "$status"
+
+      - name: zizmor
+        if: ${{ !cancelled() }}
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+        with:
+          version: 1.30.1
+          persona: pedantic
+          online-audits: false
+          # Findings print as annotations on the pull request; nothing is uploaded, so the job
+          # needs no security-events permission.
+          advanced-security: false
+          annotations: true
+
+      # pinact is built from source at an exact tag; Go checks every module against the public
+      # checksum database.
+      - name: Setup Go
+        if: ${{ !cancelled() }}
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: 1.27.1
+          cache: false
+
+      # pinact cannot pin container images (`docker://`), so it skips them; zizmor's pedantic
+      # unpinned-images audit requires their digest instead.
+      - name: pinact
+        if: ${{ !cancelled() }}
+        env:
+          # Read-only token: pinact only looks up tags of the pinned actions.
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          go install github.com/suzuki-shunsuke/pinact/v5/cmd/pinact@v5.0.0
+          shopt -s nullglob
+          files=(.github/workflows/*.yml .github/workflows/*.yaml actions/*/action.yml plugins/*/templates/*/.github/workflows/*.yml plugins/*/templates/*/.github/workflows/*.yaml)
+          echo "pinact: ${#files[@]} file(s)"
+          "$(go env GOPATH)/bin/pinact" run --check --verify-comment \
+            --exclude '^docker://' --exclude '^adhibuchori/agent-config-kit/' "${files[@]}"
+
+      - name: Setup uv
+        if: ${{ !cancelled() }}
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: 0.12.17
+          enable-cache: false
+
+      # PyYAML at an exact release, as the kit's own trigger check runs it.
+      - name: Workflow policy
+        if: ${{ !cancelled() }}
+        run: uv run --no-project --with pyyaml==6.0.3 python3 scripts/workflow-policy.py

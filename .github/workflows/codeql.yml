@@ -1,0 +1,65 @@
+# CodeQL: code scanning on pull requests, advanced setup. Default setup is not used on purpose: it
+# adds a weekly scheduled scan, and this repository runs no scheduled and no push-triggered
+# workflows.
+#
+# Adapted from the kit's codeql.yml (which detects languages from a user's repo): this repository's
+# languages are fixed, so the matrix is too.
+#
+#   | Language              | What it covers here                                                  |
+#   | --------------------- | -------------------------------------------------------------------- |
+#   | actions               | .github/workflows, actions/*/action.yml, the template workflows       |
+#   | javascript-typescript | scripts/*.mjs and the check scripts the plugins install              |
+#   | python                | agent-core's setup engine (libexec) and scripts/workflow-policy.py   |
+#
+# Shell has no CodeQL extractor; ShellCheck in self-test.yml covers it. tests/ is left out: its
+# fixtures are toy repos that may hold the very patterns a check must catch.
+#
+# A private repository needs GitHub Code Security to upload results; without it the upload fails,
+# so the jobs are skipped until the repository variable CODE_SECURITY is `true`.
+name: CodeQL
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    if: ${{ !github.event.repository.private || vars.CODE_SECURITY == 'true' }}
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 30
+    permissions:
+      contents: read # check out the code under analysis
+      security-events: write # upload the results to code scanning
+      actions: read # lets the upload read this run's metadata in a private repository
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [actions, javascript-typescript, python]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          config: |
+            paths-ignore:
+              - tests
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          category: /language:${{ matrix.language }}

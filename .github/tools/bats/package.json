@@ -1,0 +1,8 @@
+{
+  "name": "agent-config-kit-ci-bats",
+  "private": true,
+  "description": "The bats release self-test.yml runs tests/ with. npm ci installs exactly the lockfile.",
+  "dependencies": {
+    "bats": "1.13.0"
+  }
+}
