@@ -270,22 +270,29 @@ ci_env_repo() {
   ci_env_repo
   run --separate-stderr env DATABASE_URL=from-the-shell SHELL_ONLY=leak bash "$REPO/scripts/check/ci-env.sh" env
   [ "$status" -eq 0 ]
-  [[ "$output" == *"DATABASE_URL=postgresql://postgres:postgres@localhost:5432/app"* ]]
-  [[ "$output" == *"REDIS_URL=redis://localhost:6379"* ]]
-  [[ "$output" == *"CI=true"* ]] && [[ "$output" == *"BUN_OPTIONS=--no-env-file"* ]]
-  [[ "$output" != *"from-the-shell"* ]] && [[ "$output" != *"SHELL_ONLY"* ]]
-  [[ "$output" != *"FROM_DOTENV"* ]]
+  [[ "$output" == *"DATABASE_URL=postgresql://postgres:postgres@localhost:5432/app"* ]] || false
+  [[ "$output" == *"REDIS_URL=redis://localhost:6379"* ]] || false
+  [[ "$output" == *"CI=true"* ]] && [[ "$output" == *"BUN_OPTIONS=--no-env-file"* ]] || false
+  [[ "$output" != *"from-the-shell"* ]] && [[ "$output" != *"SHELL_ONLY"* ]] || false
+  [[ "$output" != *"FROM_DOTENV"* ]] || false
 }
 
 @test "ci-env: bun reads no .env file under it, while plain bun does" {
   command -v bun >/dev/null || skip "bun is not installed"
   ci_env_repo
   cd "$REPO"
-  local probe='console.log([process.env.FROM_DOTENV, process.env.FROM_DOTENV_TEST, process.env.DATABASE_URL].join(" "))'
+  local probe='console.log([process.env.FROM_DOTENV, process.env.DATABASE_URL].join(" "))'
   run -0 bun -e "$probe"
-  [[ "$output" == "leak leak postgresql://real-user"* ]]
+  [[ "$output" == "leak postgresql://real-user"* ]] || false
   run -0 --separate-stderr bash scripts/check/ci-env.sh bun -e "$probe"
-  [ "$output" = "  postgresql://postgres:postgres@localhost:5432/app" ]
+  [ "$output" = " postgresql://postgres:postgres@localhost:5432/app" ]
+  # bun test reads .env.test as well, and under ci-env.sh it does not.
+  mkdir -p src
+  printf 'import { test } from "bun:test";\ntest("env", () => { console.log("ENVTEST=" + process.env.FROM_DOTENV_TEST); });\n' >src/env.test.ts
+  run -0 bun test src
+  [[ "$output" == *"ENVTEST=leak"* ]] || false
+  run -0 bash scripts/check/ci-env.sh bun test src
+  [[ "$output" == *"ENVTEST=undefined"* ]] || false
 }
 
 @test "ci-env: the file the caller passes as env-file is the one read, parsed as the gate parses it" {
@@ -293,8 +300,8 @@ ci_env_repo() {
   printf '      with:\n        env-file: .env.test.example # dummies\n' >>"$REPO/.github/workflows/quality-gate.yml"
   printf '# a comment\nexport API_KEY="dummy-key"\nEMPTY=\n' >"$REPO/.env.test.example"
   run -0 --separate-stderr bash "$REPO/scripts/check/ci-env.sh" env
-  [[ "$output" == *"API_KEY=dummy-key"* ]] && [[ "$output" == *"EMPTY="* ]]
-  [[ "$output" != *"DATABASE_URL"* ]]
+  [[ "$output" == *"API_KEY=dummy-key"* ]] && [[ "$output" == *"EMPTY="* ]] || false
+  [[ "$output" != *"DATABASE_URL"* ]] || false
 }
 
 @test "ci-env: a workflow that runs the tests itself gives its env: blocks, the job's last" {
@@ -318,9 +325,9 @@ jobs:
           STEP_ONLY: not-the-unit-tier
 YML
   run -0 --separate-stderr env SHARED=shell bash "$REPO/scripts/check/ci-env.sh" env
-  [[ "$output" == *"SHARED=from-the-workflow"* ]] && [[ "$output" == *"PROVIDER_API_KEY=dummy"* ]]
-  [[ "$output" == *"DATABASE_URL=postgresql://postgres:postgres@localhost:5432/app"* ]]
-  [[ "$output" != *"STEP_ONLY"* ]]
+  [[ "$output" == *"SHARED=from-the-workflow"* ]] && [[ "$output" == *"PROVIDER_API_KEY=dummy"* ]] || false
+  [[ "$output" == *"DATABASE_URL=postgresql://postgres:postgres@localhost:5432/app"* ]] || false
+  [[ "$output" != *"STEP_ONLY"* ]] || false
 }
 
 @test "ci-env: a missing env source fails and runs nothing" {
@@ -328,13 +335,13 @@ YML
   rm "$REPO/.env.ci.example"
   run --separate-stderr bash "$REPO/scripts/check/ci-env.sh" touch "$REPO/ran"
   [ "$status" -eq 1 ]
-  [[ "$stderr" == *".env.ci.example is missing"* ]]
+  [[ "$stderr" == *".env.ci.example is missing"* ]] || false
   [ ! -e "$REPO/ran" ]
   # A workflow that neither calls the gate nor sets an env: block leaves CI's variables unknown.
   printf 'on:\n  pull_request:\njobs:\n  test:\n    runs-on: ubuntu-latest\n' >"$REPO/.github/workflows/quality-gate.yml"
   run --separate-stderr bash "$REPO/scripts/check/ci-env.sh" touch "$REPO/ran"
   [ "$status" -eq 1 ]
-  [[ "$stderr" == *"the variables CI's tests run with are unknown"* ]]
+  [[ "$stderr" == *"the variables CI's tests run with are unknown"* ]] || false
   [ ! -e "$REPO/ran" ]
 }
 
@@ -342,11 +349,11 @@ YML
   ci_env_repo
   rm "$REPO/.github/workflows/quality-gate.yml"
   run -0 --separate-stderr bash "$REPO/scripts/check/ci-env.sh" env
-  [[ "$output" == *"REDIS_URL=redis://localhost:6379"* ]]
+  [[ "$output" == *"REDIS_URL=redis://localhost:6379"* ]] || false
   printf 'NODE_OPTIONS=--require ./x.js\n' >>"$REPO/.env.ci.example"
   run --separate-stderr bash "$REPO/scripts/check/ci-env.sh" env
   [ "$status" -eq 1 ]
-  [[ "$stderr" == *"NODE_OPTIONS changes how the runner or a toolchain behaves"* ]]
+  [[ "$stderr" == *"NODE_OPTIONS changes how the runner or a toolchain behaves"* ]] || false
   run --separate-stderr bash "$REPO/scripts/check/ci-env.sh"
   [ "$status" -eq 2 ]
 }

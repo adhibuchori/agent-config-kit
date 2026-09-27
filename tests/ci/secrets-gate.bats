@@ -40,7 +40,7 @@ pin() { sed -n 's/^PIN=//p' "$SECRETS"; }
 @test "secrets: without gitleaks it fails, never skips, and names the release to install" {
   run --separate-stderr env PATH="$(path_without gitleaks)" bash "$REPO/scripts/check/secrets.sh"
   [ "$status" -eq 1 ]
-  [[ "$stderr" == *"gitleaks is not installed; install release $(pin)"* ]]
+  [[ "$stderr" == *"gitleaks is not installed; install release $(pin)"* ]] || false
 }
 
 @test "secrets: CI's release scans the staged changes with the repo's config, quietly" {
@@ -53,7 +53,7 @@ pin() { sed -n 's/^PIN=//p' "$SECRETS"; }
 @test "secrets: another release warns on stderr and still scans" {
   fake_gitleaks 8.18.0
   run -0 --separate-stderr bash "$REPO/scripts/check/secrets.sh"
-  [[ "$stderr" == *"gitleaks 8.18.0 found; CI pins $(pin). Scanning with it anyway"* ]]
+  [[ "$stderr" == *"gitleaks 8.18.0 found; CI pins $(pin). Scanning with it anyway"* ]] || false
   grep -q '^gitleaks git --staged ' "$BATS_TEST_TMPDIR/scans.log"
 }
 
@@ -62,7 +62,7 @@ pin() { sed -n 's/^PIN=//p' "$SECRETS"; }
   printf '#!/usr/bin/env bash\nGITLEAKS_VERSION=9.1.0\n' >"$REPO/.github/scripts/quality-gate.sh"
   fake_gitleaks "$(pin)"
   run -0 --separate-stderr bash "$REPO/scripts/check/secrets.sh"
-  [[ "$stderr" == *"CI pins 9.1.0"* ]]
+  [[ "$stderr" == *"CI pins 9.1.0"* ]] || false
 }
 
 @test "secrets: without .gitleaks.toml it fails and scans nothing" {
@@ -70,7 +70,7 @@ pin() { sed -n 's/^PIN=//p' "$SECRETS"; }
   fake_gitleaks "$(pin)"
   run --separate-stderr bash "$REPO/scripts/check/secrets.sh"
   [ "$status" -eq 1 ]
-  [[ "$stderr" == *".gitleaks.toml is missing"* ]]
+  [[ "$stderr" == *".gitleaks.toml is missing"* ]] || false
   [ ! -e "$BATS_TEST_TMPDIR/scans.log" ]
 }
 
@@ -85,5 +85,5 @@ pin() { sed -n 's/^PIN=//p' "$SECRETS"; }
   git add conf.txt
   run --separate-stderr bash scripts/check/secrets.sh
   [ "$status" -eq 1 ]
-  [[ "$stderr" == *"leaks found: 1"* ]]
+  [[ "$stderr" == *"leaks found: 1"* ]] || false
 }
