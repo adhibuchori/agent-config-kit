@@ -1,7 +1,7 @@
 {
   "name": "agent-docs-nextra",
   "displayName": "Agent for Nextra docs",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Rules, reviewers and checks for Nextra documentation sites in Claude Code, on top of agent-core. Hook: generated-guard refuses hand edits to generated pages and data (paths in .claude/agent-config.json). Commands: setup and sync install and verify the docs-content and TypeScript rules, anti-patterns, quality-gate check scripts, lint config and pull-request-only CI callers (quality gate, changelog, react-doctor, an optional DeepSeek review) and a CODEOWNERS starter. Agents: seo-validator and security-guard. The hook runs on your machine, opens no network connection and stays silent until the project opts in.",
   "author": {
     "name": "Mochammad Adhi Buchori",

@@ -29,7 +29,7 @@ jobs:
     if: github.event.pull_request.merged == true
     permissions:
       contents: write # push the strip commit to prod and the back-merge to dev
-    uses: adhibuchori/agent-config-kit/.github/workflows/strip-ai.yml@0000000000000000000000000000000000000000 # v1.2.0
+    uses: adhibuchori/agent-config-kit/.github/workflows/strip-ai.yml@8699a5bed2aa9d986c459f65b3e519c7bbe162d1 # v1.2.0
     # with: # every input is optional
     #   prod-branch: prod
     #   dev-branch: dev
