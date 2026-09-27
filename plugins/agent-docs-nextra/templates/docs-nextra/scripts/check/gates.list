@@ -6,6 +6,7 @@
 # come from the agent-config-kit plugins, which prove them in their own CI. So there is no
 # hook-probe, ai-config-probe or command-mirror line: here each would pass having checked nothing.
 all	@format
+all	bash scripts/check/secrets.sh
 code	bun run type-check
 code	bash scripts/check/double-assertion.sh
 code	node scripts/check/folder-shape.mjs

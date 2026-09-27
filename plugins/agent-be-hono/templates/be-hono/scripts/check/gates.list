@@ -7,7 +7,7 @@
 # mirror are not listed: each would pass having checked nothing. scripts/check/migrations.sh
 # and index-coverage.sh are pull-request checks; run them with bash after a schema change.
 all	@format
-all	gitleaks git --staged --no-banner --redact --config .gitleaks.toml
+all	bash scripts/check/secrets.sh
 code	bun run type-check
 code	bun run check:dead-code
 code	bun run check:constants

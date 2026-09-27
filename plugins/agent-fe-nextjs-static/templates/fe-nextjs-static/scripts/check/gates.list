@@ -8,7 +8,7 @@
 # metadata, share images, JSON-LD, links, images, fonts, bundle size, headers), then the browser
 # checks npm run check:a11y and npm run check:lighthouse.
 all	@format
-all	gitleaks git --staged --no-banner --redact --config .gitleaks.toml
+all	bash scripts/check/secrets.sh
 code	npm run --silent type-check
 code	npm run --silent check:dead-code
 code	bash scripts/check/double-assertion.sh
