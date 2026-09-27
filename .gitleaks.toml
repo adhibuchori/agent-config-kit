@@ -1,0 +1,5 @@
+# Lets a plain `gitleaks dir .` or `gitleaks git .` in this repository apply the same rules CI
+# passes with `--config .github/gitleaks.toml`: that file holds the rules and the one allowed
+# fixture; this one only points at it.
+[extend]
+path = ".github/gitleaks.toml"

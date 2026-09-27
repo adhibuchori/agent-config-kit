@@ -1,0 +1,32 @@
+# OS and editor files
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Claude Code: the maintainer's local settings and the hooks' runtime state
+.claude/settings.local.json
+.claude/state/
+
+# Real env files never land here; templates (*.example) do
+.env
+.env.*
+.envrc
+!.env*.example
+
+# Dependencies, caches and build output (tests and fixtures create these)
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.next/
+coverage/
+.skillspector/
+.lycheecache
+
+# Local render checks of the SVGs (qlmanage writes <name>.svg.png)
+*.svg.png

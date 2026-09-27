@@ -1,0 +1,3 @@
+# A script sources its lib.sh from its own folder, so `shellcheck -x -S style <file>` follows it
+# from any working directory, the same way CI's `-P SCRIPTDIR` does.
+source-path=SCRIPTDIR

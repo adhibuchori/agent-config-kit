@@ -1,0 +1,29 @@
+// markdownlint-cli2 for this repository's docs and the plugins' commands, agents and skills.
+// Run: markdownlint-cli2
+// Deliberately not linted here: plugins/*/templates/ (they become the user's own files, in each
+// stack's house style) and tests/ (fixtures).
+{
+  "config": {
+    "default": true,
+    // Prose is wrapped by hand near 100 columns; tables and URLs run longer.
+    "MD013": false,
+    // The READMEs start with a language switch above the banner.
+    "MD041": false,
+    // Plugin READMEs and docs pages repeat section names under different parents.
+    "MD024": { "siblings_only": true },
+    // Light/dark images, collapsible sections and a centred mascot need these elements.
+    "MD033": { "allowed_elements": ["picture", "source", "img", "details", "summary", "p", "strong", "br"] }
+  },
+  "globs": [
+    "*.md",
+    "docs/**/*.md",
+    ".out-of-scope/*.md",
+    ".github/**/*.md",
+    "actions/**/*.md",
+    "plugins/*/README.md",
+    "plugins/*/commands/**/*.md",
+    "plugins/*/agents/**/*.md",
+    "plugins/*/skills/**/*.md"
+  ],
+  "ignores": ["node_modules/**", "plugins/*/templates/**", "tests/**"]
+}

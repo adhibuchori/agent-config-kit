@@ -1,0 +1,3 @@
+# Links lychee cannot resolve inside this repository but that work where the files are installed.
+# ai-fastapi's testing rule links folder-shape.md, which agent-core's setup installs next to it.
+plugins/agent-ai-fastapi/templates/ai-fastapi/\.claude/rules/common/folder-shape\.md

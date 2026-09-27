@@ -1,0 +1,58 @@
+{
+  "name": "agent-config-kit",
+  "description": "Guardrail hooks that really block, setup-installed permissions and rules, and pull-request-only CI for Claude Code. One core plugin plus one per stack: Next.js apps and static sites, Bun + Hono APIs, FastAPI + LLM services and Nextra docs, with optional three.js and deploy add-ons.",
+  "owner": {
+    "name": "Mochammad Adhi Buchori",
+    "url": "https://github.com/adhibuchori"
+  },
+  "plugins": [
+    {
+      "name": "agent-ai-fastapi",
+      "source": "./plugins/agent-ai-fastapi",
+      "description": "Rules, a reviewer and checks for FastAPI services that call LLM providers, in Claude Code, on top of agent-core. Hook: migration-guard refuses hand edits to generated Alembic revisions (folders in .claude/agent-config.json; a repo without one is unaffected). Commands: setup and sync install and verify the backend and Python rules (types, coverage, dead code, providers), a pipeline example, the pre-commit config, quality-gate check scripts and a pull-request-only CI caller. Agent: ai-reviewer. No package.json needed: unlock runs as ./scripts/ops/unlock.sh. The hook runs on your machine, opens no network connection and stays silent until the project opts in.",
+      "category": "development"
+    },
+    {
+      "name": "agent-be-hono",
+      "source": "./plugins/agent-be-hono",
+      "description": "Rules, a reviewer and checks for Bun + Hono + Drizzle APIs in Claude Code, on top of agent-core. Hook: migration-guard refuses hand edits to generated Drizzle migrations (folders in .claude/agent-config.json; a repo without one is unaffected). Commands: setup and sync install and verify the backend and TypeScript rules, anti-patterns, quality-gate check scripts (migrations, index coverage, coverage policy, module mocks, constants), lint and test config, and a pull-request-only CI caller. Agent: reviewer. The hook runs on your machine, opens no network connection and stays silent until the project opts in.",
+      "category": "development"
+    },
+    {
+      "name": "agent-core",
+      "source": "./plugins/agent-core",
+      "description": "Guardrail hooks and the everyday git workflow for Claude Code; every stack plugin builds on it. Guards: safety-check refuses destructive or irreversible shell commands (recursive deletes of tracked work, hard resets, pushes to or deletion of protected branches, skipping the pre-commit gate, shell reads or writes of real .env files, an agent running unlock); mcp-guard refuses GitHub MCP writes onto protected branches; db-guard lets read-only SQL reach the production database tool and holds writes until you unlock db. Feedback hooks: post-edit formats and lints each written file with the project's own tools; post-commit shows what a commit carried; prompt-intent points a /debug shorthand at /agent-core:rca and prunes old hook state; session-start writes zsh options to CLAUDE_ENV_FILE so Claude's shell treats unmatched globs, =word and word splitting like bash; setup-check says when setup or sync has not run for the installed version. The hooks run on your machine, open no network connection, download nothing, and stay silent until a project opts in (/agent-core:setup or .claude/agent-config.json). Commands: setup and sync install and verify what a plugin cannot carry (permissions, rules, check scripts, the unlock and .env helpers); help maps plan, review, commit, create-pr and merge-pr; plus resolve-pr-review, rca, checkpoint, ship, promote and branch-cleanup. The commands that commit, push, merge or post to GitHub start only when you type them. Agents: reviewer and security-guard.",
+      "category": "security"
+    },
+    {
+      "name": "agent-deploy",
+      "source": "./plugins/agent-deploy",
+      "description": "Optional, host-agnostic deploy add-on for Claude Code, on top of agent-core. No hooks. Commands: promote-deploy walks a release from a merged pull request to a deploy when CI cannot run, and verify-deploy runs a post-deploy smoke test (HTTP 200, canonical URL, robots and sitemap, security headers, a deploy newer than the merge). Both use the network (your live site, the GitHub API, your deploy adapter) and start only when you type them. setup and sync install the smoke script, an optional trigger script that posts to your deploy webhook, and ask-first permissions for both. It names no hosting vendor.",
+      "category": "deployment"
+    },
+    {
+      "name": "agent-docs-nextra",
+      "source": "./plugins/agent-docs-nextra",
+      "description": "Rules, reviewers and checks for Nextra documentation sites in Claude Code, on top of agent-core. Hook: generated-guard refuses hand edits to generated pages and data (paths in .claude/agent-config.json). Commands: setup and sync install and verify the docs-content and TypeScript rules, anti-patterns, quality-gate check scripts, lint config and pull-request-only CI callers (quality gate, changelog, react-doctor). Agents: seo-validator and security-guard. The hook runs on your machine, opens no network connection and stays silent until the project opts in.",
+      "category": "development"
+    },
+    {
+      "name": "agent-fe-nextjs",
+      "source": "./plugins/agent-fe-nextjs",
+      "description": "Next.js web-app rules, reviewers and checks for Claude Code, on top of agent-core. Hook: generated-guard refuses hand edits to generated output such as an API client built from an OpenAPI spec (paths in .claude/agent-config.json). Commands: setup and sync install and verify the TypeScript and web rules, anti-patterns, quality-gate check scripts, lint configs and a pull-request-only CI caller; a11y-audit, review-soc and plan-fullstack. Agents: reviewer, i18n-guard and seo-validator. Skills: skeleton, and react-doctor, which you start yourself: it uses the project's own React Doctor CLI, or downloads the pinned version from npm once after you agree, with the CLI's telemetry turned off. The hook runs on your machine, opens no network connection and stays silent until the project opts in. License: MIT, plus the vendor's Modified MIT for the adapted react-doctor skill.",
+      "category": "development"
+    },
+    {
+      "name": "agent-fe-nextjs-static",
+      "source": "./plugins/agent-fe-nextjs-static",
+      "description": "For company-profile, landing and marketing sites built with Next.js, in static-export or SSG-with-form-endpoints mode; use it instead of agent-fe-nextjs, on top of agent-core. No hooks of its own: agent-core's guards apply. Commands: setup and sync install and verify the static-site rules (SEO, static export, security headers for static hosting, performance budgets, forms on static hosting, analytics consent) and checks (sitemap and robots, per-route metadata, OG image, JSON-LD, broken links, image and font budgets, static-export verifier) plus a pull-request-only CI caller; a11y-audit runs axe-core or pa11y-ci against the built pages; seo-audit, launch-checklist and review. Agents: seo-validator, security-guard and i18n-guard.",
+      "category": "development"
+    },
+    {
+      "name": "agent-fe-threejs",
+      "source": "./plugins/agent-fe-threejs",
+      "description": "Optional 3D add-on for Next.js sites that use three.js or React Three Fiber; install it next to agent-fe-nextjs or agent-fe-nextjs-static. No hooks. Commands: setup and sync install and verify rules for gating the scene, a still fallback, reduced motion, disposing GPU resources and asset budgets, plus a guide to adding third-party 3D skills by reference (nothing is vendored).",
+      "category": "development"
+    }
+  ]
+}
