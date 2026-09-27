@@ -1,0 +1,29 @@
+// Copy to wrangler.jsonc and fill in the three placeholders; ci-cd.yaml deploys with it.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "<worker-name>",
+  // The day you create the Worker, as YYYY-MM-DD. Move it deliberately, never automatically.
+  "compatibility_date": "<creation-date>",
+
+  // No "main": an assets-only Worker. No script runs per request, so a static asset request is
+  // free and does not count against the Workers request allowance.
+  "assets": {
+    "directory": "./out",
+    "not_found_handling": "404-page",
+  },
+
+  // One subdomain level under your zone (docs.example.com, not docs.team.example.com): the free
+  // Universal SSL certificate covers only the first level.
+  "routes": [
+    {
+      "pattern": "<docs-host>",
+      "custom_domain": true,
+    },
+  ],
+
+  // Side doors. Whatever guards the hostname above (Cloudflare Access, a WAF rule) does not cover
+  // the other addresses a Worker gets, so close them. Both flags are needed: preview URLs are
+  // a separate setting, and a flag left out keeps whatever the deployed Worker already has.
+  "workers_dev": false,
+  "preview_urls": false,
+}

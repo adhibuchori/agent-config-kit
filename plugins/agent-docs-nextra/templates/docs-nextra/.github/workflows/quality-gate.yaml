@@ -1,0 +1,23 @@
+# The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit.
+# /agent-docs-nextra:sync offers the new pin when the plugin updates; nothing moves on its own.
+name: Quality Gate
+
+on:
+  pull_request:
+    # dev is the review gate; prod re-runs it as a safety net on promotion.
+    branches: [dev, prod]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Quality Gate
+    permissions:
+      contents: read
+    # No secrets: the gate reads the checkout and nothing else.
+    uses: adhibuchori/agent-config-kit/.github/workflows/docs-nextra-quality-gate.yml@0000000000000000000000000000000000000000 # v1.0.0

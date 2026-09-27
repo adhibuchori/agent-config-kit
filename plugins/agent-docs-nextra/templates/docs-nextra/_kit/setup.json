@@ -1,0 +1,85 @@
+{
+  "stack": "docs-nextra",
+  "conflictsWith": ["agent-ai-fastapi", "agent-be-hono", "agent-fe-nextjs", "agent-fe-nextjs-static"],
+  "questions": [
+    {
+      "id": "generated-pages",
+      "ask": "Do generators write pages into this site: an API reference under content/technical and a changelog at content/changelog.mdx?",
+      "why": "Yes writes .claude/agent-config.json with those two paths as generatedPaths, so the generated-guard hook refuses hand edits to them. If your generators write elsewhere, answer no and list your paths there yourself; until a path is listed, the guard protects nothing on a docs site.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "scripts/generate/ exists, content/technical/ or content/changelog.mdx exists, or package.json has a docs:generate or changelog:generate script",
+      "install": { "yes": [".claude/agent-config.json"] }
+    },
+    {
+      "id": "ci-pipeline",
+      "ask": "Should CI regenerate those pages and deploy the static export to Cloudflare Workers when a pull request merges into prod?",
+      "why": "Installs changelog.yaml, the deploy workflow it calls (ci-cd.yaml) and wrangler.example.jsonc. They run your generators under scripts/generate/ and need the APP_REPO_TOKEN, CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets, so answer yes only together with generated-pages; a site that deploys some other way does not need them.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "wrangler.jsonc or wrangler.toml exists, or package.json depends on wrangler",
+      "install": {
+        "yes": [".github/workflows/changelog.yaml", ".github/workflows/ci-cd.yaml", "wrangler.example.jsonc"]
+      }
+    },
+    {
+      "id": "react-doctor",
+      "ask": "Run React Doctor on pull requests into dev and prod (advisory review comments and a commit status; it never fails the check)?",
+      "why": "Installs .github/workflows/react-doctor.yml, which runs the vendor's action pinned to one commit, with write access to pull-request comments, issues and statuses, to catch React security, performance and accessibility slips in the few .tsx files a docs site has. The action runs the CLI with its own defaults, which report diagnostics to the vendor's score service. Answer yes only if that is acceptable for this repo.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "the site has .tsx files under app/ or components/",
+      "install": { "yes": [".github/workflows/react-doctor.yml", "doctor.config.json"] }
+    },
+    {
+      "id": "analytics",
+      "ask": "Does an agent need to read an analytics API for this site?",
+      "why": "Adds .claude/ANALYTICS.example.md, a template to fill in for a self-hosted analytics read API. An unfilled template is worse than none, because an agent will try to use it.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "package.json or the site's code names an analytics client, or .claude/ANALYTICS.md exists",
+      "install": { "yes": [".claude/ANALYTICS.example.md"] }
+    }
+  ],
+  "seed": [
+    ".claude/agent-config.json",
+    ".claude/ANALYTICS.example.md",
+    ".claude/anti-patterns/INDEX.md",
+    ".claude/docs/code-review-checklist.md",
+    ".claude/rules/docs-site/content.md",
+    ".env.development.example",
+    ".env.production.example",
+    ".github/PULL_REQUEST_TEMPLATE/*.md",
+    ".github/workflows/changelog.yaml",
+    ".oxfmtrc.json",
+    ".oxlintignore",
+    "doctor.config.json",
+    "knip.ts",
+    "oxlint.json",
+    "scripts/check/gates.list",
+    "wrangler.example.jsonc"
+  ],
+  "snippets": {},
+  "gitignore": [
+    ".env",
+    ".env.local",
+    ".env.development",
+    ".env.production",
+    ".env.*.local",
+    "node_modules/",
+    ".next/",
+    "out/",
+    "*.tsbuildinfo",
+    ".wrangler/",
+    "app-source/",
+    ".generation-marker"
+  ],
+  "packageScripts": {
+    "env:init": "bun run scripts/next/env.ts init",
+    "format": "oxfmt --write",
+    "fl": "oxfmt --write && oxlint -c oxlint.json --ignore-path=.oxlintignore",
+    "fl:ci": "oxfmt --check && oxlint -c oxlint.json --ignore-path=.oxlintignore",
+    "type-check": "tsc --noEmit",
+    "check:dead-code": "knip"
+  }
+}

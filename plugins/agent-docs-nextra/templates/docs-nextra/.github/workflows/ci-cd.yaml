@@ -1,0 +1,62 @@
+name: CI/CD Pipeline
+
+# Called by changelog.yaml after its content commit lands, never on its own: an earlier
+# build would ship the pages from before that commit.
+on:
+  workflow_call:
+    secrets:
+      CLOUDFLARE_API_TOKEN:
+        required: true
+      CLOUDFLARE_ACCOUNT_ID:
+        required: true
+
+permissions:
+  contents: read
+
+# Every deploy is of prod, whichever event started the caller, so one fixed queue. Not
+# the caller's prod-deploy group: a called workflow sharing it would wait on itself.
+concurrency:
+  group: worker-deploy
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy
+    # Install, next build and pagefind: the one docs job long enough to want the faster pool.
+    runs-on: ${{ vars.CI_RUNNER_FAST || vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: prod
+          persist-credentials: false
+
+      # No cache in the job that publishes: a poisoned cache entry would ship. An exact
+      # Bun, moved with quality-gate.yaml and changelog.yaml: `latest` is whatever ships that day.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
+          no-cache: true
+
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile
+
+      # `output: 'export'` emits out/, then pagefind writes its index into it.
+      - name: Build Static Site
+        run: bun run build
+
+      # Assets-only Worker (wrangler.example.jsonc): uploads out/ and nothing else. No
+      # container, no image registry, no origin to keep alive.
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # The last 3.x release, the same exact pin as the dev dependency: Wrangler 4 needs
+          # Node 22+, and `preview_urls` needs 3.74 or newer.
+          wranglerVersion: '3.114.17'

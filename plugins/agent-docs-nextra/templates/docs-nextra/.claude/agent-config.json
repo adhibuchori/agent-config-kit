@@ -1,0 +1,5 @@
+{
+  "//": "Per-repo settings for the agent-config-kit hooks; every key is optional, and .claude/agent-config.example.json lists them all. /agent-docs-nextra:setup wrote this file once and never touches it again: it is yours to edit. A key set here replaces its default whole.",
+  "//generatedPaths": "What the generated-guard hook keeps agents from editing by hand: the pages docs:generate and changelog:generate write. Keep it in step with the table in .claude/rules/docs-site/content.md, and leave out a page whose hand-written section the generator preserves.",
+  "generatedPaths": ["content/technical", "content/changelog.mdx"]
+}

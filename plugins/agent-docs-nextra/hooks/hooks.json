@@ -1,0 +1,17 @@
+{
+  "description": "agent-docs-nextra guardrail: generated-guard refuses hand edits to generated pages and data (generatedPaths in .claude/agent-config.json), so a change lands in the generator's source instead. Silent until the project opts in.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|mcp__serena__(replace_content|replace_symbol_body|insert_after_symbol|insert_before_symbol|replace_in_files|rename_symbol|safe_delete_symbol)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/generated-guard.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

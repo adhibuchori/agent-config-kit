@@ -1,0 +1,16 @@
+# This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .husky/pre-commit.
+# <kinds><TAB><command>. Kinds pick the gates a commit needs from what it stages; see gates.sh.
+# A docs site has no test suite, so there is no coverage gate. Every package script named here must
+# be in package.json (/agent-docs-nextra:setup adds the missing ones); list only what this repo
+# ships, since a missing script fails its gate. The hooks, the commands and the kit's own checks
+# come from the agent-config-kit plugins, which prove them in their own CI. So there is no
+# hook-probe, ai-config-probe or command-mirror line: here each would pass having checked nothing.
+all	@format
+code	bun run type-check
+code	bash scripts/check/double-assertion.sh
+code	node scripts/check/folder-shape.mjs
+code	bun run check:dead-code
+code	bun run .github/scripts/check-comment-style.ts
+code	bash .github/scripts/check-comment-blocks.sh
+all	bash scripts/check/ai-config.sh
+commands,hooks	bash scripts/check/skills.sh --staged

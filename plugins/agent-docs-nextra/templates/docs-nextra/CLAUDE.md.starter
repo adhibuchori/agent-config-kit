@@ -1,0 +1,115 @@
+# CLAUDE.md — `<Project Name>` Docs
+
+Static Nextra documentation site (Next.js App Router, MDX, `output: 'export'`). No backend, no
+database, no auth, no test suite. Content lives under `content/` (`.mdx` pages plus `_meta.js` nav
+files), a thin `app/` shell renders it through Nextra's catch-all route, and `components/` holds the
+few `.tsx` files the theme cannot express. `scripts/generate/docs/` and `scripts/generate/changelog/`
+write MDX from source comments and git history: **never hand-edit their output.**
+
+> **There is deliberately no `AGENTS.md` and no `SSOT.md` here.** `SSOT.md` states what a codebase
+> _is_; a docs site renders content another repository owns. `AGENTS.md` guards domain logic, and
+> there is none. This file, `.claude/rules/` and the hooks carry the rule layer. A content pipeline
+> that grows conventions worth numbering is the signal to add `AGENTS.md`, and not before.
+
+## Orientation
+
+Before a non-trivial change, skim:
+
+- `content/_meta.js` and each section's `_meta.js`: the real navigation
+- `app/layout.tsx`: theme, navbar, footer, metadata
+- `next.config.mjs`: the Nextra wrapper and the static export
+- `.claude/anti-patterns/INDEX.md`: known traps. Read it **before** touching the `nextra` /
+  `nextra-theme-docs` versions or the dev and build scripts, not after the build breaks
+
+## Agent Tooling
+
+- **Command wrapper.** If shell commands go through a wrapper (an output filter, a sandbox, a
+  recorder), declare it here as a hard rule, prefix every command in this file with it, and list it
+  under `commandWrappers` in `.claude/agent-config.json` so the safety hook judges the command it
+  wraps. A wrapper mentioned in passing is dropped once a task gets busy. With no wrapper, the
+  commands here are already correct.
+- **Library APIs:** check current docs through Context7 before relying on training data.
+- **Serena:** call `mcp__serena__initial_instructions` before the first symbol search, then use its
+  symbol tools for `.ts`/`.tsx` and the built-in tools for MDX and everything else. If it is not
+  connected, say so once and use the built-in tools.
+
+## Quality Gates
+
+Before calling a task done, run `bash scripts/check/gates.sh`. It runs `scripts/check/gates.list`,
+the list `.husky/pre-commit` runs, and prints each gate's exit code and log. In a shared checkout,
+`--paths <your files>` limits format and lint to your own files, and `--fix <your files>` formats
+them. Give the Bash call a timeout of at least 300000 ms, or the tool stops it at two minutes.
+
+`bun run build` (never `bun build`) is not a gate; run it after a structural change and before a
+PR. There is no test suite: do not invent `bun test` commands. `bun run docs:generate` and
+`bun run changelog:generate` rebuild the generated pages; re-run them when their source or the git
+history changed, then review the generated MDX.
+
+No explicit `any` and no `as unknown as` in `.ts`/`.tsx`: `.claude/rules/typescript/types.md` says
+what to use instead.
+
+## Commit Format
+
+```text
+type(scope): subject, at most 50 characters
+
+[optional body, wrapped at ~72 chars]
+```
+
+Types: `feat` · `fix` · `refactor` · `chore` · `docs` · `style` · `perf`. They label commits, not
+branches (see § Branching). Scope is the area touched (`product`, `technical`, `nav`, `scripts`).
+Commit by pathspec (`git commit -- <paths>`), after `git add` for new files only. `git add -A` is
+used only inside `/agent-core:ship`, which states its own guards; everything else,
+`/agent-core:checkpoint` included, names its files.
+
+## Branching
+
+| Branch             | Purpose                                              |
+| ------------------ | ---------------------------------------------------- |
+| `internal/{scope}` | Experiments, proof of concept, early work on a scope |
+| `dev`              | Active development: every scope merges here first    |
+| `prod`             | Stable, deployed                                     |
+
+`internal/{scope}/{context}` splits a scope into parallel tasks; `internal/{scope}` then becomes
+their integration branch and takes no direct commits. Merge order: `internal/{scope}/{context}` →
+`internal/{scope}` → `dev` → `prod`, by pull request, merged with `--merge`. The safety hook refuses
+pushes to `dev`, `prod`, `main` and `master`: hand such a push to the user to run with `!`.
+
+## Protected Files
+
+- `.env*`, except `.env.<target>.example` (the schema, with no real values). The hooks refuse every
+  shell read or write of one. List a file with `bash scripts/env/show.sh <file>` (secrets masked); a
+  value changes only through `scripts/env/set.sh`, while the user has unlocked `env` themselves
+  (`docs/unlock.md`). Never run the unlock yourself: ask the user to.
+- Generated pages: change their source and re-run the generator. The `generated-guard` hook refuses
+  hand edits to the paths `.claude/agent-config.json` lists under `generatedPaths`.
+- `.claude/settings.json` holds the permissions and the sandbox. The hooks come from the
+  agent-config-kit plugins, so it has no `hooks` key: one there would run each hook twice. Change it
+  only when the user asks, and never to get past a refusal.
+- `.claude/agent-config-kit.lock` records what setup installed; while it exists, the kit's hooks run
+  here. `/agent-docs-nextra:sync --check` compares the repo with it.
+
+## Workflow Commands
+
+The slash commands come from the agent-config-kit plugins. `/agent-core:help` maps the flow: plan →
+review → commit → create-pr → merge-pr. Reach for `/agent-core:rca` on a bug (reproduce first) and
+`/agent-core:ship` to review, gate, commit and push the work branch. The
+`agent-docs-nextra:seo-validator` and `agent-docs-nextra:security-guard` subagents review metadata-
+and security-sensitive changes, and only report.
+
+## On-demand References
+
+Nothing below loads automatically: read a file when its row matches the task. The first four
+files ship as `.claude/<NAME>.example.md` templates when setup installed them: fill one in and drop
+`.example`, or delete the template and its row.
+
+| Read when                                                                   | File                                    |
+| --------------------------------------------------------------------------- | --------------------------------------- |
+| Hooks, GitHub and CI, reviews, MCP pins, deploys, skill scanning            | `.claude/OPERATIONS.md`                 |
+| CI runner pools and billed minutes                                          | `.claude/CI-RUNNERS.md`                 |
+| Database access through `db-dev` / `db-prod` (a docs site usually has none) | `.claude/DATABASE.md`                   |
+| The analytics read API                                                      | `.claude/ANALYTICS.md`                  |
+| Reviewing a change, or running `/agent-core:review`                         | `.claude/docs/code-review-checklist.md` |
+| A build or dev failure that should not happen: scan the trigger keywords    | `.claude/anti-patterns/INDEX.md`        |
+| `.env*` files and production writes: the user's unlock                      | `docs/unlock.md`                        |
+| A rarely used MCP server, loaded for one session with `claude --mcp-config` | `.claude/mcp/*.json`                    |
