@@ -283,11 +283,11 @@ shows an honest empty panel; an invented measurement is read as a measurement.
 
 Loading, empty and error each have one home:
 
-| State   | Inside a mounted screen                            | Before the screen mounts  |
-| ------- | -------------------------------------------------- | ------------------------- |
-| Loading | the table's loading prop, a skeleton               | the route's `loading.tsx` |
-| Empty   | the empty-state component                          | —                         |
-| Error   | the error state with a retry, or a rethrow to `error.tsx` | —                  |
+| State   | Inside a mounted screen                                   | Before the screen mounts  |
+| ------- | --------------------------------------------------------- | ------------------------- |
+| Loading | the table's loading prop, a skeleton                      | the route's `loading.tsx` |
+| Empty   | the empty-state component                                 | —                         |
+| Error   | the error state with a retry, or a rethrow to `error.tsx` | —                         |
 
 A route's `loading.tsx` belongs to one page; on a segment with children it stands in for all of
 them. A placeholder repeats the real component's box (`.claude/rules/web/skeletons.md`). The empty

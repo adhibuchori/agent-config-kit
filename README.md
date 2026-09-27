@@ -294,7 +294,7 @@ each repo.
 shortened with `…`):
 
 ```text
-agent-setup plan · agent-fe-nextjs 1.0.3 + agent-core 1.0.4 · project .
+agent-setup plan · agent-fe-nextjs 1.2.1 + agent-core 1.1.1 · project .
   create   .claude/rules/web/security.md
   …
   create   .claude/settings.json                   +$schema, +16 permissions.allow, +7 permissions.ask, +14 permissions.deny, +sandbox.enabled, …
@@ -795,7 +795,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.github/CODEOWNERS` | once; then yours | Code owners: GitHub asks them to review every pull request that touches a matching path. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | with `pr-templates=yes`; once; then yours | The pull-request template for work going into dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | with `pr-templates=yes`; once; then yours | The pull-request template for a dev to prod promotion |
-| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; held until a release pins the reusable workflow to a real commit | An AI review of each pull request by DeepSeek, installed by /agent-ai-fastapi:setup when you answer deepseek-review=yes. |
+| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; sync keeps it current | An AI review of each pull request by DeepSeek, installed by /agent-ai-fastapi:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; sync keeps it current | Quality Gate for a FastAPI + LLM service: every pull request into a protected branch runs the FastAPI gate that agent-config-kit ships as a reusable workflow (ai-fastapi-quality-gate.yml; its header lists the checks). |
 | `.pre-commit-config.yaml` | once; then yours | The commit gate. |
 | `AGENTS.md` | once, if missing; then yours | AGENTS.md — &lt;repo-name&gt; |
@@ -868,7 +868,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.github/CODEOWNERS` | once; then yours | Code owners: GitHub asks them to review every pull request that touches a matching path. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | with `pr-templates=yes`; once; then yours | The pull-request template for work going into dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | with `pr-templates=yes`; once; then yours | The pull-request template for a dev to prod promotion |
-| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; held until a release pins the reusable workflow to a real commit | An AI review of each pull request by DeepSeek, installed by /agent-be-hono:setup when you answer deepseek-review=yes. |
+| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; sync keeps it current | An AI review of each pull request by DeepSeek, installed by /agent-be-hono:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; sync keeps it current | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
 | `.husky/pre-commit` | once; then yours | Runs the gates on staged files before each commit |
 | `.oxfmtrc.json` | once; then yours | Formatter settings for oxfmt |
@@ -935,8 +935,8 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | File | When setup installs it | What it is |
 | --- | --- | --- |
 | `.claude/settings.json` | merged into yours (additive; your values win) | Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox |
-| `.github/workflows/deploy.yml` | with `deploy-on-merge=yes`; held until a release pins the reusable workflow to a real commit | Deploys when a pull request is merged into prod, installed by /agent-deploy:setup when you answer deploy-on-merge=yes. |
-| `.github/workflows/strip-ai.yml` | with `strip-ai=yes`; held until a release pins the reusable workflow to a real commit | Strips the agent config from prod after each merge, installed by /agent-deploy:setup when you answer strip-ai=yes. |
+| `.github/workflows/deploy.yml` | with `deploy-on-merge=yes`; sync keeps it current | Deploys when a pull request is merged into prod, installed by /agent-deploy:setup when you answer deploy-on-merge=yes. |
+| `.github/workflows/strip-ai.yml` | with `strip-ai=yes`; sync keeps it current | Strips the agent config from prod after each merge, installed by /agent-deploy:setup when you answer strip-ai=yes. |
 | `scripts/deploy/trigger-deploy.sh` | with `webhook=yes`; sync keeps it current | trigger-deploy.sh: start a deploy by POSTing to the deploy platform's webhook, and fail loudly when the platform declines it. |
 | `scripts/deploy/verify-deploy.sh` | always; sync keeps it current | verify-deploy.sh: smoke-test a live deploy from the outside, on any host. |
 | `CLAUDE.md` | one managed block, appended | `## Agent config kit` |
@@ -972,7 +972,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.github/scripts/check-comment-style.ts` | always; sync keeps it current | Comment standard: `//` is reserved for directives (ts-expect-error, oxlint-disable, |
 | `.github/workflows/changelog.yaml` | with `ci-pipeline=yes`; once; then yours | Generate Content |
 | `.github/workflows/ci-cd.yaml` | with `ci-pipeline=yes`; sync keeps it current | CI/CD Pipeline |
-| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; held until a release pins the reusable workflow to a real commit | An AI review of each pull request by DeepSeek, installed by /agent-docs-nextra:setup when you answer deepseek-review=yes. |
+| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; sync keeps it current | An AI review of each pull request by DeepSeek, installed by /agent-docs-nextra:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yaml` | always; sync keeps it current | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
 | `.github/workflows/react-doctor.yml` | with `react-doctor=yes`; sync keeps it current | React Doctor: security, performance, correctness, accessibility, and architecture checks for React. |
 | `.husky/pre-commit` | always; sync keeps it current | Runs the gates on staged files before each commit |
@@ -1067,7 +1067,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | once; then yours | The pull-request template for a dev to prod promotion |
 | `.github/scripts/check-comment-blocks.sh` | always; sync keeps it current | Caps consecutive comment runs under .github/ at 2 lines; shebangs are exempt. |
 | `.github/scripts/check-comment-style.ts` | always; sync keeps it current | Comment standard: `//` is reserved for directives (ts-expect-error, oxlint-disable, |
-| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; held until a release pins the reusable workflow to a real commit | An AI review of each pull request by DeepSeek, installed by /agent-fe-nextjs:setup when you answer deepseek-review=yes. |
+| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; sync keeps it current | An AI review of each pull request by DeepSeek, installed by /agent-fe-nextjs:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yaml` | always; sync keeps it current | The pull-request quality gate for this Next.js app, installed by /agent-fe-nextjs:setup. |
 | `.github/workflows/react-doctor.yml` | with `react-doctor-ci=yes`; sync keeps it current | React Doctor: security, performance, correctness, accessibility, and architecture checks for React. |
 | `.husky/pre-commit` | always; sync keeps it current | Runs the gates on staged files before each commit |
@@ -1177,7 +1177,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.claude/settings.json` | merged into yours (additive; your values win) | Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox |
 | `.env.example` | once; then yours | Copy to .env.local for local builds, and set the same names in the host's build environment. |
 | `.github/CODEOWNERS` | once; then yours | Code owners: GitHub asks them to review every pull request that touches a matching path. |
-| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; held until a release pins the reusable workflow to a real commit | An AI review of each pull request by DeepSeek, installed by /agent-fe-nextjs-static:setup when you answer deepseek-review=yes. |
+| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; sync keeps it current | An AI review of each pull request by DeepSeek, installed by /agent-fe-nextjs-static:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yaml` | with `ci-gate=yes`; sync keeps it current | The pull-request quality gate for this static site, installed by /agent-fe-nextjs-static:setup. |
 | `.github/workflows/react-doctor.yml` | with `react-doctor=yes`; sync keeps it current | React Doctor: security, performance, correctness, accessibility and architecture findings for the site's React code, as review comments on the changed lines, one summary comment and a commit status. |
 | `.husky/pre-commit` | always; sync keeps it current | Runs the gates on staged files before each commit |
@@ -1581,8 +1581,12 @@ flowchart LR
 job a person waits on (the quality gate, and the docs build) takes `CI_RUNNER_FAST` first; the
 rest (advisory checks, the AI review, everything after a merge) takes `CI_RUNNER`. Runners bill
 each job by the started minute, so a faster, paid runner only saves money above a minute: place a
-job by who waits for its result. Leave both unset and everything runs on `ubuntu-latest`; set
-`CI_RUNNER_FAST` alone to move only the gate. Every reusable workflow also takes a `runs-on`
+job by who waits for its result: the merge-blocking gate, the one job that must not die or stall,
+goes to the fast pool, and everything that can fail without blocking anyone spends the cheapest
+minutes. Leave both unset and everything runs on `ubuntu-latest`; set `CI_RUNNER_FAST` alone to
+move only the gate, for example to Blacksmith with `gh variable set CI_RUNNER_FAST --body
+blacksmith-2vcpu-ubuntu-2404`. On a private repository that spends two free pools: GitHub's 2,000
+minutes a month (Free plan) for the rest, and the provider's own (Blacksmith: 3,000) for the gate. Every reusable workflow also takes a `runs-on`
 input. The installed `.claude/CI-RUNNERS.example.md` has the combinations, a safe budget test and
 the escape hatches.
 
