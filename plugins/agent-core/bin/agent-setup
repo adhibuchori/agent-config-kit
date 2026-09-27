@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# agent-setup: the agent-config-kit setup engine (agent-core). Claude Code puts this plugin's bin/
+# on the Bash tool's PATH, so commands call it by bare name, passing the plugin's templates folder:
+#   agent-setup <subcommand> --templates "${CLAUDE_PLUGIN_ROOT}/templates" --stack <id> [--project DIR] ...
+# Run with no arguments for the full usage. Needs bash 3.2+ and python3 3.8+ (standard library only).
+# Exit codes: 0 ok or in sync, 1 drift, 4 double wiring, 5 both, 2 usage or I/O error, 3 refused.
+set -u
+# Resolve this file's real location through any symlinks (readlink -f is not portable).
+src="${BASH_SOURCE[0]}"
+# ${src%/*} stands in for dirname, so a PATH without coreutils still reaches the python3 check.
+case "$src" in */*) ;; *) src="./$src" ;; esac
+while [ -L "$src" ]; do
+  dir="$(cd -P "${src%/*}" && pwd)" || exit 2
+  src="$(readlink "$src")"
+  case "$src" in /*) ;; *) src="$dir/$src" ;; esac
+done
+root="$(cd -P "${src%/*}/.." && pwd)" || exit 2
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "agent-setup: python3 (3.8 or newer) is required and was not found on PATH" >&2
+  exit 2
+fi
+exec python3 -I "$root/libexec/agentkit.py" setup "$@"

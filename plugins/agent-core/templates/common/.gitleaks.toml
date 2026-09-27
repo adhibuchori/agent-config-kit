@@ -1,0 +1,26 @@
+# Gitleaks configuration, installed once by /agent-core:setup and yours from then on.
+#
+# The pre-commit gate (a `gitleaks` line in scripts/check/gates.list) and the reusable quality gate
+# in CI both read it. The default ruleset stays on; this file only narrows it where a generic rule
+# misfires. Keep every exception to one exact value or shape: a broad allowlist (a whole folder,
+# every Markdown file, a key-name pattern) turns the scanner into decoration. No path is exempt:
+# `.claude/` is where a filled-in DATABASE.md, OPERATIONS.md or MCP config would carry a pasted
+# credential.
+
+[extend]
+useDefault = true
+
+# scripts/check/hook-probes.sh hands the .env helpers fake secrets to prove they are masked. One is
+# shaped like a JWT: its payload is {"sub":"probe"} and its signature the literal
+# "probeSignatureValue9", so no service would accept it. The value is matched whole, not the file:
+# any other token of the same shape, in the same file, is still reported.
+[[allowlists]]
+description = "Hook-probe JWT fixture"
+regexes = ['''^eyJhbGciOiJIUzI1NiJ9\.eyJzdWIiOiJwcm9iZSJ9\.probeSignatureValue9$''']
+
+# A quoted ${VARIABLE} is a reference the shell or Claude Code resolves (.mcp.json, workflow files),
+# never a value. Only that exact shape passes; a literal token next to it is still reported.
+[[allowlists]]
+description = "Environment variable references"
+regexTarget = "match"
+regexes = ['''['"]\$\{[A-Z_][A-Z0-9_]*\}['"]''']

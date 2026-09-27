@@ -1,0 +1,55 @@
+{
+  "stack": "common",
+  "conflictsWith": [],
+  "questions": [
+    {
+      "id": "language",
+      "ask": "Which languages does this repo's code use?",
+      "why": "Installs the no-any and dead-code rules for those languages (they load only while Claude edits such files), and for TypeScript the double-assertion check.",
+      "choices": ["typescript", "python", "both"],
+      "recommended": "typescript",
+      "detect": "package.json or tsconfig.json at the root means typescript; pyproject.toml means python; both files mean both",
+      "install": {
+        "typescript": [".claude/rules/typescript/*.md", "scripts/check/double-assertion.sh"],
+        "python": [".claude/rules/python/*.md"],
+        "both": [".claude/rules/typescript/*.md", ".claude/rules/python/*.md", "scripts/check/double-assertion.sh"]
+      }
+    },
+    {
+      "id": "sandbox",
+      "ask": "Turn on Claude Code's Bash sandbox for this repo?",
+      "why": "The operating system then stops every command Claude runs from reading real .env files or writing an unlock token, whatever the command line says; the hooks alone only read command text. Linux and WSL2 need bubblewrap and socat; where the sandbox cannot start, Claude Code warns and runs without it.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": ".claude/settings.json already has a sandbox key: yours is kept either way",
+      "settings": { "yes": { "/sandbox": true } }
+    },
+    {
+      "id": "mcp",
+      "ask": "Add the kit's .mcp.json (Serena, GitHub, Context7, and read-only dev and production database servers)?",
+      "why": "The servers the commands and hooks expect, each pinned to one release; secrets stay ${VARIABLE} references resolved from your shell. Claude Code asks before it starts a project server. Servers you need now and then (a deploy platform, a VPS provider, Cloudflare) come as .claude/mcp/*.example.json files you load for one session instead. An existing .mcp.json is kept either way.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": ".mcp.json exists: it is left alone; compare it with the template",
+      "install": { "yes": [".mcp.json"] }
+    },
+    {
+      "id": "team-plugins",
+      "ask": "Offer these plugins to teammates who open the repo?",
+      "why": "Adds the agent-config-kit marketplace and agent-core to .claude/settings.json (extraKnownMarketplaces, enabledPlugins), so Claude Code prompts each teammate to install them.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "a solo or private repo may not need it",
+      "settings": {
+        "yes": {
+          "/extraKnownMarketplaces/agent-config-kit": true,
+          "/enabledPlugins/agent-core@agent-config-kit": true
+        }
+      }
+    }
+  ],
+  "seed": [".mcp.json", ".gitleaks.toml", ".skillspector-baseline.yaml", ".claude/rules/common/working-agreements.md"],
+  "snippets": {},
+  "gitignore": [".claude/state/", ".claude/settings.local.json", ".claude/session-logs/"],
+  "packageScripts": { "unlock": "bash scripts/ops/unlock.sh" }
+}
