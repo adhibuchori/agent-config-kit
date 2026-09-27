@@ -14,6 +14,11 @@
 | Adding anything to better-auth's `hooks.after`, or reordering its `plugins` | better-auth-user-hook-runs-first.md |
 | Ending a session, or changing a column the session snapshot carries (`role`, `banned`, …) | session-rows-are-a-mirror-not-the-session.md |
 | Passing `jobId` to a queue, or chasing a job that was never processed | queue-job-id-cannot-contain-colon.md |
+| Revoking sessions or banning a user, or a "session expired" flow that bounces back | auth-cookie-cache-outlives-revocation.md |
+| Building an account-security flow on the auth client (unlink, list sessions, set a password) | better-auth-account-endpoints-are-gated.md |
+| Passkey registration or sign-in, cancellation handling, user verification | better-auth-passkey-quirks.md |
+| Passing a list option (paths, origins) to a Better Auth plugin | better-auth-list-option-replaces-defaults.md |
+| Cancelling or superseding a payment (or any remote resource) and acting on the result | gateway-cancel-result-is-not-the-state.md |
 
 ## When to add a new entry
 

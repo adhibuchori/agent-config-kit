@@ -114,3 +114,9 @@ mounts keeps `app.ts` readable top-to-bottom as "policy, then routes".
 `app.doc("/openapi.json", {...})` is called once, in `src/index.ts` (bootstrap), not in
 `app.ts` (composition) — the OpenAPI document metadata (title/version/description) is a
 bootstrap concern, not part of the request-handling composition.
+
+The spec and the reference UI (`/openapi.json`, `/docs`) need their own switch: an environment
+flag that production sets to off unless they are meant to be public. Do not assume a proxy or an
+access policy in front of them; check with an anonymous request after the deploy. The committed
+`openapi.json` is exported with `bun run spec:export`, and `check:openapi` fails when it is stale or
+describes no route.

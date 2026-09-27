@@ -191,3 +191,20 @@ sharing a scope. Never push directly to `dev` or `prod`.
 `<A behaviour of a dependency or the platform that looks like a bug in this repo's code: what it
 does, how it was proven, and the workaround in place. Once it has a root cause and a fix, move it to
 .claude/anti-patterns/ and leave a one-line pointer here.>`
+
+A known one to check on your versions: `z.infer` of a schema built with `z` from
+`@hono/zod-openapi`, and `c.req.valid(...)`, can resolve to `any` when the package's `zod` and the
+repo's own `zod` differ. Nothing fails; the types simply stop checking. Hover one before trusting it,
+and until the versions agree, declare the service's input types by hand.
+
+## Transactional email
+
+`<Fill in once the service sends mail.>` The shape that holds:
+
+- **One guarded send path**: every message goes through one function that checks the quota and logs
+  the recipient hashed, never the address or the body.
+- **Synchronous for mail a person is waiting on** (a sign-in code); queued for the rest. A job
+  carries the data to render, never rendered HTML, so a template fix reaches mail already queued.
+- **One locale resolver and typed message catalogues**, shared with the web copy.
+- **A refused send is not retried** when the quota counter moves before it compares: a retry would
+  spend the quota again.

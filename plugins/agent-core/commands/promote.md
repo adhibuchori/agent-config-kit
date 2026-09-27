@@ -169,7 +169,11 @@ turns a missing key into a quiet wrong address rather than a crash, so a key tha
 still a placeholder, or holding a development value counts as missing. The live values include
 every secret in clear, so they go to a file that is removed on exit, and only key names with a
 verdict reach the transcript. A repo without `.env.production.example` cannot be audited this way:
-write it first (every key, placeholder values only), or report the audit as not run.
+write it first (every key, placeholder values only), or report the audit as not run. The usual list: a one-time code never appears in the URL; a reset link opened in a fresh tab
+offers a new code; signing out and pressing Back lands on the sign-in page; pressing Pay twice raises
+one payment; a stopped backend shows an error, not a spinner; the flow works with the keyboard alone
+and with reduced motion on. After a change to third-party sign-in, start it on the deployed site:
+it must reach the provider's account chooser, not a redirect-URI error.
 
 ```bash
 live="$(mktemp)"
@@ -228,8 +232,10 @@ it must stay backward-compatible with the code still running.
 3. Hand the migration to the user. It runs as the database owner role, from their shell, with the
    production connection string they hold; the agent's database role has no DDL rights and must
    not get them. Ask them to type `! <migrate-command>` and wait for its output.
-4. Verify through `db-prod`, read-only: `<applied-migrations-query>` must match the number of
-   migration files on `prod`.
+4. Verify through `db-prod`, read-only: `<applied-migrations-query>` must show every migration file
+   on `prod` as applied. For a tool that records a count of applied files (drizzle) compare the
+   count; for one that records only the head revision (Alembic's `version_num`) compare that head
+   with the newest revision on `prod`, never a count.
 
 A repo that owns no schema depends on its backend's: before this deploy lands, confirm the backend's
 production migrations match its own `prod` branch, and promote the backend first if they do not.

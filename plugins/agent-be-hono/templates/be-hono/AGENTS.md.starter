@@ -421,6 +421,30 @@ inline there and in `.claude/rules/backend/hono.md`. Enforcement: `quality-gate.
 
 ---
 
+## §P. Payload Contract (where adopted)
+
+Only where setup answered `payload-encryption=yes` (a `payload.config.json` exists). The full
+contract and its threat model: `.claude/PAYLOAD-CONTRACT.md`; the short form loads from
+`.claude/rules/common/payload-contract.md`.
+
+**Rule 44 — Every body that crosses a service boundary is sealed**, unless its route is exempted
+in `payload.config.json` with a written reason. A half-policy is chosen by what the body needs
+(`response-only` for a multipart upload, `request-only` for an event stream), never by how
+sensitive it looks.
+
+**Rule 45 — No route path outside the registry.** Paths come from `src/lib/endpoints/endpoints.ts`, never a typed `/api/...`; `endpoints.generated.ts` is
+regenerated (`bun run generate:endpoints`), never edited.
+
+**Rule 46 — Encrypt at the transport only.** The payload middleware opens requests before any validator and seals responses; handlers and services see plaintext. It reads the body from `c.req.raw`, never `c.req.text()`. Nothing else imports `src/lib/payload/`.
+
+**Rule 47 — Keys are added, never repurposed**: one variable per hop, `<NAME>_NEXT` for rotation,
+never public, never printed or committed. Tests use placeholder bytes and the real cipher.
+
+**Rule 48 — The committed switch says `strict`.** Debug with `PAYLOAD_MODE=off` in your own
+shell; every service refuses `off` in production.
+
+---
+
 ## How to Add a New Module
 
 Copy `src/modules/<reference-module>/` — the reference module, built to the full shape (errors,

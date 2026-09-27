@@ -62,6 +62,12 @@ The Worker serves assets only. Flag a change that:
   open
 - adds a route or custom domain the change does not explain
 
+### 4b. Third-Party Content in MDX
+
+- An external `<script>` or `<iframe>` embed from a domain the site has not allowlisted (and the
+  CSP does not name).
+- A `javascript:` or `data:` URL in a link, an image or an embed.
+
 ### 5. Settings Protection
 
 Remind if any change touches:

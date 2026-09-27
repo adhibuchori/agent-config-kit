@@ -38,6 +38,11 @@ A static site (agent-fe-nextjs-static) has its own `/agent-fe-nextjs-static:revi
 accessibility and Core Web Vitals as well: use it there. Give the subagent the scope from Step 1 and
 ask for its findings with file, line, rule and fix.
 
+When the diff touches what a specialist owns and that specialist is installed, run it on the same
+scope: `agent-fe-nextjs:i18n-guard` for user-facing strings and message catalogues,
+`agent-fe-nextjs:seo-validator` for metadata, robots or share images, and
+`/agent-fe-nextjs:a11y-audit` for `.tsx` that renders UI. Merge their findings into one report.
+
 ## Step 3: Security first — block on these
 
 Run `agent-core:security-guard` over the same diff (or the stack's own security guard, such as
@@ -53,6 +58,19 @@ installed). Whatever the stack, block on:
 - A known advisory in the dependencies: run the package manager's audit on every review, not only
   when the lockfile changed, and report what it finds
 
+Run the cheap scans first and report what they print (with RTK installed, as `rtk proxy …`):
+
+```bash
+bash scripts/check/secrets.sh                      # gitleaks over the staged changes
+git diff --cached --name-only | grep -E '(^|/)\.env(\.|$)' | grep -v '\.example$'   # a real env file staged
+git diff --cached | grep -nE 'eval[[:space:]]*\(|new[[:space:]]+Function[[:space:]]*\(|dangerouslySetInnerHTML|innerHTML[[:space:]]*='
+git diff --cached | grep -niE "(api[_-]?key|secret|password|token|private[_-]?key)[\"']?[[:space:]]*[:=][[:space:]]*[\"'][^\"']{8,}"
+```
+
+Where the repo adopted the payload contract (`payload.config.json`), also: a new route missing
+from the registry, a typed route path, a `fetch` outside the transport, or a policy edited in the
+generated registry (`bun run check:endpoints` decides the last three).
+
 ## Step 4: Correctness and structure
 
 - An async call that is not awaited; a transaction boundary that splits one logical write
@@ -66,5 +84,8 @@ installed). Whatever the stack, block on:
 ## Step 5: Report
 
 Group findings as CRITICAL / HIGH / MEDIUM / LOW, each with file, line, the rule it breaks and the
-fix. CRITICAL blocks the merge; HIGH should be fixed before it. State clearly whether the change is
-approved, approved with warnings, or blocked. Name any step you could not run.
+fix. CRITICAL blocks the merge; HIGH should be fixed before it. approved, approved with warnings, or blocked. Name any step you could not run, and list the gates
+you ran with their result.
+
+Then offer the fixes: apply all, go one by one, or leave them. Apply nothing before the user
+chooses (`/agent-core:ship` applies them down to MEDIUM without asking).

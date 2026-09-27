@@ -30,6 +30,7 @@
 | ---------------------------------------------------------------------------- | -------------------------------------- |
 | A Tailwind utility with no effect against a hand-written rule                | unlayered-css-beats-tailwind-layers.md |
 | Smooth scroll to an anchor that does nothing, or snaps back while content loads | smooth-scroll-races-layout-shift.md |
+| A glass surface whose blur does nothing, or a hand-written `-webkit-` property | lightningcss-keeps-only-the-prefixed-backdrop-filter.md |
 
 ## When to add a new entry
 
