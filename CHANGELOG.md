@@ -10,6 +10,129 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+### agent-core 1.0.2
+
+#### Fixed
+
+- safety-check now sees through RTK, an optional output-trimming CLI proxy: `rtk <command>` and
+  `rtk proxy <command>` (also `rtk err`, `test` and `summary`) are judged as the command they run,
+  and RTK's file readers (`read`, `smart`, `json`, `log`) as `cat`. Before, `rtk git push --force
+  origin main`, `rtk proxy git push origin main`, `rtk git reset --hard HEAD~3` and
+  `rtk git commit --no-verify` were let through. 37 new probe rows (29 block, 8 pass) prove the
+  rule both ways. Every plugin's `scripts/lib.sh` carries the fix.
+- The commands and agents that decide from `git`, `grep` or `gh` output (`review`, `commit`,
+  `create-pr`, `resolve-pr-review`, `ship`, `promote`, `checkpoint`, `branch-cleanup`, `reviewer`,
+  `security-guard`) say to run them as `rtk proxy <command>` where RTK is installed: its rewrite
+  condenses a diff and prints a line for an empty one, so a review or an "is it empty" check could
+  read the wrong thing.
+
+#### Added
+
+- `scripts/check/secrets.sh`: the staged secret scan as a script (`gitleaks git --staged` with the
+  repo's `.gitleaks.toml`). It fails, never skips, when gitleaks or the config is missing, and warns
+  but still scans when gitleaks is not the release CI pins. The stack plugins' `gates.list` run it.
+
+#### Changed
+
+- The working agreements add the reuse ladder: this codebase, the standard library, the
+  framework's built-ins, a dependency already installed, and only then a new dependency or new
+  code. The output-wrapper agreement and `OPERATIONS.example.md` name `rtk proxy <command>`.
+
+### agent-ai-fastapi 1.0.2
+
+#### Fixed
+
+- The secret scan in `gates.list` ran `gitleaks git` without `--staged`, which reads committed
+  history and never the staged changes. It now runs `scripts/check/secrets.sh`, as does
+  `.pre-commit-config.yaml`. A repo set up earlier keeps its own `gates.list`; change that line by
+  hand.
+- `scripts/lib.sh` sees through RTK (agent-core 1.0.2), and `ai-reviewer` reads the diff through
+  `rtk proxy` where RTK is installed.
+
+#### Changed
+
+- Rule 2 of the `AGENTS.md` starter carries the reuse ladder.
+
+### agent-be-hono 1.0.2
+
+#### Added
+
+- `scripts/check/ci-env.sh` runs a command with CI's test variables and nothing else: the
+  env file the CI caller passes to the reusable gate (`.env.ci.example` by default), or a
+  workflow's own `env:` blocks, plus `CI=true` and `BUN_OPTIONS=--no-env-file`, so neither a
+  shell-exported variable nor a `.env`/`.env.test` file reaches the tests. It fails when that
+  source is missing. `gates.list` runs the unit tests through it, and setup seeds
+  `.env.ci.example`. A repo set up earlier keeps its own `gates.list`: to adopt it, change the
+  `bun run test:coverage` line to `bash scripts/check/ci-env.sh bun run test:coverage` and commit a
+  `.env.ci.example`.
+
+#### Fixed
+
+- `gates.list` runs `scripts/check/secrets.sh` for the staged secret scan (agent-core 1.0.2).
+- `scripts/lib.sh` sees through RTK (agent-core 1.0.2), and `reviewer` reads the diff through
+  `rtk proxy` where RTK is installed.
+
+#### Changed
+
+- Rule 2 of the `AGENTS.md` starter carries the reuse ladder, and the testing rule runs coverage
+  through `ci-env.sh`.
+
+### agent-docs-nextra 1.0.2
+
+#### Added
+
+- `gates.list` runs `scripts/check/secrets.sh` on every commit: a docs repo had no staged secret
+  scan before. A repo set up earlier keeps its own `gates.list`; add the line by hand.
+
+#### Fixed
+
+- `scripts/lib.sh` sees through RTK (agent-core 1.0.2), and `security-guard` and `seo-validator`
+  run their read commands through `rtk proxy` where RTK is installed.
+
+### agent-fe-nextjs 1.0.2
+
+#### Fixed
+
+- `scripts/lib.sh` sees through RTK (agent-core 1.0.2). `reviewer`, `i18n-guard`, `seo-validator`
+  and the `react-doctor` triage read git output through `rtk proxy` where RTK is installed.
+- `gates.list` runs `scripts/check/secrets.sh` for the staged secret scan (agent-core 1.0.2).
+
+#### Changed
+
+- Rule 2 of the `AGENTS.md` starter carries the reuse ladder.
+- The README lists the skills to install by reference, impeccable and ui-animation (MIT), with
+  their install command, license and pin; nothing of them is vendored. `PRODUCT.example.md` and
+  `DESIGN.example.md` link the renamed skills section of the template's `SETUP.md`.
+
+### agent-fe-nextjs-static 1.0.2
+
+#### Fixed
+
+- `review`, `launch-checklist`, `i18n-guard`, `security-guard` and `seo-validator` run git and
+  curl through `rtk proxy` where RTK is installed.
+- `gates.list` runs `scripts/check/secrets.sh` for the staged secret scan (agent-core 1.0.2).
+
+#### Changed
+
+- Rule 2 of the `AGENTS.md` starter carries the reuse ladder.
+- The README recommends the ui-animation skill (MIT) by reference, with its install command,
+  license and pin; nothing of it is vendored.
+
+### agent-deploy 1.0.1
+
+#### Fixed
+
+- `promote-deploy` runs the check-run annotation read, the open-items `grep` and the migrations
+  diff through `rtk proxy` where RTK is installed, so an empty list stays empty.
+
+### agent-fe-threejs 1.0.1
+
+#### Changed
+
+- `docs/3d-skills.md` names a vetted pack, the Three.js Claude Skill Package (MIT), with an install
+  pinned to its `v1.1.1` release, and corrects the pinning advice: `skills@1.7.0` checks out a tag
+  or a branch, never a bare commit.
+
 ### agent-core 1.0.1
 
 #### Fixed

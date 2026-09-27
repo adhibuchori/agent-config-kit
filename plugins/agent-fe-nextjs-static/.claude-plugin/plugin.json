@@ -1,7 +1,7 @@
 {
   "name": "agent-fe-nextjs-static",
   "displayName": "Agent for static Next.js sites",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "For company-profile, landing and marketing sites built with Next.js, in static-export or SSG-with-form-endpoints mode; use it instead of agent-fe-nextjs, on top of agent-core. No hooks of its own: agent-core's guards apply. Commands: setup and sync install and verify the static-site rules (SEO, static export, security headers for static hosting, performance budgets, forms on static hosting, analytics consent) and checks (sitemap and robots, per-route metadata, OG image, JSON-LD, broken links, image and font budgets, static-export verifier) plus a pull-request-only CI caller; a11y-audit runs axe-core or pa11y-ci against the built pages; seo-audit, launch-checklist and review. Agents: seo-validator, security-guard and i18n-guard.",
   "author": {
     "name": "Mochammad Adhi Buchori",
