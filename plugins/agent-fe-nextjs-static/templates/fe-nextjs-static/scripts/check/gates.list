@@ -1,0 +1,19 @@
+# This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .husky/pre-commit.
+# <kinds><TAB><command>. Kinds pick the gates a commit needs from what it stages; see gates.sh.
+# /agent-fe-nextjs-static:setup wrote this list and added the package scripts it names to
+# package.json (a script you already had was kept as it was). A missing script fails its gate.
+#
+# These read the source and run in seconds. The checks that read the built site run after
+# `next build` instead, in CI and by hand: node scripts/check/site-audit.mjs (sitemap, robots,
+# metadata, share images, JSON-LD, links, images, fonts, bundle size, headers), then the browser
+# checks npm run check:a11y and npm run check:lighthouse.
+all	@format
+all	gitleaks git --staged --no-banner --redact --config .gitleaks.toml
+code	npm run --silent type-check
+code	npm run --silent check:dead-code
+code	bash scripts/check/double-assertion.sh
+code	node scripts/check/static-export.mjs
+code	node scripts/check/image-budget.mjs --source-only
+code	node scripts/check/font-budget.mjs --source
+all	bash scripts/check/ai-config.sh
+commands,hooks	bash scripts/check/skills.sh --staged

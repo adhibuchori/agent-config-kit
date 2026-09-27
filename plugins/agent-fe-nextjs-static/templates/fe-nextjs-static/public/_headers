@@ -1,0 +1,19 @@
+# Response headers for every page, in the _headers format several static hosts read: a path
+# pattern line, then indented "Name: value" lines. Installed by /agent-fe-nextjs-static:setup and
+# yours to edit; node scripts/check/security-headers.mjs checks it, and
+# .claude/rules/web/security.md explains each line. If your host reads headers from another file,
+# move these there and point headersFile in scripts/check/site.config.json at it.
+#
+# script-src allows 'unsafe-inline' because every Next.js page carries inline scripts whose content
+# changes with each build; the check warns while it is there. To tighten it, see
+# .claude/anti-patterns/hash-csp-goes-stale-on-every-build.md.
+# A form that posts to another origin needs that origin in form-action or connect-src.
+# includeSubDomains covers every subdomain: remove it if any subdomain is still served over http.
+# After each deploy, compare with the live response: curl -sI https://<your origin>/
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Strict-Transport-Security: max-age=63072000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Cross-Origin-Opener-Policy: same-origin

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npm run check:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run format:*)",
+      "Bash(npm run fl:*)",
+      "Bash(pnpm run check:*)",
+      "Bash(pnpm run lint:*)",
+      "Bash(pnpm run type-check:*)",
+      "Bash(pnpm run format:*)",
+      "Bash(pnpm run fl:*)",
+      "Bash(bun run check:*)",
+      "Bash(bun run lint:*)",
+      "Bash(bun run type-check:*)",
+      "Bash(bun run format:*)",
+      "Bash(bun run fl:*)",
+      "Bash(node scripts/check/static-export.mjs:*)",
+      "Bash(node scripts/check/site-audit.mjs:*)",
+      "Bash(node scripts/check/sitemap-robots.mjs:*)",
+      "Bash(node scripts/check/metadata.mjs:*)",
+      "Bash(node scripts/check/og-image.mjs:*)",
+      "Bash(node scripts/check/jsonld.mjs:*)",
+      "Bash(node scripts/check/broken-links.mjs:*)",
+      "Bash(node scripts/check/image-budget.mjs:*)",
+      "Bash(node scripts/check/font-budget.mjs:*)",
+      "Bash(node scripts/check/bundle-budget.mjs:*)",
+      "Bash(node scripts/check/security-headers.mjs:*)",
+      "Bash(node scripts/check/a11y.mjs:*)"
+    ],
+    "ask": [
+      "Edit(public/_headers)",
+      "Edit(scripts/check/site.config.json)",
+      "Edit(lighthouserc.json)"
+    ],
+    "deny": [
+      "Edit(SSOT.md)",
+      "Edit(AGENTS.md)"
+    ]
+  }
+}

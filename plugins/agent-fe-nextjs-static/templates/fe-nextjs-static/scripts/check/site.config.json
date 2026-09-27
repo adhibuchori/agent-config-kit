@@ -1,0 +1,37 @@
+{
+  "//": "Settings for the static-site checks in scripts/check/ (installed by /agent-fe-nextjs-static:setup; this file is yours to edit). Every key is optional: the value shown is the default, and a key you leave out keeps it. Keys starting with // are notes.",
+
+  "//mode": "auto reads next.config: output: 'export' means export (pure static hosting), anything else ssg-with-endpoints (prerendered pages plus a few route handlers). Pin it when next.config computes the output.",
+  "mode": "auto",
+
+  "//siteUrl": "The production origin, such as https://www.example.com: canonical URLs, the sitemap, hreflang and share images are checked against it. Empty means the variable named by siteUrlEnv supplies it.",
+  "siteUrl": "",
+  "siteUrlEnv": "NEXT_PUBLIC_SITE_URL",
+  "basePath": "",
+
+  "//outDir": "Where the built pages are. Empty means out/ in export mode and .next/server/app in ssg-with-endpoints mode.",
+  "outDir": "",
+
+  "//endpoints": "ssg-with-endpoints only: the folders where route handlers, server actions and request-time APIs may live. Anything outside them must prerender.",
+  "endpoints": ["app/api/**", "src/app/api/**"],
+
+  "//sitemapExclude": "Page paths that are deliberately not in the sitemap (thank-you pages, drafts). Glob patterns over the URL path.",
+  "sitemapExclude": [],
+
+  "//headersFile": "The file your host reads response headers from: a _headers file, or an nginx config with add_header lines. Empty skips security-headers.mjs, loudly; then check the headers on the live URL.",
+  "headersFile": "public/_headers",
+
+  "description": { "minChars": 50, "maxChars": 160 },
+  "ogImage": { "minWidth": 1200, "minHeight": 630, "maxKB": 5000 },
+
+  "//images": "maxKB and maxWidthPx fail; modernFormatKB only warns (a PNG, JPEG or GIF above it should have an AVIF or WebP copy). unusedIgnore lists public/ paths whose URL is built at run time.",
+  "images": { "maxKB": 250, "maxWidthPx": 2560, "modernFormatKB": 100, "unusedIgnore": [] },
+
+  "fonts": { "maxFamilies": 2, "maxFiles": 6, "maxTotalKB": 300 },
+
+  "//bundle": "First-load JavaScript and CSS per page, gzipped. Run `node scripts/check/bundle-budget.mjs --report` on your first build to see what the framework costs, then set these to what you ship plus headroom.",
+  "bundle": { "maxJsKB": 250, "maxCssKB": 50 },
+
+  "//a11y": "a11y.mjs: the WCAG level (WCAG2A, WCAG2AA or WCAG2AAA) and page paths to leave out (glob patterns).",
+  "a11y": { "standard": "WCAG2AA", "exclude": [] }
+}

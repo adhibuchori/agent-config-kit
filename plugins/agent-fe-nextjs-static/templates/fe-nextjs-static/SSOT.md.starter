@@ -1,0 +1,70 @@
+# SSOT.md — <Site Name>
+
+> The single source of truth for this site's facts. Agents read it and propose changes; a person
+> edits it. Fill in each section; delete a section that does not apply rather than leaving
+> placeholders.
+
+---
+
+## 1. Purpose and audience
+
+- What the site is for, in one sentence: <…>
+- Who it is for, and what each audience should do next (the calls to action): <…>
+- Owner of content decisions: <name or role>
+
+## 2. Routes
+
+| Route | Purpose | Indexable | Languages | Notes |
+| --- | --- | --- | --- | --- |
+| `/` | Home | yes | <en> | |
+| `/about` | About the company | yes | <en> | |
+| `/contact` | Contact form | yes | <en> | form: §6 |
+| `/privacy` | Privacy notice | yes | <en> | linked from the footer and any consent banner |
+
+A page that is deliberately not indexable (a thank-you page) is listed here with "no" and in
+`sitemapExclude` in `scripts/check/site.config.json`.
+
+## 3. Content sources
+
+Where copy, images and structured content come from, and how a change reaches the site (all of it
+is read at build time): <files in `content/`, message catalogues, a CMS read at build time, …>
+
+## 4. Design system
+
+- Visual direction and why it fits the brand: <…>
+- Colours (tokens and their roles, light and dark if both): <…>
+- Type: at most two families, self-hosted through `next/font`: <heading family>, <body family>
+- Spacing scale, radius, shadow, motion (durations, easing, what respects reduced motion): <…>
+
+## 5. Hosting and headers
+
+- Mode: `<export | ssg-with-endpoints>`; host: <…>; production origin: <https://…>
+- Preview deployments: <where they live, and how they are kept out of search (the build-time
+  variable that switches robots to Disallow)>
+- The headers file the host reads: <`public/_headers` | other>; CSP: <'unsafe-inline' for now |
+  hashes generated in the deploy step>
+- Redirects from old URLs: <where they are configured>
+
+## 6. Forms and endpoints
+
+| Form | Endpoint (origin and path) | Where it runs | Spam protection | Where messages go |
+| --- | --- | --- | --- | --- |
+| Contact | <…> | <…> | honeypot + minimum time + <rate limit> | <…> |
+
+## 7. Analytics and consent
+
+- Tool(s) and why: <…>; loads only in production builds.
+- Consent: <needed or not, for which visitors, decided by whom>; banner: <…>
+- Origins to allow in the CSP: <…>
+
+## 8. SEO facts
+
+- Site name and title template: <"%s | Site Name">
+- Default description: <…>
+- Languages and `x-default`: <…>
+- Organization data for JSON-LD: name <…>, logo URL <…>, social profiles <…>
+
+## 9. Performance budgets
+
+The numbers the checks enforce live in `scripts/check/site.config.json` (`bundle`, `images`,
+`fonts`) and `lighthouserc.json`. Record here any budget you changed from the default, and why.

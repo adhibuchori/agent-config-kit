@@ -1,0 +1,98 @@
+# AGENTS.md — <Site Name>
+
+> The rules every agent follows in this repo, numbered so a review can cite them. The detail behind
+> each lives in the `.claude/rules/` file named next to it, which loads by itself while a matching
+> file is being edited. `SSOT.md` holds this site's facts; `CLAUDE.md` says how to work here.
+
+This is a static site: a company profile, landing or marketing site built with Next.js (App Router)
+and prerendered at build time. Its mode (`export` or `ssg-with-endpoints`) is in
+`scripts/check/site.config.json`.
+
+---
+
+## A. How to work
+
+**Rule 1** — Read before writing. Find the files a change touches and an existing pattern to
+follow; if the task is unclear, ask before editing.
+
+**Rule 2** — Smallest change that does the job. No abstraction, dependency or file the task did not
+ask for.
+
+**Rule 3** — Stay in scope. Leave files outside the task alone, even when they could be tidier.
+
+**Rule 4** — When an approach fails twice, stop and re-read; do not push through with workarounds.
+
+## B. Static by design
+
+**Rule 5** — Every page is prerendered at build time. No request-time API, `force-dynamic`, ISR or
+dynamic segment without `generateStaticParams`; in export mode, no proxy, no `headers()` in
+`next.config`, and no non-GET route handler (`.claude/rules/web/static-export.md`).
+
+**Rule 6** — Server Components by default; `'use client'` only on the leaf that needs state or an
+event handler.
+
+**Rule 7** — No app machinery: no client data cache, global store, generated API client or auth
+library unless `SSOT.md` records why (`.claude/rules/web/no-app-machinery.md`).
+
+**Rule 8** — A form posts to one endpoint that validates every field on the server and resists spam
+(`.claude/rules/web/forms-on-static-hosting.md`).
+
+## C. Search and sharing
+
+**Rule 9** — Every indexable page has its own title and description, an absolute self-canonical on
+the production origin, and a share image (`.claude/rules/web/seo.md`).
+
+**Rule 10** — JSON-LD describes only what the page shows, and renders as a script child with `<`
+escaped, never through `dangerouslySetInnerHTML`.
+
+**Rule 11** — A preview or staging build is never indexable, and the production build always is.
+
+## D. Performance
+
+**Rule 12** — The largest element in the first view is HTML text or an image, never a canvas or a
+video that must load first (`.claude/rules/web/heavy-hero.md`).
+
+**Rule 13** — Images go through `next/image` with dimensions; the hero gets `priority`; files in
+`public/` are sized for the largest box they fill (`.claude/rules/web/performance.md`).
+
+**Rule 14** — At most two font families, self-hosted through `next/font`.
+
+**Rule 15** — Third-party scripts load through `next/script`, after consent where they track, from
+origins listed in the CSP (`.claude/rules/web/analytics-consent.md`).
+
+## E. Accessibility
+
+**Rule 16** — Semantic landmarks (`header`, `nav`, `main`, `footer`), one `h1` per page, and heading
+levels in order.
+
+**Rule 17** — Every interactive element is reachable and usable by keyboard, has an accessible name,
+and shows a visible focus style. Images have meaningful `alt`, or `alt=""` when decorative.
+
+**Rule 18** — Text contrast is at least 4.5:1 (3:1 for large text and UI parts), and motion respects
+`prefers-reduced-motion`.
+
+## F. Security
+
+**Rule 19** — Security headers live in the host's config (`public/_headers` by default), never only
+in `next.config` (`.claude/rules/web/security.md`).
+
+**Rule 20** — No `dangerouslySetInnerHTML`; a URL from content is limited to `https:`, `http:`,
+`mailto:` and `tel:`.
+
+**Rule 21** — `NEXT_PUBLIC_` carries only public values; everything in the build output is public.
+
+## G. Code quality
+
+**Rule 22** — No explicit `any` and no double assertion through `unknown`
+(`.claude/rules/typescript/types.md`).
+
+**Rule 23** — No `oxlint-disable` comment to pass a gate: fix the cause, or change the rule in
+`oxlint.json` with a reason in the pull request.
+
+**Rule 24** — No budget in `scripts/check/site.config.json` or `lighthouserc.json` is raised to make
+a check pass without the user agreeing to the new number.
+
+## H. Done means
+
+**Rule 25** — `bash scripts/check/gates.sh` passes. After a change to pages, content, images, fonts
+or headers, `next build` and then `node scripts/check/site-audit.mjs` pass as well.

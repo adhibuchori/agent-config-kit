@@ -1,0 +1,25 @@
+# The pull-request quality gate for this static site, installed by /agent-fe-nextjs-static:setup.
+# The checks live in agent-config-kit's reusable fe-nextjs-static-quality-gate workflow, pinned below
+# to one commit: the source gates, `next build`, then the checks that read the built site.
+# /agent-fe-nextjs-static:sync brings a new pin when a plugin release moves it.
+
+name: Quality Gate
+
+on:
+  pull_request:
+    # The branches agent-core's guards protect by default: work reaches them only by pull request.
+    branches: [dev, prod, main, master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Quality Gate
+    permissions:
+      contents: read
+    uses: adhibuchori/agent-config-kit/.github/workflows/fe-nextjs-static-quality-gate.yml@0000000000000000000000000000000000000000 # v1.0.0

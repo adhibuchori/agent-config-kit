@@ -1,0 +1,78 @@
+# <Site Name> — Claude Code Config
+
+> A static site. Rules: `AGENTS.md`. Facts about this site: `SSOT.md`. The rules in
+> `.claude/rules/` load by themselves while a matching file is in play.
+
+---
+
+## Project Snapshot
+
+Next.js (App Router) + React, prerendered at build time. Mode: `<export | ssg-with-endpoints>`
+(`scripts/check/site.config.json`). Production origin: `<https://www.example.com>`.
+Dev: `npm run dev` · Build: `npm run build` · Serve the build: `npm run serve:build`
+
+---
+
+## Context Loading Strategy
+
+| Task | Read |
+| --- | --- |
+| A new page or section | `SSOT.md` §2 (routes) + §4 (design) + `AGENTS.md` §B, §C |
+| Metadata, sitemap, robots, share images, JSON-LD | `SSOT.md` §8 + `.claude/rules/web/seo.md` |
+| Headers, CSP, third-party scripts | `SSOT.md` §5, §7 + `.claude/rules/web/security.md` |
+| A form | `SSOT.md` §6 + `.claude/rules/web/forms-on-static-hosting.md` |
+| Images, fonts, animation, a heavy hero | `SSOT.md` §9 + `.claude/rules/web/performance.md` |
+| Translations | `.claude/rules/web/i18n.md` (when the site has more than one language) |
+| Anything that looks like a known trap | `.claude/anti-patterns/INDEX.md` |
+
+---
+
+## Quality Gates
+
+Before calling a task done, run `bash scripts/check/gates.sh`: the source gates `.husky/pre-commit`
+runs too (format and lint, secrets, types, dead code, static-export, image and font budgets).
+
+After a change to pages, content, images, fonts or headers, build and check the result:
+
+```bash
+npm run build
+node scripts/check/site-audit.mjs   # sitemap, robots, metadata, share images, JSON-LD, links, budgets, headers
+npm run check:a11y                  # a real browser: pa11y-ci or axe, when installed
+npm run check:lighthouse            # Core Web Vitals budgets, when lighthouserc.json is installed
+```
+
+A check that fails is fixed, never silenced: no budget is raised and no rule disabled without the
+user agreeing (`AGENTS.md` § G).
+
+---
+
+## Protected Files
+
+```
+.env*                         ← list with scripts/env/show.sh; change only while unlocked (docs/unlock.md)
+AGENTS.md · SSOT.md           ← propose the change; the user makes it
+public/_headers               ← the security headers the host sends; edits need the user's approval
+scripts/check/site.config.json · lighthouserc.json ← budgets; edits need the user's approval
+.claude/settings.json         ← permissions and sandbox; the hooks come from the installed plugins
+.claude/agent-config-kit.lock ← written by setup and sync; its presence turns the plugins' hooks on
+```
+
+---
+
+## Commit Format
+
+```
+type(scope): subject
+```
+
+Types: `feat` · `fix` · `refactor` · `chore` · `docs` · `style` · `perf` · `test`.
+
+---
+
+## On-demand References
+
+| Read when | File |
+| --- | --- |
+| Known traps, before debugging | `.claude/anti-patterns/INDEX.md` |
+| What the `.env*` and database locks stop, and how the user opens them | `docs/unlock.md` |
+| Every check's options and exit codes | the header of each file in `scripts/check/` |

@@ -1,0 +1,70 @@
+{
+  "stack": "fe-nextjs-static",
+  "conflictsWith": ["agent-ai-fastapi", "agent-be-hono", "agent-docs-nextra", "agent-fe-nextjs"],
+  "questions": [
+    {
+      "id": "i18n",
+      "ask": "Does the site ship more than one language (next-intl)?",
+      "why": "Yes installs the languages rule (static locale routing without middleware, hreflang, catalogue parity) and .claude/agent-config.json with localePairs, so post-edit tells the agent when one catalogue changed and its partner did not. A one-language site does not need them; the metadata check still verifies any hreflang set it finds.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "package.json depends on next-intl, or messages/*.json or src/messages/*.json holds two or more catalogues, or app/[locale]/ exists",
+      "install": { "yes": [".claude/rules/web/i18n.md", ".claude/agent-config.json"] }
+    },
+    {
+      "id": "headers",
+      "ask": "Will the host read the site's response headers from a _headers file in public/?",
+      "why": "Yes installs public/_headers with the security headers a static site needs (CSP, HSTS, nosniff, Referrer-Policy, framing, Permissions-Policy), which security-headers.mjs checks. No leaves it out: put the same headers in the file your host reads (an nginx config works too) and point headersFile in scripts/check/site.config.json at it, or empty headersFile to skip the check.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "public/_headers exists (it is kept either way); an nginx config in the repo, or a host config file that sets headers, means no",
+      "install": { "yes": ["public/_headers"] }
+    },
+    {
+      "id": "lighthouse",
+      "ask": "Hold the pages to Core Web Vitals budgets with Lighthouse CI (lighthouserc.json)?",
+      "why": "Installs lighthouserc.json: LCP 2.5 s, CLS 0.1, Total Blocking Time 200 ms and category scores, measured in a real browser against the built site, reports kept on disk. It needs @lhci/cli as a dev dependency and Chrome; without the file, check:lighthouse prints a skip line and passes.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "lighthouserc.* or .lighthouserc.* already exists (kept either way), or @lhci/cli is in package.json",
+      "install": { "yes": ["lighthouserc.json"] }
+    },
+    {
+      "id": "ci-gate",
+      "ask": "Add the pull-request quality gate workflow (.github/workflows/quality-gate.yaml)?",
+      "why": "It calls agent-config-kit's reusable fe-nextjs-static quality gate, pinned to one commit, on pull requests only: the source gates, next build, then the checks that read the built site. A repo that runs its own CI answers no.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": ".github/workflows/ already holds a workflow that builds the site",
+      "install": { "yes": [".github/workflows/quality-gate.yaml"] }
+    }
+  ],
+  "seed": [
+    ".claude/agent-config.json",
+    ".claude/anti-patterns/INDEX.md",
+    ".env.example",
+    ".oxfmtrc.json",
+    "knip.json",
+    "lighthouserc.json",
+    "oxlint.json",
+    "public/_headers",
+    "scripts/check/gates.list",
+    "scripts/check/site.config.json"
+  ],
+  "snippets": {},
+  "gitignore": [".next/", "out/", "node_modules/", "*.tsbuildinfo", ".lighthouseci/"],
+  "packageScripts": {
+    "format": "oxfmt app src components lib content scripts",
+    "format:check": "oxfmt --check app src components lib content scripts",
+    "lint": "oxlint -c oxlint.json",
+    "fl:ci": "oxfmt --check app src components lib content scripts && oxlint -c oxlint.json",
+    "type-check": "tsc --noEmit",
+    "check:dead-code": "knip",
+    "check:static": "node scripts/check/static-export.mjs",
+    "check:site": "node scripts/check/site-audit.mjs",
+    "check:bundle": "node scripts/check/bundle-budget.mjs --report",
+    "check:a11y": "node scripts/check/a11y.mjs",
+    "check:lighthouse": "if [ -f lighthouserc.json ]; then lhci autorun; else echo 'check:lighthouse skipped: setup did not install lighthouserc.json'; fi",
+    "serve:build": "node scripts/check/serve.mjs"
+  }
+}
