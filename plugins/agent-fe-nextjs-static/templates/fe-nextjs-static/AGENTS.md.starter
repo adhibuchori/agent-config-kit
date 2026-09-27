@@ -16,7 +16,9 @@ and prerendered at build time. Its mode (`export` or `ssg-with-endpoints`) is in
 follow; if the task is unclear, ask before editing.
 
 **Rule 2** — Smallest change that does the job. No abstraction, dependency or file the task did not
-ask for.
+ask for. Reuse before writing, in this order: this codebase, the standard library (JavaScript and
+Web APIs), the built-ins of Next.js and the HTML platform, a dependency already in `package.json`;
+only then add a dependency or new code.
 
 **Rule 3** — Stay in scope. Leave files outside the task alone, even when they could be tidier.
 
