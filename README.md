@@ -1382,7 +1382,7 @@ jobs:
   through. So each guard refuses what it cannot check (bad input, missing python3, a hang), and
   each feedback hook stays silent on failure.
 - **Every rule is proven both ways.** 845 probe rows say what safety-check must block (569) and let
-  through (276); the kit's own probe harness runs 2,285 probes against the plugin's scripts; 1,531
+  through (276); the kit's own probe harness runs 2,288 probes against the plugin's scripts; 1,532
   bats tests cover the hooks, the setup engine, the stack checks and the CI scripts, on macOS
   (bash 3.2) and Ubuntu. Audit them: [tests/hooks/](tests/hooks/safety-probes.bats),
   [tests/setup/](tests/setup/check.bats).
