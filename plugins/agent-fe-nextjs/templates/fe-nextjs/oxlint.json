@@ -1,0 +1,134 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "react", "jsx-a11y", "nextjs", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "react/jsx-key": "error",
+    "react/no-array-index-key": "warn",
+    "react/self-closing-comp": "warn",
+    "react/no-danger": "error",
+    "react/jsx-boolean-value": "warn",
+    "react/display-name": "warn",
+    "react/react-in-jsx-scope": "off",
+    "typescript/no-explicit-any": "error",
+    "typescript/consistent-type-imports": "warn",
+    "typescript/ban-ts-comment": "warn",
+    "typescript/no-non-null-assertion": "warn",
+    "typescript/consistent-type-exports": "warn",
+    "jsx-a11y/alt-text": "error",
+    "jsx-a11y/anchor-has-content": "error",
+    "jsx-a11y/aria-props": "error",
+    "jsx-a11y/aria-role": "error",
+    "jsx-a11y/img-redundant-alt": "warn",
+    "jsx-a11y/interactive-supports-focus": "warn",
+    "jsx-a11y/label-has-associated-control": "error",
+    "jsx-a11y/no-autofocus": "warn",
+    "jsx-a11y/role-has-required-aria-props": "error",
+    "nextjs/no-img-element": "error",
+    "nextjs/no-html-link-for-pages": "error",
+    "unicorn/prefer-string-slice": "warn",
+    "unicorn/no-array-for-each": "warn",
+    "unicorn/prefer-logical-operator-over-ternary": "warn",
+    "no-console": "warn",
+    "import/no-cycle": "error",
+    "import/no-unassigned-import": "off",
+    "max-depth": ["error", 4],
+    "no-await-in-loop": "error",
+    "max-lines": ["error", { "max": 150, "skipBlankLines": true, "skipComments": true }]
+  },
+  "env": {
+    "builtin": true,
+    "browser": true,
+    "es2022": true
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    ".next/",
+    "src/lib/api/generated/",
+    ".agents/**",
+    ".claude/**",
+    ".serena/**",
+    ".vscode/**"
+  ],
+  "overrides": [
+    {
+      "files": ["src/components/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/lib/api/generated",
+                  "@/lib/api/generated/**",
+                  "**/lib/api/generated/**"
+                ],
+                "message": "Components must not name a server DTO. Take the view model from src/types/ and let the hook map it (AGENTS.md Rule 14)."
+              },
+              {
+                "group": ["@/store", "@/store/**", "**/store/**"],
+                "message": "Read the store through a named hook, however small the read (AGENTS.md Rule 6)."
+              },
+              {
+                "group": ["@/lib/api/client/**", "**/lib/api/client/**"],
+                "message": "A transport belongs behind a service hook in src/hooks/api/ (AGENTS.md §D)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/lib/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/components/**", "@/hooks/**", "**/components/**", "**/hooks/**"],
+                "message": "src/lib/ is the bottom layer: pure functions, no imports from UI or hooks (SSOT.md §4.1)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/hooks/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/components/**", "**/components/**"],
+                "message": "A hook never imports a component (AGENTS.md Rule 7)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/testing/**"],
+      "rules": {
+        "no-await-in-loop": "off"
+      }
+    },
+    {
+      "files": ["scripts/**", ".github/scripts/**"],
+      "rules": {
+        "no-console": "off",
+        "max-lines": "off",
+        "no-underscore-dangle": "off",
+        "unicorn/no-array-sort": "off",
+        "max-depth": "off"
+      }
+    }
+  ]
+}

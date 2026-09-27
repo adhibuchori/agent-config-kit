@@ -1,0 +1,30 @@
+# This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .husky/pre-commit.
+# <kinds><TAB><command>. Kinds pick the gates a commit needs from what it stages; see gates.sh.
+# /agent-fe-nextjs:setup wrote this list and added the package scripts it names to package.json
+# (a script you already had was kept as it was). A missing script fails its gate.
+# The hooks themselves come from the agent-config-kit plugins, which test them; this repo has no
+# .claude/hooks/ for hook-probes.sh to read, so the list does not run it.
+all	@format
+all	gitleaks git --staged --no-banner --redact --config .gitleaks.toml
+code	bun run type-check
+code	bun run check:dead-code
+code	bash scripts/check/double-assertion.sh
+code	node scripts/check/folder-shape.mjs
+code	node scripts/check/coverage-policy.mjs
+code	bun run test:coverage
+code	bun run check:hooks
+code	bun run check:reexport
+code	bun run check:soc
+code	bun run check:tailwind
+code	bun run check:error-codes
+code	bun run check:error-catch
+code	bun run .github/scripts/check-comment-style.ts
+code	bash .github/scripts/check-comment-blocks.sh
+# Optional modules, one setup question each. When setup did not install a module's check, its
+# package script prints a skip line and passes; delete the line here if you never want it.
+code	bun run check:i18n
+code	bun run check:dialog-desc
+code	bun run check:responsive
+code	bun run check:skeleton-switch
+all	bash scripts/check/ai-config.sh
+commands,hooks	bash scripts/check/skills.sh --staged

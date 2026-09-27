@@ -1,0 +1,143 @@
+{
+  "stack": "fe-nextjs",
+  "conflictsWith": ["agent-ai-fastapi", "agent-be-hono", "agent-docs-nextra", "agent-fe-nextjs-static"],
+  "questions": [
+    {
+      "id": "i18n",
+      "ask": "Does this app ship more than one language through next-intl?",
+      "why": "Yes installs the translation checks (key parity between catalogues, casing) and .claude/agent-config.json with localePairs, so post-edit tells the agent when one catalogue changed and its partner did not. A single-language app does not need them; check:i18n then prints a skip line and passes.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "package.json depends on next-intl, or src/messages/*.json holds two or more catalogues",
+      "install": {
+        "yes": ["scripts/check/i18n.ts", "scripts/check/i18n-casing.ts", ".claude/agent-config.json"]
+      }
+    },
+    {
+      "id": "dialogs",
+      "ask": "Does the app use dialogs (a Radix or shadcn Dialog, or a native <dialog>)?",
+      "why": "Yes installs the dialog-content rule, its standard and check:dialog-desc, which fails when a dialog has no announced description. Without dialogs the check has nothing to read; it then prints a skip line and passes.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "package.json depends on @radix-ui/react-dialog, a components/ui/dialog.tsx exists, or a .tsx file renders <dialog",
+      "install": {
+        "yes": [
+          ".claude/rules/web/dialog-content.md",
+          ".claude/docs/standards/dialog-content.md",
+          "scripts/check/dialog-desc.ts"
+        ]
+      }
+    },
+    {
+      "id": "responsive",
+      "ask": "Adopt the responsive-layout module: named breakpoints and fluid widths, checked by check:responsive?",
+      "why": "It fails a pixel breakpoint, a class with no consumer, and a fixed width with no fluid guard, which is how a screen breaks at a width nobody opened. It reads src/styles/globals.css and the class prefixes listed at the top of scripts/check/responsive.ts, so a repo without that stylesheet answers no.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "src/styles/globals.css or src/app/globals.css exists",
+      "install": {
+        "yes": [
+          ".claude/rules/web/responsive.md",
+          ".claude/docs/standards/responsive.md",
+          "scripts/check/responsive.ts",
+          "scripts/lib/stylesheets.ts"
+        ]
+      }
+    },
+    {
+      "id": "skeletons",
+      "ask": "Does the app draw loading skeletons that must match the screen they stand in for?",
+      "why": "Yes installs the skeleton rule, its standard and check:skeleton-switch, which fails when the preview switch that shows a skeleton on purpose is left on. The agent-fe-nextjs:skeleton skill works from those files. An app without skeletons answers no.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "files named *-skeleton.tsx or loading.tsx exist under src/",
+      "install": {
+        "yes": [
+          ".claude/rules/web/skeletons.md",
+          ".claude/docs/standards/skeletons.md",
+          "scripts/check/skeleton-switch.sh"
+        ]
+      }
+    },
+    {
+      "id": "react-doctor-ci",
+      "ask": "Run React Doctor on pull requests (advisory review comments and a commit status; it never fails the check)?",
+      "why": "Installs .github/workflows/react-doctor.yml, which runs the vendor's action pinned to one commit, with write access to pull-request comments and statuses. The action runs the CLI with its own defaults, which report diagnostics to the vendor's score service; the local react-doctor skill passes --no-score instead. Answer yes only if that is acceptable for this repo.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": ".github/workflows/react-doctor.yml already exists, or the user has asked for React Doctor in CI",
+      "install": { "yes": [".github/workflows/react-doctor.yml"] }
+    },
+    {
+      "id": "design-docs",
+      "ask": "Will you use the impeccable design skill (installed separately, by reference) and want its PRODUCT.md and DESIGN.md templates?",
+      "why": "Adds PRODUCT.example.md and DESIGN.example.md at the repo root, the product and visual-system files that skill reads. They are templates to fill in and rename; without the skill they are clutter.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "skills-lock.json or .claude/skills/ names impeccable, or PRODUCT.md or DESIGN.md exists",
+      "install": { "yes": ["PRODUCT.example.md", "DESIGN.example.md"] }
+    }
+  ],
+  "seed": [
+    "*.example.md",
+    ".claude/*.example.md",
+    ".claude/agent-config.json",
+    ".claude/anti-patterns/INDEX.md",
+    ".claude/docs/pre-promote-audit.md",
+    ".claude/serena-errors.md",
+    ".dockerignore",
+    ".env.*.example",
+    ".github/CODEOWNERS",
+    ".github/PULL_REQUEST_TEMPLATE/*.md",
+    ".oxfmtrc.json",
+    ".oxlintignore",
+    "doctor.config.json",
+    "knip.ts",
+    "oxlint.json",
+    "scripts/check/gates.list",
+    "scripts/check/soc.allow.json"
+  ],
+  "snippets": {
+    "tsconfig.json": "snippets/tsconfig.scripts.jsonc",
+    "vitest.config.ts": "snippets/vitest.coverage.ts"
+  },
+  "gitignore": [
+    "*.tsbuildinfo",
+    ".env",
+    ".env.*.local",
+    ".env.development",
+    ".env.local",
+    ".env.production",
+    ".env.test",
+    ".envrc",
+    ".next/",
+    ".serena/",
+    "coverage/",
+    "next-env.d.ts",
+    "node_modules/"
+  ],
+  "packageScripts": {
+    "format": "oxfmt src scripts .github/scripts",
+    "format:check": "oxfmt --check src scripts .github/scripts",
+    "lint": "oxlint -c oxlint.json --ignore-path=.oxlintignore",
+    "fl": "bun run format && bun run lint",
+    "fl:ci": "bun run format:check && oxlint -c oxlint.json --ignore-path=.oxlintignore",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "env:init": "bun run scripts/next/env.ts init",
+    "env:check": "bun run scripts/next/env.ts check development",
+    "check:dead-code": "knip",
+    "check:hooks": "bun run scripts/check/hooks.ts",
+    "check:reexport": "bun run scripts/check/no-reexport.ts",
+    "check:soc": "bun run scripts/check/soc.ts",
+    "check:tailwind": "bun run scripts/check/tailwind-classes.ts",
+    "check:error-codes": "bun run scripts/check/error-codes.ts",
+    "check:error-catch": "bun run scripts/check/error-catch.ts",
+    "check:i18n": "if [ -f scripts/check/i18n.ts ]; then bun run scripts/check/i18n.ts && bun run scripts/check/i18n-casing.ts; else echo 'check:i18n skipped: setup did not install the i18n module'; fi",
+    "check:dialog-desc": "if [ -f scripts/check/dialog-desc.ts ]; then bun run scripts/check/dialog-desc.ts; else echo 'check:dialog-desc skipped: setup did not install the dialogs module'; fi",
+    "check:responsive": "if [ -f scripts/check/responsive.ts ]; then bun run scripts/check/responsive.ts; else echo 'check:responsive skipped: setup did not install the responsive module'; fi",
+    "check:skeleton-switch": "if [ -f scripts/check/skeleton-switch.sh ]; then bash scripts/check/skeleton-switch.sh; else echo 'check:skeleton-switch skipped: setup did not install the skeletons module'; fi",
+    "measure:waterfall": "bun run scripts/measure/waterfall.ts"
+  }
+}

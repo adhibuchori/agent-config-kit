@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(bun run test:*)",
+      "Bash(bun run type-check:*)",
+      "Bash(bun run lint:*)",
+      "Bash(bun run format:*)",
+      "Bash(bun run fl:*)",
+      "Bash(bun run check:*)",
+      "Bash(bun run env:check:*)",
+      "Bash(bun fl:*)",
+      "Bash(bun check:*)",
+      "Bash(bun generate:api:*)"
+    ],
+    "deny": [
+      "Edit(SSOT.md)",
+      "Edit(AGENTS.md)",
+      "Edit(PRODUCT.md)"
+    ]
+  }
+}

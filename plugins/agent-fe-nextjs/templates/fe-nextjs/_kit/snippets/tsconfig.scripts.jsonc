@@ -1,0 +1,6 @@
+// The checks under scripts/ run on Bun and use its globals. Either keep them out of the app's type
+// check by adding "scripts" to "exclude", or install @types/bun (bun add -d @types/bun) and add
+// "bun" to "compilerOptions.types", so `tsc --noEmit` type-checks the app rather than the tooling.
+{
+  "exclude": ["node_modules", "scripts"]
+}
