@@ -1,7 +1,7 @@
 {
   "name": "agent-ai-fastapi",
   "displayName": "Agent for FastAPI + LLM services",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Rules, a reviewer and checks for FastAPI services that call LLM providers, in Claude Code, on top of agent-core. Hook: migration-guard refuses hand edits to generated Alembic revisions (folders in .claude/agent-config.json; a repo without one is unaffected). Commands: setup and sync install and verify the backend and Python rules (types, coverage, dead code, providers), a pipeline example, the pre-commit config, quality-gate check scripts and a pull-request-only CI caller. Agent: ai-reviewer. No package.json needed: unlock runs as ./scripts/ops/unlock.sh. The hook runs on your machine, opens no network connection and stays silent until the project opts in.",
   "author": {
     "name": "Mochammad Adhi Buchori",

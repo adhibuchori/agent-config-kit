@@ -31,8 +31,8 @@ the Bash sandbox that setup can turn on instead.
 ## What it blocks
 
 The settings that shape it live in `.claude/agent-config.json`: `protectedBranches`,
-`protectedPaths` and `commandWrappers`. Every rule has probes that prove it both ways: 808 rows in
-`scripts/check/hook-probes.tsv` (540 must block, 268 must pass), run by
+`protectedPaths` and `commandWrappers`. Every rule has probes that prove it both ways: 845 rows in
+`scripts/check/hook-probes.tsv` (569 must block, 276 must pass), run by
 [tests/hooks/safety-probes.bats](../../tests/hooks/safety-probes.bats).
 
 | What | Why it is blocked | Do this instead |
@@ -53,6 +53,10 @@ The settings that shape it live in `.claude/agent-config.json`: `protectedBranch
 | Git settings that change what git runs or loads (`-c alias.*`, `core.sshCommand`, `core.fsmonitor`, a credential helper, `url.*.insteadOf`, a proxy) | They can run any program behind a harmless-looking git command | Plain settings (`user.*`, `color.*`) stay open; run the rest yourself with `!` |
 | `alembic downgrade`, where `alembic.ini` exists | It drops columns and the data in them | Write a new forward revision |
 | A command it cannot resolve: computed code in `eval`, a decoded payload run by a shell, `curl … \| bash`, a script name built at run time | Fail closed: an unread command is not a safe command | Run it yourself with `!` if it is meant |
+
+A wrapper does not hide the command it runs: `env`, `sudo`, `timeout`, `nice`, `xargs`, `bash -c`,
+the package runners and RTK are peeled first, so `rtk git push --force origin main` and
+`rtk proxy git reset --hard` are judged, and refused, as the plain commands.
 
 ### How to disable
 
@@ -95,7 +99,7 @@ No, and that is the point: no hook reads permission from the chat. Run the comma
 Partly. Without python3 only plain-text rules run: protected-branch pushes, recursive deletes of protected paths, a hard reset, forced `clean`, `--no-verify`, `HUSKY=0`, any real `.env*` name, the unlock script, `scripts/env/`, the files that turn the guards on and the guard scripts themselves. Install python3 3.8 or newer for the full analyzer.
 
 **A wrapper I use hides the real command (`dotenvx run -- …`).**
-Add it to `commandWrappers` in `.claude/agent-config.json`, for example `"dotenvx run -f= --env-file="`. The wrapper is then peeled off and the inner command is judged.
+Add it to `commandWrappers` in `.claude/agent-config.json`, for example `"dotenvx run -f= --env-file="`. The wrapper is then peeled off and the inner command is judged. The common ones need no entry: `env`, `sudo`, `timeout`, `nice`, `xargs`, `bash -c`, the package runners, and RTK (`rtk <command>`, `rtk proxy <command>`, whose file readers count as `cat`).
 
 **Is this a security boundary?**
 No. It reads command text, so a script Claude writes and then runs is executed, not read. It is a guardrail against slips and against instructions hidden in files. It does refuse every shell change it can read to the hooks themselves, since a guard Claude could rewrite would guard nothing; a change goes through the Edit tool, where you see the diff, or your own `!`. The Bash sandbox that setup can turn on is the layer the operating system enforces.

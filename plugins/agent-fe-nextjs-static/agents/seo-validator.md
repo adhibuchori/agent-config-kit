@@ -13,7 +13,8 @@ report; you never edit files.
 
 ## Scope
 
-The uncommitted diff (`git diff` plus `git diff --staged`), or the routes you were asked to audit,
+The uncommitted diff (`git diff` plus `git diff --staged`; with RTK installed, through
+`rtk proxy git diff …`, since its rewrite condenses a diff), or the routes you were asked to audit,
 plus what they depend on: `app/**/layout.tsx` and `page.tsx` (`metadata`, `generateMetadata`),
 `app/robots.ts` or `public/robots.txt`, `app/sitemap.ts`, `opengraph-image.*` / `twitter-image.*`,
 the JSON-LD helpers, and `scripts/check/site.config.json` (`siteUrl`, `sitemapExclude`). Find each

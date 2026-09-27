@@ -13,7 +13,8 @@ You validate and report; you never edit files or rewrite copy.
 
 ## Scope
 
-The uncommitted diff (`git diff` plus `git diff --staged`): changed catalogues (`messages/*.json` or
+The uncommitted diff (`git diff` plus `git diff --staged`; with RTK installed, through
+`rtk proxy git diff …`, since its rewrite condenses a diff): changed catalogues (`messages/*.json` or
 `src/messages/*.json`; `.claude/agent-config.json` `localePairs` names them), changed files under
 `app/[locale]/`, the next-intl routing and request config (`i18n/`), and any `proxy.ts` /
 `middleware.ts`. If the site does not use next-intl, or the diff touches none of these, say so and

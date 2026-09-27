@@ -15,6 +15,8 @@ session: one line per agreement, under 5 KB. Operational facts live in `.claude/
 
 - Deliver the ask; a bigger refactor is a separate offer. "Make it the same" still has a boundary:
   fix what is broken, report deliberate differences with their cost.
+- Reuse before writing, in this order: this codebase, the language's standard library, the
+  framework's built-ins, a dependency already installed. Only then add a dependency or new code.
 - A finding in one place is checked in its siblings unasked (the same component, handler or config
   elsewhere), and reported per place.
 - "Resolve all findings" includes pre-existing ones, and every review runs the dependency audit.
@@ -72,7 +74,7 @@ session: one line per agreement, under 5 KB. Operational facts live in `.claude/
 ## Tool traps
 
 - An output wrapper or filter can truncate without a marker: read diffs, check results and scan
-  output unfiltered, and send large output to a file.
+  output unfiltered (`rtk proxy <command>` where RTK is installed), and send large output to a file.
 - File length is what the linter's max-lines rule counts, never `wc -l`. A disable comment the
   linter honours is proven load-bearing by deleting it and re-running.
 - `git rev-list --left-right A...B` counts A first. Run Python tools with `env -u PYTHONPATH` when

@@ -5,7 +5,7 @@
 # The hooks themselves come from the agent-config-kit plugins, which test them; this repo has no
 # .claude/hooks/ for hook-probes.sh to read, so the list does not run it.
 all	@format
-all	gitleaks git --staged --no-banner --redact --config .gitleaks.toml
+all	bash scripts/check/secrets.sh
 code	bun run type-check
 code	bun run check:dead-code
 code	bash scripts/check/double-assertion.sh

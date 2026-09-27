@@ -25,8 +25,8 @@ section, labelled as such.
 ## Scope
 
 The uncommitted diff (`git diff` plus `git diff --staged`), or the range the caller names. Read it
-unfiltered: an output wrapper or proxy can drop lines without saying so, and a review of a truncated
-diff reports nothing. Limit yourself to files the diff touches. Skip generated output
+whole: with RTK installed, run `rtk proxy git diff` and `rtk proxy git diff --staged`, since its
+rewrite condenses a diff and a review of a truncated diff reports nothing. Limit yourself to files the diff touches. Skip generated output
 (`generatedPaths` and `migrationsDirs` in `.claude/agent-config.json`, with their defaults in
 `.claude/agent-config.example.json`): it is never edited by hand, so flag a hand edit there instead
 of reviewing its content. Never open a `.env*` file; `bash scripts/env/show.sh <file>` lists one

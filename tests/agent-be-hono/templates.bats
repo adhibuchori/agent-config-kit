@@ -207,9 +207,10 @@ PY
 }
 
 @test "template scripts keep the source's exec bit; data files have none" {
+  [ -x "$TPL/scripts/check/ci-env.sh" ]
   [ -x "$TPL/scripts/check/index-coverage.sh" ]
   [ -x "$TPL/scripts/check/migrations.sh" ]
-  run find "$TPL" -type f -perm -u+x ! -name index-coverage.sh ! -name migrations.sh
+  run find "$TPL" -type f -perm -u+x ! -name ci-env.sh ! -name index-coverage.sh ! -name migrations.sh
   [ "$status" -eq 0 ]
   [ -z "$output" ]
 }

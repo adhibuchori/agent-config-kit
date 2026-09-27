@@ -22,8 +22,9 @@ number and wording it uses, and skip a check that no rule in it backs. If the re
 ## Scope
 
 Review the uncommitted diff — `git diff` plus `git diff --staged`. Limit yourself to `.ts`
-files the diff actually touches. Read the diff unfiltered: an output wrapper or proxy can drop
-lines without saying so, and a review of a truncated diff reports nothing.
+files the diff actually touches. Read the diff whole: with RTK installed, run `rtk proxy git diff`
+and `rtk proxy git diff --staged`, because its rewrite condenses a diff and a review of a truncated
+diff reports nothing.
 
 Skip entirely:
 

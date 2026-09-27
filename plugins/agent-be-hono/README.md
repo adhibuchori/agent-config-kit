@@ -82,7 +82,8 @@ Every component, generated from the manifests and the docs pages; each links to 
 
 **What setup installs** (`/agent-be-hono:setup`): backend rules (Hono, Drizzle, performance, testing,
 error codes), anti-patterns, the check scripts (constants, coverage, migrations, index coverage,
-module mocks) with `gates.list`, oxlint, oxfmt, knip and `bunfig.toml` config, `.husky/pre-commit`,
+module mocks) with `gates.list`, `scripts/check/ci-env.sh` and `.env.ci.example` (the unit tests
+run with CI's variables only), oxlint, oxfmt, knip and `bunfig.toml` config, `.husky/pre-commit`,
 a pull-request-only CI caller of `be-hono-quality-gate`, PR templates, and package scripts such as
 `db:generate`, `type-check` and `test:coverage`.
 

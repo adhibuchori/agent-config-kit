@@ -60,6 +60,8 @@ curl -sI "$ORIGIN/opengraph-image"        # when the site uses a generated share
 curl -sI "$ORIGIN/this-page-does-not-exist"   # 404, not 200
 ```
 
+With RTK installed, run each as `rtk proxy curl …`: its rewrite can reshape a response body.
+
 14. Headers: compare each with `public/_headers` (or the host's file). A header in the file but
     missing from the response is a `FAIL`: the host does not read that file.
 15. HTTPS: `http://` redirects to `https://`; HSTS is present.

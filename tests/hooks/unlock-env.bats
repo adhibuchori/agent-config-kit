@@ -69,7 +69,7 @@ left() { echo $(($(cat "$T/$1") - $(date +%s))); }
 
 @test "show.sh lists every key with secrets masked, and flags keys the template has that the file lacks" {
   run -0 --separate-stderr bash -c 'cd "$1" && "$2" scripts/env/show.sh .env' _ "$P" "$HOOK_BASH"
-  [[ "$output" == *"API_KEY"*"prob…(26 chars)"* ]]
+  [[ "$output" == *"API_KEY"*"prob…(25 chars)"* ]] || false
   [[ "$output" == *"PORT"*"3000"* ]]
   [[ "$output" != *"probe-secret-value"* ]]
   [[ "$output" == *"env is locked"* ]]

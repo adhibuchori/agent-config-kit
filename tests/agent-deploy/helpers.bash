@@ -34,15 +34,17 @@ mock_start() {
   printf '{}\n' >"$MOCK_DIR/config.json"
   : >"$MOCK_DIR/log.jsonl"
   python3 "$BATS_TEST_DIRNAME/mock_server.py" "$MOCK_DIR/config.json" "$MOCK_DIR/port" \
-    "$MOCK_DIR/log.jsonl" "$MOCK_DIR/cert.pem" "$MOCK_DIR/key.pem" 3>&- >/dev/null 2>&1 &
+    "$MOCK_DIR/log.jsonl" "$MOCK_DIR/cert.pem" "$MOCK_DIR/key.pem" 3>&- >/dev/null 2>"$MOCK_DIR/server.err" &
   printf '%s\n' "$!" >"$MOCK_DIR/pid"
   local i=0
-  while [ ! -s "$MOCK_DIR/port" ] && [ "$i" -lt 100 ]; do
+  # Up to 30 s: a busy CI runner can take a while to start python3 and load ssl.
+  while [ ! -s "$MOCK_DIR/port" ] && [ "$i" -lt 300 ]; do
     sleep 0.1
     i=$((i + 1))
   done
   [ -s "$MOCK_DIR/port" ] || {
-    echo "mock server did not start" >&2
+    echo "mock server did not start; its stderr:" >&2
+    cat "$MOCK_DIR/server.err" >&2
     return 1
   }
   local port

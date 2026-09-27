@@ -3130,126 +3130,274 @@ setup() {
   probe allow '-' 'stdbuf -oL git log -1'
 }
 
-@test "L837 block (-): git -c alias.st=status st" {
+@test "L835 block (-): rtk git push --force origin main" {
+  probe block '-' 'rtk git push --force origin main'
+}
+
+@test "L836 block (-): rtk proxy git push origin main" {
+  probe block '-' 'rtk proxy git push origin main'
+}
+
+@test "L837 block (-): rtk git reset --hard HEAD 3" {
+  probe block '-' 'rtk git reset --hard HEAD~3'
+}
+
+@test "L838 block (-): rtk git commit --no-verify -m x" {
+  probe block '-' 'rtk git commit --no-verify -m x'
+}
+
+@test "L839 block (-): rtk -u git push origin dev" {
+  probe block '-' 'rtk -u git push origin dev'
+}
+
+@test "L840 block (-): rtk proxy -v git clean -fdx" {
+  probe block '-' 'rtk proxy -v git clean -fdx'
+}
+
+@test "L841 block (-): rtk err git checkout -- ." {
+  probe block '-' 'rtk err git checkout -- .'
+}
+
+@test "L842 block (-): rtk summary git stash push -u" {
+  probe block '-' 'rtk summary git stash push -u'
+}
+
+@test "L843 block (-): rtk git push origin --delete dev" {
+  probe block '-' 'rtk git push origin --delete dev'
+}
+
+@test "L844 block (-): HUSKY=0 rtk git commit -m x" {
+  probe block '-' 'HUSKY=0 rtk git commit -m x'
+}
+
+@test "L845 block (-): rtk gh pr merge 12 --merge --delete-branch" {
+  probe block '-' 'rtk gh pr merge 12 --merge --delete-branch'
+}
+
+@test "L846 block (-): rtk rm -rf src" {
+  probe block '-' 'rtk rm -rf src'
+}
+
+@test "L847 block (-): rtk proxy rm -r notes" {
+  probe block '-' 'rtk proxy rm -r notes'
+}
+
+@test "L848 block (-): rtk find . -delete" {
+  probe block '-' 'rtk find . -delete'
+}
+
+@test "L849 block (-): rtk read .env" {
+  probe block '-' 'rtk read .env'
+}
+
+@test "L850 block (-): rtk smart .env.local" {
+  probe block '-' 'rtk smart .env.local'
+}
+
+@test "L851 block (-): rtk read printf s .en v " {
+  probe block '-' 'rtk read "$(printf %s .en)v"'
+}
+
+@test "L852 block (-): rtk json ls -a grep en " {
+  probe block '-' 'rtk json $(ls -a | grep en)'
+}
+
+@test "L853 block (-): rtk grep API_KEY .env" {
+  probe block '-' 'rtk grep API_KEY .env'
+}
+
+@test "L854 block (-): rtk proxy cat .env.local" {
+  probe block '-' 'rtk proxy cat .env.local'
+}
+
+@test "L855 block (-): rtk proxy bash scripts/ops/unlock.sh env" {
+  probe block '-' 'rtk proxy bash scripts/ops/unlock.sh env'
+}
+
+@test "L856 block (-): rtk proxy touch .claude/state/unlock/env" {
+  probe block '-' 'rtk proxy touch .claude/state/unlock/env'
+}
+
+@test "L857 block (-): rtk proxy sed -i.bak s/exit 2/exit 0/ .claude/hooks/lib.sh" {
+  probe block '-' 'rtk proxy sed -i.bak '\''s/exit 2/exit 0/'\'' .claude/hooks/lib.sh'
+}
+
+@test "L858 block (-): rtk proxy cp notes/keep.txt .claude/settings.json" {
+  probe block '-' 'rtk proxy cp notes/keep.txt .claude/settings.json'
+}
+
+@test "L859 block (-): rtk proxy -- git reset --hard" {
+  probe block '-' 'rtk proxy -- git reset --hard'
+}
+
+@test "L860 block (-): rtk test bash -c git reset --hard " {
+  probe block '-' 'rtk test bash -c '\''git reset --hard'\'''
+}
+
+@test "L861 block (-): bash -c rtk git reset --hard " {
+  probe block '-' 'bash -c '\''rtk git reset --hard'\'''
+}
+
+@test "L862 block (-): timeout 5 rtk proxy git reset --hard" {
+  probe block '-' 'timeout 5 rtk proxy git reset --hard'
+}
+
+@test "L863 block (-): /usr/local/bin/rtk proxy git push origin main" {
+  probe block '-' '/usr/local/bin/rtk proxy git push origin main'
+}
+
+@test "L864 allow (-): rtk git status" {
+  probe allow '-' 'rtk git status'
+}
+
+@test "L865 allow (-): rtk git diff" {
+  probe allow '-' 'rtk git diff'
+}
+
+@test "L866 allow (-): rtk grep foo src" {
+  probe allow '-' 'rtk grep foo src'
+}
+
+@test "L867 allow (-): rtk proxy git log -1" {
+  probe allow '-' 'rtk proxy git log -1'
+}
+
+@test "L868 allow (-): rtk git push origin feature/x" {
+  probe allow '-' 'rtk git push origin feature/x'
+}
+
+@test "L869 allow (-): rtk read notes/keep.txt" {
+  probe allow '-' 'rtk read notes/keep.txt'
+}
+
+@test "L870 allow (-): rtk proxy cat .env.example" {
+  probe allow '-' 'rtk proxy cat .env.example'
+}
+
+@test "L871 allow (-): rtk gain" {
+  probe allow '-' 'rtk gain'
+}
+
+@test "L877 block (-): git -c alias.st=status st" {
   probe block '-' 'git -c alias.st=status st'
 }
 
-@test "L838 block (-): git -c alias.nuke= reset --hard nuke" {
+@test "L878 block (-): git -c alias.nuke= reset --hard nuke" {
   probe block '-' 'git -c alias.nuke='\''reset --hard'\'' nuke'
 }
 
-@test "L839 block (-): git -c include.path= TMP /extra.gitconfig log -1" {
+@test "L879 block (-): git -c include.path= TMP /extra.gitconfig log -1" {
   probe block '-' 'git -c include.path=@TMP@/extra.gitconfig log -1'
 }
 
-@test "L840 block (-): git -c includeIf.onbranch:feature/probe.path= TMP /extra...." {
+@test "L880 block (-): git -c includeIf.onbranch:feature/probe.path= TMP /extra...." {
   probe block '-' 'git -c includeIf.onbranch:feature/probe.path=@TMP@/extra.gitconfig log -1'
 }
 
-@test "L841 block (-): git -c core.sshCommand=ssh fetch" {
+@test "L881 block (-): git -c core.sshCommand=ssh fetch" {
   probe block '-' 'git -c core.sshCommand=ssh fetch'
 }
 
-@test "L842 block (-): git -c core.fsmonitor=true status" {
+@test "L882 block (-): git -c core.fsmonitor=true status" {
   probe block '-' 'git -c core.fsmonitor=true status'
 }
 
-@test "L843 block (-): git -c core.editor= vim -c wq commit" {
+@test "L883 block (-): git -c core.editor= vim -c wq commit" {
   probe block '-' 'git -c core.editor='\''vim -c wq'\'' commit'
 }
 
-@test "L844 block (-): git -c credential.helper=store fetch" {
+@test "L884 block (-): git -c credential.helper=store fetch" {
   probe block '-' 'git -c credential.helper=store fetch'
 }
 
-@test "L845 block (-): git -c protocol.ext.allow=always fetch" {
+@test "L885 block (-): git -c protocol.ext.allow=always fetch" {
   probe block '-' 'git -c protocol.ext.allow=always fetch'
 }
 
-@test "L846 block (-): git -c http.proxy=http://proxy.example.invalid:8080 fetch" {
+@test "L886 block (-): git -c http.proxy=http://proxy.example.invalid:8080 fetch" {
   probe block '-' 'git -c http.proxy=http://proxy.example.invalid:8080 fetch'
 }
 
-@test "L847 block (-): git -c https.https://github.com.proxy=http://proxy.exampl..." {
+@test "L887 block (-): git -c https.https://github.com.proxy=http://proxy.exampl..." {
   probe block '-' 'git -c https.https://github.com.proxy=http://proxy.example.invalid fetch'
 }
 
-@test "L848 block (-): git -c url.https://example.invalid/.insteadOf=https://git..." {
+@test "L888 block (-): git -c url.https://example.invalid/.insteadOf=https://git..." {
   probe block '-' 'git -c url.https://example.invalid/.insteadOf=https://github.com/ fetch'
 }
 
-@test "L849 block (-): git -c safe.directory= status" {
+@test "L889 block (-): git -c safe.directory= status" {
   probe block '-' 'git -c safe.directory=* status'
 }
 
-@test "L850 block (-): git -c core.worktree= TMP status" {
+@test "L890 block (-): git -c core.worktree= TMP status" {
   probe block '-' 'git -c core.worktree=@TMP@ status'
 }
 
-@test "L851 block (-): git --config-env=alias.x=SOME_VAR x" {
+@test "L891 block (-): git --config-env=alias.x=SOME_VAR x" {
   probe block '-' 'git --config-env=alias.x=SOME_VAR x'
 }
 
-@test "L852 block (-): GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.x GIT_CONFIG_VA..." {
+@test "L892 block (-): GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.x GIT_CONFIG_VA..." {
   probe block '-' 'GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.x GIT_CONFIG_VALUE_0=status git x'
 }
 
-@test "L853 block (-): GIT_CONFIG_PARAMETERS= alias.x = status git x" {
+@test "L893 block (-): GIT_CONFIG_PARAMETERS= alias.x = status git x" {
   probe block '-' 'GIT_CONFIG_PARAMETERS="'\''alias.x'\''='\''status'\''" git x'
 }
 
-@test "L854 block (-): git config alias.nuke reset --hard " {
+@test "L894 block (-): git config alias.nuke reset --hard " {
   probe block '-' 'git config alias.nuke '\''reset --hard'\'''
 }
 
-@test "L855 block (-): git config --add include.path TMP /extra.gitconfig" {
+@test "L895 block (-): git config --add include.path TMP /extra.gitconfig" {
   probe block '-' 'git config --add include.path @TMP@/extra.gitconfig'
 }
 
-@test "L856 block (-): git config set url.https://example.invalid/.insteadOf htt..." {
+@test "L896 block (-): git config set url.https://example.invalid/.insteadOf htt..." {
   probe block '-' 'git config set url.https://example.invalid/.insteadOf https://github.com/'
 }
 
-@test "L857 block (-): git config --rename-section probe alias" {
+@test "L897 block (-): git config --rename-section probe alias" {
   probe block '-' 'git config --rename-section probe alias'
 }
 
-@test "L858 allow (-): git -c user.name=probe -c user.email=probe example.invali..." {
+@test "L898 allow (-): git -c user.name=probe -c user.email=probe example.invali..." {
   probe allow '-' 'git -c user.name=probe -c user.email=probe@example.invalid log -1'
 }
 
-@test "L859 allow (-): git -c core.quotepath=off status" {
+@test "L899 allow (-): git -c core.quotepath=off status" {
   probe allow '-' 'git -c core.quotepath=off status'
 }
 
-@test "L860 allow (-): git -c core.pager=cat log -1" {
+@test "L900 allow (-): git -c core.pager=cat log -1" {
   probe allow '-' 'git -c core.pager=cat log -1'
 }
 
-@test "L861 allow (-): git -c pager.log=false log -1" {
+@test "L901 allow (-): git -c pager.log=false log -1" {
   probe allow '-' 'git -c pager.log=false log -1'
 }
 
-@test "L862 allow (-): git -c core.fsmonitor=false status" {
+@test "L902 allow (-): git -c core.fsmonitor=false status" {
   probe allow '-' 'git -c core.fsmonitor=false status'
 }
 
-@test "L863 allow (-): git -c core.editor=true status" {
+@test "L903 allow (-): git -c core.editor=true status" {
   probe allow '-' 'git -c core.editor=true status'
 }
 
-@test "L864 allow (-): git config user.name probe" {
+@test "L904 allow (-): git config user.name probe" {
   probe allow '-' 'git config user.name probe'
 }
 
-@test "L865 allow (-): git config --get alias.x" {
+@test "L905 allow (-): git config --get alias.x" {
   probe allow '-' 'git config --get alias.x'
 }
 
-@test "L866 allow (-): git config --list" {
+@test "L906 allow (-): git config --list" {
   probe allow '-' 'git config --list'
 }
 
-@test "L867 allow (-): git config --unset alias.x" {
+@test "L907 allow (-): git config --unset alias.x" {
   probe allow '-' 'git config --unset alias.x'
 }

@@ -699,6 +699,11 @@ WRAPPER_ARGS = {"env": {"-u", "-C", "--unset", "--chdir"}, "sudo": {"-u", "-g", 
                 "xcrun": {"-sdk", "--sdk", "-toolchain", "--toolchain"}, "ionice": {"-c", "-n", "--class", "--classdata"}}
 # Wrappers that take positional words before the command: timeout's duration.
 WRAPPER_POSITIONAL = {"timeout": 1, "gtimeout": 1}
+# rtk, a CLI proxy that trims a command's output for an agent (an RTK hook may add it to any
+# command): `rtk git push ...` and `rtk proxy|err|test|summary git push ...` run `git push ...`, and
+# its own readers read the files they name, as cat does. Its options stand alone.
+RTK_RUNNERS = {"proxy", "err", "test", "summary"}
+RTK_READERS = {"read", "smart", "json", "log"}
 # commandWrappers from the config: "name [subcommand ...] [-opt= ...]". The wrapper and any of its
 # subcommands present are dropped, then its options up to `--`; an option written with a trailing
 # `=` takes the next word as its value.
@@ -1103,6 +1108,16 @@ def peel(words):
             if ws and ws[0] == "--":
                 ws.pop(0)
             del ws[:WRAPPER_POSITIONAL.get(head, 0)]
+            continue
+        if head == "rtk":
+            ws.pop(0)
+            sub = False
+            while ws and (ws[0].startswith("-") or (not sub and ws[0] in RTK_RUNNERS)):
+                sub = sub or not ws[0].startswith("-")
+                if ws.pop(0) == "--":
+                    break
+            if not sub and ws and ws[0] in RTK_READERS:
+                ws[0] = "cat"
             continue
         if head in CONFIG_WRAPPERS:
             subs, takes = CONFIG_WRAPPERS[head]
@@ -3817,7 +3832,14 @@ for line in out:
 print("END")
 PY
 
-# Capped at 8 s, and for a guard at what is left of its deadline once the fields are read.
+# Capped at 8 s, and for a guard at what is left of its deadline once the fields are read. The
+# program is well over 128 KiB, the most Linux passes in one argument or environment string
+# (MAX_ARG_STRLEN; macOS has no such limit), so python3 reads it from descriptor 3 and -c holds
+# only the loader; the command itself stays on stdin.
+HOOK_PY_FD3='import os, sys
+with os.fdopen(3, encoding="utf-8") as fh:
+    code = compile(fh.read(), "<hook>", "exec")
+exec(code)'
 analyze_command() {
   local session tool_use
   session="$(hook_field .session_id)"
@@ -3826,5 +3848,5 @@ analyze_command() {
     HOOK_CWD="${2:-$PWD}" HOOK_ROOT="${ROOT:-$PWD}" HOOK_MODE="${HOOK_MODE:-check}" HOOK_DEFAULTS="$HOOK_DEFAULTS" \
     HOOK_SESSION="$session" HOOK_TOOL_USE_ID="$tool_use" HOOK_STATE="$(hook_state_dir)" \
     HOOK_OPTIN="$(hook_optin_file)" HOOK_LIB_DIR="$HOOK_LIB_DIR" \
-    run_capped "$(hook_cap 8)" python3 -c "$HOOK_PY_PRELUDE"$'\n'"$HOOK_ANALYZER"
+    run_capped "$(hook_cap 8)" python3 -c "$HOOK_PY_FD3" 3<<<"$HOOK_PY_PRELUDE"$'\n'"$HOOK_ANALYZER"
 }

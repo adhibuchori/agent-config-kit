@@ -342,8 +342,8 @@ EOF
   [ "$status" -eq 0 ]
   grep -q '^uv sync --frozen$' "$STUB_LOG"
   grep -q '^uv run --frozen coverage report --fail-under=100$' "$STUB_LOG"
+  [[ "$output" == *"integration-tests is off"* ]] || false
   run ! grep -q -- '-m integration' "$STUB_LOG"
-  [[ "$output" == *"integration-tests is off"* ]]
   QG_STACK=ai-fastapi QG_INTEGRATION_TESTS=true gate
   [ "$status" -eq 0 ]
   grep -q '^uv run --frozen pytest tests -q -m integration$' "$STUB_LOG"

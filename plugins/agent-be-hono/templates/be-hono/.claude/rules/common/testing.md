@@ -27,7 +27,8 @@ MANDATORY workflow:
 3. Write minimal implementation (GREEN)
 4. Run test - it should PASS
 5. Refactor (IMPROVE)
-6. Verify coverage: `bun run test:coverage` (100%, every file loaded)
+6. Verify coverage: `bash scripts/check/ci-env.sh bun run test:coverage` (100%, every file
+   loaded, with CI's variables and nothing from your shell or `.env`)
 
 ## Troubleshooting Test Failures
 

@@ -21,7 +21,8 @@ git fetch origin && git diff "origin/<base>...HEAD" --stat
 ```
 
 Review the **staged** changes when there are any; otherwise the branch against its base. Read every
-diff unfiltered, with plain `git`: a truncated diff reviews as clean.
+diff whole: with RTK installed, run each `git diff` as `rtk proxy git diff …`, since its rewrite
+condenses a diff and a truncated diff reviews as clean.
 
 ## 2. The gates
 

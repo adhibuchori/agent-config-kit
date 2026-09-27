@@ -4,7 +4,7 @@ Command · agent-be-hono · `/agent-be-hono:setup [--answer id=value …]` · on
 
 ## What it does
 
-`/agent-be-hono:setup` installs what a plugin cannot ship by itself into your repo: backend rules (Hono, Drizzle, performance, testing), anti-patterns, the gate scripts (constants, coverage, migrations, index coverage, module mocks), oxlint, oxfmt, knip and bun test config, the husky pre-commit hook, a pull-request-only CI caller and PR templates, plus the package scripts they need.
+`/agent-be-hono:setup` installs what a plugin cannot ship by itself into your repo: backend rules (Hono, Drizzle, performance, testing), anti-patterns, the gate scripts (constants, coverage, migrations, index coverage, module mocks), `scripts/check/ci-env.sh` with a seeded `.env.ci.example` so the unit tests run with CI's variables and nothing from your shell or `.env`, oxlint, oxfmt, knip and bun test config, the husky pre-commit hook, a pull-request-only CI caller and PR templates, plus the package scripts they need.
 
 It explores your repo, asks one question at a time with a recommended answer, shows the exact draft,
 and writes only when you reply **go**. It never overwrites or deletes a file. It adds 13 package script(s) to an existing `package.json` (never creates one) and keeps any script you already have. The lock
