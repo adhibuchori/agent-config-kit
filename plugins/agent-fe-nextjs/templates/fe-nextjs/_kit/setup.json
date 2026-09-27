@@ -55,7 +55,8 @@
         "yes": [
           ".claude/rules/web/skeletons.md",
           ".claude/docs/standards/skeletons.md",
-          "scripts/check/skeleton-switch.sh"
+          "scripts/check/skeleton-switch.sh",
+          "scripts/check/skeleton-pairs.ts"
         ]
       }
     },
@@ -85,6 +86,31 @@
       "recommended": "no",
       "detect": "skills-lock.json or .claude/skills/ names impeccable, or PRODUCT.md or DESIGN.md exists",
       "install": { "yes": ["PRODUCT.example.md", "DESIGN.example.md"] }
+    },
+    {
+      "id": "payload-encryption",
+      "ask": "Seal request and response bodies between the browser, this app's server and the backend (the payload contract: encrypted envelopes, one endpoint registry, checked before merge)?",
+      "why": "Yes installs the payload contract: a reference implementation in src/lib/payload/ (AES-256-GCM envelopes bound to method, route and status; pre-shared key rings; browser key agreement; the browser transport and the proxy bridge; the strict/off switch) with its tests at 100%, the endpoint registry and its generator, check:endpoints (registry drift, route literals, reasons, the committed switch) and check:crypto-interop (the shared test vectors, and peers checked out beside this repo), the contract document and a rule that loads when you touch the transport. Wiring it into the app stays yours: the contract document shows where. No new dependency (WebCrypto). Answer no when bodies need no sealing beyond TLS.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "payload.config.json or src/lib/payload/ already exists, or the backend this app calls expects sealed bodies",
+      "install": {
+        "yes": [
+          ".claude/PAYLOAD-CONTRACT.md",
+          ".claude/rules/common/payload-contract.md",
+          "payload.config.json",
+          "scripts/check/endpoints.ts",
+          "scripts/check/crypto-interop.ts",
+          "scripts/check/payload-vectors.json",
+          "scripts/generate/endpoints.ts",
+          "scripts/lib/openapi-endpoints.ts",
+          "scripts/lib/source-scan.ts",
+          "src/lib/payload/**",
+          "src/lib/api/endpoints/**",
+          "src/testing/lib/payload/**",
+          "src/testing/lib/api/endpoints/**"
+        ]
+      }
     }
   ],
   "seed": [
@@ -103,8 +129,13 @@
     "doctor.config.json",
     "knip.ts",
     "oxlint.json",
+    "payload.config.json",
     "scripts/check/gates.list",
-    "scripts/check/soc.allow.json"
+    "scripts/check/soc.allow.json",
+    "src/lib/api/endpoints/**",
+    "src/lib/payload/**",
+    "src/testing/lib/api/endpoints/**",
+    "src/testing/lib/payload/**"
   ],
   "snippets": {
     "tsconfig.json": "snippets/tsconfig.scripts.jsonc",
@@ -147,6 +178,11 @@
     "check:dialog-desc": "if [ -f scripts/check/dialog-desc.ts ]; then bun run scripts/check/dialog-desc.ts; else echo 'check:dialog-desc skipped: setup did not install the dialogs module'; fi",
     "check:responsive": "if [ -f scripts/check/responsive.ts ]; then bun run scripts/check/responsive.ts; else echo 'check:responsive skipped: setup did not install the responsive module'; fi",
     "check:skeleton-switch": "if [ -f scripts/check/skeleton-switch.sh ]; then bash scripts/check/skeleton-switch.sh; else echo 'check:skeleton-switch skipped: setup did not install the skeletons module'; fi",
-    "measure:waterfall": "bun run scripts/measure/waterfall.ts"
+    "measure:waterfall": "bun run scripts/measure/waterfall.ts",
+    "check:skeleton-pairs": "if [ -f scripts/check/skeleton-pairs.ts ]; then bun run scripts/check/skeleton-pairs.ts; else echo 'check:skeleton-pairs skipped: setup did not install the skeletons module'; fi",
+    "check:dockerfile": "bun run scripts/check/dockerfile.ts",
+    "check:endpoints": "if [ -f scripts/check/endpoints.ts ]; then bun run scripts/check/endpoints.ts; else echo 'check:endpoints skipped: setup did not install the payload module'; fi",
+    "check:crypto-interop": "if [ -f scripts/check/crypto-interop.ts ]; then bun run scripts/check/crypto-interop.ts; else echo 'check:crypto-interop skipped: setup did not install the payload module'; fi",
+    "generate:endpoints": "bun run scripts/generate/endpoints.ts"
   }
 }

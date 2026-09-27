@@ -13,10 +13,16 @@ all	bash scripts/check/secrets.sh
 code	bun run type-check
 code	bun run check:dead-code
 code	bun run check:constants
+code	bun run check:dockerfile
 code	bun run check:mocks
 code	bash scripts/check/double-assertion.sh
 code	bun run check:folder-shape
 code	bun run check:coverage-policy
 code	bash scripts/check/ci-env.sh bun run test:coverage
+code	bash scripts/check/ci-env.sh bun run check:openapi
+# Optional module, one setup question (payload-encryption). When setup did not install it, its
+# package scripts print a skip line and pass; delete these lines if you never want it.
+code	bun run check:endpoints
+code	bun run check:crypto-interop
 all	bash scripts/check/ai-config.sh
 commands,hooks	bash scripts/check/skills.sh --staged

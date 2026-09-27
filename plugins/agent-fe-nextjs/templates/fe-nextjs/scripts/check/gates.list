@@ -18,6 +18,7 @@ code	bun run check:soc
 code	bun run check:tailwind
 code	bun run check:error-codes
 code	bun run check:error-catch
+code	bun run check:dockerfile
 code	bun run .github/scripts/check-comment-style.ts
 code	bash .github/scripts/check-comment-blocks.sh
 # Optional modules, one setup question each. When setup did not install a module's check, its
@@ -26,5 +27,8 @@ code	bun run check:i18n
 code	bun run check:dialog-desc
 code	bun run check:responsive
 code	bun run check:skeleton-switch
+code	bun run check:skeleton-pairs
+code	bun run check:endpoints
+code	bun run check:crypto-interop
 all	bash scripts/check/ai-config.sh
 commands,hooks	bash scripts/check/skills.sh --staged
