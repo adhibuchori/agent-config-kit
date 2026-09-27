@@ -36,6 +36,7 @@ your team does: plan, review, commit, open a PR, merge.
 - [A normal day with the kit](#a-normal-day-with-the-kit)
 - [What gets installed](#what-gets-installed)
 - [How the pieces fit](#how-the-pieces-fit)
+- [What the rules cover](#what-the-rules-cover)
 - [Everything the kit ships](#everything-the-kit-ships)
 - [Configuration](#configuration)
 - [What gets blocked, and how to turn it off](#what-gets-blocked-and-how-to-turn-it-off)
@@ -413,6 +414,75 @@ review can cite, `SSOT.md` holds facts about the codebase, the machine layer enf
 plugin, the hooks live in the plugin and the rules in `.claude/rules/`), and the gate decides
 what may merge.
 
+## What the rules cover
+
+The hooks stop the few things that are expensive to undo. The rules are the rest: how code in each
+stack is written, reviewed, tested and shipped, written down where Claude reads them and turned into
+a gate wherever a machine can decide. Almost every rule loads only while Claude touches the files it
+governs, so the whole set costs nothing until it is needed.
+
+### Payload encryption: sealed bodies and one endpoint registry
+
+The flagship module, and opt-in: answer `payload-encryption=yes` in the setup of agent-fe-nextjs,
+agent-be-hono or agent-ai-fastapi. Every request and response body that crosses a service boundary
+then travels as an AES-256-GCM envelope bound to its method, route pattern, status and key, inside a
+two-minute window; every endpoint is declared in one registry with its policy beside its path; and
+two checks keep both true before anything merges. The frontend, the backend and a Python service
+carry the same wire format, proven against one shared set of test vectors.
+[The full guide](docs/payload-encryption.md) says how to wire it in and what it does not protect.
+
+1. **A hand-written `fetch` sends plaintext past the transport.**
+   *The problem:* one screen calls the API directly, and its body and answer travel in the clear
+   while every other request is sealed; nobody notices, because it works.
+   *The fix:* the transport refuses a route the registry does not hold, the backend refuses a
+   plaintext body on a sealed route (`ENVELOPE_REQUIRED`), and `check:endpoints` fails on a `fetch`
+   outside the transport and on a route path typed anywhere but the registry.
+   *Handled by:* `src/lib/payload/`, the registry, `check:endpoints`.
+2. **Two copies of the cipher drift apart.**
+   *The problem:* the frontend's copy changes how it builds the authenticated data; both repos'
+   tests stay green, and every request fails in the browser with an error that says nothing.
+   *The fix:* each copy opens the same committed ciphertexts and refuses the same replays, and
+   `check:crypto-interop` seals with one copy and opens with the other when the peer is checked out.
+   *Handled by:* `payload-vectors.json`, `check:crypto-interop`, the Python `test_vectors.py`.
+3. **A debugging switch ships to production.**
+   *The problem:* someone turns encryption off to chase a bug, and the branch merges that way.
+   *The fix:* the committed switch must say `strict` (`check:endpoints`), every service refuses to
+   start with `off` in production, and debugging uses an environment variable in your own shell.
+   *Handled by:* `payload.config.json`, `resolveEncryptionMode`, `check:endpoints`.
+4. **A captured request is replayed on another route.**
+   *The problem:* an envelope lifted from a log is sent to a more dangerous endpoint.
+   *The fix:* the authenticated data names the method, the route pattern, the key id and the time,
+   so it opens nowhere else, and anything older than two minutes is refused before the cipher runs.
+   *Handled by:* `envelope.ts`, `codec.ts` (and their Python twins).
+
+| Piece | What it does | How to use | Why it helps |
+| --- | --- | --- | --- |
+| `payload-encryption` setup answer (fe-nextjs, be-hono, ai-fastapi) | Installs the module; nothing changes until you answer yes | `/agent-be-hono:setup`, answer `yes` | Opt-in, and the draft shows every file first |
+| `src/lib/payload/` (TypeScript) | The cipher, key rings, browser key agreement, the switch, the endpoint matcher; tests at 100% | the backend mounts `createPayloadMiddleware`, the frontend's transport calls `createBrowserPayload` | A reviewed reference instead of hand-rolled crypto |
+| `src/app/core/payload/` (Python) | The same envelope as plain ASGI middleware; tests at 100% branch coverage | `app.add_middleware(PayloadMiddleware, …)`, added first | A Python service speaks the same format |
+| Endpoint registry and `generate:endpoints` | Every route with its policy; the spec-derived half is generated | `bun run generate:endpoints` after the spec changes | Every route has a decided policy |
+| `check:endpoints` | Registry drift, exemption reasons, route literals, raw `fetch`, the committed switch, peer parity | in `gates.list` | Plaintext cannot slip in through new code |
+| `check:crypto-interop` and `payload-vectors.json` | Opens the shared vectors, refuses the replays, cross-checks peer copies | in `gates.list` | Copies of the cipher cannot drift apart unseen |
+| `.claude/PAYLOAD-CONTRACT.md` and `rules/common/payload-contract.md` | The contract, threat model and wiring; the short form loads with the transport | read on demand | Claude follows the contract while it edits the transport |
+
+The browser hop is not end-to-end encryption: the person using the browser holds the key. It buys
+integrity, route binding, replay resistance and ciphertext in every log and HAR file; TLS, httpOnly
+cookies and a server-side proxy still carry confidentiality. The contract document says so first.
+
+### The rest of the rule set
+
+| Area | What the rules and checks hold | Where |
+| --- | --- | --- |
+| Components and data | Components render and hold no logic; no request waterfalls; hooks and screens live with their feature; three states on every screen; fixtures stay in tests | fe-nextjs rules, `AGENTS.md` §B, §D, §N; `check:soc`, `check:hooks` |
+| Sessions and errors | The frontend never decides authorization or stores a session; every error code has a message; no raw backend message reaches the screen | `AGENTS.md` §M, `common/error-codes.md`; `check:error-codes` |
+| Types, dead code, one home | No `any`, no double assertion, no unused code, one home per shared identifier | core rules; `double-assertion.sh`, knip or vulture, `check:constants` |
+| Tests and coverage | A 100% floor on the logic layer, tests in CI's environment, mocks that refuse what the real client refuses | coverage rules; `coverage-policy.mjs`, `ci-env.sh`, `check:mocks` |
+| Database | Migrations generated, never hand-written; every foreign key indexed; transactions short | be-hono and pipeline rules; `migrations.sh`, `index-coverage.sh` |
+| APIs and images | The spec builds and is committed; the image builds what the gate validated | `hono.md`; `check:openapi`, `check:dockerfile` |
+| UI | Measured, not guessed; one component per role; skeletons measured against their screen | UI and skeleton rules; `check:skeleton-pairs`, `check:responsive` |
+| Operations | How the guards fail, the unlock, server access and break-glass, client IP behind a CDN, deploys proven by time | `OPERATIONS.example.md`, `DATABASE.example.md`, `CI-RUNNERS.example.md` |
+| Known traps | One file per trap that cost real time: auth sessions, passkeys, CSS pipelines, test runners, coverage tools | `.claude/anti-patterns/` (34 frontend, 12 backend, 12 static site, 9 docs, 6 Python) |
+
 ## Everything the kit ships
 
 Each table answers three questions for every piece: what it does, how you use it, and why it
@@ -455,6 +525,7 @@ Claude cannot start them on its own (`disable-model-invocation`).
 | [/agent-core:promote](docs/agent-core/promote.md) | PR to `dev`, promotion to `prod`, deploy verified by time | `/agent-core:promote` | "Merged" and "live" are not confused |
 | [/agent-core:branch-cleanup](docs/agent-core/branch-cleanup.md) | Deletes merged branches after you confirm | `/agent-core:branch-cleanup` | A tidy remote, nothing unmerged lost |
 | [/agent-core:rca](docs/agent-core/rca.md) | Reproduce, find the cause, fix with a failing test | `/agent-core:rca checkout returns 500` | Fixes that stay fixed |
+| [/agent-core:check-fix](docs/agent-core/check-fix.md) | Runs the gates, fixes each failure at its cause, re-runs until green | `/agent-core:check-fix` | Green gates without silenced findings |
 | [/agent-core:checkpoint](docs/agent-core/checkpoint.md) | Local safety commit of this session's files | `/agent-core:checkpoint before refactor` | A cheap way back |
 | [/agent-core:checkpoint-summary](docs/agent-core/checkpoint-summary.md) | Session handover summary | `/agent-core:checkpoint-summary` | The next session starts where this one ended |
 | [/agent-core:learn-session](docs/agent-core/learn-session.md) | Writes lessons into rules, checks or anti-patterns | `/agent-core:learn-session` | The same trap is not hit twice |
@@ -505,7 +576,7 @@ Claude reads or edits a matching file, so they cost nothing the rest of the time
 editing the file (it is yours; sync reports the edit as `modified`, and `agent-sync own` keeps it).
 
 <details>
-<summary><strong>All 48 rule files, by plugin</strong></summary>
+<summary><strong>All 51 rule files, by plugin</strong></summary>
 
 | Rule file | What it covers | Loads when Claude touches | Why it helps |
 | --- | --- | --- | --- |
@@ -538,6 +609,7 @@ editing the file (it is yours; sync reports the edit as `modified`, and `agent-s
 | `backend/fastapi.md`, `backend/providers.md` (ai-fastapi) | FastAPI patterns, the provider layer | api, modules, providers | LLM providers can be swapped |
 | `backend/performance.md`, `backend/testing.md` (ai-fastapi) | Async performance, tests | app, tests | No blocking calls in async code |
 | `common/coding-style.md`, `common/patterns.md`, `common/testing.md`, `python/coverage.md` (ai-fastapi) | Python style, patterns, coverage | `*.py`, tests, config | Consistent Python |
+| `common/payload-contract.md` (fe-nextjs, be-hono, ai-fastapi, optional) | Sealed bodies, the endpoint registry, keys, refusals | transport, registry, middleware, `payload.config.json` | Plaintext and drift are caught while the code is written |
 | `docs-site/content.md` (docs-nextra) | Docs content conventions | content, components, generators | Consistent pages |
 | `web/3d.md` (fe-threejs) | Scene gating, fallback, reduced motion, disposal, budgets | shaders, 3D and scene files | 3D that does not sink the page |
 
@@ -582,6 +654,10 @@ Checks are scripts setup installs under `scripts/check/`. The pre-commit gate
 | `ci-env.sh`, `.env.ci.example` (be-hono) | Runs the unit tests with exactly CI's variables (the env file the CI caller passes, `.env.ci.example` by default) and nothing from your shell or a `.env` file | in `gates.list`; one file: `bash scripts/check/ci-env.sh bun test <path>` | A test that only passes on your local credentials fails before CI |
 | `coverage-policy.mjs`, `.pre-commit-config.yaml` (ai-fastapi) | Coverage floor; ruff, mypy, pytest, vulture, import-linter | `uv run pre-commit run` | The Python gate |
 | `audit.ts`, `.github/scripts/check-comment-*` (docs-nextra, fe-nextjs) | Dependency audit, comment style | in `gates.list` | Advisories and noise are caught |
+| `endpoints.ts`, `crypto-interop.ts`, `payload-vectors.json`, `generate/endpoints.ts` (fe-nextjs, be-hono, optional) | The payload contract's registry, drift and interop checks, and the registry generator | `bun run check:endpoints`, `bun run check:crypto-interop` | Sealed stays sealed, and copies of the cipher agree |
+| `openapi.ts`, `generate/openapi.ts` (be-hono) | The spec builds, describes a route and equals the committed `openapi.json`; `spec:export` writes it | `bun run check:openapi`, `bun run spec:export` | Frontends generate clients from a current spec |
+| `dockerfile.ts` (fe-nextjs, be-hono) | The image generates its client before the build, pins by versioned digest, runs the Bun the gate ran | `bun run check:dockerfile` | A green gate means a working image |
+| `skeleton-pairs.ts` (fe-nextjs, optional) | A skeleton a screen renders is measured in the harness, or listed with a reason | `bun run check:skeleton-pairs` | Skeletons are measured, not guessed |
 | `3d-budget.mjs` (fe-threejs) | Model, triangle and texture budgets for glTF/GLB | `node scripts/check/3d-budget.mjs` | 3D assets that load on a phone |
 | `verify-deploy.sh`, `trigger-deploy.sh` (deploy) | Outside smoke test; webhook trigger that treats 3xx as failure | via the deploy commands | A deploy is proven, not assumed |
 
@@ -645,7 +721,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | --- | --- | --- |
 | `.claude/CI-RUNNERS.example.md` | always; sync keeps it current | CI Runners — Two Pools Behind Repository Variables |
 | `.claude/DATABASE.example.md` | always; sync keeps it current | Postgres — MCP Access for Debugging |
-| `.claude/OPERATIONS.example.md` | always; sync keeps it current | Operations — Hooks, GitHub and CI, Reviews, MCP, Deploys |
+| `.claude/OPERATIONS.example.md` | always; sync keeps it current | Operations — Hooks, GitHub and CI, Reviews, MCP, Deploys, Access |
 | `.claude/agent-config.example.json` | always; sync keeps it current | Every hook setting with its default; copy the keys you change to agent-config.json |
 | `.claude/mcp/cloudflare.example.json` | always; sync keeps it current | An on-demand Cloudflare MCP server, loaded for one session with --mcp-config |
 | `.claude/mcp/deploy-platform.example.json` | always; sync keeps it current | An on-demand deploy-platform MCP server to fill in and pin |
@@ -686,11 +762,12 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-ai-fastapi</strong>: 40 files</summary>
+<summary><strong>agent-ai-fastapi</strong>: 60 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
 | `.claude/ANALYTICS.example.md` | with `analytics=yes`; once; then yours | Analytics — Read API Access |
+| `.claude/PAYLOAD-CONTRACT.md` | with `payload-encryption=yes`; sync keeps it current | Payload Contract: Sealed Bodies and One Endpoint Registry |
 | `.claude/SERENA-WORKSPACE.example.md` | with `serena-workspace=yes`; once; then yours | Serena — Multi-Repo Workspace Scoping |
 | `.claude/anti-patterns/INDEX.md` | once; then yours | Anti-Patterns Index |
 | `.claude/anti-patterns/a-check-that-matches-nothing-passes.md` | always; sync keeps it current | A check whose scanner matches nothing reports success |
@@ -710,6 +787,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.claude/rules/backend/testing.md` | always; sync keeps it current | Testing Conventions |
 | `.claude/rules/common/coding-style.md` | always; sync keeps it current | Coding Style |
 | `.claude/rules/common/patterns.md` | always; sync keeps it current | Common Patterns |
+| `.claude/rules/common/payload-contract.md` | with `payload-encryption=yes`; sync keeps it current | Payload Contract (short form) |
 | `.claude/rules/common/testing.md` | always; sync keeps it current | Testing Requirements |
 | `.claude/rules/python/coverage.md` | always; sync keeps it current | COVER — Test Coverage (Python) |
 | `.claude/settings.json` | merged into yours (additive; your values win) | Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox |
@@ -723,10 +801,28 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `AGENTS.md` | once, if missing; then yours | AGENTS.md — &lt;repo-name&gt; |
 | `CLAUDE.md` | the starter, when the repo has no CLAUDE.md | &lt;Project Name&gt; — Claude Code Config |
 | `SSOT.md` | once, if missing; then yours | SSOT.md — &lt;repo-name&gt; |
+| `payload.config.json` | with `payload-encryption=yes`; once; then yours | The payload contract switch (strict, committed), the route exemptions with their reasons, and the peers to check |
 | `pyproject.toml` | once, if missing; then yours | Python project and tool settings: ruff, mypy, pytest, coverage, vulture |
 | `scripts/check/coverage-policy.mjs` | always; sync keeps it current | COVER: refuses a coverage gate that was weakened. |
 | `scripts/check/gates.list` | once; then yours | This repo's gates. |
+| `scripts/check/payload-vectors.json` | with `payload-encryption=yes`; sync keeps it current | Shared test vectors every implementation of the envelope must open and refuse; never regenerated to pass |
 | `scripts/vulture/whitelist.py` | once; then yours | Names vulture must not report as dead code |
+| `src/app/core/payload/__init__.py` | with `payload-encryption=yes`; once; then yours | The payload contract package. |
+| `src/app/core/payload/codec.py` | with `payload-encryption=yes`; once; then yours | Sealing and opening JSON envelopes with AES-256-GCM. |
+| `src/app/core/payload/envelope.py` | with `payload-encryption=yes`; once; then yours | The envelope format, freshness and AAD builders. |
+| `src/app/core/payload/errors.py` | with `payload-encryption=yes`; once; then yours | The payload error codes. |
+| `src/app/core/payload/keys.py` | with `payload-encryption=yes`; once; then yours | Pre-shared key rings for server-to-server hops. |
+| `src/app/core/payload/middleware.py` | with `payload-encryption=yes`; once; then yours | The payload contract as plain ASGI middleware. |
+| `src/app/core/payload/mode.py` | with `payload-encryption=yes`; once; then yours | The strict/off switch of the payload contract. |
+| `src/app/core/payload/policy.py` | with `payload-encryption=yes`; once; then yours | The route registry types and the policy decisions. |
+| `tests/unit/core/payload/__init__.py` | with `payload-encryption=yes`; once; then yours | Tests for the payload contract; a package so their module names never collide. |
+| `tests/unit/core/payload/test_codec.py` | with `payload-encryption=yes`; once; then yours | Unit tests for app.core.payload.codec: part of the payload contract. |
+| `tests/unit/core/payload/test_envelope.py` | with `payload-encryption=yes`; once; then yours | Unit tests for app.core.payload.envelope: part of the payload contract. |
+| `tests/unit/core/payload/test_keys.py` | with `payload-encryption=yes`; once; then yours | Unit tests for app.core.payload.keys: part of the payload contract. |
+| `tests/unit/core/payload/test_middleware.py` | with `payload-encryption=yes`; once; then yours | Unit tests for app.core.payload.middleware: part of the payload contract. |
+| `tests/unit/core/payload/test_mode.py` | with `payload-encryption=yes`; once; then yours | Unit tests for app.core.payload.mode: part of the payload contract. |
+| `tests/unit/core/payload/test_policy.py` | with `payload-encryption=yes`; once; then yours | Unit tests for app.core.payload.policy: part of the payload contract. |
+| `tests/unit/core/payload/test_vectors.py` | with `payload-encryption=yes`; once; then yours | Unit tests for app.core.payload.vectors: part of the payload contract. |
 | `CLAUDE.md` | one managed block, appended | `## Agent config kit` |
 | `.gitignore` | one managed block (18 lines) | `.serena/`, `.skillspector/`, `.env`, `.env.*`, `!.env.example`, `!.env.*.example`, `.venv/`, `__pycache__/`, `*.pyc`, `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/`, `.import_linter_cache/`, `.coverage`, `htmlcov/`, `dist/`, `build/`, `*.egg-info/` |
 | `pyproject.toml` | by hand: the draft names `_kit/snippets/pyproject.tools.toml` | |
@@ -734,16 +830,22 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-be-hono</strong>: 50 files</summary>
+<summary><strong>agent-be-hono</strong>: 92 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
 | `.claude/ANALYTICS.example.md` | with `analytics=yes`; sync keeps it current | Analytics — Read API Access |
+| `.claude/PAYLOAD-CONTRACT.md` | with `payload-encryption=yes`; sync keeps it current | Payload Contract: Sealed Bodies and One Endpoint Registry |
 | `.claude/SERENA-WORKSPACE.example.md` | with `serena-workspace=yes`; sync keeps it current | Serena — Multi-Repo Workspace Scoping |
 | `.claude/anti-patterns/INDEX.md` | once; then yours | Anti-Patterns Index |
 | `.claude/anti-patterns/a-check-that-matches-nothing-passes.md` | always; sync keeps it current | A check whose scanner matches nothing reports success |
+| `.claude/anti-patterns/auth-cookie-cache-outlives-revocation.md` | always; sync keeps it current | A revoked session keeps working until its cookie cache ages out |
+| `.claude/anti-patterns/better-auth-account-endpoints-are-gated.md` | always; sync keeps it current | Better Auth's account endpoints are gated in ways the client does not show |
+| `.claude/anti-patterns/better-auth-list-option-replaces-defaults.md` | always; sync keeps it current | A Better Auth plugin's list option replaces its defaults, it does not extend them |
+| `.claude/anti-patterns/better-auth-passkey-quirks.md` | always; sync keeps it current | Passkeys: a dismissed prompt is an error, and user verification is not enforced |
 | `.claude/anti-patterns/better-auth-user-hook-runs-first.md` | always; sync keeps it current | better-auth runs your `hooks.after` first, then lets a plugin overwrite it |
 | `.claude/anti-patterns/bun-mock-module-is-process-wide.md` | always; sync keeps it current | `mock.module` is process-wide, and bun versions disagree on file order |
+| `.claude/anti-patterns/gateway-cancel-result-is-not-the-state.md` | always; sync keeps it current | A payment gateway's cancel result is not the state of the payment |
 | `.claude/anti-patterns/postgres-max-1-pool.md` | always; sync keeps it current | `postgres(url, { max: 1 })` outside a migration runner |
 | `.claude/anti-patterns/queue-job-id-cannot-contain-colon.md` | always; sync keeps it current | A custom BullMQ job id with a `:` in it is never queued |
 | `.claude/anti-patterns/rate-limit-double-next.md` | always; sync keeps it current | `await next()` inside a middleware's own try/catch |
@@ -756,6 +858,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.claude/rules/backend/testing.md` | always; sync keeps it current | Backend Testing Conventions |
 | `.claude/rules/common/error-codes.md` | always; sync keeps it current | Error codes |
 | `.claude/rules/common/patterns.md` | always; sync keeps it current | Common Patterns |
+| `.claude/rules/common/payload-contract.md` | with `payload-encryption=yes`; sync keeps it current | Payload Contract (short form) |
 | `.claude/rules/common/testing.md` | always; sync keeps it current | Testing Requirements |
 | `.claude/rules/typescript/coverage.md` | always; sync keeps it current | COVER — Test Coverage (TypeScript) |
 | `.claude/settings.json` | merged into yours (additive; your values win) | Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox |
@@ -776,18 +879,53 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `SSOT.md` | once, if missing; then yours | SSOT.md — `&lt;repo-name&gt;` |
 | `bunfig.toml` | once; then yours | Bun's test settings, including the test preload |
 | `knip.ts` | once; then yours | Dead-code settings for knip |
+| `payload.config.json` | with `payload-encryption=yes`; once; then yours | The payload contract switch (strict, committed), the route exemptions with their reasons, and the peers to check |
 | `scripts/check/ci-env.sh` | always; sync keeps it current | Runs a command with the environment CI's unit tests get, and nothing else: PATH, HOME, TMPDIR, the locale, CI=true and CI's test variables. |
 | `scripts/check/constants.config.json` | once; then yours | Where each kind of identifier lives, for the constants check |
 | `scripts/check/constants.ts` | always; sync keeps it current | One home per identifier, enforced (AGENTS.md § G, "One home per identifier"). |
 | `scripts/check/coverage-files.mjs` | always; sync keeps it current | Every source file must be loaded by at least one test. |
 | `scripts/check/coverage-policy.mjs` | always; sync keeps it current | COVER: refuses a coverage gate that was weakened. |
+| `scripts/check/crypto-interop.ts` | with `payload-encryption=yes`; sync keeps it current | Proves this repo's payload cipher still speaks the shared wire format (.claude/PAYLOAD-CONTRACT.md § Tests and interop). |
+| `scripts/check/dockerfile.ts` | always; sync keeps it current | The production image builds what the quality gate validated. |
+| `scripts/check/endpoints.ts` | with `payload-encryption=yes`; sync keeps it current | The static half of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `scripts/check/gates.list` | once; then yours | This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .husky/pre-commit. |
 | `scripts/check/index-coverage.sh` | always; sync keeps it current | Foreign-key index gate (AGENTS.md §H Rule 32). |
 | `scripts/check/migrations.sh` | always; sync keeps it current | Migration drift gate. |
 | `scripts/check/module-mocks.ts` | once; then yours | MOCK — a module replacement must not reach the files that did not ask for one. |
+| `scripts/check/openapi.ts` | always; sync keeps it current | The OpenAPI document builds, describes at least one route, and equals the committed openapi.json. |
+| `scripts/check/payload-vectors.json` | with `payload-encryption=yes`; sync keeps it current | Shared test vectors every implementation of the envelope must open and refuse; never regenerated to pass |
+| `scripts/generate/endpoints.ts` | with `payload-encryption=yes`; sync keeps it current | Writes the generated half of the endpoint registry from the OpenAPI spec and the exemptions in payload.config.json (.claude/PAYLOAD-CONTRACT.md § Registry). |
+| `scripts/generate/openapi.ts` | always; sync keeps it current | Writes the OpenAPI document the app declares to openapi.json (`bun run spec:export`). |
+| `scripts/lib/openapi-document.ts` | always; sync keeps it current | The OpenAPI document the app declares, built from `src/app.ts` without starting a server. |
+| `scripts/lib/openapi-endpoints.ts` | with `payload-encryption=yes`; sync keeps it current | The payload contract's configuration, and the endpoint registry an OpenAPI document implies. |
+| `scripts/lib/source-scan.ts` | always; sync keeps it current | Reading a source tree the way the payload checks need it: every TypeScript file, with comments and API prose blanked so a sentence that names a route is never read as code, and JSON compared by meaning rather than by formatting. |
+| `src/lib/endpoints/__tests__/endpoints.test.ts` | always; sync keeps it current | Unit tests for the endpoint registry: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/endpoints/endpoints.generated.ts` | with `payload-encryption=yes`; once; then yours | Generated from `openapi.json` by `scripts/generate/endpoints.ts`. |
+| `src/lib/endpoints/endpoints.ts` | with `payload-encryption=yes`; once; then yours | Every route this service serves, and what happens to its payload (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/aes-gcm.test.ts` | always; sync keeps it current | Unit tests for the AES-256-GCM layer: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/base64url.test.ts` | always; sync keeps it current | Unit tests for base64url and UTF-8 helpers: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/codec.test.ts` | always; sync keeps it current | Unit tests for sealing and opening JSON envelopes: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/ecdh.test.ts` | always; sync keeps it current | Unit tests for browser key agreement: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/envelope.test.ts` | always; sync keeps it current | Unit tests for the envelope shape, freshness and AAD builders: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/errors.test.ts` | always; sync keeps it current | Unit tests for the payload error codes: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/key-ring.test.ts` | always; sync keeps it current | Unit tests for pre-shared key rings: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/mode.test.ts` | always; sync keeps it current | Unit tests for the strict/off switch: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/policy.test.ts` | always; sync keeps it current | Unit tests for policies and the endpoint matcher: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/vectors.test.ts` | always; sync keeps it current | Unit tests for this copy against the shared test vectors: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/aes-gcm.ts` | with `payload-encryption=yes`; once; then yours | The one cipher on the wire: AES-256-GCM through WebCrypto. |
+| `src/lib/payload/base64url.ts` | with `payload-encryption=yes`; once; then yours | Bytes on the wire: base64url and UTF-8, the same way in the browser, on Node and on Bun. |
+| `src/lib/payload/codec.ts` | with `payload-encryption=yes`; once; then yours | A JSON body into an envelope and back: the one place that decides the order of operations. |
+| `src/lib/payload/ecdh.ts` | with `payload-encryption=yes`; once; then yours | Key agreement for the browser hop, where there is no secret the browser could hold. |
+| `src/lib/payload/envelope.ts` | with `payload-encryption=yes`; once; then yours | The wire format: what an envelope is, and what its ciphertext is bound to. |
+| `src/lib/payload/errors.ts` | with `payload-encryption=yes`; once; then yours | The closed set of ways an envelope can fail to become a payload. |
+| `src/lib/payload/key-ring.ts` | with `payload-encryption=yes`; once; then yours | Pre-shared keys for server-to-server hops, which never reach a browser. |
+| `src/lib/payload/mode.ts` | with `payload-encryption=yes`; once; then yours | The switch: whether this service enforces the payload contract. |
+| `src/lib/payload/policy.ts` | with `payload-encryption=yes`; once; then yours | The endpoint registry's types, and the one place that decides what a policy seals. |
+| `src/middlewares/__tests__/payload.middleware.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the Hono payload middleware: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/middlewares/payload.middleware.ts` | with `payload-encryption=yes`; once; then yours | The payload contract at this service's edge (.claude/PAYLOAD-CONTRACT.md). |
 | `CLAUDE.md` | one managed block, appended | `## Agent config kit` |
 | `.gitignore` | one managed block (14 lines) | `.env`, `.env.*.local`, `.env.development`, `.env.local`, `.env.production`, `.env.staging`, `.env.test`, `.envrc`, `.serena/`, `.skillspector/`, `/coverage`, `build/`, `dist/`, `node_modules/` |
-| `package.json` | missing scripts only: check:constants, check:coverage-policy, check:dead-code, check:folder-shape, check:mocks, db:generate, fl, fl:ci, format, format:check, lint, test:coverage, type-check | `scripts` |
+| `package.json` | missing scripts only: check:constants, check:dockerfile, check:coverage-policy, check:dead-code, check:folder-shape, check:mocks, db:generate, fl, fl:ci, format, format:check, lint, test:coverage, type-check, check:crypto-interop, check:endpoints, check:openapi, generate:endpoints, spec:export | `scripts` |
 
 </details>
 
@@ -856,23 +994,29 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-fe-nextjs</strong>: 99 files</summary>
+<summary><strong>agent-fe-nextjs</strong>: 141 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
 | `.claude/ANALYTICS.example.md` | once; then yours | Analytics — Read API Access |
+| `.claude/PAYLOAD-CONTRACT.md` | with `payload-encryption=yes`; sync keeps it current | Payload Contract: Sealed Bodies and One Endpoint Registry |
 | `.claude/SERENA-WORKSPACE.example.md` | once; then yours | Serena — Shared Multi-Repo Workspace Scoping |
 | `.claude/agent-config.json` | with `i18n=yes`; once; then yours | This stack's hook settings, such as generatedPaths or migrationsDirs |
 | `.claude/anti-patterns/INDEX.md` | once; then yours | Anti-Patterns Index |
+| `.claude/anti-patterns/auth-cookie-cache-outlives-revocation.md` | always; sync keeps it current | A revoked session keeps working until its cookie cache ages out |
+| `.claude/anti-patterns/better-auth-account-endpoints-are-gated.md` | always; sync keeps it current | Better Auth's account endpoints are gated in ways the client does not show |
+| `.claude/anti-patterns/better-auth-passkey-quirks.md` | always; sync keeps it current | Passkeys: a dismissed prompt is an error, and user verification is not enforced |
 | `.claude/anti-patterns/bodiless-request-is-an-empty-stream.md` | always; sync keeps it current | A bodiless request arrives as an empty stream, not `null` |
 | `.claude/anti-patterns/bun-build-vs-bun-run-build.md` | always; sync keeps it current | `bun &lt;name&gt;` ≠ `bun run &lt;name&gt;` — build **and** test |
 | `.claude/anti-patterns/coverage-allowlist-hides-files.md` | always; sync keeps it current | A named-file coverage allowlist cannot report what is missing from it |
+| `.claude/anti-patterns/cropper-letterboxes-and-caps-the-crop-area.md` | always; sync keeps it current | An image cropper's crop circle will not sit flush with its stage |
 | `.claude/anti-patterns/deploy-platform-env-is-encrypted-at-rest.md` | always; sync keeps it current | A deploy platform that stores app env encrypted: never write it with SQL |
 | `.claude/anti-patterns/dialog-inline-maxwidth-drops-ua-gutter.md` | always; sync keeps it current | An inline `maxWidth` on `&lt;dialog&gt;` removes the browser's edge gutter |
 | `.claude/anti-patterns/fixed-popover-in-contained-ancestor-lands-offset.md` | always; sync keeps it current | A `position: fixed` pop-up inside a contained or transformed ancestor lands offset |
 | `.claude/anti-patterns/git-apply-check-passes-then-deletes.md` | always; sync keeps it current | `git apply --check` passes, then the patch deletes the files |
 | `.claude/anti-patterns/i18n-template-key-blinds-namespace.md` | always; sync keeps it current | One template key blinds the unused-key check for a whole namespace |
 | `.claude/anti-patterns/jsdom-min-in-inline-style-breaks-getbyrole.md` | always; sync keeps it current | jsdom throws on `min()` in an inline style, and every `getByRole` in that tree fails |
+| `.claude/anti-patterns/lightningcss-keeps-only-the-prefixed-backdrop-filter.md` | always; sync keeps it current | Writing both `backdrop-filter` forms can leave only the `-webkit-` one |
 | `.claude/anti-patterns/live-session-flip-skips-flow-steps.md` | always; sync keeps it current | A live session refetch skips the auth flow's own steps |
 | `.claude/anti-patterns/max-lines-skips-blanks-and-comments.md` | always; sync keeps it current | `wc -l` disagrees with the `max-lines` gate, and only the gate decides |
 | `.claude/anti-patterns/nextjs-page-level-shell-loading-flashes-chrome.md` | always; sync keeps it current | A shell rendered by `page.tsx` turns every `loading.tsx` into a chrome flash |
@@ -901,6 +1045,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.claude/docs/standards/responsive.md` | with `responsive=yes`; sync keeps it current | RESP — Responsive Layout Standard |
 | `.claude/docs/standards/skeletons.md` | with `skeletons=yes`; sync keeps it current | SKEL — Loading Skeleton Standard |
 | `.claude/rules/common/error-codes.md` | always; sync keeps it current | Error codes |
+| `.claude/rules/common/payload-contract.md` | with `payload-encryption=yes`; sync keeps it current | Payload Contract (short form) |
 | `.claude/rules/typescript/conventions.md` | always; sync keeps it current | TypeScript Conventions |
 | `.claude/rules/typescript/coverage.md` | always; sync keeps it current | COVER — Test Coverage (TypeScript) |
 | `.claude/rules/web/data-fetching.md` | always; sync keeps it current | FETCH — No Request Waterfalls |
@@ -936,9 +1081,13 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `doctor.config.json` | once; then yours | React Doctor settings (dead code is left to knip) |
 | `knip.ts` | once; then yours | Dead-code settings for knip |
 | `oxlint.json` | once; then yours | Lint rules for oxlint; the reasons are in .claude/docs/lint-config.md |
+| `payload.config.json` | with `payload-encryption=yes`; once; then yours | The payload contract switch (strict, committed), the route exemptions with their reasons, and the peers to check |
 | `scripts/check/audit.ts` | always; sync keeps it current | Security audit gate — wraps `bun audit --json`. |
 | `scripts/check/coverage-policy.mjs` | always; sync keeps it current | COVER: refuses a coverage gate that was weakened. |
+| `scripts/check/crypto-interop.ts` | with `payload-encryption=yes`; sync keeps it current | Proves this repo's payload cipher still speaks the shared wire format (.claude/PAYLOAD-CONTRACT.md § Tests and interop). |
 | `scripts/check/dialog-desc.ts` | with `dialogs=yes`; sync keeps it current | DESC — dialog description standard. |
+| `scripts/check/dockerfile.ts` | always; sync keeps it current | The production image builds what the quality gate validated. |
+| `scripts/check/endpoints.ts` | with `payload-encryption=yes`; sync keeps it current | The static half of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `scripts/check/error-catch.ts` | always; sync keeps it current | No failure is swallowed without saying so (.claude/rules/common/error-codes.md). |
 | `scripts/check/error-codes.ts` | always; sync keeps it current | Every error code the API can send has a message here (.claude/rules/common/error-codes.md). |
 | `scripts/check/gates.list` | once; then yours | This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .husky/pre-commit. |
@@ -946,24 +1095,55 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `scripts/check/i18n-casing.ts` | with `i18n=yes`; sync keeps it current | Title Case check for the words a button shows, in every locale (.claude/rules/web/ui-conventions.md § Copy). |
 | `scripts/check/i18n.ts` | with `i18n=yes`; sync keeps it current | Checks for: 1. |
 | `scripts/check/no-reexport.ts` | always; sync keeps it current | Refuses re-exports: a module may export only what it declares (AGENTS.md Rule 34). |
+| `scripts/check/payload-vectors.json` | with `payload-encryption=yes`; sync keeps it current | Shared test vectors every implementation of the envelope must open and refuse; never regenerated to pass |
 | `scripts/check/responsive.ts` | with `responsive=yes`; sync keeps it current | RESP — responsive layout. |
+| `scripts/check/skeleton-pairs.ts` | with `skeletons=yes`; sync keeps it current | Every loading skeleton a screen renders is measured against that screen, or named as not yet. |
 | `scripts/check/skeleton-switch.sh` | with `skeletons=yes`; sync keeps it current | IS_SKELETON_SHOWN and its twin IS_LOADER_SHOWN hold wired screens on their loading state, for comparing a placeholder with the real layout; IS_ERROR_SHOWN holds wired lists on their error state. |
 | `scripts/check/soc.allow.json` | once; then yours | Reviewed exceptions for the separation-of-concerns check |
 | `scripts/check/soc.ts` | always; sync keeps it current | SOC — refuses logic in the presentation layer (AGENTS.md Rule 32). |
 | `scripts/check/tailwind-classes.ts` | always; sync keeps it current | Refuses a Tailwind class that is not in its canonical form (AGENTS.md Rule 33). |
+| `scripts/generate/endpoints.ts` | with `payload-encryption=yes`; sync keeps it current | Writes the generated half of the endpoint registry from the OpenAPI spec and the exemptions in payload.config.json (.claude/PAYLOAD-CONTRACT.md § Registry). |
+| `scripts/lib/openapi-endpoints.ts` | with `payload-encryption=yes`; sync keeps it current | The payload contract's configuration, and the endpoint registry an OpenAPI document implies. |
+| `scripts/lib/source-scan.ts` | with `payload-encryption=yes`; sync keeps it current | Reading a source tree the way the payload checks need it: every TypeScript file, with comments and API prose blanked so a sentence that names a route is never read as code, and JSON compared by meaning rather than by formatting. |
 | `scripts/lib/stylesheets.ts` | with `responsive=yes`; sync keeps it current | Loading the stylesheets `scripts/check/responsive.ts` validates. |
 | `scripts/measure/waterfall.ts` | always; sync keeps it current | `bun run measure:waterfall --path '/en/projects/42'`: one fresh load of a URL, with every API request and image it made, when each started and when it ended. |
 | `scripts/next/env.ts` | always; sync keeps it current | Environment file bootstrap and preflight. |
+| `src/lib/api/endpoints/endpoints.generated.ts` | with `payload-encryption=yes`; once; then yours | Generated from `openapi.json` by `scripts/generate/endpoints.ts`. |
+| `src/lib/api/endpoints/endpoints.ts` | with `payload-encryption=yes`; once; then yours | Every route this app calls, and what happens to its payload (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/aes-gcm.ts` | with `payload-encryption=yes`; once; then yours | The one cipher on the wire: AES-256-GCM through WebCrypto. |
+| `src/lib/payload/base64url.ts` | with `payload-encryption=yes`; once; then yours | Bytes on the wire: base64url and UTF-8, the same way in the browser, on Node and on Bun. |
+| `src/lib/payload/bridge.ts` | with `payload-encryption=yes`; once; then yours | The frontend server's crypto boundary, where the browser hop meets the backend hop. |
+| `src/lib/payload/client.ts` | with `payload-encryption=yes`; once; then yours | The browser's half of the payload contract: one agreed key per tab, and the sealing and opening the API client's transport calls around each request (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/codec.ts` | with `payload-encryption=yes`; once; then yours | A JSON body into an envelope and back: the one place that decides the order of operations. |
+| `src/lib/payload/ecdh.ts` | with `payload-encryption=yes`; once; then yours | Key agreement for the browser hop, where there is no secret the browser could hold. |
+| `src/lib/payload/envelope.ts` | with `payload-encryption=yes`; once; then yours | The wire format: what an envelope is, and what its ciphertext is bound to. |
+| `src/lib/payload/errors.ts` | with `payload-encryption=yes`; once; then yours | The closed set of ways an envelope can fail to become a payload. |
+| `src/lib/payload/key-ring.ts` | with `payload-encryption=yes`; once; then yours | Pre-shared keys for server-to-server hops, which never reach a browser. |
+| `src/lib/payload/mode.ts` | with `payload-encryption=yes`; once; then yours | The switch: whether this service enforces the payload contract. |
+| `src/lib/payload/policy.ts` | with `payload-encryption=yes`; once; then yours | The endpoint registry's types, and the one place that decides what a policy seals. |
+| `src/testing/lib/api/endpoints/endpoints.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the endpoint registry: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/aes-gcm.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the AES-256-GCM layer: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/base64url.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for base64url and UTF-8 helpers: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/bridge.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the frontend server bridge between hops: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/client.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the browser transport calls: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/codec.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for sealing and opening JSON envelopes: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/ecdh.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for browser key agreement: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/envelope.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the envelope shape, freshness and AAD builders: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/errors.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the payload error codes: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/key-ring.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for pre-shared key rings: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/mode.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the strict/off switch: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/policy.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for policies and the endpoint matcher: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/testing/lib/payload/vectors.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for this copy against the shared test vectors: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `CLAUDE.md` | one managed block, appended | `## Agent config kit` |
 | `.gitignore` | one managed block (13 lines) | `*.tsbuildinfo`, `.env`, `.env.*.local`, `.env.development`, `.env.local`, `.env.production`, `.env.test`, `.envrc`, `.next/`, `.serena/`, `coverage/`, `next-env.d.ts`, `node_modules/` |
-| `package.json` | missing scripts only: format, format:check, lint, fl, fl:ci, type-check, test, test:coverage, env:init, env:check, check:dead-code, check:hooks, check:reexport, check:soc, check:tailwind, check:error-codes, check:error-catch, check:i18n, check:dialog-desc, check:responsive, check:skeleton-switch, measure:waterfall | `scripts` |
+| `package.json` | missing scripts only: format, format:check, lint, fl, fl:ci, type-check, test, test:coverage, env:init, env:check, check:dead-code, check:hooks, check:reexport, check:soc, check:tailwind, check:error-codes, check:error-catch, check:i18n, check:dialog-desc, check:responsive, check:skeleton-switch, measure:waterfall, check:skeleton-pairs, check:dockerfile, check:endpoints, check:crypto-interop, generate:endpoints | `scripts` |
 | `tsconfig.json` | by hand: the draft names `_kit/snippets/tsconfig.scripts.jsonc` | |
 | `vitest.config.ts` | by hand: the draft names `_kit/snippets/vitest.coverage.ts` | |
 
 </details>
 
 <details>
-<summary><strong>agent-fe-nextjs-static</strong>: 61 files</summary>
+<summary><strong>agent-fe-nextjs-static</strong>: 62 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
@@ -974,6 +1154,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.claude/anti-patterns/git-apply-check-passes-then-deletes.md` | always; sync keeps it current | `git apply --check` passes, then the patch deletes the files |
 | `.claude/anti-patterns/hash-csp-goes-stale-on-every-build.md` | always; sync keeps it current | A hash-based CSP pasted once breaks the next build |
 | `.claude/anti-patterns/in-memory-rate-limit-on-serverless.md` | always; sync keeps it current | A rate limit kept in memory does not limit a serverless endpoint |
+| `.claude/anti-patterns/lightningcss-keeps-only-the-prefixed-backdrop-filter.md` | always; sync keeps it current | Writing both `backdrop-filter` forms can leave only the `-webkit-` one |
 | `.claude/anti-patterns/nodejs-25-webstorage-ssr.md` | always; sync keeps it current | Node.js 25 — Broken localStorage breaks Next.js SSR |
 | `.claude/anti-patterns/opengraph-image-has-no-extension-in-export.md` | always; sync keeps it current | A generated share image lands in `out/` without a file extension |
 | `.claude/anti-patterns/page-opengraph-drops-the-site-share-image.md` | always; sync keeps it current | A page's own `openGraph` drops the site's share image |
@@ -1066,6 +1247,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `post-commit` | Hook (PostToolUse on `Bash`) | post-commit shows Claude what a commit actually carried, right after it lands, and says so when the commit holds paths its pathspec did not name. | Runs by itself after a commit | Another session's staged work cannot ride along unseen | [post-commit](docs/agent-core/post-commit.md) |
 | `post-edit` | Hook (PostToolUse on file edits) | post-edit formats, then lints, the file Claude just wrote, with your project's own tools, and hands Claude any finding. | Runs by itself after each file write | Findings are fixed in the next edit, not at commit time | [post-edit](docs/agent-core/post-edit.md) |
 | `/agent-core:branch-cleanup` | Command (you start it) | After a promotion, deletes every merged branch on the remote and locally except dev, prod, the default branch and open-PR heads, once the user confirms the list. Unmerged branches are reported and kept. | `/agent-core:branch-cleanup` | A tidy remote, nothing unmerged lost | [branch-cleanup](docs/agent-core/branch-cleanup.md) |
+| `/agent-core:check-fix` | Command | Runs this repo's quality gates, fixes each failure at its cause (never by silencing it), and re-runs until every gate passes or only a decision is left. Changes files, never commits. | `/agent-core:check-fix` when a gate is red | Green gates without silenced findings | [check-fix](docs/agent-core/check-fix.md) |
 | `/agent-core:checkpoint-summary` | Command | Summarises the session for a handover — what was done, what is pending, what comes next. Prints the summary; optionally writes a gitignored local log under .claude/session-logs/. | `/agent-core:checkpoint-summary` | The next session starts where this one ended | [checkpoint-summary](docs/agent-core/checkpoint-summary.md) |
 | `/agent-core:checkpoint` | Command (you start it) | Creates a local safety commit of this session's changes, by pathspec, with an ISO timestamp, before a risky change. Commits only; never pushes. | `/agent-core:checkpoint before refactor` | A cheap way back | [checkpoint](docs/agent-core/checkpoint.md) |
 | `/agent-core:commit` | Command (you start it) | Runs the quality gates, inspects the staged changes, and drafts a commit message in this repo's format. Drafts only; does not commit. | `/agent-core:commit` | A red gate never becomes a commit | [commit](docs/agent-core/commit.md) |

@@ -1,7 +1,7 @@
 {
   "name": "agent-deploy",
   "displayName": "Agent add-on: deploy",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Optional, host-agnostic deploy add-on for Claude Code, on top of agent-core. No hooks. Commands: promote-deploy walks a release from a merged pull request to a deploy when CI cannot run, and verify-deploy runs a post-deploy smoke test (HTTP 200, canonical URL, robots and sitemap, security headers, a deploy newer than the merge). Both use the network (your live site, the GitHub API, your deploy adapter) and start only when you type them. setup and sync install the smoke script, an optional trigger script that posts to your deploy webhook, ask-first permissions for both, and two optional CI callers for a merge into prod: a deploy through the webhook, and a strip of agent config from prod. It names no hosting vendor.",
   "author": {
     "name": "Mochammad Adhi Buchori",

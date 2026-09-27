@@ -118,6 +118,15 @@
         "why": "Remote rapi, tidak ada yang belum di-merge yang hilang"
       }
     },
+    "agent-core/check-fix": {
+      "use": "`/agent-core:check-fix` when a gate is red",
+      "why": "Green gates without silenced findings",
+      "id": {
+        "what": "Menjalankan gate kualitas, memperbaiki tiap kegagalan pada penyebabnya, lalu mengulang sampai semuanya lolos",
+        "use": "`/agent-core:check-fix` saat ada gate yang merah",
+        "why": "Gate hijau tanpa temuan yang dibungkam"
+      }
+    },
     "agent-core/checkpoint": {
       "use": "`/agent-core:checkpoint before refactor`",
       "why": "A cheap way back",
@@ -835,6 +844,10 @@
       "en": "Lint rules for oxlint; the reasons are in .claude/docs/lint-config.md",
       "id": "Aturan lint oxlint; alasannya ada di .claude/docs/lint-config.md"
     },
+    "payload.config.json": {
+      "en": "The payload contract switch (strict, committed), the route exemptions with their reasons, and the peers to check",
+      "id": "Sakelar kontrak payload (strict, di-commit), pengecualian rute beserta alasannya, dan repo peer yang ikut diperiksa"
+    },
     "pyproject.toml": {
       "en": "Python project and tool settings: ruff, mypy, pytest, coverage, vulture",
       "id": "Pengaturan proyek Python dan tool-nya: ruff, mypy, pytest, coverage, vulture"
@@ -846,6 +859,10 @@
     "scripts/check/constants.config.json": {
       "en": "Where each kind of identifier lives, for the constants check",
       "id": "Tempat tiap jenis identifier berada, untuk pemeriksa konstanta"
+    },
+    "scripts/check/payload-vectors.json": {
+      "en": "Shared test vectors every implementation of the envelope must open and refuse; never regenerated to pass",
+      "id": "Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope; tidak pernah dibuat ulang agar lolos"
     },
     "scripts/check/site.config.json": {
       "en": "Site URL, mode and budgets the site checks read",
