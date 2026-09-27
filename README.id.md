@@ -295,16 +295,16 @@ flowchart TD
 asli, dipersingkat dengan `…`):
 
 ```text
-agent-setup plan · agent-fe-nextjs 1.0.0 + agent-core 1.0.0 · project .
+agent-setup plan · agent-fe-nextjs 1.0.0 + agent-core 1.0.1 · project .
   create   .claude/rules/web/security.md
   …
-  create   .claude/settings.json                   +$schema, +11 permissions.allow, +4 permissions.ask, +14 permissions.deny, +sandbox.enabled, …
+  create   .claude/settings.json                   +$schema, +16 permissions.allow, +7 permissions.ask, +14 permissions.deny, +sandbox.enabled, …
   block    .gitignore                              agent-config-kit block (16 lines) (new file)
   block    CLAUDE.md                               ## Agent config kit (appended)
   alias    package.json                            scripts.unlock = "bash scripts/ops/unlock.sh"
   by-hand  tsconfig.json                           add what …/_kit/snippets/tsconfig.scripts.jsonc holds; the engine does not merge this format
   lock     .claude/agent-config-kit.lock           written last; turns the hooks on
-digest sha256:2b670bbd…
+digest sha256:664a6b9d…
 ```
 
 Setelah **go**, `/agent-fe-nextjs:sync --check` diakhiri dengan `result: in sync (0 findings; exit 0)`.
@@ -1226,6 +1226,7 @@ bentuknya (gejala, penyebab, perbaikan, tanda), dan tambahkan satu baris di `IND
 | `--no-verify`, `HUSKY=0`, `SKIP=` | safety-check | Gate adalah batasnya | Perbaiki yang dilaporkan gate | tidak ada |
 | Pembacaan atau penulisan shell atas file `.env*` asli | safety-check (+ sandbox, aturan deny) | Rahasia masuk transkrip | `scripts/env/show.sh`; `set.sh` setelah `! bun unlock env` | tidak ada; sandbox bisa dimatikan di `.claude/settings.json` |
 | Claude menjalankan `unlock` | safety-check | Hanya Anda yang membuka kunci | Anda menjalankan `! bun unlock env` | tidak ada |
+| Perubahan guard lewat shell: hook, `scripts/check/hook-probes.*`, `scripts/ops/unlock.sh`, `scripts/env/`, file yang menyalakan guard | safety-check | Guard yang bisa ditulis ulang Claude tidak menjaga apa pun | Edit tool, tempat Anda melihat diff-nya; atau jalankan sendiri dengan `!` | tidak ada |
 | Penulisan SQL produksi | db-guard | Data produksi | `! bun unlock db` | `dbWriteGuard.toolPattern`, atau biarkan server baca-saja |
 | Edit tangan pada kode hasil generator | generated-guard | Hilang di generasi berikutnya | Ubah sumbernya, jalankan generator | `"generatedPaths": []` |
 | Edit tangan pada migrasi | migration-guard | Riwayat tidak boleh berubah | Buat migrasi baru | `"migrationsDirs": []` |
@@ -1352,9 +1353,9 @@ jobs:
   crash atau timeout akan meloloskan panggilan. Karena itu setiap guard menolak apa yang tidak bisa
   diperiksanya (input rusak, python3 tidak ada, proses menggantung), dan setiap hook umpan balik
   diam saat gagal.
-- **Setiap aturan dibuktikan dua arah.** 630 baris probe menyatakan apa yang wajib diblokir
-  safety-check (422) dan apa yang wajib diloloskan (208); harness probe milik kit menjalankan 1.825
-  probe terhadap skrip plugin; 1.303 tes bats mencakup hook, mesin setup, pemeriksa stack, dan skrip
+- **Setiap aturan dibuktikan dua arah.** 808 baris probe menyatakan apa yang wajib diblokir
+  safety-check (540) dan apa yang wajib diloloskan (268); harness probe milik kit menjalankan 2.211
+  probe terhadap skrip plugin; 1.481 tes bats mencakup hook, mesin setup, pemeriksa stack, dan skrip
   CI, di macOS (bash 3.2) dan Ubuntu. Silakan audit: [tests/hooks/](tests/hooks/safety-probes.bats),
   [tests/setup/](tests/setup/check.bats).
 - **Tidak ada yang dipasang diam-diam.** Setup menampilkan draf, baru menulis setelah **go**, tidak

@@ -291,16 +291,16 @@ each repo.
 shortened with `…`):
 
 ```text
-agent-setup plan · agent-fe-nextjs 1.0.0 + agent-core 1.0.0 · project .
+agent-setup plan · agent-fe-nextjs 1.0.0 + agent-core 1.0.1 · project .
   create   .claude/rules/web/security.md
   …
-  create   .claude/settings.json                   +$schema, +11 permissions.allow, +4 permissions.ask, +14 permissions.deny, +sandbox.enabled, …
+  create   .claude/settings.json                   +$schema, +16 permissions.allow, +7 permissions.ask, +14 permissions.deny, +sandbox.enabled, …
   block    .gitignore                              agent-config-kit block (16 lines) (new file)
   block    CLAUDE.md                               ## Agent config kit (appended)
   alias    package.json                            scripts.unlock = "bash scripts/ops/unlock.sh"
   by-hand  tsconfig.json                           add what …/_kit/snippets/tsconfig.scripts.jsonc holds; the engine does not merge this format
   lock     .claude/agent-config-kit.lock           written last; turns the hooks on
-digest sha256:2b670bbd…
+digest sha256:664a6b9d…
 ```
 
 After **go**, `/agent-fe-nextjs:sync --check` ends with `result: in sync (0 findings; exit 0)`.
@@ -1219,6 +1219,7 @@ at the end of the session that found the trap.
 | `--no-verify`, `HUSKY=0`, `SKIP=` | safety-check | The gate is the bar | Fix what the gate reports | none |
 | Shell reads or writes of real `.env*` files | safety-check (+ sandbox, deny rules) | Secrets in the transcript | `scripts/env/show.sh`; `set.sh` after `! bun unlock env` | none; the sandbox can be turned off in `.claude/settings.json` |
 | Claude running `unlock` | safety-check | Only you unlock | You run `! bun unlock env` | none |
+| Shell changes to the guards: the hooks, `scripts/check/hook-probes.*`, `scripts/ops/unlock.sh`, `scripts/env/`, the files that turn the guards on | safety-check | A guard Claude can rewrite guards nothing | The Edit tool, where you see the diff; or you run it with `!` | none |
 | Production SQL writes | db-guard | Production data | `! bun unlock db` | `dbWriteGuard.toolPattern`, or keep the server read-only |
 | Hand edits to generated code | generated-guard | Lost at the next generation | Change the source, run the generator | `"generatedPaths": []` |
 | Hand edits to migrations | migration-guard | History must not change | Generate a new migration | `"migrationsDirs": []` |
@@ -1337,8 +1338,8 @@ jobs:
 - **Guards fail closed.** Only exit 2 blocks in Claude Code; a crash or timeout would let a call
   through. So each guard refuses what it cannot check (bad input, missing python3, a hang), and
   each feedback hook stays silent on failure.
-- **Every rule is proven both ways.** 630 probe rows say what safety-check must block (422) and let
-  through (208); the kit's own probe harness runs 1,825 probes against the plugin's scripts; 1,303
+- **Every rule is proven both ways.** 808 probe rows say what safety-check must block (540) and let
+  through (268); the kit's own probe harness runs 2,211 probes against the plugin's scripts; 1,481
   bats tests cover the hooks, the setup engine, the stack checks and the CI scripts, on macOS
   (bash 3.2) and Ubuntu. Audit them: [tests/hooks/](tests/hooks/safety-probes.bats),
   [tests/setup/](tests/setup/check.bats).

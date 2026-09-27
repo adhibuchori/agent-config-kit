@@ -18,6 +18,12 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
   as it already did for the unlock script and `scripts/env/`, so a change to a guard or to the
   probes that prove it always reaches you first.
 
+#### Changed
+
+- `docs/unlock.md`, the copy setup installs, says that the shell may not change the hooks, the
+  probes or the unlock script, and lists the write routes the analyzer reads (`sed` and `awk`
+  programs, inline code, paths handed over by `xargs`, `$( )` or `find -exec`).
+
 ## [1.0.0] - 2026-09-26
 
 First release.

@@ -178,9 +178,11 @@ agent-core cannot be disabled while a stack plugin that depends on it is enabled
 - Plugins cannot ship permissions, the sandbox setting or `.claude/rules/`, so `/agent-core:setup`
   writes them into your repo (after a dry run you approve).
 - The hooks read command text. A script Claude writes and then runs is executed, not read; programs
-  that run their own commands (`watch`, `parallel`, an editor) are judged by name only. The Bash
-  sandbox is the layer the operating system enforces. [docs/unlock.md](../../docs/unlock.md) lists
-  the honest limits.
+  that run their own commands (`watch`, `parallel`, an editor) are judged by name only. The shell
+  may not change the hooks themselves, the probes, the unlock script, the `.env` helpers or the files
+  that turn the guards on; a change goes through the Edit tool or your own `!`. The Bash sandbox is
+  the layer the operating system enforces. [docs/unlock.md](../../docs/unlock.md) lists the honest
+  limits.
 - No per-hook switch: Claude Code enables or disables a plugin as a whole. The settings above narrow
   single rules.
 - Not for claude.ai or Cowork (the `bin/` rule above).
