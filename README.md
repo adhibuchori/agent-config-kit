@@ -291,7 +291,7 @@ each repo.
 shortened with `…`):
 
 ```text
-agent-setup plan · agent-fe-nextjs 1.0.0 + agent-core 1.0.1 · project .
+agent-setup plan · agent-fe-nextjs 1.0.1 + agent-core 1.0.1 · project .
   create   .claude/rules/web/security.md
   …
   create   .claude/settings.json                   +$schema, +16 permissions.allow, +7 permissions.ask, +14 permissions.deny, +sandbox.enabled, …
@@ -305,9 +305,9 @@ digest sha256:664a6b9d…
 
 After **go**, `/agent-fe-nextjs:sync --check` ends with `result: in sync (0 findings; exit 0)`.
 
-Until a kit release pins the reusable quality gate to a real commit, setup holds the CI caller
-back and says so in a `warn` line instead of installing a workflow that would fail; a later
-`/<plugin>:sync` installs it. See [CI: reusable quality gates](#ci-reusable-quality-gates).
+Since 1.0.1 the stack plugins pin the reusable quality gate to the v1.0.0 release commit, so setup
+installs the CI caller with the rest. A caller that still holds the release placeholder is held back
+with a `warn` line instead of a workflow that would fail; a later `/<plugin>:sync` installs it. See [CI: reusable quality gates](#ci-reusable-quality-gates).
 
 ## A normal day with the kit
 
@@ -704,7 +704,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.dockerignore` | once; then yours | The Docker build context. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | with `pr-templates=yes`; once; then yours | The pull-request template for work going into dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | with `pr-templates=yes`; once; then yours | The pull-request template for a dev to prod promotion |
-| `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; held until a release pins the reusable workflow to a real commit | Quality Gate for a FastAPI + LLM service: every pull request into a protected branch runs the FastAPI gate that agent-config-kit ships as a reusable workflow (ai-fastapi-quality-gate.yml; its header lists the checks). |
+| `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; sync keeps it current | Quality Gate for a FastAPI + LLM service: every pull request into a protected branch runs the FastAPI gate that agent-config-kit ships as a reusable workflow (ai-fastapi-quality-gate.yml; its header lists the checks). |
 | `.pre-commit-config.yaml` | once; then yours | The commit gate. |
 | `AGENTS.md` | once, if missing; then yours | AGENTS.md — &lt;repo-name&gt; |
 | `CLAUDE.md` | the starter, when the repo has no CLAUDE.md | &lt;Project Name&gt; — Claude Code Config |
@@ -749,7 +749,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.dockerignore` | once; then yours | The build context holds only what the image builds from. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | with `pr-templates=yes`; once; then yours | The pull-request template for work going into dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | with `pr-templates=yes`; once; then yours | The pull-request template for a dev to prod promotion |
-| `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; held until a release pins the reusable workflow to a real commit | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
+| `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; sync keeps it current | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
 | `.husky/pre-commit` | once; then yours | Runs the gates on staged files before each commit |
 | `.oxfmtrc.json` | once; then yours | Formatter settings for oxfmt |
 | `.oxlintignore` | once; then yours | Paths the linter skips |
@@ -813,7 +813,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.github/scripts/check-comment-style.ts` | always; sync keeps it current | Comment standard: `//` is reserved for directives (ts-expect-error, oxlint-disable, |
 | `.github/workflows/changelog.yaml` | with `ci-pipeline=yes`; once; then yours | Generate Content |
 | `.github/workflows/ci-cd.yaml` | with `ci-pipeline=yes`; sync keeps it current | CI/CD Pipeline |
-| `.github/workflows/quality-gate.yaml` | held until a release pins the reusable workflow to a real commit | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
+| `.github/workflows/quality-gate.yaml` | always; sync keeps it current | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
 | `.github/workflows/react-doctor.yml` | with `react-doctor=yes`; sync keeps it current | React Doctor: security, performance, correctness, accessibility, and architecture checks for React. |
 | `.husky/pre-commit` | always; sync keeps it current | Runs the gates on staged files before each commit |
 | `.oxfmtrc.json` | once; then yours | Formatter settings for oxfmt |
@@ -900,7 +900,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | once; then yours | The pull-request template for a dev to prod promotion |
 | `.github/scripts/check-comment-blocks.sh` | always; sync keeps it current | Caps consecutive comment runs under .github/ at 2 lines; shebangs are exempt. |
 | `.github/scripts/check-comment-style.ts` | always; sync keeps it current | Comment standard: `//` is reserved for directives (ts-expect-error, oxlint-disable, |
-| `.github/workflows/quality-gate.yaml` | held until a release pins the reusable workflow to a real commit | The pull-request quality gate for this Next.js app, installed by /agent-fe-nextjs:setup. |
+| `.github/workflows/quality-gate.yaml` | always; sync keeps it current | The pull-request quality gate for this Next.js app, installed by /agent-fe-nextjs:setup. |
 | `.github/workflows/react-doctor.yml` | with `react-doctor-ci=yes`; sync keeps it current | React Doctor: security, performance, correctness, accessibility, and architecture checks for React. |
 | `.husky/pre-commit` | always; sync keeps it current | Runs the gates on staged files before each commit |
 | `.oxfmtrc.json` | once; then yours | Formatter settings for oxfmt |
@@ -972,7 +972,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.claude/rules/web/static-export.md` | always; sync keeps it current | Keep the site static |
 | `.claude/settings.json` | merged into yours (additive; your values win) | Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox |
 | `.env.example` | once; then yours | Copy to .env.local for local builds, and set the same names in the host's build environment. |
-| `.github/workflows/quality-gate.yaml` | with `ci-gate=yes`; held until a release pins the reusable workflow to a real commit | The pull-request quality gate for this static site, installed by /agent-fe-nextjs-static:setup. |
+| `.github/workflows/quality-gate.yaml` | with `ci-gate=yes`; sync keeps it current | The pull-request quality gate for this static site, installed by /agent-fe-nextjs-static:setup. |
 | `.husky/pre-commit` | always; sync keeps it current | Runs the gates on staged files before each commit |
 | `.oxfmtrc.json` | once; then yours | Formatter settings for oxfmt |
 | `AGENTS.md` | once, if missing; then yours | AGENTS.md — &lt;Site Name&gt; |

@@ -50,11 +50,11 @@ The reusable workflows and `actions/` are released together with the repository 
    `# vX.Y.Z` comment), bump each affected plugin, and release those plugins as above.
    `pinact run --check` and `version-sync.mjs --check` confirm the pins and comments.
 
-For 1.0.0 the callers carry the placeholder `@0000000000000000000000000000000000000000 # v1.0.0`
-until step 4 runs. Setup never installs a caller that still holds the placeholder: the draft shows a
+1.0.0 shipped the callers with the placeholder `@0000000000000000000000000000000000000000 # v1.0.0`;
+the 1.0.1 releases of the five stack plugins pinned them to the v1.0.0 commit. Setup never installs a caller that still holds the placeholder: the draft shows a
 `warn … not installed` line and `sync --check` lists it as `held`, so a user never gets a gate
 that fails every pull request. The release from step 4 is what installs the callers, through
-`/<plugin>:sync`. Do not announce the marketplace before that release is out.
+`/<plugin>:sync`. Do not announce a marketplace whose callers still hold the placeholder.
 
 ## Before the first public release
 

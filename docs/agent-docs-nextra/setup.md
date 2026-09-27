@@ -55,9 +55,10 @@ Your `.claude/settings.json` already wires a hook script the plugin also runs, s
 - The draft ends with a `digest sha256:…` line, and after **go** the last line apply prints is
   `wrote    .claude/agent-config-kit.lock`.
 - `/agent-docs-nextra:sync --check` then ends with `result: in sync (0 findings; exit 0)`.
-- While this release's CI caller still holds the release placeholder pin, the draft shows
-  `warn     .github/workflows/quality-gate.y…ml  not installed: …` and `--check` lists it as
-  `held`; the next release installs it through sync.
+- The CI caller is pinned to the v1.0.0 release commit. A caller that still holds the all-zero
+  release placeholder (as in 1.0.0) is not installed: the draft shows
+  `warn     .github/workflows/quality-gate.y…ml  not installed: …`, `--check` lists it as `held`,
+  and the next release installs it through sync.
 - `git status` shows the new files; commit them with the lock.
 
 ## Where it fits

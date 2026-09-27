@@ -295,7 +295,7 @@ flowchart TD
 asli, dipersingkat dengan `…`):
 
 ```text
-agent-setup plan · agent-fe-nextjs 1.0.0 + agent-core 1.0.1 · project .
+agent-setup plan · agent-fe-nextjs 1.0.1 + agent-core 1.0.1 · project .
   create   .claude/rules/web/security.md
   …
   create   .claude/settings.json                   +$schema, +16 permissions.allow, +7 permissions.ask, +14 permissions.deny, +sandbox.enabled, …
@@ -309,9 +309,9 @@ digest sha256:664a6b9d…
 
 Setelah **go**, `/agent-fe-nextjs:sync --check` diakhiri dengan `result: in sync (0 findings; exit 0)`.
 
-Selama rilis kit belum mem-pin quality gate reusable ke commit sungguhan, setup menahan pemanggil CI
-dan memberitahukannya lewat baris `warn`, alih-alih memasang workflow yang pasti gagal;
-`/<plugin>:sync` berikutnya memasangnya. Lihat [CI: quality gate yang dapat dipakai ulang](#ci-quality-gate-yang-dapat-dipakai-ulang).
+Sejak 1.0.1, plugin stack mem-pin quality gate reusable ke commit rilis v1.0.0, jadi setup ikut
+memasang pemanggil CI. Pemanggil yang masih memakai placeholder rilis ditahan lewat baris `warn`,
+alih-alih workflow yang pasti gagal; `/<plugin>:sync` berikutnya memasangnya. Lihat [CI: quality gate yang dapat dipakai ulang](#ci-quality-gate-yang-dapat-dipakai-ulang).
 
 ## Sehari bekerja dengan kit ini
 
@@ -711,7 +711,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.dockerignore` | sekali; lalu milik Anda | The Docker build context. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk pekerjaan yang masuk ke dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
-| `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | Quality Gate for a FastAPI + LLM service: every pull request into a protected branch runs the FastAPI gate that agent-config-kit ships as a reusable workflow (ai-fastapi-quality-gate.yml; its header lists the checks). |
+| `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; sync menjaganya tetap terbaru | Quality Gate for a FastAPI + LLM service: every pull request into a protected branch runs the FastAPI gate that agent-config-kit ships as a reusable workflow (ai-fastapi-quality-gate.yml; its header lists the checks). |
 | `.pre-commit-config.yaml` | sekali; lalu milik Anda | The commit gate. |
 | `AGENTS.md` | sekali, jika belum ada; lalu milik Anda | AGENTS.md — &lt;repo-name&gt; |
 | `CLAUDE.md` | starter-nya, jika repo belum punya CLAUDE.md | &lt;Project Name&gt; — Claude Code Config |
@@ -756,7 +756,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.dockerignore` | sekali; lalu milik Anda | The build context holds only what the image builds from. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk pekerjaan yang masuk ke dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
-| `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
+| `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; sync menjaganya tetap terbaru | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
 | `.husky/pre-commit` | sekali; lalu milik Anda | Menjalankan gate pada file yang di-stage sebelum setiap commit |
 | `.oxfmtrc.json` | sekali; lalu milik Anda | Pengaturan formatter oxfmt |
 | `.oxlintignore` | sekali; lalu milik Anda | Path yang dilewati linter |
@@ -820,7 +820,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.github/scripts/check-comment-style.ts` | selalu; sync menjaganya tetap terbaru | Comment standard: `//` is reserved for directives (ts-expect-error, oxlint-disable, |
 | `.github/workflows/changelog.yaml` | jika `ci-pipeline=yes`; sekali; lalu milik Anda | Generate Content |
 | `.github/workflows/ci-cd.yaml` | jika `ci-pipeline=yes`; sync menjaganya tetap terbaru | CI/CD Pipeline |
-| `.github/workflows/quality-gate.yaml` | ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
+| `.github/workflows/quality-gate.yaml` | selalu; sync menjaganya tetap terbaru | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
 | `.github/workflows/react-doctor.yml` | jika `react-doctor=yes`; sync menjaganya tetap terbaru | React Doctor: security, performance, correctness, accessibility, and architecture checks for React. |
 | `.husky/pre-commit` | selalu; sync menjaganya tetap terbaru | Menjalankan gate pada file yang di-stage sebelum setiap commit |
 | `.oxfmtrc.json` | sekali; lalu milik Anda | Pengaturan formatter oxfmt |
@@ -907,7 +907,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
 | `.github/scripts/check-comment-blocks.sh` | selalu; sync menjaganya tetap terbaru | Caps consecutive comment runs under .github/ at 2 lines; shebangs are exempt. |
 | `.github/scripts/check-comment-style.ts` | selalu; sync menjaganya tetap terbaru | Comment standard: `//` is reserved for directives (ts-expect-error, oxlint-disable, |
-| `.github/workflows/quality-gate.yaml` | ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | The pull-request quality gate for this Next.js app, installed by /agent-fe-nextjs:setup. |
+| `.github/workflows/quality-gate.yaml` | selalu; sync menjaganya tetap terbaru | The pull-request quality gate for this Next.js app, installed by /agent-fe-nextjs:setup. |
 | `.github/workflows/react-doctor.yml` | jika `react-doctor-ci=yes`; sync menjaganya tetap terbaru | React Doctor: security, performance, correctness, accessibility, and architecture checks for React. |
 | `.husky/pre-commit` | selalu; sync menjaganya tetap terbaru | Menjalankan gate pada file yang di-stage sebelum setiap commit |
 | `.oxfmtrc.json` | sekali; lalu milik Anda | Pengaturan formatter oxfmt |
@@ -979,7 +979,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.claude/rules/web/static-export.md` | selalu; sync menjaganya tetap terbaru | Keep the site static |
 | `.claude/settings.json` | digabung ke milik Anda (hanya menambah; nilai Anda yang menang) | Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash |
 | `.env.example` | sekali; lalu milik Anda | Copy to .env.local for local builds, and set the same names in the host's build environment. |
-| `.github/workflows/quality-gate.yaml` | jika `ci-gate=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | The pull-request quality gate for this static site, installed by /agent-fe-nextjs-static:setup. |
+| `.github/workflows/quality-gate.yaml` | jika `ci-gate=yes`; sync menjaganya tetap terbaru | The pull-request quality gate for this static site, installed by /agent-fe-nextjs-static:setup. |
 | `.husky/pre-commit` | selalu; sync menjaganya tetap terbaru | Menjalankan gate pada file yang di-stage sebelum setiap commit |
 | `.oxfmtrc.json` | sekali; lalu milik Anda | Pengaturan formatter oxfmt |
 | `AGENTS.md` | sekali, jika belum ada; lalu milik Anda | AGENTS.md — &lt;Site Name&gt; |
