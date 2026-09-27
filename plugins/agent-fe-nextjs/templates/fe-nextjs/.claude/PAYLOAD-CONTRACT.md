@@ -1,6 +1,6 @@
 # Payload Contract: Sealed Bodies and One Endpoint Registry
 
-> On-demand reference: CLAUDE.md lists it, nothing imports it, and
+> On-demand reference: AGENTS.md §P points here and nothing imports it;
 > `.claude/rules/common/payload-contract.md` loads the short form when you touch the transport, the
 > registry or `payload.config.json`. Setup installed it because this repo answered
 > `payload-encryption=yes`. The same file ships to every stack that speaks the format; keep the
