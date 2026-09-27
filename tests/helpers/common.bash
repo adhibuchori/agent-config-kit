@@ -8,12 +8,14 @@ bats_require_minimum_version 1.5.0
 
 KIT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 CORE="$KIT_ROOT/plugins/agent-core"
+# agent-core's version, as setup and sync print it.
+CORE_VERSION="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["version"])' "$CORE/.claude-plugin/plugin.json")"
 HOOKS="$CORE/scripts"
 TEMPLATES="$CORE/templates"
 COMMON="$TEMPLATES/common"
 HOOK_BASH="${HOOK_BASH:-/bin/bash}"
 [ -x "$HOOK_BASH" ] || HOOK_BASH="$(command -v bash)"
-export KIT_ROOT CORE HOOKS TEMPLATES COMMON HOOK_BASH
+export KIT_ROOT CORE CORE_VERSION HOOKS TEMPLATES COMMON HOOK_BASH
 
 # The environment every hook run starts from: none of the caller's git, plugin or workspace state.
 kit_isolate() { # $1 a folder for the git config and hook state

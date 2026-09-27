@@ -13,6 +13,7 @@ bats_require_minimum_version 1.5.0
   TEMPLATES="$PLUGIN/templates"
   TPL="$TEMPLATES/fe-threejs"
   CORE="$KIT_ROOT/plugins/agent-core"
+  CORE_VERSION="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["version"])' "$CORE/.claude-plugin/plugin.json")"
   MAKE="$BATS_TEST_DIRNAME/make_assets.py"
 }
 # The runtime for the budget check: node, or THREEJS_JS=bun to prove the same file under bun.

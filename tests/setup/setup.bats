@@ -29,7 +29,7 @@ PY
 @test "plan drafts every template file and writes nothing" {
   before="$(tree_state "$P")"
   run -0 --separate-stderr setup_cli plan "${ARGS[@]}"
-  [[ "$output" == "agent-setup plan · agent-core 1.0.0 · project "* ]]
+  [[ "$output" == "agent-setup plan · agent-core $CORE_VERSION · project "* ]]
   [[ "$output" == *"  create   scripts/ops/unlock.sh"* ]]
   [[ "$output" == *"  create   .claude/settings.json"* ]]
   [[ "$output" == *"  seed     .mcp.json"* ]]
@@ -46,11 +46,11 @@ PY
   run -0 --separate-stderr setup_cli plan "${ARGS[@]}"
   human="$(digest_of "$output")"
   run -0 --separate-stderr setup_cli plan "${ARGS[@]}" --json
-  python3 - "$output" "$human" <<'PY'
+  python3 - "$output" "$human" "$CORE_VERSION" <<'PY'
 import json, sys
 d = json.loads(sys.argv[1])
 assert d["digest"] == sys.argv[2], (d["digest"], sys.argv[2])
-assert d["plugins"] == [{"name": "agent-core", "version": "1.0.0"}], d["plugins"]
+assert d["plugins"] == [{"name": "agent-core", "version": sys.argv[3]}], d["plugins"]
 kinds = [a["kind"] for a in d["actions"]]
 assert kinds[-1] == "lock" and kinds.index("create") < kinds.index("seed") < kinds.index("block"), kinds
 assert all(set(a) == {"kind", "path", "detail"} for a in d["actions"])
@@ -123,7 +123,7 @@ PY
   setup_now
   before="$(tree_state "$P")"
   run -0 --separate-stderr setup_cli plan "${ARGS[@]}"
-  [ "$output" = "already set up (agent-core 1.0.0); run /agent-core:sync" ]
+  [ "$output" = "already set up (agent-core $CORE_VERSION); run /agent-core:sync" ]
   [ "$(tree_state "$P")" = "$before" ]
 }
 
@@ -205,8 +205,8 @@ PY
   cd "$P/sub/dir"
   run -0 --separate-stderr setup_cli plan --templates "$TEMPLATES" --stack common
   # Outside the project root the header names the project by its physical path.
-  [ "$(head -1 <<<"$output")" = "agent-setup plan · agent-core 1.0.0 · project $(cd "$P" && pwd -P)" ]
+  [ "$(head -1 <<<"$output")" = "agent-setup plan · agent-core $CORE_VERSION · project $(cd "$P" && pwd -P)" ]
   cd "$P"
   run -0 --separate-stderr setup_cli plan --templates "$TEMPLATES" --stack common
-  [ "$(head -1 <<<"$output")" = "agent-setup plan · agent-core 1.0.0 · project ." ]
+  [ "$(head -1 <<<"$output")" = "agent-setup plan · agent-core $CORE_VERSION · project ." ]
 }

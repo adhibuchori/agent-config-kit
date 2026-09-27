@@ -28,7 +28,7 @@ PY
   setup_now
   bump 1.1.0
   run -1 --separate-stderr sync_cli check "${ARGS[@]}"
-  [[ "$output" == *"version  .claude/agent-config-kit.lock  agent-core: set up with 1.0.0, 1.1.0 installed"* ]]
+  [[ "$output" == *"version  .claude/agent-config-kit.lock  agent-core: set up with $CORE_VERSION, 1.1.0 installed"* ]]
   sync_now
   [ "$(json_q "$P/.claude/agent-config-kit.lock" 'd["plugins"]["agent-core"]["version"]')" = 1.1.0 ]
   run -0 --separate-stderr sync_cli check "${ARGS[@]}"
@@ -38,7 +38,7 @@ PY
   setup_now
   echo 'A new paragraph.' >>"$K/templates/common/docs/unlock.md"
   run -1 --separate-stderr sync_cli check "${ARGS[@]}"
-  [[ "$output" == *"stale  docs/unlock.md  agent-core 1.0.0 changed it; your copy still matches the lock"* ]]
+  [[ "$output" == *"stale  docs/unlock.md  agent-core $CORE_VERSION changed it; your copy still matches the lock"* ]]
   run -0 --separate-stderr sync_cli plan "${ARGS[@]}"
   [[ "$output" == *"  replace  docs/unlock.md"*"(template changed; your copy is what setup wrote)"* ]]
   sync_now
@@ -61,7 +61,7 @@ PY
   setup_now
   echo '# added upstream' >"$K/templates/common/docs/added.md"
   run -1 --separate-stderr sync_cli check "${ARGS[@]}"
-  [[ "$output" == *"new  docs/added.md  agent-core 1.0.0 ships it"* ]]
+  [[ "$output" == *"new  docs/added.md  agent-core $CORE_VERSION ships it"* ]]
   sync_now
   cmp "$K/templates/common/docs/added.md" "$P/docs/added.md"
   run -0 --separate-stderr sync_cli check "${ARGS[@]}"
@@ -71,7 +71,7 @@ PY
   setup_now
   rm "$K/templates/common/.claude/CI-RUNNERS.example.md"
   run -1 --separate-stderr sync_cli check "${ARGS[@]}"
-  [[ "$output" == *"removed-upstream  .claude/CI-RUNNERS.example.md  agent-core 1.0.0 no longer ships it"* ]]
+  [[ "$output" == *"removed-upstream  .claude/CI-RUNNERS.example.md  agent-core $CORE_VERSION no longer ships it"* ]]
   sync_now
   [ -f "$P/.claude/CI-RUNNERS.example.md" ]
   [ "$(json_q "$P/.claude/agent-config-kit.lock" '".claude/CI-RUNNERS.example.md" in d["plugins"]["agent-core"]["files"]')" = false ]
@@ -122,7 +122,7 @@ PY
   [ "$(python3 -c 'import json, sys; print(" ".join(q["plugin"] + ":" + q["id"] for q in json.loads(sys.argv[1])["questions"]))' "$output")" = \
     "agent-core:language agent-core:sandbox agent-core:mcp agent-core:team-plugins agent-x:extra" ]
   run -0 --separate-stderr setup_cli plan "${ARGS[@]}" --answer extra=yes
-  [[ "$(head -1 <<<"$output")" == "agent-setup plan · agent-x 2.0.0 + agent-core 1.0.0 · project "* ]]
+  [[ "$(head -1 <<<"$output")" == "agent-setup plan · agent-x 2.0.0 + agent-core $CORE_VERSION · project "* ]]
   [[ "$output" == *"  create   scripts/ops/unlock.sh"* && "$output" == *"  create   .claude/rules/x/extra.md"* ]]
   setup_now --answer extra=yes
   [ "$(json_q "$P/.claude/agent-config-kit.lock" 'sorted(d["plugins"])')" = '["agent-core", "agent-x"]' ]

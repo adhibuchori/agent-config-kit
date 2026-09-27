@@ -14,6 +14,7 @@ bats_require_minimum_version 1.5.0
   FIXTURES="$KIT_ROOT/tests/fixtures/be-hono"
   TEMPLATES="$PLUGIN/templates"
   CORE="$KIT_ROOT/plugins/agent-core"
+  CORE_VERSION="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["version"])' "$CORE/.claude-plugin/plugin.json")"
 }
 # The bash that runs the hook, as Claude Code's `bash "<script>"` would. HOOK_BASH=/bin/bash proves
 # macOS's bash 3.2.

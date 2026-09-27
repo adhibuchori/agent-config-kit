@@ -13,6 +13,8 @@
       "mcp__db-prod__execute_sql",
       "Edit(.claude/agent-config.json)",
       "Edit(.claude/agent-config-kit.lock)",
+      "Edit(.claude/hooks/**)",
+      "Edit(scripts/check/hook-probes.*)",
       "Edit(scripts/ops/unlock.sh)",
       "Edit(scripts/env/**)"
     ],

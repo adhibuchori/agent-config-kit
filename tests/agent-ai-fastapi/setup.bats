@@ -39,7 +39,7 @@ print("ok")' "$output"
 
 @test "the draft: pyproject.toml kept with a by-hand line, no package.json, CLAUDE.md from the starter" {
   run -0 --separate-stderr "$SETUP_BIN" plan "${ARGS[@]}" --answer language=python
-  [[ "$output" == *"agent-setup plan · agent-ai-fastapi 1.0.0 + agent-core 1.0.0 · project "* ]] || false
+  [[ "$output" == *"agent-setup plan · agent-ai-fastapi 1.0.0 + agent-core $CORE_VERSION · project "* ]] || false
   grep -qE '^  keep +pyproject\.toml +\(exists; left alone; compare with agent-ai-fastapi templates/ai-fastapi/pyproject\.toml\.starter\)$' <<<"$output"
   grep -qE '^  by-hand +pyproject\.toml +add what .*/templates/ai-fastapi/_kit/snippets/pyproject\.tools\.toml holds' <<<"$output"
   grep -qE '^  note +package\.json +none here, so no unlock script is added; unlock runs as \./scripts/ops/unlock\.sh$' <<<"$output"

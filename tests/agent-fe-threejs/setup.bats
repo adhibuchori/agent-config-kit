@@ -52,7 +52,7 @@ assert [q["id"] for q in d["questions"]] == [q["id"] for q in core], d
   local before
   before="$(git -C "$APP" status --porcelain)"
   run -0 setup_cli plan
-  assert_has "agent-fe-threejs 1.0.0 + agent-core 1.0.0"
+  assert_has "agent-fe-threejs 1.0.0 + agent-core $CORE_VERSION"
   assert_has "  create   .claude/rules/web/3d.md"
   assert_has "  create   scripts/check/3d-budget.mjs"
   assert_has "  create   docs/3d-skills.md"

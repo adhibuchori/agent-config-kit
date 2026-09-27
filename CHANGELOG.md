@@ -10,6 +10,14 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+### agent-core 1.0.1
+
+#### Fixed
+
+- The settings template asks before an edit to `.claude/hooks/**` or `scripts/check/hook-probes.*`,
+  as it already did for the unlock script and `scripts/env/`, so a change to a guard or to the
+  probes that prove it always reaches you first.
+
 ## [1.0.0] - 2026-09-26
 
 First release.
