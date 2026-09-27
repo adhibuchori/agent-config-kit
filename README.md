@@ -10,7 +10,7 @@
 
 [![Self Test](https://github.com/adhibuchori/agent-config-kit/actions/workflows/self-test.yml/badge.svg)](https://github.com/adhibuchori/agent-config-kit/actions/workflows/self-test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-4f46e5)](LICENSE)
-[![Version 1.0.0](https://img.shields.io/badge/version-1.0.0-4f46e5)](CHANGELOG.md)
+[![Version 1.2.0](https://img.shields.io/badge/version-1.2.0-4f46e5)](CHANGELOG.md)
 
 Claude Code plugins that stop an AI agent from doing the things you would regret: force-pushing to
 `main`, deleting `src/`, reading your `.env` into the chat, or writing to the production database.

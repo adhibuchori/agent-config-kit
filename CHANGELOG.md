@@ -10,6 +10,15 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-28
+
+The pull-request pipeline is complete, and the stacks gain the ported rule set. Three new reusable
+workflows sit behind optional setup questions: a DeepSeek review of each pull request, a deploy on
+merge through your webhook, and the strip of agent config from the production branch. Their
+callers still hold the release placeholder, so setup keeps them back until the plugin releases
+that pin them to this commit. The Hono, Next.js and FastAPI stacks gain the opt-in payload
+contract, and every stack gains the missing rules, anti-patterns, checks and a CODEOWNERS starter.
+
 ### Reusable workflows and actions
 
 #### Added
@@ -42,7 +51,8 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
   `pull-requests: write`, an `if:` that requires a comment on a pull request by an OWNER, MEMBER or
   COLLABORATOR, and a called workflow that checks nothing out). ADR 0004 records why.
 - `scripts/version-sync.mjs` accepts a caller pinned to the all-zero placeholder when its comment
-  names the coming release, and asks for a changelog entry when any reusable workflow changes.
+  names the coming release (or, in the release pull request, the release being cut), and asks for
+  a changelog entry when any reusable workflow changes.
 - `scripts/catalog.mjs` lists every workflow a plugin's setup installs as a component, with a docs
   page, in the README catalogs.
 

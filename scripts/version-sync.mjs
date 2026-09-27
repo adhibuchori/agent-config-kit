@@ -24,7 +24,7 @@
 //   - With --base: a change to actions/ or to a reusable workflow (one with workflow_call) also needs
 //     a CHANGELOG entry.
 //   - A caller pinned to the all-zero placeholder (before its release commit exists) names the coming
-//     release: a version newer than the newest in CHANGELOG.md.
+//     release: the newest in CHANGELOG.md (the release being cut) or a newer one, never an older one.
 //
 // Node 20 or newer, no dependencies. Exit 0 clean, 1 out of sync, 2 usage or unreadable input.
 import { execFileSync } from 'node:child_process';
@@ -176,11 +176,12 @@ if (existsSync(pluginsDir)) {
       for (const f of readdirSync(wdir).filter((f) => /\.ya?ml$/.test(f))) {
         const rel = `plugins/${p}/templates/${stack}/.github/workflows/${f}`;
         for (const [, sha, version] of readFileSync(join(wdir, f), 'utf8').matchAll(CALL)) {
-          // The all-zero placeholder names the release that will replace it (RELEASING.md): a version
-          // newer than every release so far, not one that exists yet.
+          // The all-zero placeholder names the release whose commit will replace it (RELEASING.md):
+          // the coming release, or in the release pull request itself the release being cut, never
+          // an older one.
           if (sha === PLACEHOLDER) {
-            if (!SEMVER.test(version) || (newest && cmp(version, newest) <= 0)) {
-              problem(`${rel}: the placeholder pin names # v${version}; it must name the coming release, newer than v${newest}`);
+            if (!SEMVER.test(version) || (newest && cmp(version, newest) < 0)) {
+              problem(`${rel}: the placeholder pin names # v${version}; it must name the coming release, not one older than v${newest}`);
             } else warnings.push(`${rel}: placeholder pin for v${version}; the release commit replaces it`);
           } else if (!releaseSet.has(version)) problem(`${rel}: pins # v${version}, which is not a release in CHANGELOG.md`);
           else if (version !== newest) warnings.push(`${rel}: pins # v${version}; the newest release is v${newest}`);
