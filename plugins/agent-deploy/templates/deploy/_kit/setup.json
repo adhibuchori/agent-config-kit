@@ -20,6 +20,24 @@
           ]
         }
       }
+    },
+    {
+      "id": "deploy-on-merge",
+      "ask": "Deploy from CI when a pull request is merged into prod, by POSTing to the deploy webhook (.github/workflows/deploy.yml)?",
+      "why": "Installs a caller of agent-config-kit's reusable deploy-webhook workflow, pinned to one commit. It runs only on a merged pull request into prod, one deploy at a time and never cancelled, with the same rules as trigger-deploy.sh: https only, a 3xx or 4xx fails the job, a busy platform is asked again, and the URL is never printed. It needs the repository secret DEPLOY_WEBHOOK_URL and fails, rather than skipping, without it. A platform that already deploys on every push answers no.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": ".github/workflows/ already holds a workflow that calls a deploy webhook on a merge, or the platform is set to deploy from the prod branch by webhook",
+      "install": { "yes": [".github/workflows/deploy.yml"] }
+    },
+    {
+      "id": "strip-ai",
+      "ask": "Strip the agent config from prod after each merge, and merge prod back into dev (.github/workflows/strip-ai.yml)?",
+      "why": "Installs a caller of agent-config-kit's reusable strip-ai workflow, pinned to one commit. After a pull request merges into prod it removes .claude/, AGENTS.md, CLAUDE.md, .mcp.json and the rest of its list from prod, merges prod back into dev (dev keeps every stripped file) and checks both branches. The job's token pushes to prod and dev (contents: write), so a ruleset on either must let GitHub Actions push. For teams that keep agent instructions out of what they deploy; it needs a prod and a dev branch.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "a workflow already strips agent config after a merge (a strip-ai or strip-ai-on-pr workflow, or .github/scripts/strip-ai.sh), or the user wants production free of agent files",
+      "install": { "yes": [".github/workflows/strip-ai.yml"] }
     }
   ],
   "seed": [],

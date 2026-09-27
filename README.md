@@ -42,7 +42,8 @@ your team does: plan, review, commit, open a PR, merge.
 - [Unlocking .env and the production database](#unlocking-env-and-the-production-database)
 - [Team setup](#team-setup)
 - [Works well with: RTK and Ponytail](#works-well-with-rtk-and-ponytail)
-- [CI: reusable quality gates](#ci-reusable-quality-gates)
+- [CI/CD at a glance](#cicd-at-a-glance)
+- [CI: reusable workflows](#ci-reusable-workflows)
 - [Security model](#security-model)
 - [Cost and overhead](#cost-and-overhead)
 - [Limitations](#limitations)
@@ -98,7 +99,7 @@ real kind of failure, what the kit does about it, and which pieces do the work.
    nobody knows which repos still skip the secret scan.
    *The fix:* each repo calls one reusable workflow pinned to a commit, and `/<plugin>:sync --check`
    reports any file that drifted from what setup installed.
-   *Handled by:* [CI: reusable quality gates](#ci-reusable-quality-gates),
+   *Handled by:* [CI: reusable workflows](#ci-reusable-workflows),
    [sync](docs/agent-core/sync.md).
 
 6. **The agent wipes someone else's work.**
@@ -308,7 +309,7 @@ After **go**, `/agent-fe-nextjs:sync --check` ends with `result: in sync (0 find
 
 Since 1.0.1 the stack plugins pin the reusable quality gate to the v1.0.0 release commit, so setup
 installs the CI caller with the rest. A caller that still holds the release placeholder is held back
-with a `warn` line instead of a workflow that would fail; a later `/<plugin>:sync` installs it. See [CI: reusable quality gates](#ci-reusable-quality-gates).
+with a `warn` line instead of a workflow that would fail; a later `/<plugin>:sync` installs it. See [CI: reusable workflows](#ci-reusable-workflows).
 
 ## A normal day with the kit
 
@@ -366,7 +367,9 @@ your-repo/
 │   ├── check/                    the gates: gates.sh runs what gates.list names
 │   ├── ops/                      unlock.sh (you run it) and pr-ready.sh (merge readiness)
 │   └── env/                      show.sh (masked listing) and set.sh (writes only while unlocked)
-├── .github/workflows/            pull-request-only CI: the quality gate caller, CodeQL, dependency review
+├── .github/workflows/            pull-request-only CI: the quality gate caller, CodeQL, dependency review,
+│                                 workflow lint; optional AI review, React Doctor, deploy and strip callers
+├── .github/CODEOWNERS            who reviews CI, the guardrails and what reaches production (then yours)
 ├── .husky/pre-commit             runs the gates on staged files
 └── oxlint.json, knip.ts, …       lint and dead-code config, created once and then yours
 ```
@@ -385,7 +388,7 @@ flowchart TB
         CORE[agent-core<br/>hooks, commands, setup engine]
         STACK[stack plugin<br/>its hook, commands, agents, templates]
         STACK -->|"depends on"| CORE
-        GATE[reusable quality gates<br/>.github/workflows]
+        GATE[reusable workflows<br/>.github/workflows]
     end
     subgraph REPO[your repo]
         FILES[installed files<br/>settings, rules, checks, CI caller]
@@ -592,13 +595,17 @@ no token.
 
 | Name | What it does | How to use | Why it helps |
 | --- | --- | --- | --- |
-| `<stack>-quality-gate.yml` (five reusable workflows in this repo) | Install from the lockfile, run `gates.list`, coverage floor, committed `.env`, unsafe-HTML/`eval`/URL-scheme scans on added lines, gitleaks, audit, SkillSpector, build, source maps, stack extras | Setup installs a caller; see [CI](#ci-reusable-quality-gates) | One gate, many repos, one pin |
-| `.github/workflows/quality-gate.y*ml` (in your repo) | The small caller of your stack's gate, on pull requests into `dev`, `prod`, `main`, `master` | Installed by setup's `ci-gate` question | Nothing to copy by hand |
+| `<stack>-quality-gate.yml` (five reusable workflows in this repo) | Install from the lockfile, run `gates.list`, coverage floor, committed `.env`, unsafe-HTML/`eval`/URL-scheme scans on added lines, gitleaks, audit, SkillSpector, build, source maps, stack extras | Setup installs a caller; see [CI](#ci-reusable-workflows) | One gate, many repos, one pin |
+| `deepseek-review.yml`, `deploy-webhook.yml`, `strip-ai.yml` (reusable, this repo) | The AI review, the deploy on merge and the agent-config strip behind the callers below | Setup installs the callers; see [CI](#ci-reusable-workflows) | One tested implementation, pinned by every caller |
+| `.github/workflows/quality-gate.y*ml` (in your repo) | The small caller of your stack's gate, on pull requests | Installed by setup (the `ci-gate` question where there is one) | Nothing to copy by hand |
 | `codeql.yml`, `dependency-review.yml`, `workflows-lint.yml` (core, in your repo) | CodeQL on PRs; new vulnerable or badly licensed dependencies; actionlint, zizmor and pinact on workflow changes | Installed by agent-core's setup | Supply-chain checks without schedulers |
-| `react-doctor.yml` (fe-nextjs, docs-nextra; optional) | Advisory React Doctor comments on PRs; the vendor's action reports to its score service | Setup question (recommended **no**) | Never fails the check |
+| `deepseek-review.yml` (every stack; optional) | A DeepSeek review of each pull request as one comment, updated on `/ask-deepseek`; reads the diff over the API, runs no pull-request code | `deepseek-review=yes`, then the `DEEPSEEK_API_KEY` secret | A second reader for a cent or two a review |
+| `deploy.yml` (deploy; optional) | POSTs to your deploy webhook when a pull request is merged into `prod`; a 3xx or 4xx fails the job | `deploy-on-merge=yes`, then the `DEPLOY_WEBHOOK_URL` secret | Deploys follow merges; a refused deploy turns red |
+| `strip-ai.yml` (deploy; optional) | After a merge into `prod`, removes the agent config there, merges back into `dev`, verifies both | `strip-ai=yes` | Production carries no agent instructions |
+| `react-doctor.yml` (fe-nextjs, fe-nextjs-static, docs-nextra; optional) | Advisory React Doctor comments on PRs; the vendor's action reports to its score service | Setup question (recommended **no**) | Never fails the check |
 | `changelog.yaml`, `ci-cd.yaml` (docs-nextra; optional) | Regenerate docs pages and deploy on a merge into `prod` | Setup question | Docs follow the code |
 | `actions/quality-gate` (this repo) | The composite action the five reusable gates run: plan, install, gates, coverage floor, diff scans, gitleaks | Called by the reusable workflows; see its [README](actions/quality-gate/README.md) | One tested implementation behind every stack's gate |
-| `actions/strip-ai` (this repo, optional) | After a merge into the production branch, removes the agent config there and merges back into the development branch | A job in your repo's workflow; see its [README](actions/strip-ai/README.md) | For teams that keep agent config out of what they deploy |
+| `actions/deepseek-review`, `actions/deploy-webhook`, `actions/strip-ai` (this repo) | The steps behind the review, the deploy and the strip | Called by the reusable workflows; see their READMEs: [review](actions/deepseek-review/README.md), [deploy](actions/deploy-webhook/README.md), [strip](actions/strip-ai/README.md) | Tested with bats against a local HTTPS stand-in |
 | `self-test.yml` (this repo) | validate `--strict`, catalog and versions, ShellCheck, bats on macOS and Ubuntu, workflow lint, gitleaks, README pair | Runs on every PR here | The kit tests itself the same way |
 
 ### Config files
@@ -620,6 +627,7 @@ no token.
 | `*.example.md`, `.claude/*.example.md` (core and stacks) | Operations, database, CI runners, analytics, Serena, product and design notes to fill in | Copy to the name without `.example` and fill it in | Commands read your facts instead of guessing |
 | `.claude/docs/lint-config.md` (fe-nextjs, static, be-hono) | Why each lint rule and override exists (the configs are plain JSON) | Read before you change a rule | Rules keep their reason |
 | `.github/PULL_REQUEST_TEMPLATE/*.md` (stacks) | Pull-request templates for work into `dev` and for promotions | Picked by `/agent-core:create-pr` | Every PR says what reviewers need |
+| `.github/CODEOWNERS` (stacks) | Who GitHub asks to review: a catch-all, plus CI, the guardrails and what reaches production | Replace `@your-github-handle` (seeded) | Changes to the guards get a deliberate look |
 | `.claude/OPERATIONS.example.md` | Deploy target and adapter commands | Copy to `OPERATIONS.md` and fill in | `promote` knows your platform |
 
 ### Every installed file
@@ -678,7 +686,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-ai-fastapi</strong>: 38 files</summary>
+<summary><strong>agent-ai-fastapi</strong>: 40 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
@@ -706,8 +714,10 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.claude/rules/python/coverage.md` | always; sync keeps it current | COVER — Test Coverage (Python) |
 | `.claude/settings.json` | merged into yours (additive; your values win) | Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox |
 | `.dockerignore` | once; then yours | The Docker build context. |
+| `.github/CODEOWNERS` | once; then yours | Code owners: GitHub asks them to review every pull request that touches a matching path. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | with `pr-templates=yes`; once; then yours | The pull-request template for work going into dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | with `pr-templates=yes`; once; then yours | The pull-request template for a dev to prod promotion |
+| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; held until a release pins the reusable workflow to a real commit | An AI review of each pull request by DeepSeek, installed by /agent-ai-fastapi:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; sync keeps it current | Quality Gate for a FastAPI + LLM service: every pull request into a protected branch runs the FastAPI gate that agent-config-kit ships as a reusable workflow (ai-fastapi-quality-gate.yml; its header lists the checks). |
 | `.pre-commit-config.yaml` | once; then yours | The commit gate. |
 | `AGENTS.md` | once, if missing; then yours | AGENTS.md — &lt;repo-name&gt; |
@@ -724,7 +734,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-be-hono</strong>: 48 files</summary>
+<summary><strong>agent-be-hono</strong>: 50 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
@@ -752,8 +762,10 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.claude/test-preload.example.ts` | always; sync keeps it current | EXAMPLE — copy to `src/test/preload.ts` in the consuming repo and delete the clients it does not have. |
 | `.dockerignore` | once; then yours | The build context holds only what the image builds from. |
 | `.env.ci.example` | once; then yours | The variables the unit tests get in CI, and locally through scripts/check/ci-env.sh: dummy values only, never a real secret. |
+| `.github/CODEOWNERS` | once; then yours | Code owners: GitHub asks them to review every pull request that touches a matching path. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | with `pr-templates=yes`; once; then yours | The pull-request template for work going into dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | with `pr-templates=yes`; once; then yours | The pull-request template for a dev to prod promotion |
+| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; held until a release pins the reusable workflow to a real commit | An AI review of each pull request by DeepSeek, installed by /agent-be-hono:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; sync keeps it current | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
 | `.husky/pre-commit` | once; then yours | Runs the gates on staged files before each commit |
 | `.oxfmtrc.json` | once; then yours | Formatter settings for oxfmt |
@@ -780,11 +792,13 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-deploy</strong>: 4 files</summary>
+<summary><strong>agent-deploy</strong>: 6 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
 | `.claude/settings.json` | merged into yours (additive; your values win) | Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox |
+| `.github/workflows/deploy.yml` | with `deploy-on-merge=yes`; held until a release pins the reusable workflow to a real commit | Deploys when a pull request is merged into prod, installed by /agent-deploy:setup when you answer deploy-on-merge=yes. |
+| `.github/workflows/strip-ai.yml` | with `strip-ai=yes`; held until a release pins the reusable workflow to a real commit | Strips the agent config from prod after each merge, installed by /agent-deploy:setup when you answer strip-ai=yes. |
 | `scripts/deploy/trigger-deploy.sh` | with `webhook=yes`; sync keeps it current | trigger-deploy.sh: start a deploy by POSTing to the deploy platform's webhook, and fail loudly when the platform declines it. |
 | `scripts/deploy/verify-deploy.sh` | always; sync keeps it current | verify-deploy.sh: smoke-test a live deploy from the outside, on any host. |
 | `CLAUDE.md` | one managed block, appended | `## Agent config kit` |
@@ -792,7 +806,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-docs-nextra</strong>: 40 files</summary>
+<summary><strong>agent-docs-nextra</strong>: 42 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
@@ -813,12 +827,14 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.claude/settings.json` | merged into yours (additive; your values win) | Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox |
 | `.env.development.example` | once; then yours | Development environment template for this docs site. |
 | `.env.production.example` | once; then yours | Production environment template for this docs site. |
+| `.github/CODEOWNERS` | once; then yours | Code owners: GitHub asks them to review every pull request that touches a matching path. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | once; then yours | The pull-request template for work going into dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | once; then yours | The pull-request template for a dev to prod promotion |
 | `.github/scripts/check-comment-blocks.sh` | always; sync keeps it current | Caps consecutive comment runs under .github/ at 2 lines; shebangs are exempt. |
 | `.github/scripts/check-comment-style.ts` | always; sync keeps it current | Comment standard: `//` is reserved for directives (ts-expect-error, oxlint-disable, |
 | `.github/workflows/changelog.yaml` | with `ci-pipeline=yes`; once; then yours | Generate Content |
 | `.github/workflows/ci-cd.yaml` | with `ci-pipeline=yes`; sync keeps it current | CI/CD Pipeline |
+| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; held until a release pins the reusable workflow to a real commit | An AI review of each pull request by DeepSeek, installed by /agent-docs-nextra:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yaml` | always; sync keeps it current | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
 | `.github/workflows/react-doctor.yml` | with `react-doctor=yes`; sync keeps it current | React Doctor: security, performance, correctness, accessibility, and architecture checks for React. |
 | `.husky/pre-commit` | always; sync keeps it current | Runs the gates on staged files before each commit |
@@ -840,7 +856,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-fe-nextjs</strong>: 98 files</summary>
+<summary><strong>agent-fe-nextjs</strong>: 99 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
@@ -901,11 +917,12 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.dockerignore` | once; then yours | The build context holds only what the image builds from. |
 | `.env.development.example` | once; then yours | Development environment template. |
 | `.env.production.example` | once; then yours | Production environment template. |
-| `.github/CODEOWNERS` | once; then yours | Requests reviewers automatically. |
+| `.github/CODEOWNERS` | once; then yours | Code owners: GitHub asks them to review every pull request that touches a matching path. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | once; then yours | The pull-request template for work going into dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | once; then yours | The pull-request template for a dev to prod promotion |
 | `.github/scripts/check-comment-blocks.sh` | always; sync keeps it current | Caps consecutive comment runs under .github/ at 2 lines; shebangs are exempt. |
 | `.github/scripts/check-comment-style.ts` | always; sync keeps it current | Comment standard: `//` is reserved for directives (ts-expect-error, oxlint-disable, |
+| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; held until a release pins the reusable workflow to a real commit | An AI review of each pull request by DeepSeek, installed by /agent-fe-nextjs:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yaml` | always; sync keeps it current | The pull-request quality gate for this Next.js app, installed by /agent-fe-nextjs:setup. |
 | `.github/workflows/react-doctor.yml` | with `react-doctor-ci=yes`; sync keeps it current | React Doctor: security, performance, correctness, accessibility, and architecture checks for React. |
 | `.husky/pre-commit` | always; sync keeps it current | Runs the gates on staged files before each commit |
@@ -946,7 +963,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-fe-nextjs-static</strong>: 57 files</summary>
+<summary><strong>agent-fe-nextjs-static</strong>: 61 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
@@ -978,12 +995,16 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.claude/rules/web/static-export.md` | always; sync keeps it current | Keep the site static |
 | `.claude/settings.json` | merged into yours (additive; your values win) | Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox |
 | `.env.example` | once; then yours | Copy to .env.local for local builds, and set the same names in the host's build environment. |
+| `.github/CODEOWNERS` | once; then yours | Code owners: GitHub asks them to review every pull request that touches a matching path. |
+| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; held until a release pins the reusable workflow to a real commit | An AI review of each pull request by DeepSeek, installed by /agent-fe-nextjs-static:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yaml` | with `ci-gate=yes`; sync keeps it current | The pull-request quality gate for this static site, installed by /agent-fe-nextjs-static:setup. |
+| `.github/workflows/react-doctor.yml` | with `react-doctor=yes`; sync keeps it current | React Doctor: security, performance, correctness, accessibility and architecture findings for the site's React code, as review comments on the changed lines, one summary comment and a commit status. |
 | `.husky/pre-commit` | always; sync keeps it current | Runs the gates on staged files before each commit |
 | `.oxfmtrc.json` | once; then yours | Formatter settings for oxfmt |
 | `AGENTS.md` | once, if missing; then yours | AGENTS.md — &lt;Site Name&gt; |
 | `CLAUDE.md` | the starter, when the repo has no CLAUDE.md | &lt;Site Name&gt; — Claude Code Config |
 | `SSOT.md` | once, if missing; then yours | SSOT.md — &lt;Site Name&gt; |
+| `doctor.config.json` | with `react-doctor=yes`; sync keeps it current | React Doctor settings (dead code is left to knip) |
 | `knip.json` | once; then yours | Dead-code settings for knip |
 | `lighthouserc.json` | with `lighthouse=yes`; once; then yours | Lighthouse CI budgets: LCP, CLS and TBT |
 | `oxlint.json` | once; then yours | Lint rules for oxlint; the reasons are in .claude/docs/lint-config.md |
@@ -1028,7 +1049,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 <!-- files:end -->
 
 <details>
-<summary><strong>The complete generated catalog (every hook, command, agent and skill)</strong></summary>
+<summary><strong>The complete generated catalog (every hook, command, agent, skill and workflow)</strong></summary>
 
 <!-- catalog:start -->
 <!-- Generated by scripts/catalog.mjs from the plugin manifests, docs/ and docs/catalog.json. Edit those, then run it. -->
@@ -1062,6 +1083,9 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `/agent-core:sync` | Command (you start it) | Compare this repo with what agent-core's setup installed; --check reports drift and double hook wiring (read-only, non-zero exit), otherwise shows a sync draft and writes it on go | `/agent-core:sync --check` | Drift and double hook wiring show up with an exit code | [sync](docs/agent-core/sync.md) |
 | `agent-core:reviewer` | Agent | Checks a diff against this repo's own rules, the numbered rules in AGENTS.md and the file-type rules in .claude/rules/, and reports each violation with its rule, file, line and fix. Use it for a code review when no stack reviewer (agent-fe-nextjs, agent-be-hono, agent-ai-fastapi) is installed. Reads only; changes nothing. | Via `/agent-core:review` when no stack reviewer is installed | Rule-cited findings in any stack | [reviewer](docs/agent-core/reviewer.md) |
 | `agent-core:security-guard` | Agent | Reviews a diff for security regressions in any stack - secrets and env exposure, injection and unsafe sinks, missing authorisation, request trust, dependency advisories, and edits to the agent's own guardrails (settings, hook config, unlock and .env helpers, workflows). Use before committing a change to config, handlers, queries, rendering of user content or CI. Reports findings; changes nothing. | Via `/agent-core:review`, or ask for it | Security regressions are flagged before commit | [security-guard](docs/agent-core/security-guard.md) |
+| `.github/workflows/codeql.yml` | Workflow | `.github/workflows/codeql.yml` runs GitHub's CodeQL code scanning on every pull request, for the languages the repository holds: GitHub Actions always, JavaScript and TypeScript when there is a `tsconfig.json`, Python when there is a `pyproject.toml`. | Runs by itself on every pull request | Code scanning without a weekly schedule | [codeql](docs/agent-core/codeql.md) |
+| `.github/workflows/dependency-review.yml` | Workflow | `.github/workflows/dependency-review.yml` fails a pull request that adds or raises a dependency with a known high or critical vulnerability, in runtime and development dependencies alike. | Runs by itself on every pull request | Vulnerable dependencies are stopped when they are added, without Dependabot | [dependency-review](docs/agent-core/dependency-review.md) |
+| `.github/workflows/workflows-lint.yml` | Workflow | `.github/workflows/workflows-lint.yml` checks your GitHub Actions files when a pull request changes them: actionlint (with ShellCheck over every `run:` block) for syntax and expressions, zizmor (pedantic, offline) for security problems such as template injection or a token left in the checkout, and pinact for every `uses:` being a full commit SHA whose version comment is true. | Runs when a pull request touches `.github/` or `actions/` | Unpinned actions and injectable workflows never merge | [workflows-lint](docs/agent-core/workflows-lint.md) |
 
 ### agent-ai-fastapi
 
@@ -1071,6 +1095,8 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `/agent-ai-fastapi:setup` | Command (you start it) | Install agent-ai-fastapi's backend and Python rules, anti-patterns, pre-commit and gate config, pipeline example and pull-request CI into this FastAPI + uv repo, after a dry run you approve | `/agent-ai-fastapi:setup`, once per repo | Plugins cannot ship permissions or rules; you see every write first | [setup](docs/agent-ai-fastapi/setup.md) |
 | `/agent-ai-fastapi:sync` | Command (you start it) | Check this repo against agent-ai-fastapi's installed files with --check (read-only, exits non-zero on drift or double hook wiring), hand a managed file over with own, or update the files after a dry run you approve | `/agent-ai-fastapi:sync --check` | Drift and double hook wiring show up with an exit code | [sync](docs/agent-ai-fastapi/sync.md) |
 | `agent-ai-fastapi:ai-reviewer` | Agent | Reviews the uncommitted diff of a FastAPI + LLM service against the repo's AGENTS.md rules that no gate checks - layer boundaries, the problem+json error contract, provider indirection, streaming and completion status, tests, security, typing past the Any ban, and one home per identifier. Reports findings; edits nothing. | Via `/agent-core:review` | LLM-service mistakes no gate sees | [ai-reviewer](docs/agent-ai-fastapi/ai-reviewer.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](docs/agent-ai-fastapi/deepseek-review.md) |
+| `.github/workflows/quality-gate.yml` | Workflow (optional) | `.github/workflows/quality-gate.yml` runs agent-config-kit's `ai-fastapi-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Answer `ci-gate=yes` (recommended); runs on every pull request | Every pull request runs the same gates as the pre-commit hook, and more | [quality-gate](docs/agent-ai-fastapi/quality-gate.md) |
 
 ### agent-be-hono
 
@@ -1080,6 +1106,8 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `/agent-be-hono:setup` | Command (you start it) | Install agent-be-hono's backend rules, anti-patterns, gate scripts, lint and test config and pull-request CI into this Bun + Hono + Drizzle repo, after a dry run you approve | `/agent-be-hono:setup`, once per repo | Plugins cannot ship permissions or rules; you see every write first | [setup](docs/agent-be-hono/setup.md) |
 | `/agent-be-hono:sync` | Command (you start it) | Check this repo against agent-be-hono's installed files with --check (read-only, exits non-zero on drift or double hook wiring), or update them after a dry run you approve | `/agent-be-hono:sync --check` | Drift and double hook wiring show up with an exit code | [sync](docs/agent-be-hono/sync.md) |
 | `agent-be-hono:reviewer` | Agent | Reviews the uncommitted diff of a Bun + Hono + Drizzle API against this repo's AGENTS.md rules (layer boundaries, error contract, database access, query shape and indexes, tests, code quality) and reports each violation with its rule number. Changes no file. | Via `/agent-core:review` | Slow queries and leaky errors are caught in review | [reviewer](docs/agent-be-hono/reviewer.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](docs/agent-be-hono/deepseek-review.md) |
+| `.github/workflows/quality-gate.yml` | Workflow (optional) | `.github/workflows/quality-gate.yml` runs agent-config-kit's `be-hono-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Answer `ci-gate=yes` (recommended); runs on every pull request | Every pull request runs the same gates as the pre-commit hook, and more | [quality-gate](docs/agent-be-hono/quality-gate.md) |
 
 ### agent-deploy
 
@@ -1089,6 +1117,8 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `/agent-deploy:setup` | Command (you start it) | Install agent-deploy's post-deploy smoke script, the optional deploy-webhook trigger and their ask-first permissions into this repo, after a dry run you approve | `/agent-deploy:setup`, once per repo | Plugins cannot ship permissions or rules; you see every write first | [setup](docs/agent-deploy/setup.md) |
 | `/agent-deploy:sync` | Command (you start it) | Compare this repo with what agent-deploy's setup installed; --check reports drift and double hook wiring (read-only, non-zero exit), otherwise shows a sync draft and writes it on go | `/agent-deploy:sync --check` | Drift and double hook wiring show up with an exit code | [sync](docs/agent-deploy/sync.md) |
 | `/agent-deploy:verify-deploy` | Command (you start it) | Smoke-test a live deploy from outside (HTTP 200, canonical URL, robots and sitemap, security headers, a GitHub deployment newer than the merge). Uses the network, and only when you start it | `/agent-deploy:verify-deploy https://… --pr 42` | Proof the deploy reached production | [verify-deploy](docs/agent-deploy/verify-deploy.md) |
+| `.github/workflows/deploy.yml` | Workflow (optional) | `.github/workflows/deploy.yml` starts a deploy when a pull request is merged into `prod`: it calls agent-config-kit's `deploy-webhook.yml` reusable workflow, which POSTs to your deploy platform's webhook for `refs/heads/prod`. | Answer `deploy-on-merge=yes`, add `DEPLOY_WEBHOOK_URL` | Deploys follow merges, and a refused deploy turns red | [deploy](docs/agent-deploy/deploy.md) |
+| `.github/workflows/strip-ai.yml` | Workflow (optional) | `.github/workflows/strip-ai.yml` keeps agent configuration out of what you deploy. | Answer `strip-ai=yes`; runs after each merge into `prod` | Production carries no agent instructions; `dev` keeps them | [strip-ai](docs/agent-deploy/strip-ai.md) |
 
 ### agent-docs-nextra
 
@@ -1099,6 +1129,11 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `/agent-docs-nextra:sync` | Command (you start it) | Check this repo against agent-docs-nextra's installed files with --check (read-only, exits non-zero on drift or double hook wiring), or update them after a dry run you approve | `/agent-docs-nextra:sync --check` | Drift and double hook wiring show up with an exit code | [sync](docs/agent-docs-nextra/sync.md) |
 | `agent-docs-nextra:security-guard` | Agent | Reviews a Nextra docs-site change for response headers and CSP, secrets reaching the static export, raw HTML and XSS, and the Worker's public addresses. Use when a change touches next.config.mjs, components, public/, wrangler.jsonc or environment variables. Reports findings; changes nothing. | Ask on config changes | The public export leaks nothing | [security-guard](docs/agent-docs-nextra/security-guard.md) |
 | `agent-docs-nextra:seo-validator` | Agent | Reviews a Nextra docs-site change for page metadata, heading outline, and the favicon, robots and sitemap files a static export serves. Use when a change touches app/layout.tsx metadata, content pages or public files. Reports findings; changes nothing. | Ask on content changes | Docs stay searchable | [seo-validator](docs/agent-docs-nextra/seo-validator.md) |
+| `.github/workflows/changelog.yaml` | Workflow (optional) | `.github/workflows/changelog.yaml` regenerates the site's generated pages after a release: the changelog at `content/changelog.mdx` and the API reference under `content/technical`, built from the application repository's `prod` branch. | Answer `ci-pipeline=yes`; runs after a merge into `prod` or the app's release | Generated pages follow the application's releases | [changelog](docs/agent-docs-nextra/changelog.md) |
+| `.github/workflows/ci-cd.yaml` | Workflow (optional) | `.github/workflows/ci-cd.yaml` builds the static export of `prod` (`next build`, then the search index) and uploads it to an assets-only Cloudflare Worker. | Called by `changelog.yaml` | The site deploys only after its new pages landed | [ci-cd](docs/agent-docs-nextra/ci-cd.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](docs/agent-docs-nextra/deepseek-review.md) |
+| `.github/workflows/quality-gate.yaml` | Workflow | `.github/workflows/quality-gate.yaml` runs agent-config-kit's `docs-nextra-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Installed by setup; runs on every pull request into `dev` or `prod` | Every pull request runs the same gates as the pre-commit hook, and more | [quality-gate](docs/agent-docs-nextra/quality-gate.md) |
+| `.github/workflows/react-doctor.yml` | Workflow (optional) | `.github/workflows/react-doctor.yml` runs the React Doctor action on each pull request and reports security, performance, correctness, accessibility and architecture findings as review comments on the changed lines, one summary comment and a commit status. | Answer `react-doctor=yes` | React findings in the pull request; never blocks | [react-doctor](docs/agent-docs-nextra/react-doctor.md) |
 
 ### agent-fe-nextjs
 
@@ -1115,6 +1150,9 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `agent-fe-nextjs:seo-validator` | Agent | Validates search and sharing metadata for public routes — metadataBase, per-route titles and descriptions, canonical and hreflang alternates, robots and sitemap, Open Graph images, and JSON-LD. Use after changing metadata, public pages, robots, sitemap or share images. | Ask after metadata changes | Pages stay findable and shareable | [seo-validator](docs/agent-fe-nextjs/seo-validator.md) |
 | `agent-fe-nextjs:react-doctor` | Skill (you start it) | User-invoked React scan and triage (`/agent-fe-nextjs:react-doctor`). Runs the React Doctor CLI for lint, accessibility, bundle-size and architecture diagnostics, with its telemetry and lookups turned off. Uses the project's own installed CLI; without one it downloads the pinned react-doctor 0.9.14 from npm once, after the user agrees. Includes a regression check and a local triage workflow. | `/agent-fe-nextjs:react-doctor` | Security, performance and a11y issues before commit | [react-doctor](docs/agent-fe-nextjs/react-doctor.md) |
 | `agent-fe-nextjs:skeleton` | Skill | Use when building, fixing or checking a loading skeleton or placeholder in this frontend, or when a skeleton is said to be off, to jump, or not to match its screen ("skeleton", "loading state", "placeholder", "layout shift", IS_SKELETON_SHOWN). Derives heights from the real component, wires the preview switch, and measures the pair at four widths until they differ by at most half a pixel. | "the skeleton jumps", or `/agent-fe-nextjs:skeleton` | No layout shift when data arrives | [skeleton](docs/agent-fe-nextjs/skeleton.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](docs/agent-fe-nextjs/deepseek-review.md) |
+| `.github/workflows/quality-gate.yaml` | Workflow | `.github/workflows/quality-gate.yaml` runs agent-config-kit's `fe-nextjs-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Installed by setup; runs on every pull request | Every pull request runs the same gates as the pre-commit hook, and more | [quality-gate](docs/agent-fe-nextjs/quality-gate.md) |
+| `.github/workflows/react-doctor.yml` | Workflow (optional) | `.github/workflows/react-doctor.yml` runs the React Doctor action on each pull request and reports security, performance, correctness, accessibility and architecture findings as review comments on the changed lines, one summary comment and a commit status. | Answer `react-doctor-ci=yes` | React findings in the pull request; never blocks | [react-doctor](docs/agent-fe-nextjs/react-doctor.workflow.md) |
 
 ### agent-fe-nextjs-static
 
@@ -1129,6 +1167,9 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `agent-fe-nextjs-static:i18n-guard` | Agent | Validates next-intl usage in a static-site diff. Locale routing that works without middleware (app/[locale] with generateStaticParams and setRequestLocale), catalogue key parity, hardcoded user-facing strings, locale-aware formatting, and complete reciprocal hreflang alternates. Use after touching message catalogues, locale routing or localized metadata. Optional; reports only. | Ask after i18n changes | Languages work without middleware | [i18n-guard](docs/agent-fe-nextjs-static/i18n-guard.md) |
 | `agent-fe-nextjs-static:security-guard` | Agent | Reviews a static-site diff for security regressions. Response headers in the host's config (the _headers file or nginx, not next.config under export), a hash-based CSP that still matches the build, secrets in public variables, XSS sinks and unsafe URLs, form endpoints, third-party scripts, and edits to the agent's own guard files. Use before committing a change to headers, next.config, forms, scripts or rendered HTML. Reports only. | Via `/agent-fe-nextjs-static:review` | Static hosting has its own traps | [security-guard](docs/agent-fe-nextjs-static/security-guard.md) |
 | `agent-fe-nextjs-static:seo-validator` | Agent | Validates search and sharing metadata of a static Next.js site in a diff or a full audit. robots and the sitemap, canonical and hreflang links, per-route titles and descriptions, Open Graph images, JSON-LD validity and fit, preview indexing. Use after changing public pages, metadata, robots, the sitemap, share images or structured data. Reports only. | Via `/agent-fe-nextjs-static:seo-audit` | Judges what scripts cannot | [seo-validator](docs/agent-fe-nextjs-static/seo-validator.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](docs/agent-fe-nextjs-static/deepseek-review.md) |
+| `.github/workflows/quality-gate.yaml` | Workflow (optional) | `.github/workflows/quality-gate.yaml` runs agent-config-kit's `fe-nextjs-static-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Answer `ci-gate=yes` (recommended); runs on every pull request | Every pull request runs the same gates as the pre-commit hook, and more | [quality-gate](docs/agent-fe-nextjs-static/quality-gate.md) |
+| `.github/workflows/react-doctor.yml` | Workflow (optional) | `.github/workflows/react-doctor.yml` runs the React Doctor action on each pull request and reports security, performance, correctness, accessibility and architecture findings as review comments on the changed lines, one summary comment and a commit status. | Answer `react-doctor=yes` | React findings in the pull request; never blocks | [react-doctor](docs/agent-fe-nextjs-static/react-doctor.md) |
 
 ### agent-fe-threejs
 
@@ -1323,9 +1364,56 @@ default `full` and its `ultra` aim for the shortest diff and challenge the requi
 skip work the gates require, such as the test that keeps coverage at 100% or a doc comment a rule
 asks for, and the commit then fails. `lite` builds what was asked and only names the lazier option.
 
-## CI: reusable quality gates
+## CI/CD at a glance
 
-Each stack has a reusable workflow in this repo: `fe-nextjs-quality-gate.yml`,
+Every workflow the kit installs starts from a pull request: one that is opened or updated, a
+comment on one, or one that is merged. Nothing runs on a push or on a schedule, and there is no
+Dependabot ([ADR 0004](docs/adr/0004-pull-request-only-ci.md)).
+
+```mermaid
+flowchart LR
+    accTitle: Which workflow runs when
+    accDescr: A pull request that is opened or updated runs the quality gate on the fast runner pool, and CodeQL, dependency review, workflow lint and React Doctor on the standard pool. When it opens, reopens or is marked ready, and when a trusted person comments /ask-deepseek, the optional DeepSeek review runs. A pull request merged into prod runs the optional deploy and strip workflows, and on a docs site the changelog and its ci-cd build.
+    PR[pull request opened or updated] --> QG[quality-gate<br/>fast pool]
+    PR --> CHECKS[codeql, dependency-review,<br/>workflows-lint, react-doctor]
+    PR -->|opened, reopened, ready| DS[deepseek-review]
+    ASK["/ask-deepseek comment<br/>by owner, member or collaborator"] --> DS
+    MERGE[merged into prod] --> DEPLOY[deploy]
+    MERGE --> STRIP[strip-ai]
+    MERGE --> DOCS[changelog, then ci-cd<br/>docs sites]
+```
+
+| Workflow | Runs when | Runner | What it costs | Secrets |
+| --- | --- | --- | --- | --- |
+| `quality-gate` | every pull request into the stack's branches | `CI_RUNNER_FAST`, then `CI_RUNNER`, then `ubuntu-latest` | one job of a few minutes | none |
+| `codeql` | every pull request | `CI_RUNNER`, then `ubuntu-latest` | a few minutes per language; free on public repositories, GitHub Code Security on private ones | none (the `CODE_SECURITY` variable on a private repository) |
+| `dependency-review` | every pull request | `CI_RUNNER`, then `ubuntu-latest` | under a minute | none |
+| `workflows-lint` | a pull request that touches `.github/` or `actions/` | `CI_RUNNER`, then `ubuntu-latest` (needs Docker) | about a minute | none |
+| `react-doctor` (optional) | a pull request opened or updated | `CI_RUNNER`, then `ubuntu-latest` | a few minutes; reports to the vendor's score service | none |
+| `deepseek-review` (optional) | a pull request into `dev`, `main` or `master` opened, reopened or marked ready; `/ask-deepseek` | `CI_RUNNER`, then `ubuntu-latest` | under a minute, plus DeepSeek tokens: usually a cent or two, at most about ten US cents | `DEEPSEEK_API_KEY` |
+| `deploy` (optional) | a pull request merged into `prod` | `CI_RUNNER`, then `ubuntu-latest` | seconds; longer only while the platform is busy (retries within 12 minutes) | `DEPLOY_WEBHOOK_URL`; `DOCS_DISPATCH_TOKEN` to tell a docs site |
+| `strip-ai` (optional) | a pull request merged into `prod` | `CI_RUNNER`, then `ubuntu-latest` | under a minute | none (the job's own token pushes) |
+| `changelog`, then `ci-cd` (docs-nextra, optional) | a pull request merged into `prod`; the app's `app-deployed` event | `CI_RUNNER`; the build takes `CI_RUNNER_FAST` first | a few minutes | `APP_REPO_TOKEN`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
+
+**The runner split.** Two repository variables choose the runners, and nothing is hard-coded. The
+job a person waits on (the quality gate, and the docs build) takes `CI_RUNNER_FAST` first; the
+rest (advisory checks, the AI review, everything after a merge) takes `CI_RUNNER`. Runners bill
+each job by the started minute, so a faster, paid runner only saves money above a minute: place a
+job by who waits for its result. Leave both unset and everything runs on `ubuntu-latest`; set
+`CI_RUNNER_FAST` alone to move only the gate. Every reusable workflow also takes a `runs-on`
+input. The installed `.claude/CI-RUNNERS.example.md` has the combinations, a safe budget test and
+the escape hatches.
+
+**The one comment trigger.** `/ask-deepseek` is the only workflow that answers a comment, and
+`scripts/workflow-policy.py` keeps it in one shape: a comment on a pull request by the
+repository's owner, a member or a collaborator; `contents: read` and `pull-requests: write` only;
+no checkout, so no pull-request code runs; the diff read over the API as data. GitHub runs a
+comment trigger from the default branch's copy of the file, so a pull request cannot change it,
+and a fork's pull request is never sent.
+
+## CI: reusable workflows
+
+Each stack has a reusable quality gate in this repo: `fe-nextjs-quality-gate.yml`,
 `fe-nextjs-static-quality-gate.yml`, `be-hono-quality-gate.yml`, `ai-fastapi-quality-gate.yml` and
 `docs-nextra-quality-gate.yml`. Setup's `ci-gate` question installs a caller like this one (every
 input is optional):
@@ -1366,6 +1454,19 @@ jobs:
 - The self-repository form the gates use to call their action needs github.com with runner
   2.336.0 or newer (GitHub-hosted runners are). GitHub Enterprise Server does not support it.
 
+Three more reusable workflows sit behind optional callers. Each takes a `runs-on` input (empty uses
+`CI_RUNNER`, then `ubuntu-latest`) and `timeout-minutes`; every input is optional, and every secret
+is passed by name.
+
+| Reusable workflow | Caller setup installs | Inputs | Secrets |
+| --- | --- | --- | --- |
+| `deepseek-review.yml` | `.github/workflows/deepseek-review.yml` (each stack, `deepseek-review=yes`) | `instructions`, `exclude`, `model` (`deepseek-v4-pro`; `deepseek-flash` is cheaper), `base-url`, `max-diff-bytes` (100,000), `max-tokens` (16,384), `reasoning-effort` (`low`) | `DEEPSEEK_API_KEY` (without it the job passes and sends nothing) |
+| `deploy-webhook.yml` | `.github/workflows/deploy.yml` (agent-deploy, `deploy-on-merge=yes`) | `ref` (the branch the pull request merged into), `retry-delays` (`30 90 180`), `webhook-timeout`, `docs-repository` | `DEPLOY_WEBHOOK_URL` (required in practice: without it the job fails), `DOCS_DISPATCH_TOKEN` |
+| `strip-ai.yml` | `.github/workflows/strip-ai.yml` (agent-deploy, `strip-ai=yes`) | `prod-branch` (`prod`), `dev-branch` (`dev`), `paths`, `extra-paths`, `back-merge` | none: the job's token, with `contents: write` |
+
+None of them checks out code it does not need: the review and the deploy check out nothing, and
+the strip checks out the production branch without keeping the token.
+
 ## Security model
 
 - **The guards run on your machine.** Hooks, `bin/` and `libexec/` are scripts that read their
@@ -1378,11 +1479,15 @@ jobs:
   which uses your project's React Doctor CLI or asks before it downloads the pinned version once.
   Your own gates may reach a package registry (a dependency audit), and the MCP servers in
   `.mcp.json` run only after Claude Code asks you.
+- **CI answers pull requests only.** Workflows run on pull-request events and `workflow_call`,
+  with `contents: read` by default, SHA-pinned actions, checkouts that keep no token, and named
+  secrets only. The one comment trigger, `/ask-deepseek`, is limited to trusted commenters and
+  runs no pull-request code ([CI/CD at a glance](#cicd-at-a-glance)).
 - **Guards fail closed.** Only exit 2 blocks in Claude Code; a crash or timeout would let a call
   through. So each guard refuses what it cannot check (bad input, missing python3, a hang), and
   each feedback hook stays silent on failure.
 - **Every rule is proven both ways.** 845 probe rows say what safety-check must block (569) and let
-  through (276); the kit's own probe harness runs 2,288 probes against the plugin's scripts; 1,532
+  through (276); the kit's own probe harness runs 2,288 probes against the plugin's scripts; 1,563
   bats tests cover the hooks, the setup engine, the stack checks and the CI scripts, on macOS
   (bash 3.2) and Ubuntu. Audit them: [tests/hooks/](tests/hooks/safety-probes.bats),
   [tests/setup/](tests/setup/check.bats).
@@ -1410,6 +1515,7 @@ Measured on an Apple M5 with macOS `/bin/bash` 3.2 and python3 3.14, median of 2
 | Always-loaded context after a fresh setup (starter `CLAUDE.md` + block + unscoped rules) | agent-core 5.5 KB, fe-nextjs 14.2 KB, fe-nextjs-static 9.2 KB, be-hono 14.7 KB, ai-fastapi 13.8 KB, docs-nextra 13.5 KB; `ai-config.sh` fails above 15,000 bytes |
 | Command, agent and skill descriptions Claude Code lists | agent-core 3.9 KB; each stack plugin 0.3–2.5 KB |
 | CI | runs only on pull requests; nothing on push, nothing on a schedule |
+| The optional DeepSeek review | usually a cent or two a pull request, at most about ten US cents (the diff and the answer are capped); each comment shows its tokens |
 
 A formatter or linter that post-edit runs adds its own time (60 s timeout).
 
@@ -1577,7 +1683,7 @@ That release still pins the reusable workflow to the all-zero placeholder, so th
 fail every pull request. Setup holds it back on purpose, and `sync --check` lists it as `held`
 (not drift). After the next plugin release pins a real commit, `/<plugin>:sync` installs it. To
 use the gate before that, write the caller yourself with a real SHA from this repository's
-releases, as shown in [CI](#ci-reusable-quality-gates).
+releases, as shown in [CI](#ci-reusable-workflows).
 
 </details>
 

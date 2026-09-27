@@ -4,7 +4,7 @@ Command · agent-docs-nextra · `/agent-docs-nextra:setup [--answer id=value …
 
 ## What it does
 
-`/agent-docs-nextra:setup` installs what a plugin cannot ship by itself into your repo: the docs-content rule, anti-patterns, the gate scripts and comment checks, oxlint, oxfmt and knip config, the env helper, a pull-request-only CI caller and, if you want them, the changelog and deploy workflows.
+`/agent-docs-nextra:setup` installs what a plugin cannot ship by itself into your repo: the docs-content rule, anti-patterns, the gate scripts and comment checks, oxlint, oxfmt and knip config, the env helper, a pull-request-only CI caller, a CODEOWNERS starter and, if you want them, the changelog and deploy workflows, React Doctor and a DeepSeek review of each pull request.
 
 It explores your repo, asks one question at a time with a recommended answer, shows the exact draft,
 and writes only when you reply **go**. It never overwrites or deletes a file. It adds 6 package script(s) to an existing `package.json` (never creates one) and keeps any script you already have. The lock
@@ -30,6 +30,7 @@ The questions (answer "ok" to take the recommended one):
 | `generated-pages` | Do generators write pages into this site: an API reference under content/technical and a changelog at content/changelog.mdx? | yes / no | `no` |
 | `ci-pipeline` | Should CI regenerate those pages and deploy the static export to Cloudflare Workers when a pull request merges into prod? | yes / no | `no` |
 | `react-doctor` | Run React Doctor on pull requests into dev and prod (advisory review comments and a commit status; it never fails the check)? | yes / no | `no` |
+| `deepseek-review` | Review each pull request with DeepSeek, a low-cost paid AI model (.github/workflows/deepseek-review.yml)? | yes / no | `no` |
 | `analytics` | Does an agent need to read an analytics API for this site? | yes / no | `no` |
 
 The draft lists every action: `create`, `same`, `keep`, `seed`, `merge`, `conflict`, `block`,
@@ -55,10 +56,10 @@ Your `.claude/settings.json` already wires a hook script the plugin also runs, s
 - The draft ends with a `digest sha256:…` line, and after **go** the last line apply prints is
   `wrote    .claude/agent-config-kit.lock`.
 - `/agent-docs-nextra:sync --check` then ends with `result: in sync (0 findings; exit 0)`.
-- The CI caller is pinned to the v1.0.0 release commit. A caller that still holds the all-zero
-  release placeholder (as in 1.0.0) is not installed: the draft shows
-  `warn     .github/workflows/quality-gate.y…ml  not installed: …`, `--check` lists it as `held`,
-  and the next release installs it through sync.
+- Every CI caller is pinned to a release commit of agent-config-kit. A caller that still holds the
+  all-zero release placeholder (a new caller, until the plugin release that pins it) is not
+  installed: the draft shows `warn     .github/workflows/<name>.y…ml  not installed: …`, `--check`
+  lists it as `held`, and the next release installs it through sync.
 - `git status` shows the new files; commit them with the lock.
 
 ## Where it fits

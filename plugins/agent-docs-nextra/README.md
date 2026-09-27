@@ -76,6 +76,11 @@ Every component, generated from the manifests and the docs pages; each links to 
 | `/agent-docs-nextra:sync` | Command (you start it) | Check this repo against agent-docs-nextra's installed files with --check (read-only, exits non-zero on drift or double hook wiring), or update them after a dry run you approve | `/agent-docs-nextra:sync --check` | Drift and double hook wiring show up with an exit code | [sync](../../docs/agent-docs-nextra/sync.md) |
 | `agent-docs-nextra:security-guard` | Agent | Reviews a Nextra docs-site change for response headers and CSP, secrets reaching the static export, raw HTML and XSS, and the Worker's public addresses. Use when a change touches next.config.mjs, components, public/, wrangler.jsonc or environment variables. Reports findings; changes nothing. | Ask on config changes | The public export leaks nothing | [security-guard](../../docs/agent-docs-nextra/security-guard.md) |
 | `agent-docs-nextra:seo-validator` | Agent | Reviews a Nextra docs-site change for page metadata, heading outline, and the favicon, robots and sitemap files a static export serves. Use when a change touches app/layout.tsx metadata, content pages or public files. Reports findings; changes nothing. | Ask on content changes | Docs stay searchable | [seo-validator](../../docs/agent-docs-nextra/seo-validator.md) |
+| `.github/workflows/changelog.yaml` | Workflow (optional) | `.github/workflows/changelog.yaml` regenerates the site's generated pages after a release: the changelog at `content/changelog.mdx` and the API reference under `content/technical`, built from the application repository's `prod` branch. | Answer `ci-pipeline=yes`; runs after a merge into `prod` or the app's release | Generated pages follow the application's releases | [changelog](../../docs/agent-docs-nextra/changelog.md) |
+| `.github/workflows/ci-cd.yaml` | Workflow (optional) | `.github/workflows/ci-cd.yaml` builds the static export of `prod` (`next build`, then the search index) and uploads it to an assets-only Cloudflare Worker. | Called by `changelog.yaml` | The site deploys only after its new pages landed | [ci-cd](../../docs/agent-docs-nextra/ci-cd.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](../../docs/agent-docs-nextra/deepseek-review.md) |
+| `.github/workflows/quality-gate.yaml` | Workflow | `.github/workflows/quality-gate.yaml` runs agent-config-kit's `docs-nextra-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Installed by setup; runs on every pull request into `dev` or `prod` | Every pull request runs the same gates as the pre-commit hook, and more | [quality-gate](../../docs/agent-docs-nextra/quality-gate.md) |
+| `.github/workflows/react-doctor.yml` | Workflow (optional) | `.github/workflows/react-doctor.yml` runs the React Doctor action on each pull request and reports security, performance, correctness, accessibility and architecture findings as review comments on the changed lines, one summary comment and a commit status. | Answer `react-doctor=yes` | React findings in the pull request; never blocks | [react-doctor](../../docs/agent-docs-nextra/react-doctor.md) |
 <!-- catalog:end -->
 
 ### Hooks
@@ -86,8 +91,8 @@ Every component, generated from the manifests and the docs pages; each links to 
 
 **What setup installs** (`/agent-docs-nextra:setup`): the docs-content rule, anti-patterns, gate
 scripts and comment checks, oxlint, oxfmt and knip config, the env helper
-(`bun run env:init`), a pull-request-only CI caller and, if you want them, the changelog and deploy
-workflows and React Doctor on pull requests.
+(`bun run env:init`), a pull-request-only CI caller, a CODEOWNERS starter and, if you want them, the
+changelog and deploy workflows, React Doctor and a DeepSeek review of each pull request.
 
 ## Configuration
 
@@ -114,7 +119,8 @@ agent-core keeps running. To remove the files setup installed, see [Uninstall](.
 - Commands and agents read your repo; agents report and never edit.
 - The optional CI workflows run on GitHub, not on your machine: the changelog job reads the GitHub
   API, and the React Doctor job (setup's `react-doctor`, recommended **no**) runs the vendor's
-  action, which reports to the vendor's score service.
+  action, which reports to the vendor's score service. The DeepSeek review (`deepseek-review`,
+  recommended **no**) sends the pull request's diff to DeepSeek's API.
 
 ## Limitations
 

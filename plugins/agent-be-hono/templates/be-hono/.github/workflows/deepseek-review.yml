@@ -1,0 +1,61 @@
+# An AI review of each pull request by DeepSeek, installed by /agent-be-hono:setup when you answer
+# deepseek-review=yes. DeepSeek bills tokens: with the settings in agent-config-kit's reusable
+# deepseek-review workflow (a 100 KB diff cap, a 16,384-token answer) one review costs about ten
+# US cents at most at peak prices, usually a cent or two, and each comment ends with the tokens it
+# used. Add the repository secret DEEPSEEK_API_KEY; without it the job passes and sends nothing.
+# /agent-be-hono:sync brings a new pin when a plugin release moves it.
+#
+# A pull request from a branch of this repository is reviewed when it opens, reopens or is marked
+# ready. A comment that starts with /ask-deepseek, by the repository's owner, a member or a
+# collaborator, reviews it again. GitHub runs that comment trigger from the default branch's copy
+# of this file, and the job never checks the pull request's code out: it reads the diff over the
+# API.
+
+name: DeepSeek Review
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+    # Not prod: a promotion's diff repeats what was reviewed on the way into dev.
+    branches: [dev, main, master]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+# One review per pull request at a time, and a newer request replaces a running one. Every other
+# comment gets a group of its own, so it can never cancel a review.
+concurrency:
+  group: deepseek-review-${{ github.event.pull_request.number || github.event.issue.number }}-${{ (github.event_name == 'issue_comment' && !startsWith(github.event.comment.body, '/ask-deepseek')) && github.run_id || 'review' }}
+  cancel-in-progress: true
+
+jobs:
+  deepseek-review:
+    name: DeepSeek Review
+    # A pull request from a branch of this repository (a fork's run gets no secret), or
+    # /ask-deepseek on a pull request from someone the repository trusts. Every other comment
+    # starts nothing.
+    if: >-
+      (github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/ask-deepseek') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+    permissions:
+      contents: read # read the pull request and its changed files over the API
+      pull-requests: write # post or update the one review comment
+    uses: adhibuchori/agent-config-kit/.github/workflows/deepseek-review.yml@0000000000000000000000000000000000000000 # v1.2.0
+    with: # every input is optional; model: deepseek-flash is the cheaper choice
+      instructions: >-
+        A Bun + Hono API on strict TypeScript with Drizzle ORM on PostgreSQL. Routes declare
+        HTTP and schemas, handlers stay thin, services hold the logic and repositories the
+        queries. Errors leave through one error envelope that never carries a stack, an
+        internal id or an upstream message. Look hardest at authorisation, a query outside a
+        repository, a new filter without an index, an unbounded result set, and non-database
+        work inside a transaction. Migrations come from drizzle-kit and are never edited by hand.
+      # Generated files a review cannot improve; lockfiles are always left out.
+      exclude: 'src/db/migrations/* drizzle/* openapi.json'
+    secrets:
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}

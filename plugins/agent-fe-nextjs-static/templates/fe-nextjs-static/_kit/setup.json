@@ -37,12 +37,31 @@
       "recommended": "yes",
       "detect": ".github/workflows/ already holds a workflow that builds the site",
       "install": { "yes": [".github/workflows/quality-gate.yaml"] }
+    },
+    {
+      "id": "react-doctor",
+      "ask": "Run React Doctor on pull requests (advisory review comments and a commit status; it never fails the check)?",
+      "why": "Installs .github/workflows/react-doctor.yml and doctor.config.json. The workflow runs the vendor's action pinned to one commit, with write access to pull-request comments and statuses, and the action runs the CLI with its own defaults, which report diagnostics to the vendor's score service. Answer yes only if that is acceptable for this repo.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": ".github/workflows/react-doctor.yml or doctor.config.json already exists, or the user has asked for React Doctor in CI",
+      "install": { "yes": [".github/workflows/react-doctor.yml", "doctor.config.json"] }
+    },
+    {
+      "id": "deepseek-review",
+      "ask": "Review each pull request with DeepSeek, a low-cost paid AI model (.github/workflows/deepseek-review.yml)?",
+      "why": "Installs a caller of agent-config-kit's reusable DeepSeek review, with notes about this stack: one comment per pull request from a branch of this repository, updated when the repository's owner, a member or a collaborator comments /ask-deepseek. It reads the diff over the GitHub API and runs no pull-request code. It needs the repository secret DEEPSEEK_API_KEY and costs about ten US cents a review at most, usually a cent or two (the diff and the answer are capped); without the secret it passes and sends nothing.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": ".github/workflows/deepseek-review.yml already exists, or the user has asked for an AI review in CI",
+      "install": { "yes": [".github/workflows/deepseek-review.yml"] }
     }
   ],
   "seed": [
     ".claude/agent-config.json",
     ".claude/anti-patterns/INDEX.md",
     ".env.example",
+    ".github/CODEOWNERS",
     ".oxfmtrc.json",
     "knip.json",
     "lighthouserc.json",

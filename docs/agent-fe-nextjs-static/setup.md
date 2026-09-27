@@ -4,7 +4,7 @@ Command · agent-fe-nextjs-static · `/agent-fe-nextjs-static:setup [--answer id
 
 ## What it does
 
-`/agent-fe-nextjs-static:setup` installs what a plugin cannot ship by itself into your repo: the static-site rules, anti-patterns, the site checks (static export, sitemap and robots, metadata, share images, JSON-LD, links, image, font and bundle budgets, security headers, accessibility), `site.config.json`, lint and budget configs, `public/_headers` and a pull-request-only CI caller.
+`/agent-fe-nextjs-static:setup` installs what a plugin cannot ship by itself into your repo: the static-site rules, anti-patterns, the site checks (static export, sitemap and robots, metadata, share images, JSON-LD, links, image, font and bundle budgets, security headers, accessibility), `site.config.json`, lint and budget configs, `public/_headers`, a pull-request-only CI caller, a CODEOWNERS starter and, if you want them, React Doctor and a DeepSeek review of each pull request.
 
 It explores your repo, asks one question at a time with a recommended answer, shows the exact draft,
 and writes only when you reply **go**. It never overwrites or deletes a file. It adds 12 package script(s) to an existing `package.json` (never creates one) and keeps any script you already have. The lock
@@ -31,6 +31,8 @@ The questions (answer "ok" to take the recommended one):
 | `headers` | Will the host read the site's response headers from a _headers file in public/? | yes / no | `yes` |
 | `lighthouse` | Hold the pages to Core Web Vitals budgets with Lighthouse CI (lighthouserc.json)? | yes / no | `yes` |
 | `ci-gate` | Add the pull-request quality gate workflow (.github/workflows/quality-gate.yaml)? | yes / no | `yes` |
+| `react-doctor` | Run React Doctor on pull requests (advisory review comments and a commit status; it never fails the check)? | yes / no | `no` |
+| `deepseek-review` | Review each pull request with DeepSeek, a low-cost paid AI model (.github/workflows/deepseek-review.yml)? | yes / no | `no` |
 
 The draft lists every action: `create`, `same`, `keep`, `seed`, `merge`, `conflict`, `block`,
 `alias`, `by-hand`, `warn` and `lock`, then a `digest`. `apply` is not pre-approved, so your
@@ -55,10 +57,10 @@ Your `.claude/settings.json` already wires a hook script the plugin also runs, s
 - The draft ends with a `digest sha256:…` line, and after **go** the last line apply prints is
   `wrote    .claude/agent-config-kit.lock`.
 - `/agent-fe-nextjs-static:sync --check` then ends with `result: in sync (0 findings; exit 0)`.
-- The CI caller is pinned to the v1.0.0 release commit. A caller that still holds the all-zero
-  release placeholder (as in 1.0.0) is not installed: the draft shows
-  `warn     .github/workflows/quality-gate.y…ml  not installed: …`, `--check` lists it as `held`,
-  and the next release installs it through sync.
+- Every CI caller is pinned to a release commit of agent-config-kit. A caller that still holds the
+  all-zero release placeholder (a new caller, until the plugin release that pins it) is not
+  installed: the draft shows `warn     .github/workflows/<name>.y…ml  not installed: …`, `--check`
+  lists it as `held`, and the next release installs it through sync.
 - `git status` shows the new files; commit them with the lock.
 
 ## Where it fits

@@ -12,6 +12,15 @@
       "install": { "yes": [".github/workflows/quality-gate.yml"] }
     },
     {
+      "id": "deepseek-review",
+      "ask": "Review each pull request with DeepSeek, a low-cost paid AI model (.github/workflows/deepseek-review.yml)?",
+      "why": "Installs a caller of agent-config-kit's reusable DeepSeek review, with notes about this stack: one comment per pull request from a branch of this repository, updated when the repository's owner, a member or a collaborator comments /ask-deepseek. It reads the diff over the GitHub API and runs no pull-request code. It needs the repository secret DEEPSEEK_API_KEY and costs about ten US cents a review at most, usually a cent or two (the diff and the answer are capped); without the secret it passes and sends nothing.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": ".github/workflows/deepseek-review.yml already exists, or the user has asked for an AI review in CI",
+      "install": { "yes": [".github/workflows/deepseek-review.yml"] }
+    },
+    {
       "id": "pr-templates",
       "ask": "Add pull-request templates for work pull requests and dev → prod promotions (.github/PULL_REQUEST_TEMPLATE/)?",
       "why": "They list only what the gate cannot decide: the schema and query checks a person reads, and the migration and deploy steps of a promotion. They assume dev and prod branches.",
@@ -44,6 +53,7 @@
     ".claude/docs/code-review-checklist.md",
     ".dockerignore",
     ".env.ci.example",
+    ".github/CODEOWNERS",
     ".github/PULL_REQUEST_TEMPLATE/*.md",
     ".husky/pre-commit",
     ".oxfmtrc.json",

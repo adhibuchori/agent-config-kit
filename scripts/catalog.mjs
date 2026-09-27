@@ -10,6 +10,9 @@
 //                                                    plugins/<p>/README.md: that plugin only.
 //                                                    One row per component: Component, Kind,
 //                                                    What it does, How to use, Why it helps, Docs.
+//                                                    A component is a hook, command, agent or skill,
+//                                                    or a workflow a plugin's setup installs
+//                                                    (templates/<stack>/.github/workflows/*.y*ml).
 //                                                    README.id.md gets the same table in Indonesian.
 //   <!-- install:start --> ... <!-- install:end -->  README.md: docs/install-block.md, verbatim;
 //                                                    README.id.md: docs/install-block.id.md, verbatim;
@@ -17,8 +20,9 @@
 //                                                    with that plugin's own name and install lines.
 //   <!-- files:start --> ... <!-- files:end -->      README.md and README.id.md (optional): every file
 //                                                    each plugin's setup installs, when, and what it is.
-// "What it does" is the description in a command's, agent's or skill's frontmatter, and for a hook
-// the first sentence under "## What it does" in its docs page (README.id.md: docs/catalog.json).
+// "What it does" is the description in a command's, agent's or skill's frontmatter, and for a hook or
+// a workflow the first sentence under "## What it does" in its docs page (README.id.md:
+// docs/catalog.json).
 // "How to use" and "Why it helps" come from docs/catalog.json, one entry per component, keyed by its
 // docs page (<plugin>/<page name>). "What it is" for an installed file is its first Markdown heading
 // or its first comment sentence, else the entry for its name or path in docs/catalog.json "files".
@@ -26,9 +30,11 @@
 // Invariants (--check, and after a rewrite):
 //   - README.md has both marker pairs; every plugins/<p>/README.md exists with the install markers;
 //     every generated block is current.
-//   - Every component (hook script wired in hooks/hooks.json, command, agent, skill) has a page at
-//     docs/<plugin>/<name>.md (<name>.<kind>.md when two kinds share a name), and every page in
-//     docs/<plugin>/ belongs to a component. lib.sh and setup-check.sh are not components.
+//   - Every component (hook script wired in hooks/hooks.json, command, agent, skill, template
+//     workflow) has a page at docs/<plugin>/<name>.md (<name>.<kind>.md when two kinds share a name;
+//     a workflow alone takes <name>.workflow.md when it shares its name with another component), and
+//     every page in docs/<plugin>/ belongs to a component. lib.sh and setup-check.sh are not
+//     components.
 //   - plugins/agent-core/commands/help.md names every command of every plugin as /<plugin>:<command>.
 //   - marketplace.json: one entry per plugins/<p>, sorted by name, names ^[a-z0-9][a-z0-9-]{1,63}$,
 //     source ./plugins/<name>, no version, a description of 10-2000 characters identical to the
@@ -178,6 +184,9 @@ const cell = (s) =>
     .replace(/\|/g, '\\|')
     .trim();
 
+// A setup.json install glob as a regular expression: ** crosses folders, * and ? do not.
+const globRe = (g) => new RegExp(`^${g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*\//g, '(?:.*/)?').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]')}$`);
+
 // ── Manifests ────────────────────────────────────────────────────────────────────────────────
 const marketplacePath = join(root, '.claude-plugin', 'marketplace.json');
 if (!existsSync(marketplacePath)) usage(`${rel(marketplacePath)} not found; is --root a checkout of agent-config-kit?`);
@@ -283,13 +292,32 @@ for (const p of plugins) {
       comps.push({ kind: 'skill', name, invoke: `${p.name}:${name}`, desc: fm.description ?? '', userOnly });
     }
   }
-  // Docs pages: <name>.md, or <name>.<kind>.md when two kinds in one plugin share a name.
+  // The workflows setup installs: every templates/<stack>/.github/workflows/*.y*ml. One is optional
+  // when a setup question gates it.
+  const templatesDir = join(p.dir, 'templates');
+  const workflows = [];
+  if (existsSync(templatesDir)) {
+    for (const stack of readdirSync(templatesDir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort()) {
+      const wdir = join(templatesDir, stack, '.github', 'workflows');
+      if (!existsSync(wdir)) continue;
+      const setupPath = join(templatesDir, stack, '_kit', 'setup.json');
+      const questions = existsSync(setupPath) ? readJson(setupPath).questions ?? [] : [];
+      for (const f of readdirSync(wdir).filter((f) => /\.ya?ml$/.test(f)).sort()) {
+        const dest = `.github/workflows/${f}`;
+        const optional = questions.some((q) => Object.values(q.install ?? {}).flat().some((g) => globRe(g).test(dest)));
+        workflows.push({ kind: 'workflow', name: f.replace(/\.ya?ml$/, ''), invoke: dest, optional });
+      }
+    }
+  }
+  // Docs pages: <name>.md, or <name>.<kind>.md when two kinds in one plugin share a name. A workflow
+  // that shares its name with another component takes <name>.workflow.md and leaves the other's page
+  // where it is.
   const kindsByName = new Map();
   for (const c of comps) kindsByName.set(c.name, (kindsByName.get(c.name) ?? 0) + 1);
-  for (const c of comps) {
-    c.page = `docs/${p.name}/${kindsByName.get(c.name) > 1 ? `${c.name}.${c.kind}` : c.name}.md`;
-    if (c.kind === 'hook') c.desc = whatItDoes(join(root, c.page));
-  }
+  for (const c of comps) c.page = `docs/${p.name}/${kindsByName.get(c.name) > 1 ? `${c.name}.${c.kind}` : c.name}.md`;
+  for (const w of workflows) w.page = `docs/${p.name}/${kindsByName.has(w.name) ? `${w.name}.workflow` : w.name}.md`;
+  comps.push(...workflows);
+  for (const c of comps) if (c.kind === 'hook' || c.kind === 'workflow') c.desc = whatItDoes(join(root, c.page));
   p.comps = comps;
 }
 
@@ -302,7 +330,7 @@ for (const p of plugins) {
     if (r === `docs/${p.name}/README.md`) continue;
     if (!expected.has(r)) problem(`${r}: no component of ${p.name} has this page`);
   }
-  for (const c of p.comps.filter((c) => c.kind === 'hook')) {
+  for (const c of p.comps.filter((c) => c.kind === 'hook' || c.kind === 'workflow')) {
     if (existsSync(join(root, c.page)) && !c.desc) problem(`${c.page}: no sentence under "## What it does"`);
   }
 }
@@ -460,20 +488,22 @@ for (const p of plugins) {
 const LANG = {
   en: {
     head: '| Component | Kind | What it does | How to use | Why it helps | Docs |',
-    kinds: { hook: 'Hook', command: 'Command', agent: 'Agent', skill: 'Skill' },
+    kinds: { hook: 'Hook', command: 'Command', agent: 'Agent', skill: 'Skill', workflow: 'Workflow' },
+    optional: 'optional',
     on: 'on',
     matchers: { edits: 'file edits', github: 'GitHub MCP writes', other: 'several tools' },
     userOnly: 'you start it',
-    empty: 'No hooks, commands, agents or skills.',
+    empty: 'No hooks, commands, agents, skills or workflows.',
     noPage: '(no page yet)',
   },
   id: {
     head: '| Komponen | Jenis | Fungsinya | Cara pakai | Manfaatnya | Dokumen |',
-    kinds: { hook: 'Hook', command: 'Perintah', agent: 'Agen', skill: 'Skill' },
+    kinds: { hook: 'Hook', command: 'Perintah', agent: 'Agen', skill: 'Skill', workflow: 'Workflow' },
+    optional: 'opsional',
     on: 'pada',
     matchers: { edits: 'edit berkas', github: 'penulisan lewat GitHub MCP', other: 'beberapa tool' },
     userOnly: 'Anda yang memulai',
-    empty: 'Tanpa hook, perintah, agen, atau skill.',
+    empty: 'Tanpa hook, perintah, agen, skill, atau workflow.',
     noPage: '(belum ada halaman)',
   },
 };
@@ -494,6 +524,7 @@ function catalogBlock(list, fromDir, lang = 'en') {
       const on = c.on.replace(/ on /g, ` ${L.on} `).replace(/`([^`]+)`/g, (_, m) => matcherLabel(m));
       return `${L.kinds.hook} (${on})`;
     }
+    if (c.kind === 'workflow') return c.optional ? `${L.kinds.workflow} (${L.optional})` : L.kinds.workflow;
     return c.userOnly ? `${L.kinds[c.kind]} (${L.userOnly})` : L.kinds[c.kind];
   };
   const out = [GENERATED_NOTE, ''];
@@ -631,7 +662,6 @@ function filesBlock(lang) {
     const questions = setup.questions ?? [];
     const seeds = setup.seed ?? [];
     const rows = [];
-    const globRe = (g) => new RegExp(`^${g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*\//g, '(?:.*/)?').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]')}$`);
     const matchAny = (globs, d) => globs.some((g) => globRe(g).test(d));
     const walkT = (d) => {
       for (const e of readdirSync(d, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {

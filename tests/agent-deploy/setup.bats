@@ -37,13 +37,14 @@ ask_rules() {
     "$APP/.claude/settings.json"
 }
 
-@test "questions: agent-core's layer first, then the webhook question, recommended no" {
+@test "questions: agent-core's layer first, then webhook, deploy-on-merge and strip-ai, each recommended no" {
   run -0 --separate-stderr setup_cli questions --json
   printf '%s' "$output" | python3 -c '
 import json, sys
 qs = json.load(sys.stdin)["questions"]
-assert qs[-1]["id"] == "webhook" and qs[-1]["recommended"] == "no", qs[-1]
-assert "language" in [q["id"] for q in qs[:-1]]
+assert [q["id"] for q in qs[-3:]] == ["webhook", "deploy-on-merge", "strip-ai"], qs[-3:]
+assert all(q["recommended"] == "no" for q in qs[-3:]), qs[-3:]
+assert "language" in [q["id"] for q in qs[:-3]]
 '
 }
 

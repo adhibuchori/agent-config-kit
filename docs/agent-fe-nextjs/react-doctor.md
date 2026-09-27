@@ -44,8 +44,8 @@ Diagnostics and repository metadata to the vendor's score API, and dependency na
 a supply-chain service. The flags turn both off.
 
 **Is there a CI version?**
-Setup's `react-doctor-ci` question installs an advisory pull-request workflow; it never fails the
-check. It runs the vendor's action with its defaults, which report to the vendor's score service,
+Setup's `react-doctor-ci` question installs an advisory pull-request workflow
+([react-doctor.yml](react-doctor.workflow.md)); it never fails the check. It runs the vendor's action with its defaults, which report to the vendor's score service,
 so setup recommends **no**.
 
 ## License

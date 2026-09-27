@@ -74,6 +74,8 @@ Every component, generated from the manifests and the docs pages; each links to 
 | `/agent-ai-fastapi:setup` | Command (you start it) | Install agent-ai-fastapi's backend and Python rules, anti-patterns, pre-commit and gate config, pipeline example and pull-request CI into this FastAPI + uv repo, after a dry run you approve | `/agent-ai-fastapi:setup`, once per repo | Plugins cannot ship permissions or rules; you see every write first | [setup](../../docs/agent-ai-fastapi/setup.md) |
 | `/agent-ai-fastapi:sync` | Command (you start it) | Check this repo against agent-ai-fastapi's installed files with --check (read-only, exits non-zero on drift or double hook wiring), hand a managed file over with own, or update the files after a dry run you approve | `/agent-ai-fastapi:sync --check` | Drift and double hook wiring show up with an exit code | [sync](../../docs/agent-ai-fastapi/sync.md) |
 | `agent-ai-fastapi:ai-reviewer` | Agent | Reviews the uncommitted diff of a FastAPI + LLM service against the repo's AGENTS.md rules that no gate checks - layer boundaries, the problem+json error contract, provider indirection, streaming and completion status, tests, security, typing past the Any ban, and one home per identifier. Reports findings; edits nothing. | Via `/agent-core:review` | LLM-service mistakes no gate sees | [ai-reviewer](../../docs/agent-ai-fastapi/ai-reviewer.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](../../docs/agent-ai-fastapi/deepseek-review.md) |
+| `.github/workflows/quality-gate.yml` | Workflow (optional) | `.github/workflows/quality-gate.yml` runs agent-config-kit's `ai-fastapi-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Answer `ci-gate=yes` (recommended); runs on every pull request | Every pull request runs the same gates as the pre-commit hook, and more | [quality-gate](../../docs/agent-ai-fastapi/quality-gate.md) |
 <!-- catalog:end -->
 
 ### Hooks
@@ -84,8 +86,9 @@ Every component, generated from the manifests and the docs pages; each links to 
 
 **What setup installs** (`/agent-ai-fastapi:setup`): backend and Python rules (FastAPI, providers,
 performance, testing, coverage), anti-patterns, `.pre-commit-config.yaml`, `gates.list`, a vulture
-whitelist, a pull-request-only CI caller of `ai-fastapi-quality-gate`, PR templates and, if the
-service owns its schema, the pipeline example. `pyproject.toml` is never merged: the draft prints
+whitelist, a pull-request-only CI caller of `ai-fastapi-quality-gate`, PR templates, a CODEOWNERS
+starter and, if the service owns its schema, the pipeline example. Optional: a DeepSeek review of
+each pull request (`deepseek-review`, needs the `DEEPSEEK_API_KEY` secret). `pyproject.toml` is never merged: the draft prints
 its tool sections as a `by-hand` line.
 
 ## Configuration

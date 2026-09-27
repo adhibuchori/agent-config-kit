@@ -1,16 +1,18 @@
-# Requests reviewers automatically. Without branch protection this is a prompt, not
-# a gate. Later rules win, so the narrow entries below override the catch-all.
+# Code owners: GitHub asks them to review every pull request that touches a matching path. Without
+# a branch ruleset that requires code-owner review this is a request, not a gate. The last matching
+# line wins, so the paths below override the catch-all. Replace @your-github-handle with a user or
+# an @org/team; setup created this file once, and it is yours now.
 
 *                                @your-github-handle
 
-# Anything that decides what reaches production deserves a deliberate look.
+# CI, and what decides what reaches production.
 /.github/                        @your-github-handle
 /.gitleaks.toml                  @your-github-handle
 /Dockerfile                      @your-github-handle
 /.dockerignore                   @your-github-handle
 
-# The agent's guardrails: what it may run and reach, what it is refused, and the
-# checks and unlock scripts that prove and open them.
+# The agent's guardrails: what it may run and reach, the lock that turns the hooks on, and the
+# checks and scripts that judge and unlock its work. A one-line edit here can switch a guard off.
 /.claude/settings.json           @your-github-handle
 /.claude/agent-config-kit.lock   @your-github-handle
 /.claude/agent-config.json       @your-github-handle

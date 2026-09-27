@@ -27,13 +27,13 @@ do_install() {
   setup_cli apply "${ANSWERS[@]}" --digest "$digest"
 }
 
-@test "questions lists this stack's four questions after agent-core's, each with a recommended answer" {
+@test "questions lists this stack's six questions after agent-core's, each with a recommended answer" {
   run -0 --separate-stderr setup_cli questions --json
   printf '%s' "$output" | python3 -c '
 import json, sys
 d = json.load(sys.stdin)
 ids = [q["id"] for q in d["questions"]]
-assert ids[-4:] == ["i18n", "headers", "lighthouse", "ci-gate"], ids
+assert ids[-6:] == ["i18n", "headers", "lighthouse", "ci-gate", "react-doctor", "deepseek-review"], ids
 assert all(q["recommended"] in q["choices"] and q["why"] for q in d["questions"])
 '
 }

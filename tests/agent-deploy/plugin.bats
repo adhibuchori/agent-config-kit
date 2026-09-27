@@ -67,12 +67,16 @@ assert not shared, sorted(shared)
 PY
 }
 
-@test "the webhook question gates exactly the trigger script and its ask rules" {
+@test "the webhook question gates the trigger script and its ask rules; two more gate the CI callers" {
   python3 - "$DEPLOY_TEMPLATES" <<'PY'
 import json, os, sys
 root = sys.argv[1]
 cfg = json.load(open(os.path.join(root, "_kit/setup.json")))
-assert cfg["stack"] == "deploy" and [q["id"] for q in cfg["questions"]] == ["webhook"]
+assert cfg["stack"] == "deploy" and [q["id"] for q in cfg["questions"]] == ["webhook", "deploy-on-merge", "strip-ai"]
+assert all(q["recommended"] == "no" for q in cfg["questions"])
+assert cfg["questions"][1]["install"] == {"yes": [".github/workflows/deploy.yml"]}
+assert cfg["questions"][2]["install"] == {"yes": [".github/workflows/strip-ai.yml"]}
+assert "settings" not in cfg["questions"][1] and "settings" not in cfg["questions"][2]
 q = cfg["questions"][0]
 assert q["install"] == {"yes": ["scripts/deploy/trigger-deploy.sh"]}
 gated = q["settings"]["yes"]["/permissions/ask"]

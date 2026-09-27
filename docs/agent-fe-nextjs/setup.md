@@ -4,7 +4,7 @@ Command · agent-fe-nextjs · `/agent-fe-nextjs:setup [--answer id=value …]` �
 
 ## What it does
 
-`/agent-fe-nextjs:setup` installs what a plugin cannot ship by itself into your repo: TypeScript and web rules, anti-patterns, standards, the gate scripts and their `gates.list`, oxlint, oxfmt and knip configs, the husky pre-commit hook, a pull-request-only CI caller, PR templates, CODEOWNERS and the env examples.
+`/agent-fe-nextjs:setup` installs what a plugin cannot ship by itself into your repo: TypeScript and web rules, anti-patterns, standards, the gate scripts and their `gates.list`, oxlint, oxfmt and knip configs, the husky pre-commit hook, a pull-request-only CI caller, PR templates, CODEOWNERS and the env examples, and if you want them React Doctor and a DeepSeek review of each pull request.
 
 It explores your repo, asks one question at a time with a recommended answer, shows the exact draft,
 and writes only when you reply **go**. It never overwrites or deletes a file. It adds 22 package script(s) to an existing `package.json` (never creates one) and keeps any script you already have. The lock
@@ -32,6 +32,7 @@ The questions (answer "ok" to take the recommended one):
 | `responsive` | Adopt the responsive-layout module: named breakpoints and fluid widths, checked by check:responsive? | yes / no | `yes` |
 | `skeletons` | Does the app draw loading skeletons that must match the screen they stand in for? | yes / no | `no` |
 | `react-doctor-ci` | Run React Doctor on pull requests (advisory review comments and a commit status; it never fails the check)? | yes / no | `no` |
+| `deepseek-review` | Review each pull request with DeepSeek, a low-cost paid AI model (.github/workflows/deepseek-review.yml)? | yes / no | `no` |
 | `design-docs` | Will you use the impeccable design skill (installed separately, by reference) and want its PRODUCT.md and DESIGN.md templates? | yes / no | `no` |
 
 The draft lists every action: `create`, `same`, `keep`, `seed`, `merge`, `conflict`, `block`,
@@ -59,10 +60,10 @@ Your `.claude/settings.json` already wires a hook script the plugin also runs, s
 - The draft ends with a `digest sha256:…` line, and after **go** the last line apply prints is
   `wrote    .claude/agent-config-kit.lock`.
 - `/agent-fe-nextjs:sync --check` then ends with `result: in sync (0 findings; exit 0)`.
-- The CI caller is pinned to the v1.0.0 release commit. A caller that still holds the all-zero
-  release placeholder (as in 1.0.0) is not installed: the draft shows
-  `warn     .github/workflows/quality-gate.y…ml  not installed: …`, `--check` lists it as `held`,
-  and the next release installs it through sync.
+- Every CI caller is pinned to a release commit of agent-config-kit. A caller that still holds the
+  all-zero release placeholder (a new caller, until the plugin release that pins it) is not
+  installed: the draft shows `warn     .github/workflows/<name>.y…ml  not installed: …`, `--check`
+  lists it as `held`, and the next release installs it through sync.
 - `git status` shows the new files; commit them with the lock.
 
 ## Where it fits

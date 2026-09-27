@@ -32,10 +32,16 @@ Set them with `gh variable set CI_RUNNER_FAST --body <label>`; remove one with
 
 ## Which jobs are marked fast
 
-| Pool                   | Jobs in this repo                                    | Why                                    |
-| ---------------------- | ---------------------------------------------------- | -------------------------------------- |
-| `CI_RUNNER_FAST` first | `<the pull-request quality gate>`, `<preview build>` | a person is waiting on the result      |
-| `CI_RUNNER`            | `<bots, advisory checks, post-merge jobs>`           | nobody waits; sub-minute on any runner |
+The kit's workflows already follow this split; a reusable workflow's `runs-on` input overrides it
+for one caller.
+
+| Pool                   | Workflows the kit installs                                      | Why                             |
+| ---------------------- | --------------------------------------------------------------- | ------------------------------- |
+| `CI_RUNNER_FAST` first | `quality-gate` (every stack), the docs site's `ci-cd` build     | a person waits on it; it builds |
+| `CI_RUNNER`            | `codeql`, `dependency-review`, `workflows-lint`, `react-doctor` | advisory; sub-minute anywhere   |
+| `CI_RUNNER`            | `deepseek-review`                                               | advisory and network-bound      |
+| `CI_RUNNER`            | `deploy`, `strip-ai`, the docs site's `changelog`               | post-merge; nobody waits on it  |
+| Yours                  | `<preview build>`, `<anything else in this repo>`               | `<who waits on it>`             |
 
 ## The allocation rule
 
@@ -50,11 +56,12 @@ An organisation budget set to stop usage at its limit may block all Actions or o
 above the free tier, and the settings page does not say which. Test with a throwaway workflow, not
 with the variables; while `CI_RUNNER` is set, nothing lands on `ubuntu-latest` to be observed:
 
-1. Add a `workflow_dispatch` workflow with `runs-on: ubuntu-latest` written literally and a single
-   `echo ok` step. Run it.
+1. Open a throwaway pull request that adds a `pull_request` workflow with `runs-on: ubuntu-latest`
+   written literally and a single `echo ok` step. The kit's CI starts only from pull requests, so
+   opening it is what runs it.
 2. Green means the pool is reachable. A job that dies in about three seconds with no log means the
-   budget blocks it; the reason is in the check-run annotation, not the run log. Delete the file
-   either way.
+   budget blocks it; the reason is in the check-run annotation, not the run log. Close the pull
+   request unmerged either way.
 3. Only if green, change the variables.
 
 ## Escape hatches

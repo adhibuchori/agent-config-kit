@@ -43,7 +43,8 @@ Anda, sehingga agen bekerja seperti tim Anda bekerja: rencana, review, commit, b
 - [Membuka kunci .env dan database produksi](#membuka-kunci-env-dan-database-produksi)
 - [Penyiapan untuk tim](#penyiapan-untuk-tim)
 - [Cocok dipakai bersama: RTK dan Ponytail](#cocok-dipakai-bersama-rtk-dan-ponytail)
-- [CI: quality gate yang dapat dipakai ulang](#ci-quality-gate-yang-dapat-dipakai-ulang)
+- [CI/CD sekilas](#cicd-sekilas)
+- [CI: workflow yang dapat dipakai ulang](#ci-workflow-yang-dapat-dipakai-ulang)
 - [Model keamanan](#model-keamanan)
 - [Biaya dan beban tambahan](#biaya-dan-beban-tambahan)
 - [Keterbatasan](#keterbatasan)
@@ -100,7 +101,7 @@ mana yang menanganinya.
    repo, dan tidak ada yang tahu repo mana yang masih melewatkan pemindaian rahasia.
    *Solusinya:* setiap repo memanggil satu reusable workflow yang di-pin ke satu commit, dan
    `/<plugin>:sync --check` melaporkan file mana pun yang sudah bergeser dari hasil setup.
-   *Ditangani oleh:* [CI: quality gate yang dapat dipakai ulang](#ci-quality-gate-yang-dapat-dipakai-ulang),
+   *Ditangani oleh:* [CI: workflow yang dapat dipakai ulang](#ci-workflow-yang-dapat-dipakai-ulang),
    [sync](docs/agent-core/sync.md).
 
 6. **Agen menghapus pekerjaan orang lain.**
@@ -312,7 +313,7 @@ Setelah **go**, `/agent-fe-nextjs:sync --check` diakhiri dengan `result: in sync
 
 Sejak 1.0.1, plugin stack mem-pin quality gate reusable ke commit rilis v1.0.0, jadi setup ikut
 memasang pemanggil CI. Pemanggil yang masih memakai placeholder rilis ditahan lewat baris `warn`,
-alih-alih workflow yang pasti gagal; `/<plugin>:sync` berikutnya memasangnya. Lihat [CI: quality gate yang dapat dipakai ulang](#ci-quality-gate-yang-dapat-dipakai-ulang).
+alih-alih workflow yang pasti gagal; `/<plugin>:sync` berikutnya memasangnya. Lihat [CI: workflow yang dapat dipakai ulang](#ci-workflow-yang-dapat-dipakai-ulang).
 
 ## Sehari bekerja dengan kit ini
 
@@ -370,7 +371,9 @@ repo-anda/
 │   ├── check/                    gate: gates.sh menjalankan apa yang disebut gates.list
 │   ├── ops/                      unlock.sh (Anda yang menjalankan) dan pr-ready.sh (kesiapan merge)
 │   └── env/                      show.sh (daftar tersamar) dan set.sh (menulis hanya saat terbuka)
-├── .github/workflows/            CI khusus pull request: pemanggil quality gate, CodeQL, dependency review
+├── .github/workflows/            CI khusus pull request: pemanggil quality gate, CodeQL, dependency review,
+│                                 lint workflow; opsional: review AI, React Doctor, pemanggil deploy dan strip
+├── .github/CODEOWNERS            siapa yang me-review CI, guardrail, dan apa yang sampai ke produksi (lalu milik Anda)
 ├── .husky/pre-commit             menjalankan gate pada file yang di-stage
 └── oxlint.json, knip.ts, …       konfigurasi lint dan dead code, dibuat sekali lalu jadi milik Anda
 ```
@@ -389,7 +392,7 @@ flowchart TB
         CORE[agent-core<br/>hook, perintah, mesin setup]
         STACK[plugin stack<br/>hook, perintah, agen, template]
         STACK -->|"bergantung pada"| CORE
-        GATE[quality gate reusable<br/>.github/workflows]
+        GATE[reusable workflow<br/>.github/workflows]
     end
     subgraph REPO[repo Anda]
         FILES[file terpasang<br/>settings, aturan, pemeriksa, pemanggil CI]
@@ -598,13 +601,17 @@ tidak menyimpan token.
 
 | Nama | Fungsinya | Cara memakai | Mengapa berguna |
 | --- | --- | --- | --- |
-| `<stack>-quality-gate.yml` (lima reusable workflow di repo ini) | Pasang dari lockfile, jalankan `gates.list`, batas cakupan, `.env` yang ter-commit, pemindaian HTML tak aman/`eval`/skema URL pada baris yang ditambahkan, gitleaks, audit, SkillSpector, build, source map, tambahan per stack | Setup memasang pemanggilnya; lihat [CI](#ci-quality-gate-yang-dapat-dipakai-ulang) | Satu gate, banyak repo, satu pin |
-| `.github/workflows/quality-gate.y*ml` (di repo Anda) | Pemanggil kecil untuk gate stack Anda, pada pull request ke `dev`, `prod`, `main`, `master` | Dipasang lewat pertanyaan `ci-gate` saat setup | Tidak perlu menyalin apa pun dengan tangan |
+| `<stack>-quality-gate.yml` (lima reusable workflow di repo ini) | Pasang dari lockfile, jalankan `gates.list`, batas cakupan, `.env` yang ter-commit, pemindaian HTML tak aman/`eval`/skema URL pada baris yang ditambahkan, gitleaks, audit, SkillSpector, build, source map, tambahan per stack | Setup memasang pemanggilnya; lihat [CI](#ci-workflow-yang-dapat-dipakai-ulang) | Satu gate, banyak repo, satu pin |
+| `deepseek-review.yml`, `deploy-webhook.yml`, `strip-ai.yml` (reusable, repo ini) | Review AI, deploy saat merge, dan pembersihan konfigurasi agen di balik pemanggil di bawah | Setup memasang pemanggilnya; lihat [CI](#ci-workflow-yang-dapat-dipakai-ulang) | Satu implementasi teruji, di-pin oleh setiap pemanggil |
+| `.github/workflows/quality-gate.y*ml` (di repo Anda) | Pemanggil kecil untuk gate stack Anda, pada pull request | Dipasang oleh setup (lewat pertanyaan `ci-gate` bila ada) | Tidak perlu menyalin apa pun dengan tangan |
 | `codeql.yml`, `dependency-review.yml`, `workflows-lint.yml` (core, di repo Anda) | CodeQL di PR; dependensi baru yang rentan atau berlisensi buruk; actionlint, zizmor, dan pinact saat workflow berubah | Dipasang oleh setup agent-core | Pemeriksaan rantai pasok tanpa penjadwal |
-| `react-doctor.yml` (fe-nextjs, docs-nextra; opsional) | Komentar React Doctor yang bersifat saran di PR; action milik vendor melapor ke layanan skornya | Pertanyaan setup (disarankan **no**) | Tidak pernah menggagalkan pemeriksaan |
+| `deepseek-review.yml` (setiap stack; opsional) | Review DeepSeek atas setiap pull request sebagai satu komentar, diperbarui lewat `/ask-deepseek`; membaca diff lewat API, tidak menjalankan kode pull request | `deepseek-review=yes`, lalu secret `DEEPSEEK_API_KEY` | Pembaca kedua dengan biaya satu atau dua sen per review |
+| `deploy.yml` (deploy; opsional) | POST ke webhook deploy Anda saat pull request di-merge ke `prod`; 3xx atau 4xx menggagalkan job | `deploy-on-merge=yes`, lalu secret `DEPLOY_WEBHOOK_URL` | Deploy mengikuti merge; deploy yang ditolak menjadi merah |
+| `strip-ai.yml` (deploy; opsional) | Setelah merge ke `prod`, menghapus konfigurasi agen di sana, merge balik ke `dev`, lalu memeriksa keduanya | `strip-ai=yes` | Produksi tidak membawa instruksi agen |
+| `react-doctor.yml` (fe-nextjs, fe-nextjs-static, docs-nextra; opsional) | Komentar React Doctor yang bersifat saran di PR; action milik vendor melapor ke layanan skornya | Pertanyaan setup (disarankan **no**) | Tidak pernah menggagalkan pemeriksaan |
 | `changelog.yaml`, `ci-cd.yaml` (docs-nextra; opsional) | Membuat ulang halaman dokumentasi dan deploy saat merge ke `prod` | Pertanyaan setup | Dokumentasi mengikuti kode |
 | `actions/quality-gate` (repo ini) | Composite action yang dijalankan kelima gate reusable: rencana, instalasi, gate, batas cakupan, pemindaian diff, gitleaks | Dipanggil oleh reusable workflow; lihat [README-nya](actions/quality-gate/README.md) | Satu implementasi teruji di balik gate setiap stack |
-| `actions/strip-ai` (repo ini, opsional) | Setelah merge ke branch produksi, menghapus konfigurasi agen di sana lalu merge balik ke branch pengembangan | Satu job di workflow repo Anda; lihat [README-nya](actions/strip-ai/README.md) | Untuk tim yang tidak ingin konfigurasi agen ikut di-deploy |
+| `actions/deepseek-review`, `actions/deploy-webhook`, `actions/strip-ai` (repo ini) | Langkah di balik review, deploy, dan pembersihan | Dipanggil oleh reusable workflow; lihat README-nya: [review](actions/deepseek-review/README.md), [deploy](actions/deploy-webhook/README.md), [strip](actions/strip-ai/README.md) | Diuji dengan bats terhadap tiruan HTTPS lokal |
 | `self-test.yml` (repo ini) | validate `--strict`, katalog dan versi, ShellCheck, bats di macOS dan Ubuntu, lint workflow, gitleaks, pasangan README | Berjalan di setiap PR di sini | Kit menguji dirinya dengan cara yang sama |
 
 ### File konfigurasi
@@ -626,6 +633,7 @@ tidak menyimpan token.
 | `*.example.md`, `.claude/*.example.md` (core dan stack) | Catatan operasi, database, runner CI, analitik, Serena, produk, dan desain untuk diisi | Salin ke nama tanpa `.example` lalu isi | Perintah membaca fakta Anda, bukan menebak |
 | `.claude/docs/lint-config.md` (fe-nextjs, static, be-hono) | Alasan setiap aturan dan override lint (konfigurasinya JSON biasa) | Baca sebelum mengubah sebuah aturan | Aturan tetap punya alasannya |
 | `.github/PULL_REQUEST_TEMPLATE/*.md` (stack) | Template pull request untuk pekerjaan ke `dev` dan untuk promosi | Dipilih oleh `/agent-core:create-pr` | Setiap PR memuat yang dibutuhkan reviewer |
+| `.github/CODEOWNERS` (stack) | Siapa yang diminta GitHub untuk me-review: penangkap semua, ditambah CI, guardrail, dan apa yang sampai ke produksi | Ganti `@your-github-handle` (seed) | Perubahan pada guard mendapat perhatian khusus |
 | `.claude/OPERATIONS.example.md` | Target deploy dan perintah adapter | Salin ke `OPERATIONS.md` lalu isi | `promote` mengenal platform Anda |
 
 ### Setiap berkas yang dipasang
@@ -685,7 +693,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-ai-fastapi</strong>: 38 berkas</summary>
+<summary><strong>agent-ai-fastapi</strong>: 40 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -713,8 +721,10 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.claude/rules/python/coverage.md` | selalu; sync menjaganya tetap terbaru | COVER — Test Coverage (Python) |
 | `.claude/settings.json` | digabung ke milik Anda (hanya menambah; nilai Anda yang menang) | Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash |
 | `.dockerignore` | sekali; lalu milik Anda | The Docker build context. |
+| `.github/CODEOWNERS` | sekali; lalu milik Anda | Code owners: GitHub asks them to review every pull request that touches a matching path. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk pekerjaan yang masuk ke dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
+| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | An AI review of each pull request by DeepSeek, installed by /agent-ai-fastapi:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; sync menjaganya tetap terbaru | Quality Gate for a FastAPI + LLM service: every pull request into a protected branch runs the FastAPI gate that agent-config-kit ships as a reusable workflow (ai-fastapi-quality-gate.yml; its header lists the checks). |
 | `.pre-commit-config.yaml` | sekali; lalu milik Anda | The commit gate. |
 | `AGENTS.md` | sekali, jika belum ada; lalu milik Anda | AGENTS.md — &lt;repo-name&gt; |
@@ -731,7 +741,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-be-hono</strong>: 48 berkas</summary>
+<summary><strong>agent-be-hono</strong>: 50 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -759,8 +769,10 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.claude/test-preload.example.ts` | selalu; sync menjaganya tetap terbaru | EXAMPLE — copy to `src/test/preload.ts` in the consuming repo and delete the clients it does not have. |
 | `.dockerignore` | sekali; lalu milik Anda | The build context holds only what the image builds from. |
 | `.env.ci.example` | sekali; lalu milik Anda | The variables the unit tests get in CI, and locally through scripts/check/ci-env.sh: dummy values only, never a real secret. |
+| `.github/CODEOWNERS` | sekali; lalu milik Anda | Code owners: GitHub asks them to review every pull request that touches a matching path. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk pekerjaan yang masuk ke dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
+| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | An AI review of each pull request by DeepSeek, installed by /agent-be-hono:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; sync menjaganya tetap terbaru | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
 | `.husky/pre-commit` | sekali; lalu milik Anda | Menjalankan gate pada file yang di-stage sebelum setiap commit |
 | `.oxfmtrc.json` | sekali; lalu milik Anda | Pengaturan formatter oxfmt |
@@ -787,11 +799,13 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-deploy</strong>: 4 berkas</summary>
+<summary><strong>agent-deploy</strong>: 6 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
 | `.claude/settings.json` | digabung ke milik Anda (hanya menambah; nilai Anda yang menang) | Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash |
+| `.github/workflows/deploy.yml` | jika `deploy-on-merge=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | Deploys when a pull request is merged into prod, installed by /agent-deploy:setup when you answer deploy-on-merge=yes. |
+| `.github/workflows/strip-ai.yml` | jika `strip-ai=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | Strips the agent config from prod after each merge, installed by /agent-deploy:setup when you answer strip-ai=yes. |
 | `scripts/deploy/trigger-deploy.sh` | jika `webhook=yes`; sync menjaganya tetap terbaru | trigger-deploy.sh: start a deploy by POSTing to the deploy platform's webhook, and fail loudly when the platform declines it. |
 | `scripts/deploy/verify-deploy.sh` | selalu; sync menjaganya tetap terbaru | verify-deploy.sh: smoke-test a live deploy from the outside, on any host. |
 | `CLAUDE.md` | satu blok terkelola, ditambahkan di akhir | `## Agent config kit` |
@@ -799,7 +813,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-docs-nextra</strong>: 40 berkas</summary>
+<summary><strong>agent-docs-nextra</strong>: 42 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -820,12 +834,14 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.claude/settings.json` | digabung ke milik Anda (hanya menambah; nilai Anda yang menang) | Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash |
 | `.env.development.example` | sekali; lalu milik Anda | Development environment template for this docs site. |
 | `.env.production.example` | sekali; lalu milik Anda | Production environment template for this docs site. |
+| `.github/CODEOWNERS` | sekali; lalu milik Anda | Code owners: GitHub asks them to review every pull request that touches a matching path. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | sekali; lalu milik Anda | Template pull request untuk pekerjaan yang masuk ke dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
 | `.github/scripts/check-comment-blocks.sh` | selalu; sync menjaganya tetap terbaru | Caps consecutive comment runs under .github/ at 2 lines; shebangs are exempt. |
 | `.github/scripts/check-comment-style.ts` | selalu; sync menjaganya tetap terbaru | Comment standard: `//` is reserved for directives (ts-expect-error, oxlint-disable, |
 | `.github/workflows/changelog.yaml` | jika `ci-pipeline=yes`; sekali; lalu milik Anda | Generate Content |
 | `.github/workflows/ci-cd.yaml` | jika `ci-pipeline=yes`; sync menjaganya tetap terbaru | CI/CD Pipeline |
+| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | An AI review of each pull request by DeepSeek, installed by /agent-docs-nextra:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yaml` | selalu; sync menjaganya tetap terbaru | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
 | `.github/workflows/react-doctor.yml` | jika `react-doctor=yes`; sync menjaganya tetap terbaru | React Doctor: security, performance, correctness, accessibility, and architecture checks for React. |
 | `.husky/pre-commit` | selalu; sync menjaganya tetap terbaru | Menjalankan gate pada file yang di-stage sebelum setiap commit |
@@ -847,7 +863,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-fe-nextjs</strong>: 98 berkas</summary>
+<summary><strong>agent-fe-nextjs</strong>: 99 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -908,11 +924,12 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.dockerignore` | sekali; lalu milik Anda | The build context holds only what the image builds from. |
 | `.env.development.example` | sekali; lalu milik Anda | Development environment template. |
 | `.env.production.example` | sekali; lalu milik Anda | Production environment template. |
-| `.github/CODEOWNERS` | sekali; lalu milik Anda | Requests reviewers automatically. |
+| `.github/CODEOWNERS` | sekali; lalu milik Anda | Code owners: GitHub asks them to review every pull request that touches a matching path. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | sekali; lalu milik Anda | Template pull request untuk pekerjaan yang masuk ke dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
 | `.github/scripts/check-comment-blocks.sh` | selalu; sync menjaganya tetap terbaru | Caps consecutive comment runs under .github/ at 2 lines; shebangs are exempt. |
 | `.github/scripts/check-comment-style.ts` | selalu; sync menjaganya tetap terbaru | Comment standard: `//` is reserved for directives (ts-expect-error, oxlint-disable, |
+| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | An AI review of each pull request by DeepSeek, installed by /agent-fe-nextjs:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yaml` | selalu; sync menjaganya tetap terbaru | The pull-request quality gate for this Next.js app, installed by /agent-fe-nextjs:setup. |
 | `.github/workflows/react-doctor.yml` | jika `react-doctor-ci=yes`; sync menjaganya tetap terbaru | React Doctor: security, performance, correctness, accessibility, and architecture checks for React. |
 | `.husky/pre-commit` | selalu; sync menjaganya tetap terbaru | Menjalankan gate pada file yang di-stage sebelum setiap commit |
@@ -953,7 +970,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-fe-nextjs-static</strong>: 57 berkas</summary>
+<summary><strong>agent-fe-nextjs-static</strong>: 61 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -985,12 +1002,16 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.claude/rules/web/static-export.md` | selalu; sync menjaganya tetap terbaru | Keep the site static |
 | `.claude/settings.json` | digabung ke milik Anda (hanya menambah; nilai Anda yang menang) | Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash |
 | `.env.example` | sekali; lalu milik Anda | Copy to .env.local for local builds, and set the same names in the host's build environment. |
+| `.github/CODEOWNERS` | sekali; lalu milik Anda | Code owners: GitHub asks them to review every pull request that touches a matching path. |
+| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | An AI review of each pull request by DeepSeek, installed by /agent-fe-nextjs-static:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yaml` | jika `ci-gate=yes`; sync menjaganya tetap terbaru | The pull-request quality gate for this static site, installed by /agent-fe-nextjs-static:setup. |
+| `.github/workflows/react-doctor.yml` | jika `react-doctor=yes`; sync menjaganya tetap terbaru | React Doctor: security, performance, correctness, accessibility and architecture findings for the site's React code, as review comments on the changed lines, one summary comment and a commit status. |
 | `.husky/pre-commit` | selalu; sync menjaganya tetap terbaru | Menjalankan gate pada file yang di-stage sebelum setiap commit |
 | `.oxfmtrc.json` | sekali; lalu milik Anda | Pengaturan formatter oxfmt |
 | `AGENTS.md` | sekali, jika belum ada; lalu milik Anda | AGENTS.md — &lt;Site Name&gt; |
 | `CLAUDE.md` | starter-nya, jika repo belum punya CLAUDE.md | &lt;Site Name&gt; — Claude Code Config |
 | `SSOT.md` | sekali, jika belum ada; lalu milik Anda | SSOT.md — &lt;Site Name&gt; |
+| `doctor.config.json` | jika `react-doctor=yes`; sync menjaganya tetap terbaru | Pengaturan React Doctor (dead code diserahkan ke knip) |
 | `knip.json` | sekali; lalu milik Anda | Pengaturan dead code untuk knip |
 | `lighthouserc.json` | jika `lighthouse=yes`; sekali; lalu milik Anda | Anggaran Lighthouse CI: LCP, CLS, dan TBT |
 | `oxlint.json` | sekali; lalu milik Anda | Aturan lint oxlint; alasannya ada di .claude/docs/lint-config.md |
@@ -1035,7 +1056,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 <!-- files:end -->
 
 <details>
-<summary><strong>Katalog lengkap hasil generator (setiap hook, perintah, agen, dan skill)</strong></summary>
+<summary><strong>Katalog lengkap hasil generator (setiap hook, perintah, agen, skill, dan workflow)</strong></summary>
 
 <!-- catalog:start -->
 <!-- Generated by scripts/catalog.mjs from the plugin manifests, docs/ and docs/catalog.json. Edit those, then run it. -->
@@ -1069,6 +1090,9 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `/agent-core:sync` | Perintah (Anda yang memulai) | Membandingkan repo dengan yang dipasang setup; `--check` melaporkan pergeseran, selain itu menulis setelah draft | `/agent-core:sync --check` | Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar | [sync](docs/agent-core/sync.md) |
 | `agent-core:reviewer` | Agen | Memeriksa diff terhadap `AGENTS.md` dan `.claude/rules/` | Lewat `/agent-core:review` jika tidak ada reviewer stack | Temuan yang mengutip aturan, di stack apa pun | [reviewer](docs/agent-core/reviewer.md) |
 | `agent-core:security-guard` | Agen | Rahasia, injeksi, otorisasi, dan perubahan pada pagar pengaman agen | Lewat `/agent-core:review`, atau minta langsung | Kemunduran keamanan ditandai sebelum commit | [security-guard](docs/agent-core/security-guard.md) |
+| `.github/workflows/codeql.yml` | Workflow | Pemindaian kode CodeQL di setiap pull request, untuk bahasa yang ada di repo | Berjalan sendiri di setiap pull request | Pemindaian kode tanpa jadwal mingguan | [codeql](docs/agent-core/codeql.md) |
+| `.github/workflows/dependency-review.yml` | Workflow | Menggagalkan pull request yang menambah dependensi dengan kerentanan tinggi atau kritis | Berjalan sendiri di setiap pull request | Dependensi rentan dihentikan saat ditambahkan, tanpa Dependabot | [dependency-review](docs/agent-core/dependency-review.md) |
+| `.github/workflows/workflows-lint.yml` | Workflow | actionlint, zizmor, dan pinact atas file GitHub Actions saat pull request mengubahnya | Berjalan saat pull request menyentuh `.github/` atau `actions/` | Action yang tidak di-pin dan workflow yang bisa diinjeksi tidak pernah masuk | [workflows-lint](docs/agent-core/workflows-lint.md) |
 
 ### agent-ai-fastapi
 
@@ -1078,6 +1102,8 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `/agent-ai-fastapi:setup` | Perintah (Anda yang memulai) | Memasang aturan backend dan Python, anti-pattern, konfigurasi pre-commit dan gate, contoh pipeline, dan CI pull request untuk repo FastAPI + uv setelah dry run yang Anda setujui | `/agent-ai-fastapi:setup`, sekali per repo | Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu | [setup](docs/agent-ai-fastapi/setup.md) |
 | `/agent-ai-fastapi:sync` | Perintah (Anda yang memulai) | Memeriksa repo terhadap file yang dipasang agent-ai-fastapi (`--check`), atau memperbaruinya setelah dry run | `/agent-ai-fastapi:sync --check` | Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar | [sync](docs/agent-ai-fastapi/sync.md) |
 | `agent-ai-fastapi:ai-reviewer` | Agen | Indireksi penyedia, streaming, problem+json, dan tipe dalam layanan FastAPI + LLM | Lewat `/agent-core:review` | Kesalahan layanan LLM yang tidak terlihat oleh gate | [ai-reviewer](docs/agent-ai-fastapi/ai-reviewer.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (opsional) | Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout | Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang | Pembaca kedua di setiap pull request dengan biaya satu atau dua sen | [deepseek-review](docs/agent-ai-fastapi/deepseek-review.md) |
+| `.github/workflows/quality-gate.yml` | Workflow (opsional) | Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit | Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request | Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih | [quality-gate](docs/agent-ai-fastapi/quality-gate.md) |
 
 ### agent-be-hono
 
@@ -1087,6 +1113,8 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `/agent-be-hono:setup` | Perintah (Anda yang memulai) | Memasang aturan backend, anti-pattern, skrip gate, konfigurasi lint dan tes, serta CI pull request untuk repo Bun + Hono + Drizzle setelah dry run yang Anda setujui | `/agent-be-hono:setup`, sekali per repo | Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu | [setup](docs/agent-be-hono/setup.md) |
 | `/agent-be-hono:sync` | Perintah (Anda yang memulai) | Memeriksa repo terhadap file yang dipasang agent-be-hono (`--check`), atau memperbaruinya setelah dry run | `/agent-be-hono:sync --check` | Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar | [sync](docs/agent-be-hono/sync.md) |
 | `agent-be-hono:reviewer` | Agen | Lapisan, kontrak error, akses database, bentuk query, dan indeks | Lewat `/agent-core:review` | Query lambat dan error yang bocor tertangkap saat review | [reviewer](docs/agent-be-hono/reviewer.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (opsional) | Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout | Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang | Pembaca kedua di setiap pull request dengan biaya satu atau dua sen | [deepseek-review](docs/agent-be-hono/deepseek-review.md) |
+| `.github/workflows/quality-gate.yml` | Workflow (opsional) | Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit | Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request | Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih | [quality-gate](docs/agent-be-hono/quality-gate.md) |
 
 ### agent-deploy
 
@@ -1096,6 +1124,8 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `/agent-deploy:setup` | Perintah (Anda yang memulai) | Memasang skrip smoke test setelah deploy, pemicu webhook deploy opsional, dan izin tanya-dulu untuk keduanya setelah dry run yang Anda setujui | `/agent-deploy:setup`, sekali per repo | Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu | [setup](docs/agent-deploy/setup.md) |
 | `/agent-deploy:sync` | Perintah (Anda yang memulai) | Memeriksa repo terhadap file yang dipasang agent-deploy (`--check`), atau memperbaruinya setelah dry run | `/agent-deploy:sync --check` | Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar | [sync](docs/agent-deploy/sync.md) |
 | `/agent-deploy:verify-deploy` | Perintah (Anda yang memulai) | Smoke test deploy live dari luar: HTTP 200, URL canonical, robots, sitemap, header keamanan, deploy yang lebih baru dari merge | `/agent-deploy:verify-deploy https://… --pr 42` | Bukti deploy sampai ke produksi | [verify-deploy](docs/agent-deploy/verify-deploy.md) |
+| `.github/workflows/deploy.yml` | Workflow (opsional) | POST ke webhook deploy saat pull request di-merge ke `prod`; 3xx atau 4xx berarti gagal | Jawab `deploy-on-merge=yes`, tambahkan `DEPLOY_WEBHOOK_URL` | Deploy mengikuti merge, dan deploy yang ditolak menjadi merah | [deploy](docs/agent-deploy/deploy.md) |
+| `.github/workflows/strip-ai.yml` | Workflow (opsional) | Menghapus konfigurasi agen dari `prod` setelah merge, lalu merge balik ke `dev` dan memeriksa keduanya | Jawab `strip-ai=yes`; berjalan setelah setiap merge ke `prod` | Produksi tidak membawa instruksi agen; `dev` tetap menyimpannya | [strip-ai](docs/agent-deploy/strip-ai.md) |
 
 ### agent-docs-nextra
 
@@ -1106,6 +1136,11 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `/agent-docs-nextra:sync` | Perintah (Anda yang memulai) | Memeriksa repo terhadap file yang dipasang agent-docs-nextra (`--check`), atau memperbaruinya setelah dry run | `/agent-docs-nextra:sync --check` | Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar | [sync](docs/agent-docs-nextra/sync.md) |
 | `agent-docs-nextra:security-guard` | Agen | Header, CSP, rahasia di hasil export, dan HTML mentah | Minta saat konfigurasi berubah | Export publik tidak membocorkan apa pun | [security-guard](docs/agent-docs-nextra/security-guard.md) |
 | `agent-docs-nextra:seo-validator` | Agen | Metadata halaman, struktur heading, robots, dan sitemap | Minta saat konten berubah | Dokumentasi tetap mudah dicari | [seo-validator](docs/agent-docs-nextra/seo-validator.md) |
+| `.github/workflows/changelog.yaml` | Workflow (opsional) | Membuat ulang changelog dan referensi API setelah rilis, lalu memanggil ci-cd | Jawab `ci-pipeline=yes`; berjalan setelah merge ke `prod` atau rilis aplikasi | Halaman hasil generator mengikuti rilis aplikasi | [changelog](docs/agent-docs-nextra/changelog.md) |
+| `.github/workflows/ci-cd.yaml` | Workflow (opsional) | Build ekspor statis dan unggah ke Cloudflare Worker, dipanggil oleh changelog | Dipanggil oleh `changelog.yaml` | Situs hanya di-deploy setelah halaman barunya masuk | [ci-cd](docs/agent-docs-nextra/ci-cd.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (opsional) | Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout | Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang | Pembaca kedua di setiap pull request dengan biaya satu atau dua sen | [deepseek-review](docs/agent-docs-nextra/deepseek-review.md) |
+| `.github/workflows/quality-gate.yaml` | Workflow | Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit | Dipasang oleh setup; berjalan di setiap pull request ke `dev` atau `prod` | Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih | [quality-gate](docs/agent-docs-nextra/quality-gate.md) |
+| `.github/workflows/react-doctor.yml` | Workflow (opsional) | Temuan React Doctor sebagai komentar dan status commit di pull request; hanya saran | Jawab `react-doctor=yes` | Temuan React muncul di pull request; tidak pernah memblokir | [react-doctor](docs/agent-docs-nextra/react-doctor.md) |
 
 ### agent-fe-nextjs
 
@@ -1122,6 +1157,9 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `agent-fe-nextjs:seo-validator` | Agen | Metadata, canonical, sitemap, gambar OG, dan JSON-LD | Minta setelah perubahan metadata | Halaman tetap mudah ditemukan dan dibagikan | [seo-validator](docs/agent-fe-nextjs/seo-validator.md) |
 | `agent-fe-nextjs:react-doctor` | Skill (Anda yang memulai) | Memindai kode React dengan React Doctor CLI milik proyek, atau mengunduh versi yang di-pin sekali setelah Anda setuju; telemetri dimatikan | `/agent-fe-nextjs:react-doctor` | Masalah keamanan, performa, dan a11y ketahuan sebelum commit | [react-doctor](docs/agent-fe-nextjs/react-doctor.md) |
 | `agent-fe-nextjs:skeleton` | Skill | Membangun skeleton loading dari komponen asli dan mengukurnya di empat lebar layar | "the skeleton jumps", atau `/agent-fe-nextjs:skeleton` | Tidak ada pergeseran layout saat data datang | [skeleton](docs/agent-fe-nextjs/skeleton.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (opsional) | Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout | Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang | Pembaca kedua di setiap pull request dengan biaya satu atau dua sen | [deepseek-review](docs/agent-fe-nextjs/deepseek-review.md) |
+| `.github/workflows/quality-gate.yaml` | Workflow | Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit | Dipasang oleh setup; berjalan di setiap pull request | Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih | [quality-gate](docs/agent-fe-nextjs/quality-gate.md) |
+| `.github/workflows/react-doctor.yml` | Workflow (opsional) | Temuan React Doctor sebagai komentar dan status commit di pull request; hanya saran | Jawab `react-doctor-ci=yes` | Temuan React muncul di pull request; tidak pernah memblokir | [react-doctor](docs/agent-fe-nextjs/react-doctor.workflow.md) |
 
 ### agent-fe-nextjs-static
 
@@ -1136,6 +1174,9 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `agent-fe-nextjs-static:i18n-guard` | Agen | Routing locale statis, kesetaraan key, dan hreflang | Minta setelah perubahan i18n | Bahasa berjalan tanpa middleware | [i18n-guard](docs/agent-fe-nextjs-static/i18n-guard.md) |
 | `agent-fe-nextjs-static:security-guard` | Agen | Header host, CSP berbasis hash, formulir, dan skrip pihak ketiga | Lewat `/agent-fe-nextjs-static:review` | Hosting statis punya jebakannya sendiri | [security-guard](docs/agent-fe-nextjs-static/security-guard.md) |
 | `agent-fe-nextjs-static:seo-validator` | Agen | Metadata pencarian dan berbagi situs statis, plus pengindeksan preview | Lewat `/agent-fe-nextjs-static:seo-audit` | Menilai hal yang tidak bisa dinilai skrip | [seo-validator](docs/agent-fe-nextjs-static/seo-validator.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (opsional) | Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout | Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang | Pembaca kedua di setiap pull request dengan biaya satu atau dua sen | [deepseek-review](docs/agent-fe-nextjs-static/deepseek-review.md) |
+| `.github/workflows/quality-gate.yaml` | Workflow (opsional) | Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit | Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request | Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih | [quality-gate](docs/agent-fe-nextjs-static/quality-gate.md) |
+| `.github/workflows/react-doctor.yml` | Workflow (opsional) | Temuan React Doctor sebagai komentar dan status commit di pull request; hanya saran | Jawab `react-doctor=yes` | Temuan React muncul di pull request; tidak pernah memblokir | [react-doctor](docs/agent-fe-nextjs-static/react-doctor.md) |
 
 ### agent-fe-threejs
 
@@ -1336,9 +1377,57 @@ melewatkan pekerjaan yang diwajibkan gate, seperti tes yang menjaga coverage tet
 dokumentasi yang diminta sebuah aturan, sehingga commit kemudian gagal. `lite` membangun apa yang
 diminta dan hanya menyebutkan opsi yang lebih malas.
 
-## CI: quality gate yang dapat dipakai ulang
+## CI/CD sekilas
 
-Setiap stack punya reusable workflow di repo ini: `fe-nextjs-quality-gate.yml`,
+Setiap workflow yang dipasang kit berawal dari pull request: yang dibuka atau diperbarui, komentar
+di sebuah pull request, atau pull request yang di-merge. Tidak ada yang berjalan saat push atau
+sesuai jadwal, dan tidak ada Dependabot ([ADR 0004](docs/adr/0004-pull-request-only-ci.md)).
+
+```mermaid
+flowchart LR
+    accTitle: Workflow mana yang berjalan kapan
+    accDescr: Pull request yang dibuka atau diperbarui menjalankan quality gate di kelompok runner cepat, serta CodeQL, dependency review, lint workflow, dan React Doctor di kelompok standar. Saat dibuka, dibuka kembali, atau ditandai siap, dan saat orang tepercaya berkomentar /ask-deepseek, review DeepSeek yang opsional berjalan. Pull request yang di-merge ke prod menjalankan workflow deploy dan strip yang opsional, dan di situs dokumentasi changelog beserta build ci-cd-nya.
+    PR[pull request dibuka atau diperbarui] --> QG[quality-gate<br/>runner cepat]
+    PR --> CHECKS[codeql, dependency-review,<br/>workflows-lint, react-doctor]
+    PR -->|dibuka, dibuka kembali, siap| DS[deepseek-review]
+    ASK["komentar /ask-deepseek<br/>oleh owner, member, atau collaborator"] --> DS
+    MERGE[di-merge ke prod] --> DEPLOY[deploy]
+    MERGE --> STRIP[strip-ai]
+    MERGE --> DOCS[changelog, lalu ci-cd<br/>situs dokumentasi]
+```
+
+| Workflow | Berjalan saat | Runner | Biayanya | Secret |
+| --- | --- | --- | --- | --- |
+| `quality-gate` | setiap pull request ke branch milik stack | `CI_RUNNER_FAST`, lalu `CI_RUNNER`, lalu `ubuntu-latest` | satu job beberapa menit | tidak ada |
+| `codeql` | setiap pull request | `CI_RUNNER`, lalu `ubuntu-latest` | beberapa menit per bahasa; gratis di repositori publik, GitHub Code Security di repositori privat | tidak ada (variabel `CODE_SECURITY` di repositori privat) |
+| `dependency-review` | setiap pull request | `CI_RUNNER`, lalu `ubuntu-latest` | kurang dari satu menit | tidak ada |
+| `workflows-lint` | pull request yang menyentuh `.github/` atau `actions/` | `CI_RUNNER`, lalu `ubuntu-latest` (butuh Docker) | sekitar satu menit | tidak ada |
+| `react-doctor` (opsional) | pull request dibuka atau diperbarui | `CI_RUNNER`, lalu `ubuntu-latest` | beberapa menit; melapor ke layanan skor vendor | tidak ada |
+| `deepseek-review` (opsional) | pull request ke `dev`, `main`, atau `master` dibuka, dibuka kembali, atau ditandai siap; `/ask-deepseek` | `CI_RUNNER`, lalu `ubuntu-latest` | kurang dari satu menit, ditambah token DeepSeek: biasanya satu atau dua sen, paling banyak sekitar sepuluh sen dolar AS | `DEEPSEEK_API_KEY` |
+| `deploy` (opsional) | pull request di-merge ke `prod` | `CI_RUNNER`, lalu `ubuntu-latest` | beberapa detik; lebih lama hanya saat platform sibuk (percobaan ulang dalam 12 menit) | `DEPLOY_WEBHOOK_URL`; `DOCS_DISPATCH_TOKEN` untuk memberi tahu situs dokumentasi |
+| `strip-ai` (opsional) | pull request di-merge ke `prod` | `CI_RUNNER`, lalu `ubuntu-latest` | kurang dari satu menit | tidak ada (token job itu sendiri yang melakukan push) |
+| `changelog`, lalu `ci-cd` (docs-nextra, opsional) | pull request di-merge ke `prod`; event `app-deployed` dari aplikasi | `CI_RUNNER`; build-nya mendahulukan `CI_RUNNER_FAST` | beberapa menit | `APP_REPO_TOKEN`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
+
+**Pembagian runner.** Dua variabel repositori memilih runner, dan tidak ada yang ditulis mati. Job
+yang ditunggu seseorang (quality gate dan build dokumentasi) mendahulukan `CI_RUNNER_FAST`; sisanya
+(pemeriksaan yang bersifat saran, review AI, semua yang berjalan setelah merge) memakai
+`CI_RUNNER`. Runner menagih tiap job per menit yang dimulai, jadi runner yang lebih cepat dan
+berbayar baru menghemat di atas satu menit: tempatkan job menurut siapa yang menunggu hasilnya.
+Biarkan keduanya kosong dan semuanya berjalan di `ubuntu-latest`; isi `CI_RUNNER_FAST` saja untuk
+memindahkan gate saja. Setiap reusable workflow juga menerima input `runs-on`. File
+`.claude/CI-RUNNERS.example.md` yang terpasang berisi kombinasinya, uji anggaran yang aman, dan
+jalan keluarnya.
+
+**Satu-satunya pemicu komentar.** `/ask-deepseek` adalah satu-satunya workflow yang menjawab
+komentar, dan `scripts/workflow-policy.py` menjaga bentuknya: komentar di pull request oleh owner,
+member, atau collaborator repositori; hanya `contents: read` dan `pull-requests: write`; tanpa
+checkout, jadi tidak ada kode pull request yang berjalan; diff dibaca lewat API sebagai data. GitHub
+menjalankan pemicu komentar dari salinan file di branch default, jadi pull request tidak bisa
+mengubahnya, dan pull request dari fork tidak pernah dikirim.
+
+## CI: workflow yang dapat dipakai ulang
+
+Setiap stack punya quality gate reusable di repo ini: `fe-nextjs-quality-gate.yml`,
 `fe-nextjs-static-quality-gate.yml`, `be-hono-quality-gate.yml`, `ai-fastapi-quality-gate.yml`, dan
 `docs-nextra-quality-gate.yml`. Pertanyaan `ci-gate` saat setup memasang pemanggil seperti ini
 (semua input opsional):
@@ -1383,6 +1472,19 @@ jobs:
   runner 2.336.0 atau lebih baru (runner milik GitHub sudah memenuhinya). GitHub Enterprise Server
   belum mendukungnya.
 
+Tiga reusable workflow lain ada di balik pemanggil opsional. Masing-masing menerima input `runs-on`
+(kosong berarti `CI_RUNNER`, lalu `ubuntu-latest`) dan `timeout-minutes`; semua input opsional, dan
+setiap secret diteruskan berdasarkan namanya.
+
+| Reusable workflow | Pemanggil yang dipasang setup | Input | Secret |
+| --- | --- | --- | --- |
+| `deepseek-review.yml` | `.github/workflows/deepseek-review.yml` (setiap stack, `deepseek-review=yes`) | `instructions`, `exclude`, `model` (`deepseek-v4-pro`; `deepseek-flash` lebih murah), `base-url`, `max-diff-bytes` (100.000), `max-tokens` (16.384), `reasoning-effort` (`low`) | `DEEPSEEK_API_KEY` (tanpanya job lolos dan tidak mengirim apa pun) |
+| `deploy-webhook.yml` | `.github/workflows/deploy.yml` (agent-deploy, `deploy-on-merge=yes`) | `ref` (branch tujuan merge pull request), `retry-delays` (`30 90 180`), `webhook-timeout`, `docs-repository` | `DEPLOY_WEBHOOK_URL` (praktis wajib: tanpanya job gagal), `DOCS_DISPATCH_TOKEN` |
+| `strip-ai.yml` | `.github/workflows/strip-ai.yml` (agent-deploy, `strip-ai=yes`) | `prod-branch` (`prod`), `dev-branch` (`dev`), `paths`, `extra-paths`, `back-merge` | tidak ada: token job itu sendiri, dengan `contents: write` |
+
+Tidak satu pun melakukan checkout kode yang tidak dibutuhkannya: review dan deploy tidak melakukan
+checkout sama sekali, dan strip melakukan checkout branch produksi tanpa menyimpan token.
+
 ## Model keamanan
 
 - **Guard berjalan di mesin Anda.** Hook, `bin/`, dan `libexec/` adalah skrip yang membaca input
@@ -1395,13 +1497,18 @@ jobs:
   React Doctor CLI milik proyek Anda atau bertanya dulu sebelum mengunduh versi yang di-pin sekali.
   Gate Anda sendiri bisa menghubungi registry paket (audit dependensi), dan server MCP di
   `.mcp.json` baru berjalan setelah Claude Code bertanya kepada Anda.
+- **CI hanya menjawab pull request.** Workflow berjalan pada event pull request dan `workflow_call`,
+  dengan `contents: read` sebagai bawaan, action yang di-pin ke SHA, checkout yang tidak menyimpan
+  token, dan secret yang diteruskan berdasarkan nama. Satu-satunya pemicu komentar, `/ask-deepseek`,
+  dibatasi untuk pemberi komentar tepercaya dan tidak menjalankan kode pull request
+  ([CI/CD sekilas](#cicd-sekilas)).
 - **Guard gagal dalam keadaan tertutup (fail closed).** Di Claude Code hanya exit 2 yang memblokir;
   crash atau timeout akan meloloskan panggilan. Karena itu setiap guard menolak apa yang tidak bisa
   diperiksanya (input rusak, python3 tidak ada, proses menggantung), dan setiap hook umpan balik
   diam saat gagal.
 - **Setiap aturan dibuktikan dua arah.** 845 baris probe menyatakan apa yang wajib diblokir
   safety-check (569) dan apa yang wajib diloloskan (276); harness probe milik kit menjalankan 2.288
-  probe terhadap skrip plugin; 1.532 tes bats mencakup hook, mesin setup, pemeriksa stack, dan skrip
+  probe terhadap skrip plugin; 1.563 tes bats mencakup hook, mesin setup, pemeriksa stack, dan skrip
   CI, di macOS (bash 3.2) dan Ubuntu. Silakan audit: [tests/hooks/](tests/hooks/safety-probes.bats),
   [tests/setup/](tests/setup/check.bats).
 - **Tidak ada yang dipasang diam-diam.** Setup menampilkan draf, baru menulis setelah **go**, tidak
@@ -1429,6 +1536,7 @@ Diukur di Apple M5 dengan `/bin/bash` 3.2 macOS dan python3 3.14, median dari 25
 | Konteks yang selalu dimuat setelah setup baru (`CLAUDE.md` starter + blok + aturan tanpa `paths`) | agent-core 5,5 KB, fe-nextjs 14,2 KB, fe-nextjs-static 9,2 KB, be-hono 14,7 KB, ai-fastapi 13,8 KB, docs-nextra 13,5 KB; `ai-config.sh` gagal di atas 15.000 byte |
 | Deskripsi perintah, agen, dan skill yang didaftar Claude Code | agent-core 3,9 KB; tiap plugin stack 0,3–2,5 KB |
 | CI | hanya berjalan di pull request; tidak ada saat push, tidak ada jadwal |
+| Review DeepSeek yang opsional | biasanya satu atau dua sen per pull request, paling banyak sekitar sepuluh sen dolar AS (diff dan jawabannya dibatasi); setiap komentar menampilkan tokennya |
 
 Formatter atau linter yang dijalankan post-edit menambah waktunya sendiri (timeout 60 detik).
 
@@ -1600,7 +1708,7 @@ Rilis itu masih mem-pin reusable workflow ke placeholder berisi nol, sehingga pe
 menggagalkan setiap pull request. Setup sengaja menahannya, dan `sync --check` mencantumkannya
 sebagai `held` (bukan pergeseran). Setelah rilis plugin berikutnya mem-pin commit sungguhan,
 `/<plugin>:sync` memasangnya. Untuk memakai gate sebelum itu, tulis pemanggilnya sendiri dengan SHA
-sungguhan dari rilis repositori ini, seperti di [CI](#ci-quality-gate-yang-dapat-dipakai-ulang).
+sungguhan dari rilis repositori ini, seperti di [CI](#ci-workflow-yang-dapat-dipakai-ulang).
 
 </details>
 

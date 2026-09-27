@@ -10,6 +10,119 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+### Reusable workflows and actions
+
+#### Added
+
+- `deepseek-review.yml` and `actions/deepseek-review`: an AI review of a pull request's diff by
+  DeepSeek, posted as one comment that later runs update. It reads the pull request over the
+  GitHub API and checks nothing out, so no pull-request code runs; it skips, and passes, without
+  the `DEEPSEEK_API_KEY` secret, for a fork's pull request, a draft or a closed one. Lockfiles and
+  your `exclude` patterns are left out, the diff is capped at `max-diff-bytes` (100,000) and the
+  answer at `max-tokens` (16,384), so a review costs a cent or two and at most about ten US cents;
+  each comment shows the tokens it used. Mentions in the answer are quietened.
+- `deploy-webhook.yml` and `actions/deploy-webhook`: when a pull request is merged into the
+  production branch, POST to `DEPLOY_WEBHOOK_URL` with agent-deploy's `trigger-deploy.sh` (the
+  same file, kept identical by a test): https only, a 3xx or 4xx fails the job, a busy platform is
+  asked again, and the URL is never printed. With `docs-repository` and `DOCS_DISPATCH_TOKEN` it
+  then sends `app-deployed`, which agent-docs-nextra's changelog answers.
+- `strip-ai.yml`: runs `actions/strip-ai` after a merge into the production branch with a checkout
+  that keeps no token; git gets the job's token from a credential helper in that step's
+  environment.
+- Every new reusable workflow takes `runs-on` (empty uses `CI_RUNNER`, then `ubuntu-latest`) and
+  `timeout-minutes`, and every input is optional.
+
+#### Changed
+
+- `actions/strip-ai`: its README and header point at the reusable workflow and a checkout with
+  `persist-credentials: false`. The action itself is unchanged.
+- `scripts/workflow-policy.py` allows `issue_comment` in one place only: a template's
+  `deepseek-review.yml` for `/ask-deepseek`, and only in its safe shape (`types: [created]`, a job
+  that calls this repository's `deepseek-review.yml` with `contents: read` and
+  `pull-requests: write`, an `if:` that requires a comment on a pull request by an OWNER, MEMBER or
+  COLLABORATOR, and a called workflow that checks nothing out). ADR 0004 records why.
+- `scripts/version-sync.mjs` accepts a caller pinned to the all-zero placeholder when its comment
+  names the coming release, and asks for a changelog entry when any reusable workflow changes.
+- `scripts/catalog.mjs` lists every workflow a plugin's setup installs as a component, with a docs
+  page, in the README catalogs.
+
+### agent-core 1.0.5
+
+#### Changed
+
+- `.claude/CI-RUNNERS.example.md` names the workflows the kit installs on each runner pool, and
+  its budget test opens a throwaway pull request instead of a `workflow_dispatch` workflow, which
+  the kit's CI policy does not use.
+- The README catalog lists the CodeQL, dependency-review and workflows-lint workflows, each with a
+  docs page.
+
+### agent-ai-fastapi 1.1.0
+
+#### Added
+
+- Setup question `deepseek-review` (recommended no): `.github/workflows/deepseek-review.yml`, a
+  DeepSeek review of each pull request with notes about a FastAPI service, leaving out Alembic
+  revisions. Needs the `DEEPSEEK_API_KEY` secret. Held until a release pins it.
+- A `.github/CODEOWNERS` starter, seeded once: CI, the guardrails, startup, settings and the
+  database.
+
+### agent-be-hono 1.1.0
+
+#### Added
+
+- Setup question `deepseek-review` (recommended no): `.github/workflows/deepseek-review.yml`, a
+  DeepSeek review of each pull request with notes about a Hono + Drizzle API, leaving out
+  drizzle-kit migrations and the exported spec. Needs the `DEEPSEEK_API_KEY` secret. Held until a
+  release pins it.
+- A `.github/CODEOWNERS` starter, seeded once: CI, the guardrails, startup, env and the database.
+
+### agent-deploy 1.1.0
+
+#### Added
+
+- Setup question `deploy-on-merge` (recommended no): `.github/workflows/deploy.yml` deploys
+  through your webhook when a pull request is merged into `prod`, one at a time and never
+  cancelled. Needs the `DEPLOY_WEBHOOK_URL` secret; fails, rather than skipping, without it.
+- Setup question `strip-ai` (recommended no): `.github/workflows/strip-ai.yml` strips the agent
+  config from `prod` after each merge, merges back into `dev` and verifies both.
+- Both callers are held until a release pins them.
+
+### agent-docs-nextra 1.1.0
+
+#### Added
+
+- Setup question `deepseek-review` (recommended no): `.github/workflows/deepseek-review.yml`, a
+  DeepSeek review of each pull request with notes about a Nextra site, leaving out the generated
+  changelog and API reference. Needs the `DEEPSEEK_API_KEY` secret. Held until a release pins it.
+- A `.github/CODEOWNERS` starter, seeded once: CI, the deploy target, the generators and the
+  guardrails.
+
+### agent-fe-nextjs 1.1.0
+
+#### Added
+
+- Setup question `deepseek-review` (recommended no): `.github/workflows/deepseek-review.yml`, a
+  DeepSeek review of each pull request with notes about a Next.js app, leaving out the generated
+  API client and the translation catalogues. Needs the `DEEPSEEK_API_KEY` secret. Held until a
+  release pins it.
+
+#### Changed
+
+- The seeded `.github/CODEOWNERS` starter explains itself in the same words as the other stacks'
+  and names the setup lock.
+
+### agent-fe-nextjs-static 1.1.0
+
+#### Added
+
+- Setup question `react-doctor` (recommended no): `.github/workflows/react-doctor.yml` and
+  `doctor.config.json`, advisory React Doctor comments and a commit status on pull requests.
+- Setup question `deepseek-review` (recommended no): `.github/workflows/deepseek-review.yml`, a
+  DeepSeek review of each pull request with notes about a static export. Needs the
+  `DEEPSEEK_API_KEY` secret. Held until a release pins it.
+- A `.github/CODEOWNERS` starter, seeded once: CI, the headers, the build config, the budgets and
+  the guardrails.
+
 ## [1.1.0] - 2026-09-27
 
 The guards now work on Linux, where they refused every command, and they see through RTK. The
