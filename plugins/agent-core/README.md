@@ -137,7 +137,7 @@ want). A malformed key falls back to its default and Claude is warned. The templ
 | --- | --- | --- | --- |
 | `protectedBranches` | safety-check, mcp-guard | `["dev", "prod", "main", "master"]` | Branches Claude never pushes to, deletes or writes to through GitHub MCP |
 | `protectedPaths` | safety-check | `src`, `app`, `components`, `content`, `tests`, `scripts`, `.claude`, `.github`, `.git`, `CLAUDE.md`, `AGENTS.md`, … | What `rm -r` and `git clean -f -- <path>` may never take |
-| `commandWrappers` | safety-check | `[]` (plus built-in `sudo`, `env`, `timeout`, `npx`, …) | Extra wrappers to peel before judging, e.g. `"dotenvx run -f= --env-file="` |
+| `commandWrappers` | safety-check | `[]` (plus built-in `sudo`, `env`, `timeout`, `npx`, `rtk`, …) | Extra wrappers to peel before judging, e.g. `"dotenvx run -f= --env-file="` |
 | `dbWriteGuard.toolPattern` | db-guard | `"mcp__db-prod__execute_sql"` | Regex naming your production SQL tool |
 | `localePairs` | post-edit | `[]` (off) | Files that change together, e.g. `[["messages/en.json", "messages/id.json"]]` |
 | `generatedPaths` | generated-guard (stack plugins) | `src/lib/api/generated`, `src/generated`, `openapi.json`, `openapi.yaml`, `openapi.yml` | Generated output Claude may not hand-edit |
