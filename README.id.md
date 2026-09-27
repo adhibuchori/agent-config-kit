@@ -296,7 +296,7 @@ flowchart TD
 asli, dipersingkat dengan `…`):
 
 ```text
-agent-setup plan · agent-fe-nextjs 1.0.2 + agent-core 1.0.3 · project .
+agent-setup plan · agent-fe-nextjs 1.0.3 + agent-core 1.0.4 · project .
   create   .claude/rules/web/security.md
   …
   create   .claude/settings.json                   +$schema, +16 permissions.allow, +7 permissions.ask, +14 permissions.deny, +sandbox.enabled, …
@@ -1048,9 +1048,9 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `prompt-intent` | Hook (UserPromptSubmit) | Mengarahkan singkatan `/debug` ke debugging yang dimulai dari reproduksi, dan membersihkan state hook yang lama | Ketik `/debug <gejala>` | Debugging dimulai dari reproduksi, bukan tebakan | [prompt-intent](docs/agent-core/prompt-intent.md) |
 | `safety-check` | Hook (PreToolUse pada `Bash`) | Menolak perintah shell yang merusak atau tak bisa dibatalkan, push ke branch yang dilindungi, melewati gate, dan setiap pembacaan shell atas file `.env*` asli | Berjalan sendiri sebelum setiap panggilan `Bash` | Perintah yang akan Anda sesali tidak pernah berjalan | [safety-check](docs/agent-core/safety-check.md) |
 | `db-guard` | Hook (PreToolUse pada `mcp__.*`) | Meloloskan satu pernyataan SQL baca-saja; menahan penulisan sampai Anda membuka `db` | Berjalan sendiri sebelum tool SQL produksi | Tidak ada `DELETE` mendadak di produksi | [db-guard](docs/agent-core/db-guard.md) |
-| `mcp-guard` | Hook (PreToolUse pada `mcp__.*github.*__(push_files\|create_or_update_file\|delete_file\|create_branch)`) | Menolak penulisan MCP GitHub ke branch yang dilindungi | Berjalan sendiri sebelum empat tool MCP GitHub yang menulis | Menutup jalan memutar di luar guard shell | [mcp-guard](docs/agent-core/mcp-guard.md) |
+| `mcp-guard` | Hook (PreToolUse pada penulisan lewat GitHub MCP) | Menolak penulisan MCP GitHub ke branch yang dilindungi | Berjalan sendiri sebelum empat tool MCP GitHub yang menulis | Menutup jalan memutar di luar guard shell | [mcp-guard](docs/agent-core/mcp-guard.md) |
 | `post-commit` | Hook (PostToolUse pada `Bash`) | Menunjukkan apa yang benar-benar dibawa sebuah commit | Berjalan sendiri setelah commit | Perubahan staged milik sesi lain tidak bisa ikut diam-diam | [post-commit](docs/agent-core/post-commit.md) |
-| `post-edit` | Hook (PostToolUse pada `Write\|Edit\|MultiEdit\|mcp__serena__(replace_content\|replace_symbol_body\|insert_after_symbol\|insert_before_symbol\|replace_in_files\|rename_symbol\|safe_delete_symbol)`) | Memformat lalu me-lint setiap file yang ditulis, dengan tool proyek Anda sendiri | Berjalan sendiri setelah setiap penulisan file | Temuan diperbaiki di edit berikutnya, bukan saat commit | [post-edit](docs/agent-core/post-edit.md) |
+| `post-edit` | Hook (PostToolUse pada edit berkas) | Memformat lalu me-lint setiap file yang ditulis, dengan tool proyek Anda sendiri | Berjalan sendiri setelah setiap penulisan file | Temuan diperbaiki di edit berikutnya, bukan saat commit | [post-edit](docs/agent-core/post-edit.md) |
 | `/agent-core:branch-cleanup` | Perintah (Anda yang memulai) | Menghapus branch yang sudah di-merge setelah Anda mengonfirmasi daftarnya | `/agent-core:branch-cleanup` | Remote rapi, tidak ada yang belum di-merge yang hilang | [branch-cleanup](docs/agent-core/branch-cleanup.md) |
 | `/agent-core:checkpoint-summary` | Perintah | Ringkasan serah terima sesi: yang selesai, yang tertunda, dan langkah berikutnya | `/agent-core:checkpoint-summary` | Sesi berikutnya mulai dari titik akhir sesi ini | [checkpoint-summary](docs/agent-core/checkpoint-summary.md) |
 | `/agent-core:checkpoint` | Perintah (Anda yang memulai) | Commit pengaman lokal untuk file sesi ini; tidak pernah push | `/agent-core:checkpoint before refactor` | Jalan pulang yang murah | [checkpoint](docs/agent-core/checkpoint.md) |
@@ -1074,7 +1074,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 
 | Komponen | Jenis | Fungsinya | Cara pakai | Manfaatnya | Dokumen |
 | --- | --- | --- | --- | --- | --- |
-| `migration-guard` | Hook (PreToolUse pada `Write\|Edit\|MultiEdit\|mcp__serena__(replace_content\|replace_symbol_body\|insert_after_symbol\|insert_before_symbol\|replace_in_files\|rename_symbol\|safe_delete_symbol)`) | Menolak edit tangan pada revisi Alembic hasil generator | Berjalan sendiri sebelum penulisan file | Database, log migrasi, dan skema tetap selaras | [migration-guard](docs/agent-ai-fastapi/migration-guard.md) |
+| `migration-guard` | Hook (PreToolUse pada edit berkas) | Menolak edit tangan pada revisi Alembic hasil generator | Berjalan sendiri sebelum penulisan file | Database, log migrasi, dan skema tetap selaras | [migration-guard](docs/agent-ai-fastapi/migration-guard.md) |
 | `/agent-ai-fastapi:setup` | Perintah (Anda yang memulai) | Memasang aturan backend dan Python, anti-pattern, konfigurasi pre-commit dan gate, contoh pipeline, dan CI pull request untuk repo FastAPI + uv setelah dry run yang Anda setujui | `/agent-ai-fastapi:setup`, sekali per repo | Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu | [setup](docs/agent-ai-fastapi/setup.md) |
 | `/agent-ai-fastapi:sync` | Perintah (Anda yang memulai) | Memeriksa repo terhadap file yang dipasang agent-ai-fastapi (`--check`), atau memperbaruinya setelah dry run | `/agent-ai-fastapi:sync --check` | Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar | [sync](docs/agent-ai-fastapi/sync.md) |
 | `agent-ai-fastapi:ai-reviewer` | Agen | Indireksi penyedia, streaming, problem+json, dan tipe dalam layanan FastAPI + LLM | Lewat `/agent-core:review` | Kesalahan layanan LLM yang tidak terlihat oleh gate | [ai-reviewer](docs/agent-ai-fastapi/ai-reviewer.md) |
@@ -1083,7 +1083,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 
 | Komponen | Jenis | Fungsinya | Cara pakai | Manfaatnya | Dokumen |
 | --- | --- | --- | --- | --- | --- |
-| `migration-guard` | Hook (PreToolUse pada `Write\|Edit\|MultiEdit\|mcp__serena__(replace_content\|replace_symbol_body\|insert_after_symbol\|insert_before_symbol\|replace_in_files\|rename_symbol\|safe_delete_symbol)`) | Menolak edit tangan pada migrasi Drizzle hasil generator | Berjalan sendiri sebelum penulisan file | Database, log migrasi, dan skema tetap selaras | [migration-guard](docs/agent-be-hono/migration-guard.md) |
+| `migration-guard` | Hook (PreToolUse pada edit berkas) | Menolak edit tangan pada migrasi Drizzle hasil generator | Berjalan sendiri sebelum penulisan file | Database, log migrasi, dan skema tetap selaras | [migration-guard](docs/agent-be-hono/migration-guard.md) |
 | `/agent-be-hono:setup` | Perintah (Anda yang memulai) | Memasang aturan backend, anti-pattern, skrip gate, konfigurasi lint dan tes, serta CI pull request untuk repo Bun + Hono + Drizzle setelah dry run yang Anda setujui | `/agent-be-hono:setup`, sekali per repo | Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu | [setup](docs/agent-be-hono/setup.md) |
 | `/agent-be-hono:sync` | Perintah (Anda yang memulai) | Memeriksa repo terhadap file yang dipasang agent-be-hono (`--check`), atau memperbaruinya setelah dry run | `/agent-be-hono:sync --check` | Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar | [sync](docs/agent-be-hono/sync.md) |
 | `agent-be-hono:reviewer` | Agen | Lapisan, kontrak error, akses database, bentuk query, dan indeks | Lewat `/agent-core:review` | Query lambat dan error yang bocor tertangkap saat review | [reviewer](docs/agent-be-hono/reviewer.md) |
@@ -1101,7 +1101,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 
 | Komponen | Jenis | Fungsinya | Cara pakai | Manfaatnya | Dokumen |
 | --- | --- | --- | --- | --- | --- |
-| `generated-guard` | Hook (PreToolUse pada `Write\|Edit\|MultiEdit\|mcp__serena__(replace_content\|replace_symbol_body\|insert_after_symbol\|insert_before_symbol\|replace_in_files\|rename_symbol\|safe_delete_symbol)`) | Menolak edit tangan pada halaman dan data hasil generator | Berjalan sendiri sebelum penulisan file | Perubahan masuk ke sumbernya, bukan ke file yang akan ditimpa generator | [generated-guard](docs/agent-docs-nextra/generated-guard.md) |
+| `generated-guard` | Hook (PreToolUse pada edit berkas) | Menolak edit tangan pada halaman dan data hasil generator | Berjalan sendiri sebelum penulisan file | Perubahan masuk ke sumbernya, bukan ke file yang akan ditimpa generator | [generated-guard](docs/agent-docs-nextra/generated-guard.md) |
 | `/agent-docs-nextra:setup` | Perintah (Anda yang memulai) | Memasang aturan konten docs, anti-pattern, skrip gate, konfigurasi lint, dan CI pull request untuk repo docs Nextra setelah dry run yang Anda setujui | `/agent-docs-nextra:setup`, sekali per repo | Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu | [setup](docs/agent-docs-nextra/setup.md) |
 | `/agent-docs-nextra:sync` | Perintah (Anda yang memulai) | Memeriksa repo terhadap file yang dipasang agent-docs-nextra (`--check`), atau memperbaruinya setelah dry run | `/agent-docs-nextra:sync --check` | Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar | [sync](docs/agent-docs-nextra/sync.md) |
 | `agent-docs-nextra:security-guard` | Agen | Header, CSP, rahasia di hasil export, dan HTML mentah | Minta saat konfigurasi berubah | Export publik tidak membocorkan apa pun | [security-guard](docs/agent-docs-nextra/security-guard.md) |
@@ -1111,7 +1111,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 
 | Komponen | Jenis | Fungsinya | Cara pakai | Manfaatnya | Dokumen |
 | --- | --- | --- | --- | --- | --- |
-| `generated-guard` | Hook (PreToolUse pada `Write\|Edit\|MultiEdit\|mcp__serena__(replace_content\|replace_symbol_body\|insert_after_symbol\|insert_before_symbol\|replace_in_files\|rename_symbol\|safe_delete_symbol)`) | Menolak edit tangan pada keluaran generator, seperti klien API dari spesifikasi OpenAPI | Berjalan sendiri sebelum penulisan file | Perubahan masuk ke sumbernya, bukan ke file yang akan ditimpa generator | [generated-guard](docs/agent-fe-nextjs/generated-guard.md) |
+| `generated-guard` | Hook (PreToolUse pada edit berkas) | Menolak edit tangan pada keluaran generator, seperti klien API dari spesifikasi OpenAPI | Berjalan sendiri sebelum penulisan file | Perubahan masuk ke sumbernya, bukan ke file yang akan ditimpa generator | [generated-guard](docs/agent-fe-nextjs/generated-guard.md) |
 | `/agent-fe-nextjs:a11y-audit` | Perintah | Audit aksesibilitas file `.tsx`, dilaporkan menurut tingkat keparahan | `/agent-fe-nextjs:a11y-audit src/` | Nama aksesibel, alt text, dan gaya fokus yang hilang ketahuan sebelum rilis | [a11y-audit](docs/agent-fe-nextjs/a11y-audit.md) |
 | `/agent-fe-nextjs:plan-fullstack` | Perintah | Merencanakan fitur lintas frontend dan API-nya sebelum kode ditulis | `/agent-fe-nextjs:plan-fullstack invites` | Perubahan kontrak direncanakan, bukan ditemukan belakangan | [plan-fullstack](docs/agent-fe-nextjs/plan-fullstack.md) |
 | `/agent-fe-nextjs:review-soc` | Perintah | Memindahkan logika keluar dari komponen, berdasarkan temuan gate | `/agent-fe-nextjs:review-soc` | Komponen tetap mudah diubah | [review-soc](docs/agent-fe-nextjs/review-soc.md) |

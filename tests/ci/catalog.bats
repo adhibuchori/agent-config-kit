@@ -109,6 +109,20 @@ write_then_check() {
   grep -qF '| `.claude/settings.json` | merged into yours (additive; your values win) |' "$K/README.md"
 }
 
+@test "catalog: a long hook matcher becomes a short label, a short one stays code" {
+  local h="$K/plugins/agent-core/hooks/hooks.json"
+  python3 - "$h" <<'PY'
+import json, sys
+p = sys.argv[1]; d = json.load(open(p))
+d["hooks"]["PreToolUse"][0]["matcher"] = "Write|Edit|MultiEdit|mcp__serena__(replace_content|replace_symbol_body)"
+json.dump(d, open(p, "w"))
+PY
+  write_then_check
+  grep -qF '| `guard` | Hook (PreToolUse on file edits) |' "$K/README.md"
+  grep -qF '| `guard` | Hook (PreToolUse pada edit berkas) |' "$K/README.id.md"
+  run ! grep -qF 'MultiEdit' "$K/README.md"
+}
+
 @test "catalog: --check never writes, and reports a stale block" {
   catalog --check
   [ "$status" -eq 1 ]

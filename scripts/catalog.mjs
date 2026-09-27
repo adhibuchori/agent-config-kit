@@ -462,6 +462,7 @@ const LANG = {
     head: '| Component | Kind | What it does | How to use | Why it helps | Docs |',
     kinds: { hook: 'Hook', command: 'Command', agent: 'Agent', skill: 'Skill' },
     on: 'on',
+    matchers: { edits: 'file edits', github: 'GitHub MCP writes', other: 'several tools' },
     userOnly: 'you start it',
     empty: 'No hooks, commands, agents or skills.',
     noPage: '(no page yet)',
@@ -470,6 +471,7 @@ const LANG = {
     head: '| Komponen | Jenis | Fungsinya | Cara pakai | Manfaatnya | Dokumen |',
     kinds: { hook: 'Hook', command: 'Perintah', agent: 'Agen', skill: 'Skill' },
     on: 'pada',
+    matchers: { edits: 'edit berkas', github: 'penulisan lewat GitHub MCP', other: 'beberapa tool' },
     userOnly: 'Anda yang memulai',
     empty: 'Tanpa hook, perintah, agen, atau skill.',
     noPage: '(belum ada halaman)',
@@ -479,8 +481,19 @@ const LANG = {
 function catalogBlock(list, fromDir, lang = 'en') {
   const L = LANG[lang];
   const link = (page) => relative(fromDir, join(root, page)).split(sep).join('/');
+  // A short matcher stays as code; a long one (a tool alternation that would stretch the column)
+  // becomes a plain label. The exact matcher lives in the plugin's hooks/hooks.json.
+  const matcherLabel = (m) => {
+    if (m.length <= 24 && !/[()|]/.test(m)) return `\`${m}\``;
+    if (/\b(Write|Edit|MultiEdit)\b/.test(m)) return L.matchers.edits;
+    if (/github/i.test(m)) return L.matchers.github;
+    return L.matchers.other;
+  };
   const kindLabel = (c) => {
-    if (c.kind === 'hook') return `${L.kinds.hook} (${c.on.replace(/ on /g, ` ${L.on} `)})`;
+    if (c.kind === 'hook') {
+      const on = c.on.replace(/ on /g, ` ${L.on} `).replace(/`([^`]+)`/g, (_, m) => matcherLabel(m));
+      return `${L.kinds.hook} (${on})`;
+    }
     return c.userOnly ? `${L.kinds[c.kind]} (${L.userOnly})` : L.kinds[c.kind];
   };
   const out = [GENERATED_NOTE, ''];

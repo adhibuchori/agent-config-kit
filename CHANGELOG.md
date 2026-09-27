@@ -10,6 +10,48 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-27
+
+The guards now work on Linux, where they refused every command, and they see through RTK. The
+guard scripts are out of the shell's reach, every stack gets a staged secret scan, and the Hono
+stack runs its tests with CI's environment only. The reusable workflows and actions are unchanged
+since 1.0.0, so the CI callers stay pinned to its commit.
+
+### agent-core 1.0.4
+
+#### Changed
+
+- The README catalog names a long hook matcher in plain words (for example "file edits"), so the
+  Kind column stays narrow. The exact matcher is still in `hooks/hooks.json`.
+
+### agent-ai-fastapi 1.0.3
+
+#### Changed
+
+- The README catalog names a long hook matcher in plain words (for example "file edits"), so the
+  Kind column stays narrow. The exact matcher is still in `hooks/hooks.json`.
+
+### agent-be-hono 1.0.3
+
+#### Changed
+
+- The README catalog names a long hook matcher in plain words (for example "file edits"), so the
+  Kind column stays narrow. The exact matcher is still in `hooks/hooks.json`.
+
+### agent-docs-nextra 1.0.3
+
+#### Changed
+
+- The README catalog names a long hook matcher in plain words (for example "file edits"), so the
+  Kind column stays narrow. The exact matcher is still in `hooks/hooks.json`.
+
+### agent-fe-nextjs 1.0.3
+
+#### Changed
+
+- The README catalog names a long hook matcher in plain words (for example "file edits"), so the
+  Kind column stays narrow. The exact matcher is still in `hooks/hooks.json`.
+
 ### agent-core 1.0.3
 
 #### Fixed
@@ -294,5 +336,6 @@ First release.
 - Templates: the 3D scene rule, the glTF/GLB asset budget check with its config, and a guide to
   adding 3D skills by reference.
 
-[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.1.0
 [1.0.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.0.0
