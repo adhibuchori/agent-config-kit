@@ -5,7 +5,9 @@
 # The hooks and commands come from the agent-config-kit plugins, which prove them in their own
 # CI; this repo holds no hook scripts or command sources, so the hook probes and the command
 # mirror are not listed: each would pass having checked nothing. scripts/check/migrations.sh
-# and index-coverage.sh are pull-request checks; run them with bash after a schema change.
+# and index-coverage.sh are pull-request checks; run them with bash after a schema change. The unit
+# tests run through scripts/check/ci-env.sh: CI's variables (.env.ci.example), nothing from your
+# shell or a .env file.
 all	@format
 all	bash scripts/check/secrets.sh
 code	bun run type-check
@@ -15,6 +17,6 @@ code	bun run check:mocks
 code	bash scripts/check/double-assertion.sh
 code	bun run check:folder-shape
 code	bun run check:coverage-policy
-code	bun run test:coverage
+code	bash scripts/check/ci-env.sh bun run test:coverage
 all	bash scripts/check/ai-config.sh
 commands,hooks	bash scripts/check/skills.sh --staged

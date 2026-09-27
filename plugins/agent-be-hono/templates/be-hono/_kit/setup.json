@@ -43,6 +43,7 @@
     ".claude/anti-patterns/INDEX.md",
     ".claude/docs/code-review-checklist.md",
     ".dockerignore",
+    ".env.ci.example",
     ".github/PULL_REQUEST_TEMPLATE/*.md",
     ".husky/pre-commit",
     ".oxfmtrc.json",
