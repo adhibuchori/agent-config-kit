@@ -1637,7 +1637,9 @@ guard yang membaca izin dari chat, CI terjadwal, atau akses jaringan di hook.
 - [SECURITY.md](SECURITY.md): laporkan kerentanan secara privat; cara melewati hook termasuk.
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md): Contributor Covenant 3.0.
 - [CONTEXT.md](CONTEXT.md): glosarium; setiap istilah di sini punya satu arti.
-- [docs/adr/](docs/adr/0001-plugins-cannot-carry-permissions.md): alasan di balik keputusan yang sulit dibalik.
+- [docs/adr/](docs/adr/0001-plugins-cannot-carry-permissions.md): alasan di balik keputusan yang sulit dibalik;
+  [ADR 0006](docs/adr/0006-design-choices.md) merangkum pilihan-pilihan kecil di balik guard, izin,
+  perintah, dan template, masing-masing dengan alasannya.
 - [.out-of-scope/](.out-of-scope/README.md): hal yang sengaja tidak dikerjakan kit ini.
 - Lisensi: [MIT](LICENSE), kecuali satu skill hasil adaptasi.
   `plugins/agent-fe-nextjs/skills/react-doctor/` tetap memakai Modified MIT License milik Million
