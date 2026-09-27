@@ -100,6 +100,24 @@ modules, one question each: i18n, dialogs, responsive, skeletons, React Doctor i
 With the `i18n` answer `yes`, setup seeds `.claude/agent-config.json` with `localePairs` for your
 catalogues.
 
+## Skills installed by reference
+
+The plugin ships no third-party skill. Two suit a Next.js app and are worth installing yourself,
+from their source and with the installer's own tooling; nothing of them is committed to the kit:
+
+| Skill | What it does | Install | License and pin |
+| --- | --- | --- | --- |
+| [impeccable](https://github.com/pbakaus/impeccable) | Interface design, critique and polish from a written brief; setup's `design-docs` answer installs its `PRODUCT.example.md` and `DESIGN.example.md` | `DO_NOT_TRACK=1 npx skills@1.7.0 add pbakaus/impeccable --skill impeccable --agent claude-code` | Apache-2.0 |
+| [ui-animation](https://github.com/mblode/agent-skills/tree/main/skills/ui-animation) | Builds, reviews and measures UI motion: springs, gestures, scroll effects, easing fitted from a recording | `DO_NOT_TRACK=1 npx skills@1.7.0 add mblode/agent-skills --skill ui-animation --agent claude-code` | MIT, Copyright 2026 Matthew Blode (`LICENSE.md` at the repository root). No release tags, so the pin is the content hash `skills-lock.json` records |
+
+Each installer copies the skill into `.claude/skills/<name>/` and records its source and a hash of the
+tree in `skills-lock.json`; `DO_NOT_TRACK=1` stops the installer's usage reporting. Then treat it as
+a dependency: read its `SKILL.md` and scripts, keep the license beside it (copy the repository's
+`LICENSE.md` into `.claude/skills/ui-animation/`), commit the folder and `skills-lock.json`
+together, run `bash scripts/check/skills.sh`, and accept the reviewed tree by its hash under
+`vendored:` in `.skillspector-baseline.yaml`. An upgrade changes the hash and fails the scan until
+someone reads it again.
+
 ## Enabling and disabling
 
 Installing a plugin changes nothing in a repo until that repo opts in (the lock written by setup,
