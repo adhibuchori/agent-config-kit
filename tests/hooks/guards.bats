@@ -58,6 +58,30 @@ unlock_file() {
   run -0 --separate-stderr hook safety-check.sh "$(bash_payload "$P" "git status")" "${CP[@]}" PATH="$(tool_kit nojq "$BATS_TEST_TMPDIR")"
 }
 
+@test "no guard hands python3 a string over 128 KiB, the most Linux passes in one argument" {
+  # Linux refuses to start a program given one argument or environment string over MAX_ARG_STRLEN
+  # (131072 bytes), and a guard then fails closed on every command. macOS has no such cap, so this
+  # python3 shim holds the hooks to Linux's rule on any system.
+  local shim="$BATS_TEST_TMPDIR/argcap" real
+  real="$(command -v python3)"
+  mkdir -p "$shim"
+  cat >"$shim/python3" <<EOF
+#!/usr/bin/env bash
+LC_ALL=C
+for a in "\$@"; do
+  [ "\${#a}" -le 131072 ] || { echo "python3: an argument of \${#a} bytes, over Linux's cap" >&2; exit 126; }
+done
+"$real" -c 'import os, sys; sys.exit(any(len(k) + len(v) + 1 > 131072 for k, v in os.environb.items()))' ||
+  { echo "python3: an environment string over Linux's cap" >&2; exit 126; }
+exec "$real" "\$@"
+EOF
+  chmod +x "$shim/python3"
+  run -2 --separate-stderr hook safety-check.sh "$(bash_payload "$P" "git push origin dev")" "${CP[@]}" PATH="$shim:$PATH"
+  [[ "$stderr" == *"BLOCKED: pushing to a protected branch"* ]] || { echo "$stderr" >&2; return 1; }
+  run -0 --separate-stderr hook safety-check.sh "$(bash_payload "$P" "git status")" "${CP[@]}" PATH="$shim:$PATH"
+  run -0 --separate-stderr hook db-guard.sh "$(sql_payload mcp__db-prod__execute_sql "SELECT 1")" "${CP[@]}" PATH="$shim:$PATH"
+}
+
 @test "mcp-guard blocks GitHub MCP writes to a protected branch, for any GitHub server name" {
   for tool in mcp__github__push_files mcp__github__create_or_update_file mcp__github__delete_file \
     mcp__github__create_branch mcp__plugin_github_github__push_files; do

@@ -14,6 +14,10 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 #### Fixed
 
+- On Linux, safety-check refused every command: the analyzer, over 128 KiB, reached python3 as
+  one argument, and Linux starts no program with an argument over that size (`Argument list too
+  long`), so the guard failed closed. python3 now reads the analyzer from a file descriptor. A
+  python3 shim held to Linux's cap, in the tests and the probe harness, catches this on macOS too.
 - safety-check now sees through RTK, an optional output-trimming CLI proxy: `rtk <command>` and
   `rtk proxy <command>` (also `rtk err`, `test` and `summary`) are judged as the command they run,
   and RTK's file readers (`read`, `smart`, `json`, `log`) as `cat`. Before, `rtk git push --force
@@ -46,8 +50,8 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
   history and never the staged changes. It now runs `scripts/check/secrets.sh`, as does
   `.pre-commit-config.yaml`. A repo set up earlier keeps its own `gates.list`; change that line by
   hand.
-- `scripts/lib.sh` sees through RTK (agent-core 1.0.2), and `ai-reviewer` reads the diff through
-  `rtk proxy` where RTK is installed.
+- `scripts/lib.sh` sees through RTK and runs on Linux (agent-core 1.0.2), and `ai-reviewer` reads
+  the diff through `rtk proxy` where RTK is installed.
 
 #### Changed
 
@@ -69,8 +73,8 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 #### Fixed
 
 - `gates.list` runs `scripts/check/secrets.sh` for the staged secret scan (agent-core 1.0.2).
-- `scripts/lib.sh` sees through RTK (agent-core 1.0.2), and `reviewer` reads the diff through
-  `rtk proxy` where RTK is installed.
+- `scripts/lib.sh` sees through RTK and runs on Linux (agent-core 1.0.2), and `reviewer` reads the
+  diff through `rtk proxy` where RTK is installed.
 
 #### Changed
 
@@ -86,15 +90,16 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 #### Fixed
 
-- `scripts/lib.sh` sees through RTK (agent-core 1.0.2), and `security-guard` and `seo-validator`
-  run their read commands through `rtk proxy` where RTK is installed.
+- `scripts/lib.sh` sees through RTK and runs on Linux (agent-core 1.0.2), and `security-guard` and
+  `seo-validator` run their read commands through `rtk proxy` where RTK is installed.
 
 ### agent-fe-nextjs 1.0.2
 
 #### Fixed
 
-- `scripts/lib.sh` sees through RTK (agent-core 1.0.2). `reviewer`, `i18n-guard`, `seo-validator`
-  and the `react-doctor` triage read git output through `rtk proxy` where RTK is installed.
+- `scripts/lib.sh` sees through RTK and runs on Linux (agent-core 1.0.2). `reviewer`, `i18n-guard`,
+  `seo-validator` and the `react-doctor` triage read git output through `rtk proxy` where RTK is
+  installed.
 - `gates.list` runs `scripts/check/secrets.sh` for the staged secret scan (agent-core 1.0.2).
 
 #### Changed
