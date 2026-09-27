@@ -1,0 +1,23 @@
+# The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit.
+# /agent-be-hono:sync offers the new pin when the plugin updates; nothing moves on its own.
+name: Quality Gate
+
+on:
+  # Every pull request, whatever branch it targets: a branch filter that misses this repo's
+  # branches would leave the gate silent. Diff steps compare against the pull request's base.
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Quality Gate
+    permissions:
+      contents: read
+    # No secrets: the gate reads the checkout and nothing else.
+    uses: adhibuchori/agent-config-kit/.github/workflows/be-hono-quality-gate.yml@0000000000000000000000000000000000000000 # v1.0.0

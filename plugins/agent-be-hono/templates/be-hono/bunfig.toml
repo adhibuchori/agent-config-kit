@@ -1,0 +1,57 @@
+[test]
+# Bun's default test root is the repo root, which would pick up config files
+# and anything else matching *.test.ts outside src/. Scope discovery to the
+# actual source tree.
+root = "src"
+
+# Every external client (a provider SDK, Redis, Postgres) is replaced here,
+# once, before any test file loads. `mock.module` mutates a registry shared by
+# the whole run, so per-file mocking of the same module is last-write-wins —
+# and the losing file silently gets the other's mock. That is how a unit test
+# ends up making a real call to a third-party API. Steer behaviour from a test
+# via the controls this file exports; do not re-mock those modules per file.
+preload = ["./src/test/preload.ts"]
+
+# Applies only when --coverage is passed (see "test:coverage" in package.json) — plain `bun test`
+# stays fast and uninstrumented. 100 %, per file, lines and functions: bun measures no branches.
+# Bun also reports only the files a test loaded, so `test:coverage` runs
+# scripts/check/coverage-files.mjs after it to fail on any source file no test imports; it reads
+# the lcov report written to coverageDir.
+#
+# The ignore list is closed (.claude/rules/typescript/coverage.md): composition roots and raw
+# clients, barrels, pure declarations, generated output. A file that is merely hard to test is never
+# listed; it wants a test or an injected dependency. scripts/check/coverage-policy.mjs refuses an
+# entry without a reason comment above it.
+coverageThreshold = 1.0
+coverageSkipTestFiles = true
+coverageReporter = ["text", "lcov"]
+coverageDir = "coverage"
+coveragePathIgnorePatterns = [
+  # Composition roots and raw clients: wiring with no logic of its own. The db client and the
+  # generated migrations get real exercise from the integration tier instead.
+  "src/index.ts",
+  "src/app.ts",
+  "src/env.ts",
+  "src/db/**",
+  "src/lib/server/logger.ts",
+  "src/lib/server/factory.ts",
+
+  # The shared doubles themselves: the harness the measured files run under.
+  "src/test/**",
+
+  # Queue and worker wiring: a Queue constructor and a Worker factory that open a Redis
+  # connection. The job logic worth testing lives in its own processor module, which is
+  # deliberately not listed and is covered directly.
+  "src/queues/index.ts",
+  "src/queues/workers/**",
+
+  # Raw clients built from env and replaced for the whole run by src/test/preload.ts: the auth
+  # library's configuration call and one file per external client. The decisions around them live
+  # in measured files. List each client file by path as it is added.
+  "src/lib/auth/auth.ts",
+  "src/lib/redis/redis.ts",
+
+  # Type-only declarations: erased at runtime, so no test can load them.
+  "src/types/**",
+  "src/**/*.types.ts",
+]

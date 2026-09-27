@@ -1,0 +1,20 @@
+# This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .husky/pre-commit.
+# <kinds><TAB><command>. Kinds pick the gates a commit needs from what it stages; see gates.sh.
+# /agent-be-hono:setup wrote this list and added the package scripts it names to package.json
+# (a script you already had was kept as it was). A missing script fails its gate.
+# The hooks and commands come from the agent-config-kit plugins, which prove them in their own
+# CI; this repo holds no hook scripts or command sources, so the hook probes and the command
+# mirror are not listed: each would pass having checked nothing. scripts/check/migrations.sh
+# and index-coverage.sh are pull-request checks; run them with bash after a schema change.
+all	@format
+all	gitleaks git --staged --no-banner --redact --config .gitleaks.toml
+code	bun run type-check
+code	bun run check:dead-code
+code	bun run check:constants
+code	bun run check:mocks
+code	bash scripts/check/double-assertion.sh
+code	bun run check:folder-shape
+code	bun run check:coverage-policy
+code	bun run test:coverage
+all	bash scripts/check/ai-config.sh
+commands,hooks	bash scripts/check/skills.sh --staged

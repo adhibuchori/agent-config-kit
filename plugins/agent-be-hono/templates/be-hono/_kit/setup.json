@@ -1,0 +1,89 @@
+{
+  "stack": "be-hono",
+  "conflictsWith": ["agent-ai-fastapi", "agent-docs-nextra", "agent-fe-nextjs", "agent-fe-nextjs-static"],
+  "questions": [
+    {
+      "id": "ci-gate",
+      "ask": "Run agent-config-kit's backend quality gate on every pull request (.github/workflows/quality-gate.yml)?",
+      "why": "Installs a small caller of the kit's be-hono-quality-gate workflow, pinned to one commit: format, lint, types, tests with coverage, migration drift, index coverage, runtime hardening and secret scans, with a read-only token and no secrets. It needs GitHub Actions; an existing quality-gate.yml is kept either way.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "the repo is on GitHub (a github.com remote or a .github/ folder); .github/workflows/quality-gate.yml already exists",
+      "install": { "yes": [".github/workflows/quality-gate.yml"] }
+    },
+    {
+      "id": "pr-templates",
+      "ask": "Add pull-request templates for work pull requests and dev → prod promotions (.github/PULL_REQUEST_TEMPLATE/)?",
+      "why": "They list only what the gate cannot decide: the schema and query checks a person reads, and the migration and deploy steps of a promotion. They assume dev and prod branches.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "branches dev and prod exist (git branch --list dev prod); .github/PULL_REQUEST_TEMPLATE/ already has files",
+      "install": { "yes": [".github/PULL_REQUEST_TEMPLATE/*.md"] }
+    },
+    {
+      "id": "analytics",
+      "ask": "Does an agent need to read a self-hosted analytics API from this repo?",
+      "why": "Adds .claude/ANALYTICS.example.md, a template to fill in for that read API. An unfilled template is worse than none, because an agent will try to use it.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "the code or .env.*.example names an analytics client, or .claude/ANALYTICS.md exists",
+      "install": { "yes": [".claude/ANALYTICS.example.md"] }
+    },
+    {
+      "id": "serena-workspace",
+      "ask": "Do you open several repositories as one Serena workspace?",
+      "why": "Adds .claude/SERENA-WORKSPACE.example.md, which explains how to scope Serena's searches across repos. With a single repo the default needs no documentation.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": ".mcp.json runs Serena and a .serena/project.yml above this repo lists several folders, or AGENT_WORKSPACE_ROOT is set",
+      "install": { "yes": [".claude/SERENA-WORKSPACE.example.md"] }
+    }
+  ],
+  "seed": [
+    ".claude/anti-patterns/INDEX.md",
+    ".claude/docs/code-review-checklist.md",
+    ".dockerignore",
+    ".github/PULL_REQUEST_TEMPLATE/*.md",
+    ".husky/pre-commit",
+    ".oxfmtrc.json",
+    ".oxlintignore",
+    ".oxlintrc.json",
+    "bunfig.toml",
+    "knip.ts",
+    "scripts/check/constants.config.json",
+    "scripts/check/gates.list",
+    "scripts/check/module-mocks.ts"
+  ],
+  "snippets": {},
+  "gitignore": [
+    ".env",
+    ".env.*.local",
+    ".env.development",
+    ".env.local",
+    ".env.production",
+    ".env.staging",
+    ".env.test",
+    ".envrc",
+    ".serena/",
+    ".skillspector/",
+    "/coverage",
+    "build/",
+    "dist/",
+    "node_modules/"
+  ],
+  "packageScripts": {
+    "check:constants": "bun scripts/check/constants.ts",
+    "check:coverage-policy": "node scripts/check/coverage-policy.mjs",
+    "check:dead-code": "knip",
+    "check:folder-shape": "node scripts/check/folder-shape.mjs",
+    "check:mocks": "bun scripts/check/module-mocks.ts",
+    "db:generate": "drizzle-kit generate",
+    "fl":"bun run format && bun run lint",
+    "fl:ci": "bun run format:check && oxlint --type-aware src scripts",
+    "format": "oxfmt src scripts",
+    "format:check": "oxfmt --check src scripts",
+    "lint": "oxlint --type-aware src scripts",
+    "test:coverage": "bun test src --coverage && node scripts/check/coverage-files.mjs",
+    "type-check": "tsc --noEmit"
+  }
+}
