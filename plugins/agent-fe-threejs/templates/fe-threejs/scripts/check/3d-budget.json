@@ -1,0 +1,13 @@
+{
+  "//": "Budgets for scripts/check/3d-budget.mjs; why they exist: .claude/rules/web/3d.md section 5. Setup created this file once and never checks or rewrites it: it is yours. Measure on a mid-range phone and adjust. To let one file exceed a budget, add an exceptions entry: { \"path\": \"public/models/hero.glb\", \"budget\": \"triangles\", \"max\": 180000, \"reason\": \"why this file needs more\" }.",
+  "roots": ["public"],
+  "textureDirs": ["public/models", "public/textures", "public/3d"],
+  "budgets": {
+    "modelKB": 1536,
+    "triangles": 100000,
+    "textureKB": 512,
+    "texturePx": 2048,
+    "environmentKB": 2048
+  },
+  "exceptions": []
+}

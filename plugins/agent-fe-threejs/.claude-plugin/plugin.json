@@ -1,0 +1,24 @@
+{
+  "name": "agent-fe-threejs",
+  "displayName": "Agent add-on: three.js",
+  "version": "1.0.0",
+  "description": "Optional 3D add-on for Next.js sites that use three.js or React Three Fiber; install it next to agent-fe-nextjs or agent-fe-nextjs-static. No hooks. Commands: setup and sync install and verify rules for gating the scene, a still fallback, reduced motion, disposing GPU resources and asset budgets, plus a guide to adding third-party 3D skills by reference (nothing is vendored).",
+  "author": {
+    "name": "Mochammad Adhi Buchori",
+    "url": "https://github.com/adhibuchori"
+  },
+  "homepage": "https://github.com/adhibuchori/agent-config-kit",
+  "repository": "https://github.com/adhibuchori/agent-config-kit",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "threejs",
+    "react-three-fiber",
+    "webgl",
+    "3d",
+    "performance"
+  ],
+  "dependencies": [
+    "agent-core"
+  ]
+}

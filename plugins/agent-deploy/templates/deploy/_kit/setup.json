@@ -1,0 +1,29 @@
+{
+  "stack": "deploy",
+  "conflictsWith": [],
+  "questions": [
+    {
+      "id": "webhook",
+      "ask": "Does a deploy start when something POSTs to a deploy webhook URL?",
+      "why": "Installs scripts/deploy/trigger-deploy.sh, which treats a 3xx as a refusal (a bare curl reports it as success) and keeps the secret URL out of its output and the process list. Claude must ask you before each run.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "a workflow or script reads DEPLOY_WEBHOOK_URL, or .github/scripts/trigger-deploy.sh exists",
+      "install": { "yes": ["scripts/deploy/trigger-deploy.sh"] },
+      "settings": {
+        "yes": {
+          "/permissions/ask": [
+            "Bash(bash scripts/deploy/trigger-deploy.sh:*)",
+            "Bash(bash ./scripts/deploy/trigger-deploy.sh:*)",
+            "Bash(./scripts/deploy/trigger-deploy.sh:*)",
+            "Bash(scripts/deploy/trigger-deploy.sh:*)"
+          ]
+        }
+      }
+    }
+  ],
+  "seed": [],
+  "snippets": {},
+  "gitignore": [],
+  "packageScripts": {}
+}

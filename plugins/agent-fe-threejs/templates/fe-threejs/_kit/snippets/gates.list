@@ -1,0 +1,2 @@
+# agent-fe-threejs: 3D asset budgets (scripts/check/3d-budget.json; why: .claude/rules/web/3d.md)
+code	node scripts/check/3d-budget.mjs

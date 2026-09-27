@@ -1,0 +1,12 @@
+{
+  "stack": "fe-threejs",
+  "conflictsWith": [],
+  "questions": [],
+  "seed": ["scripts/check/3d-budget.json"],
+  "snippets": {
+    ".claude/settings.json": "snippets/skill-overrides.json",
+    "scripts/check/gates.list": "snippets/gates.list"
+  },
+  "gitignore": [],
+  "packageScripts": {}
+}

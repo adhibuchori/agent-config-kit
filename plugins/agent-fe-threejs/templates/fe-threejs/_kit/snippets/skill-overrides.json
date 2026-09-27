@@ -1,0 +1,6 @@
+{
+  "skillOverrides": {
+    "<skill-claude-should-reach-for>": "name-only",
+    "<skill-you-only-run-yourself>": "user-invocable-only"
+  }
+}
