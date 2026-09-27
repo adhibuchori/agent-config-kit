@@ -5,12 +5,17 @@ How a maintainer ships plugins and the reusable workflows. Tags are described in
 
 ## A plugin release
 
-1. **Bump.** Raise `version` in `plugins/<p>/.claude-plugin/plugin.json` (SemVer: a removed
-   command, setting or default, or a new required prerequisite, is a major bump). Never add a
+1. **Bump.** Raise `version` in `plugins/<p>/.claude-plugin/plugin.json` by SemVer: a removed
+   command, setting or default, or a new required prerequisite, is a major bump; a new command,
+   hook, rule, check or guard is a minor bump; a fix or a docs change is a patch. Never add a
    version to `marketplace.json`.
 2. **Changelog.** Move the plugin's entries from `## [Unreleased]` into a new
    `## [X.Y.Z] - YYYY-MM-DD` release, under `### <p> <new version>`, with **Breaking:** lines where a
    user must act.
+   Do this in every release pull request; `[Unreleased]` must not hold shipped plugin versions. The
+   repository number takes the largest bump among the plugins it ships, and its GitHub release
+   (`vX.Y.Z`, then `v1` moved to it) follows the workflow steps below even when the workflows did
+   not change.
 3. **Validate.**
 
    ```bash
