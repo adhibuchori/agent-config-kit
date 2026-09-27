@@ -10,6 +10,56 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+### agent-core 1.1.1
+
+#### Changed
+
+- `CI-RUNNERS.example.md` says how to spend two free pools of minutes: the merge-blocking gate, the
+  one job that must not die or stall, on a fast third-party pool (Blacksmith as the example), and
+  every job that can fail without blocking anyone on GitHub's free minutes.
+
+### agent-ai-fastapi 1.2.1
+
+#### Fixed
+
+- The CI callers are pinned to the v1.2.0 release commit, so setup installs them instead of
+  holding them back.
+
+### agent-be-hono 1.2.1
+
+#### Fixed
+
+- The CI callers are pinned to the v1.2.0 release commit, so setup installs them instead of
+  holding them back.
+
+### agent-deploy 1.1.2
+
+#### Fixed
+
+- The CI callers are pinned to the v1.2.0 release commit, so setup installs them instead of
+  holding them back.
+
+### agent-docs-nextra 1.1.2
+
+#### Fixed
+
+- The CI callers are pinned to the v1.2.0 release commit, so setup installs them instead of
+  holding them back.
+
+### agent-fe-nextjs 1.2.1
+
+#### Fixed
+
+- The CI callers are pinned to the v1.2.0 release commit, so setup installs them instead of
+  holding them back.
+
+### agent-fe-nextjs-static 1.1.2
+
+#### Fixed
+
+- The CI callers are pinned to the v1.2.0 release commit, so setup installs them instead of
+  holding them back.
+
 ## [1.2.0] - 2026-09-28
 
 The pull-request pipeline is complete, and the stacks gain the ported rule set. Three new reusable

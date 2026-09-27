@@ -31,7 +31,7 @@ jobs:
     if: github.event.pull_request.merged == true
     permissions:
       contents: read
-    uses: adhibuchori/agent-config-kit/.github/workflows/deploy-webhook.yml@0000000000000000000000000000000000000000 # v1.2.0
+    uses: adhibuchori/agent-config-kit/.github/workflows/deploy-webhook.yml@8699a5bed2aa9d986c459f65b3e519c7bbe162d1 # v1.2.0
     # with: # every input is optional
     #   # A docs site built with agent-docs-nextra regenerates its pages on this event. Needs the
     #   # DOCS_DISPATCH_TOKEN secret: a token that may send events to that repository.

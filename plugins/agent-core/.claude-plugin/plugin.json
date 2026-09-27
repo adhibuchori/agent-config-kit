@@ -1,7 +1,7 @@
 {
   "name": "agent-core",
   "displayName": "Agent Core",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Guardrail hooks and the everyday git workflow for Claude Code; every stack plugin builds on it. Guards: safety-check refuses destructive or irreversible shell commands (recursive deletes of tracked work, hard resets, pushes to or deletion of protected branches, skipping the pre-commit gate, shell reads or writes of real .env files, an agent running unlock); mcp-guard refuses GitHub MCP writes onto protected branches; db-guard lets read-only SQL reach the production database tool and holds writes until you unlock db. Feedback hooks: post-edit formats and lints each written file with the project's own tools; post-commit shows what a commit carried; prompt-intent points a /debug shorthand at /agent-core:rca and prunes old hook state; session-start writes zsh options to CLAUDE_ENV_FILE so Claude's shell treats unmatched globs, =word and word splitting like bash; setup-check says when setup or sync has not run for the installed version. The hooks run on your machine, open no network connection, download nothing, and stay silent until a project opts in (/agent-core:setup or .claude/agent-config.json). Commands: setup and sync install and verify what a plugin cannot carry (permissions, rules, check scripts, the unlock and .env helpers); help maps plan, review, commit, create-pr and merge-pr; plus resolve-pr-review, rca, checkpoint, ship, promote and branch-cleanup. The commands that commit, push, merge or post to GitHub start only when you type them. Agents: reviewer and security-guard.",
   "author": {
     "name": "Mochammad Adhi Buchori",

@@ -46,7 +46,7 @@ jobs:
     permissions:
       contents: read # read the pull request and its changed files over the API
       pull-requests: write # post or update the one review comment
-    uses: adhibuchori/agent-config-kit/.github/workflows/deepseek-review.yml@0000000000000000000000000000000000000000 # v1.2.0
+    uses: adhibuchori/agent-config-kit/.github/workflows/deepseek-review.yml@8699a5bed2aa9d986c459f65b3e519c7bbe162d1 # v1.2.0
     with: # every input is optional; model: deepseek-flash is the cheaper choice
       instructions: >-
         A statically exported Next.js site (output: 'export'): no server, no API routes and no

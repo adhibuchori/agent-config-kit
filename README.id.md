@@ -298,7 +298,7 @@ flowchart TD
 asli, dipersingkat dengan `…`):
 
 ```text
-agent-setup plan · agent-fe-nextjs 1.0.3 + agent-core 1.0.4 · project .
+agent-setup plan · agent-fe-nextjs 1.2.1 + agent-core 1.1.1 · project .
   create   .claude/rules/web/security.md
   …
   create   .claude/settings.json                   +$schema, +16 permissions.allow, +7 permissions.ask, +14 permissions.deny, +sandbox.enabled, …
@@ -805,7 +805,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.github/CODEOWNERS` | sekali; lalu milik Anda | Code owners: GitHub asks them to review every pull request that touches a matching path. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk pekerjaan yang masuk ke dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
-| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | An AI review of each pull request by DeepSeek, installed by /agent-ai-fastapi:setup when you answer deepseek-review=yes. |
+| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; sync menjaganya tetap terbaru | An AI review of each pull request by DeepSeek, installed by /agent-ai-fastapi:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; sync menjaganya tetap terbaru | Quality Gate for a FastAPI + LLM service: every pull request into a protected branch runs the FastAPI gate that agent-config-kit ships as a reusable workflow (ai-fastapi-quality-gate.yml; its header lists the checks). |
 | `.pre-commit-config.yaml` | sekali; lalu milik Anda | The commit gate. |
 | `AGENTS.md` | sekali, jika belum ada; lalu milik Anda | AGENTS.md — &lt;repo-name&gt; |
@@ -878,7 +878,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.github/CODEOWNERS` | sekali; lalu milik Anda | Code owners: GitHub asks them to review every pull request that touches a matching path. |
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk pekerjaan yang masuk ke dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
-| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | An AI review of each pull request by DeepSeek, installed by /agent-be-hono:setup when you answer deepseek-review=yes. |
+| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; sync menjaganya tetap terbaru | An AI review of each pull request by DeepSeek, installed by /agent-be-hono:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; sync menjaganya tetap terbaru | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
 | `.husky/pre-commit` | sekali; lalu milik Anda | Menjalankan gate pada file yang di-stage sebelum setiap commit |
 | `.oxfmtrc.json` | sekali; lalu milik Anda | Pengaturan formatter oxfmt |
@@ -945,8 +945,8 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
 | `.claude/settings.json` | digabung ke milik Anda (hanya menambah; nilai Anda yang menang) | Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash |
-| `.github/workflows/deploy.yml` | jika `deploy-on-merge=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | Deploys when a pull request is merged into prod, installed by /agent-deploy:setup when you answer deploy-on-merge=yes. |
-| `.github/workflows/strip-ai.yml` | jika `strip-ai=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | Strips the agent config from prod after each merge, installed by /agent-deploy:setup when you answer strip-ai=yes. |
+| `.github/workflows/deploy.yml` | jika `deploy-on-merge=yes`; sync menjaganya tetap terbaru | Deploys when a pull request is merged into prod, installed by /agent-deploy:setup when you answer deploy-on-merge=yes. |
+| `.github/workflows/strip-ai.yml` | jika `strip-ai=yes`; sync menjaganya tetap terbaru | Strips the agent config from prod after each merge, installed by /agent-deploy:setup when you answer strip-ai=yes. |
 | `scripts/deploy/trigger-deploy.sh` | jika `webhook=yes`; sync menjaganya tetap terbaru | trigger-deploy.sh: start a deploy by POSTing to the deploy platform's webhook, and fail loudly when the platform declines it. |
 | `scripts/deploy/verify-deploy.sh` | selalu; sync menjaganya tetap terbaru | verify-deploy.sh: smoke-test a live deploy from the outside, on any host. |
 | `CLAUDE.md` | satu blok terkelola, ditambahkan di akhir | `## Agent config kit` |
@@ -982,7 +982,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.github/scripts/check-comment-style.ts` | selalu; sync menjaganya tetap terbaru | Comment standard: `//` is reserved for directives (ts-expect-error, oxlint-disable, |
 | `.github/workflows/changelog.yaml` | jika `ci-pipeline=yes`; sekali; lalu milik Anda | Generate Content |
 | `.github/workflows/ci-cd.yaml` | jika `ci-pipeline=yes`; sync menjaganya tetap terbaru | CI/CD Pipeline |
-| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | An AI review of each pull request by DeepSeek, installed by /agent-docs-nextra:setup when you answer deepseek-review=yes. |
+| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; sync menjaganya tetap terbaru | An AI review of each pull request by DeepSeek, installed by /agent-docs-nextra:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yaml` | selalu; sync menjaganya tetap terbaru | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
 | `.github/workflows/react-doctor.yml` | jika `react-doctor=yes`; sync menjaganya tetap terbaru | React Doctor: security, performance, correctness, accessibility, and architecture checks for React. |
 | `.husky/pre-commit` | selalu; sync menjaganya tetap terbaru | Menjalankan gate pada file yang di-stage sebelum setiap commit |
@@ -1077,7 +1077,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
 | `.github/scripts/check-comment-blocks.sh` | selalu; sync menjaganya tetap terbaru | Caps consecutive comment runs under .github/ at 2 lines; shebangs are exempt. |
 | `.github/scripts/check-comment-style.ts` | selalu; sync menjaganya tetap terbaru | Comment standard: `//` is reserved for directives (ts-expect-error, oxlint-disable, |
-| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | An AI review of each pull request by DeepSeek, installed by /agent-fe-nextjs:setup when you answer deepseek-review=yes. |
+| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; sync menjaganya tetap terbaru | An AI review of each pull request by DeepSeek, installed by /agent-fe-nextjs:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yaml` | selalu; sync menjaganya tetap terbaru | The pull-request quality gate for this Next.js app, installed by /agent-fe-nextjs:setup. |
 | `.github/workflows/react-doctor.yml` | jika `react-doctor-ci=yes`; sync menjaganya tetap terbaru | React Doctor: security, performance, correctness, accessibility, and architecture checks for React. |
 | `.husky/pre-commit` | selalu; sync menjaganya tetap terbaru | Menjalankan gate pada file yang di-stage sebelum setiap commit |
@@ -1187,7 +1187,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.claude/settings.json` | digabung ke milik Anda (hanya menambah; nilai Anda yang menang) | Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash |
 | `.env.example` | sekali; lalu milik Anda | Copy to .env.local for local builds, and set the same names in the host's build environment. |
 | `.github/CODEOWNERS` | sekali; lalu milik Anda | Code owners: GitHub asks them to review every pull request that touches a matching path. |
-| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | An AI review of each pull request by DeepSeek, installed by /agent-fe-nextjs-static:setup when you answer deepseek-review=yes. |
+| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; sync menjaganya tetap terbaru | An AI review of each pull request by DeepSeek, installed by /agent-fe-nextjs-static:setup when you answer deepseek-review=yes. |
 | `.github/workflows/quality-gate.yaml` | jika `ci-gate=yes`; sync menjaganya tetap terbaru | The pull-request quality gate for this static site, installed by /agent-fe-nextjs-static:setup. |
 | `.github/workflows/react-doctor.yml` | jika `react-doctor=yes`; sync menjaganya tetap terbaru | React Doctor: security, performance, correctness, accessibility and architecture findings for the site's React code, as review comments on the changed lines, one summary comment and a commit status. |
 | `.husky/pre-commit` | selalu; sync menjaganya tetap terbaru | Menjalankan gate pada file yang di-stage sebelum setiap commit |
@@ -1598,8 +1598,12 @@ yang ditunggu seseorang (quality gate dan build dokumentasi) mendahulukan `CI_RU
 (pemeriksaan yang bersifat saran, review AI, semua yang berjalan setelah merge) memakai
 `CI_RUNNER`. Runner menagih tiap job per menit yang dimulai, jadi runner yang lebih cepat dan
 berbayar baru menghemat di atas satu menit: tempatkan job menurut siapa yang menunggu hasilnya.
-Biarkan keduanya kosong dan semuanya berjalan di `ubuntu-latest`; isi `CI_RUNNER_FAST` saja untuk
-memindahkan gate saja. Setiap reusable workflow juga menerima input `runs-on`. File
+Gate yang memblokir merge, satu-satunya job yang tidak boleh mati atau macet, masuk ke pool cepat;
+semua yang boleh gagal tanpa memblokir siapa pun memakai menit termurah. Biarkan keduanya kosong
+dan semuanya berjalan di `ubuntu-latest`; isi `CI_RUNNER_FAST` saja untuk memindahkan gate saja,
+misalnya ke Blacksmith dengan `gh variable set CI_RUNNER_FAST --body blacksmith-2vcpu-ubuntu-2404`.
+Di repositori private, cara ini memakai dua kuota gratis: 2.000 menit sebulan dari GitHub (paket
+Free) untuk sisanya, dan kuota milik penyedia (Blacksmith: 3.000) untuk gate. Setiap reusable workflow juga menerima input `runs-on`. File
 `.claude/CI-RUNNERS.example.md` yang terpasang berisi kombinasinya, uji anggaran yang aman, dan
 jalan keluarnya.
 
