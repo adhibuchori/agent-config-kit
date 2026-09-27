@@ -189,6 +189,46 @@ PY
   [[ "$output" == *'no sentence under "## What it does"'* ]]
 }
 
+@test "catalog: a template workflow is a component: page, entry, What it does, and optional when a question gates it" {
+  local t="$K/plugins/agent-demo/templates/demo"
+  mkdir -p "$t/.github/workflows"
+  printf '# The gate.\nname: Gate\non:\n  pull_request:\npermissions:\n  contents: read\njobs: {}\n' >"$t/.github/workflows/gate.yml"
+  printf '# A review.\nname: Review\non:\n  pull_request:\npermissions:\n  contents: read\njobs: {}\n' >"$t/.github/workflows/review.yaml"
+  printf '{ "stack": "demo", "questions": [ { "id": "review", "choices": ["yes", "no"], "install": { "yes": [".github/workflows/review.yaml"] } } ] }\n' \
+    >"$t/_kit/setup.json"
+  catalog --check
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"docs/agent-demo/gate.md: missing (the page for workflow .github/workflows/gate.yml)"* ]]
+  [[ "$output" == *'docs/catalog.json: no entry "agent-demo/review"'* ]]
+  printf '# gate\n\n## What it does\n\nRuns the gate on every pull request. More.\n' >"$K/docs/agent-demo/gate.md"
+  printf '# review\n' >"$K/docs/agent-demo/review.md"
+  python3 - "$K/docs/catalog.json" <<'PY'
+import json, sys
+p = sys.argv[1]
+d = json.load(open(p))
+for k in ("gate", "review"):
+    d["components"][f"agent-demo/{k}"] = {"use": "On pull requests", "why": "Checked", "id": {"what": "Gerbang", "use": "Di PR", "why": "Diperiksa"}}
+open(p, "w").write(json.dumps(d))
+PY
+  catalog --check
+  [[ "$output" == *'docs/agent-demo/review.md: no sentence under "## What it does"'* ]]
+  printf '# review\n\n## What it does\n\nReviews the diff.\n' >"$K/docs/agent-demo/review.md"
+  write_then_check
+  grep -qF '| `.github/workflows/gate.yml` | Workflow | Runs the gate on every pull request. | On pull requests | Checked | [gate](docs/agent-demo/gate.md) |' "$K/README.md"
+  grep -qF '| `.github/workflows/review.yaml` | Workflow (optional) | Reviews the diff. |' "$K/README.md"
+  grep -qF '| `.github/workflows/review.yaml` | Workflow (opsional) | Gerbang |' "$K/README.id.md"
+}
+
+@test "catalog: a workflow named like another component takes <name>.workflow.md; the other keeps its page" {
+  local t="$K/plugins/agent-demo/templates/demo"
+  mkdir -p "$t/.github/workflows"
+  printf 'name: Tidy\non:\n  pull_request:\npermissions:\n  contents: read\njobs: {}\n' >"$t/.github/workflows/tidy.yml"
+  catalog --check
+  [[ "$output" == *"docs/agent-demo/tidy.workflow.md: missing (the page for workflow .github/workflows/tidy.yml)"* ]]
+  [[ "$output" != *"docs/agent-demo/tidy.skill.md"* ]]
+  [[ "$output" != *"docs/agent-demo/tidy.md: no component"* ]]
+}
+
 @test "catalog: two kinds with one name get <name>.<kind>.md pages" {
   printf -- '---\ndescription: Review the change\n---\n' >"$K/plugins/agent-demo/commands/reviewer.md"
   printf '%s\n' '/agent-demo:reviewer' >>"$K/plugins/agent-core/commands/help.md"

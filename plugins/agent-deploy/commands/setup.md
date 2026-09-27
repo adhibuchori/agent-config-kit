@@ -42,7 +42,12 @@ Read what setup would touch, and note what you find, with the file as evidence:
   step 5 hands it over.
 - How deploys start today: `.github/workflows/` (a deploy job on a merged pull request?), anything
   that reads `DEPLOY_WEBHOOK_URL`, and a `.github/scripts/trigger-deploy.sh` copied from a template.
-  That decides the `webhook` answer.
+  That decides the `webhook` answer. A workflow that already deploys on a merged pull request means
+  `deploy-on-merge=no` (a second trigger would deploy twice); none, and a platform that deploys
+  when its webhook is called, means `deploy-on-merge` is worth offering. A workflow or script that
+  already strips agent config from the production branch (`strip-ai-on-pr.yml`,
+  `.github/scripts/strip-ai.sh`) decides `strip-ai`; so does whether the repo has `prod` and `dev`
+  branches at all.
 - `scripts/deploy/`: a file already there is kept, never replaced; the draft lists it as `keep`.
 - `.claude/settings.json` and `.claude/settings.local.json`: a `hooks` key that runs a
   `.claude/hooks/*.sh` script agent-core also runs is double wiring (each would run twice); setup never

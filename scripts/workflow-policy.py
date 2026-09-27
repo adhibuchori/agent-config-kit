@@ -7,10 +7,15 @@ Run from anywhere; PyYAML is the one dependency, pinned the way the kit's trigge
 Files: .github/workflows/*.y*ml and plugins/*/templates/*/.github/workflows/*.y*ml.
 
 Per file:
-  - Triggers: pull_request and workflow_call only. Never push, schedule, issue_comment,
-    pull_request_target, workflow_run or workflow_dispatch. One documented exception (ADR 0004):
-    agent-docs-nextra's changelog.yaml also accepts repository_dispatch, the event the documented
-    application's own release sends; no other file may use it.
+  - Triggers: pull_request and workflow_call only. Never push, schedule, pull_request_target,
+    workflow_run or workflow_dispatch. Two documented exceptions (ADR 0004):
+      - agent-docs-nextra's changelog.yaml also accepts repository_dispatch, the event the
+        documented application's own release sends; no other file may use it.
+      - a template's deepseek-review.yml also accepts issue_comment (`/ask-deepseek`), and only in
+        the safe shape: `types: [created]`; top-level permissions `contents: read`; every job a call
+        to this repository's deepseek-review.yml with nothing but `contents: read` and
+        `pull-requests: write`, and an `if:` that requires a comment on a pull request by an OWNER,
+        MEMBER or COLLABORATOR; and the called workflow checks nothing out.
   - A `pull_request: types: [closed]` workflow runs no job without a merge guard (the job's `if:`
     tests `merged`, directly or through every job it needs).
   - A top-level `permissions:` block; no `secrets: inherit`.
@@ -43,6 +48,12 @@ ALLOWED = {"pull_request", "workflow_call"}
 EXCEPTIONS = {
     "plugins/agent-docs-nextra/templates/docs-nextra/.github/workflows/changelog.yaml": {"repository_dispatch"},
 }
+# The second exception (ADR 0004): the DeepSeek review callers answer an `/ask-deepseek` comment. A
+# comment can come from anyone, and GitHub gives that run the repository's secrets and a write
+# token, so the file must keep the shape comment_problems() checks.
+COMMENT_CALLER = re.compile(r"^plugins/[^/]+/templates/[^/]+/\.github/workflows/deepseek-review\.yml$")
+COMMENT_TARGET = "deepseek-review.yml"
+TRUSTED = ("OWNER", "MEMBER", "COLLABORATOR")
 KIT = "adhibuchori/agent-config-kit/"
 PLACEHOLDER = "0" * 40
 USES_LINE = re.compile(r"^\s*(?:-\s+)?uses:\s*(['\"]?)(?P<ref>[^\s'\"#]+)\1\s*(?:#\s*(?P<comment>.*))?$")
@@ -63,6 +74,43 @@ def guarded(jobs, name, seen=()):
     needs = job.get("needs") or []
     needs = [needs] if isinstance(needs, str) else needs
     return bool(needs) and all(n not in seen and guarded(jobs, n, seen + (name,)) for n in needs)
+
+
+def comment_problems(rel, root, doc, events, jobs):
+    """Why an issue_comment workflow is not in the one safe shape (empty when it is)."""
+    out = []
+    types = (events.get("issue_comment") or {}).get("types") if isinstance(events.get("issue_comment"), dict) else None
+    if types != ["created"]:
+        out.append(f"{rel}: issue_comment must be limited to `types: [created]`")
+    if doc.get("permissions") != {"contents": "read"}:
+        out.append(f"{rel}: an issue_comment workflow needs top-level `permissions: contents: read` and nothing more")
+    if not jobs:
+        out.append(f"{rel}: an issue_comment workflow needs a job")
+    for name, job in jobs.items():
+        if not isinstance(job, dict):
+            continue
+        call = KIT_CALL.match(str(job.get("uses", "")))
+        if not call or call.group("file") != COMMENT_TARGET or job.get("steps"):
+            out.append(f"{rel}: job `{name}` must be a call to this repository's {COMMENT_TARGET} and nothing else")
+        perms = job.get("permissions")
+        if not isinstance(perms, dict) or not set(perms.items()) <= {("contents", "read"), ("pull-requests", "write")}:
+            out.append(f"{rel}: job `{name}` may hold `contents: read` and `pull-requests: write` only")
+        cond = str(job.get("if", ""))
+        needed = ["github.event.issue.pull_request", "github.event.comment.author_association"] + [f'"{t}"' for t in TRUSTED]
+        missing = [n for n in needed if n not in cond]
+        extra = [a for a in ("CONTRIBUTOR", "FIRST_TIMER", "FIRST_TIME_CONTRIBUTOR", "MANNEQUIN", "NONE") if a in cond]
+        if missing or extra:
+            out.append(f"{rel}: job `{name}` must run on a comment only for a pull request and an OWNER, MEMBER or COLLABORATOR"
+                       + (f" (missing {', '.join(missing)})" if missing else "") + (f" (also allows {', '.join(extra)})" if extra else ""))
+    target = os.path.join(root, ".github", "workflows", COMMENT_TARGET)
+    if os.path.isfile(target):
+        with open(target, encoding="utf-8") as fh:
+            called = yaml.safe_load(fh) or {}
+        for jname, job in (called.get("jobs") or {}).items():
+            for step in (job or {}).get("steps") or []:
+                if isinstance(step, dict) and str(step.get("uses", "")).startswith("actions/checkout@"):
+                    out.append(f".github/workflows/{COMMENT_TARGET}: job `{jname}` checks out code, which a comment-triggered run must never do")
+    return out
 
 
 def git(root, *args):
@@ -113,12 +161,17 @@ def main():
         else:
             problems.append(f"{rel}: no `on:` block")
             events = {}
-        allowed = ALLOWED | EXCEPTIONS.get(rel.replace(os.sep, "/"), set())
+        posix = rel.replace(os.sep, "/")
+        allowed = ALLOWED | EXCEPTIONS.get(posix, set())
+        if COMMENT_CALLER.match(posix):
+            allowed = allowed | {"issue_comment"}
         for event in events:
             if event not in allowed:
                 problems.append(f"{rel}: trigger `{event}` is not allowed (pull-request events and workflow_call only)")
 
         jobs = doc.get("jobs") or {}
+        if "issue_comment" in events and COMMENT_CALLER.match(posix):
+            problems.extend(comment_problems(rel, root, doc, events, jobs))
         pr = events.get("pull_request")
         if isinstance(pr, dict) and "closed" in (pr.get("types") or []):
             for name in jobs:

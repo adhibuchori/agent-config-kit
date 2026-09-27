@@ -80,6 +80,9 @@ Every component, generated from the manifests and the docs pages; each links to 
 | `agent-fe-nextjs:seo-validator` | Agent | Validates search and sharing metadata for public routes — metadataBase, per-route titles and descriptions, canonical and hreflang alternates, robots and sitemap, Open Graph images, and JSON-LD. Use after changing metadata, public pages, robots, sitemap or share images. | Ask after metadata changes | Pages stay findable and shareable | [seo-validator](../../docs/agent-fe-nextjs/seo-validator.md) |
 | `agent-fe-nextjs:react-doctor` | Skill (you start it) | User-invoked React scan and triage (`/agent-fe-nextjs:react-doctor`). Runs the React Doctor CLI for lint, accessibility, bundle-size and architecture diagnostics, with its telemetry and lookups turned off. Uses the project's own installed CLI; without one it downloads the pinned react-doctor 0.9.14 from npm once, after the user agrees. Includes a regression check and a local triage workflow. | `/agent-fe-nextjs:react-doctor` | Security, performance and a11y issues before commit | [react-doctor](../../docs/agent-fe-nextjs/react-doctor.md) |
 | `agent-fe-nextjs:skeleton` | Skill | Use when building, fixing or checking a loading skeleton or placeholder in this frontend, or when a skeleton is said to be off, to jump, or not to match its screen ("skeleton", "loading state", "placeholder", "layout shift", IS_SKELETON_SHOWN). Derives heights from the real component, wires the preview switch, and measures the pair at four widths until they differ by at most half a pixel. | "the skeleton jumps", or `/agent-fe-nextjs:skeleton` | No layout shift when data arrives | [skeleton](../../docs/agent-fe-nextjs/skeleton.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](../../docs/agent-fe-nextjs/deepseek-review.md) |
+| `.github/workflows/quality-gate.yaml` | Workflow | `.github/workflows/quality-gate.yaml` runs agent-config-kit's `fe-nextjs-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Installed by setup; runs on every pull request | Every pull request runs the same gates as the pre-commit hook, and more | [quality-gate](../../docs/agent-fe-nextjs/quality-gate.md) |
+| `.github/workflows/react-doctor.yml` | Workflow (optional) | `.github/workflows/react-doctor.yml` runs the React Doctor action on each pull request and reports security, performance, correctness, accessibility and architecture findings as review comments on the changed lines, one summary comment and a commit status. | Answer `react-doctor-ci=yes` | React findings in the pull request; never blocks | [react-doctor](../../docs/agent-fe-nextjs/react-doctor.workflow.md) |
 <!-- catalog:end -->
 
 ### Hooks
@@ -92,7 +95,8 @@ Every component, generated from the manifests and the docs pages; each links to 
 anti-patterns, standards, `scripts/check/gates.list` and the check scripts it names, `oxlint.json`,
 `.oxfmtrc.json`, `knip.ts`, `.husky/pre-commit`, a pull-request-only CI caller of the kit's
 `fe-nextjs-quality-gate`, PR templates, CODEOWNERS, `.gitleaks.toml` and env examples. Optional
-modules, one question each: i18n, dialogs, responsive, skeletons, React Doctor in CI, design docs.
+modules, one question each: i18n, dialogs, responsive, skeletons, React Doctor in CI, a DeepSeek
+review of each pull request (`deepseek-review`, needs the `DEEPSEEK_API_KEY` secret), design docs.
 
 ## Configuration
 
@@ -141,7 +145,8 @@ agent-core keeps running. To remove the files setup installed, see [Uninstall](.
   npm once. Every scan passes `--no-score --no-supply-chain`, so results stay local unless you
   agree otherwise.
 - The optional React Doctor CI workflow (setup's `react-doctor-ci`, recommended **no**) runs the
-  vendor's action, which reports to the vendor's score service.
+  vendor's action, which reports to the vendor's score service. The optional DeepSeek review
+  (`deepseek-review`, recommended **no**) sends the pull request's diff to DeepSeek's API.
 
 ## Limitations
 

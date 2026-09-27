@@ -73,6 +73,8 @@ Every component, generated from the manifests and the docs pages; each links to 
 | `/agent-deploy:setup` | Command (you start it) | Install agent-deploy's post-deploy smoke script, the optional deploy-webhook trigger and their ask-first permissions into this repo, after a dry run you approve | `/agent-deploy:setup`, once per repo | Plugins cannot ship permissions or rules; you see every write first | [setup](../../docs/agent-deploy/setup.md) |
 | `/agent-deploy:sync` | Command (you start it) | Compare this repo with what agent-deploy's setup installed; --check reports drift and double hook wiring (read-only, non-zero exit), otherwise shows a sync draft and writes it on go | `/agent-deploy:sync --check` | Drift and double hook wiring show up with an exit code | [sync](../../docs/agent-deploy/sync.md) |
 | `/agent-deploy:verify-deploy` | Command (you start it) | Smoke-test a live deploy from outside (HTTP 200, canonical URL, robots and sitemap, security headers, a GitHub deployment newer than the merge). Uses the network, and only when you start it | `/agent-deploy:verify-deploy https://… --pr 42` | Proof the deploy reached production | [verify-deploy](../../docs/agent-deploy/verify-deploy.md) |
+| `.github/workflows/deploy.yml` | Workflow (optional) | `.github/workflows/deploy.yml` starts a deploy when a pull request is merged into `prod`: it calls agent-config-kit's `deploy-webhook.yml` reusable workflow, which POSTs to your deploy platform's webhook for `refs/heads/prod`. | Answer `deploy-on-merge=yes`, add `DEPLOY_WEBHOOK_URL` | Deploys follow merges, and a refused deploy turns red | [deploy](../../docs/agent-deploy/deploy.md) |
+| `.github/workflows/strip-ai.yml` | Workflow (optional) | `.github/workflows/strip-ai.yml` keeps agent configuration out of what you deploy. | Answer `strip-ai=yes`; runs after each merge into `prod` | Production carries no agent instructions; `dev` keeps them | [strip-ai](../../docs/agent-deploy/strip-ai.md) |
 <!-- catalog:end -->
 
 ### Hooks
@@ -81,13 +83,17 @@ This plugin wires no hooks.
 
 **What setup installs** (`/agent-deploy:setup`): `scripts/deploy/verify-deploy.sh`, the
 optional `scripts/deploy/trigger-deploy.sh` (for a deploy webhook), and `ask` permissions so Claude
-asks before running either. The deploy target itself lives in `.claude/OPERATIONS.md` § Deploys,
+asks before running either. Two optional CI callers run when a pull request is merged into `prod`:
+`.github/workflows/deploy.yml` (`deploy-on-merge=yes`) posts to the same webhook through the kit's
+reusable `deploy-webhook.yml`, and `.github/workflows/strip-ai.yml` (`strip-ai=yes`) strips the
+agent config from `prod` and merges back into `dev`. The deploy target itself lives in `.claude/OPERATIONS.md` § Deploys,
 which agent-core installs as an example.
 
 ## Configuration
 
 `.claude/OPERATIONS.md` § Deploys: platform, app, live URL and the four adapter commands
-(`read-env`, `latest`, `trigger`, `backup`). `DEPLOY_WEBHOOK_URL` for the trigger script.
+(`read-env`, `latest`, `trigger`, `backup`). `DEPLOY_WEBHOOK_URL` for the trigger script, in your shell; for `deploy.yml`, the repository
+secret of the same name (and `DOCS_DISPATCH_TOKEN` to tell a docs site).
 
 ## Enabling and disabling
 

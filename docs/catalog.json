@@ -10,6 +10,15 @@
         "why": "Kesalahan layanan LLM yang tidak terlihat oleh gate"
       }
     },
+    "agent-ai-fastapi/deepseek-review": {
+      "use": "Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run",
+      "why": "A second reader on every pull request for a cent or two",
+      "id": {
+        "what": "Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout",
+        "use": "Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang",
+        "why": "Pembaca kedua di setiap pull request dengan biaya satu atau dua sen"
+      }
+    },
     "agent-ai-fastapi/migration-guard": {
       "use": "Runs by itself before file writes",
       "why": "The database, the migration log and the schema keep agreeing",
@@ -17,6 +26,15 @@
         "what": "Menolak edit tangan pada revisi Alembic hasil generator",
         "use": "Berjalan sendiri sebelum penulisan file",
         "why": "Database, log migrasi, dan skema tetap selaras"
+      }
+    },
+    "agent-ai-fastapi/quality-gate": {
+      "use": "Answer `ci-gate=yes` (recommended); runs on every pull request",
+      "why": "Every pull request runs the same gates as the pre-commit hook, and more",
+      "id": {
+        "what": "Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit",
+        "use": "Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request",
+        "why": "Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih"
       }
     },
     "agent-ai-fastapi/setup": {
@@ -37,6 +55,15 @@
         "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
       }
     },
+    "agent-be-hono/deepseek-review": {
+      "use": "Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run",
+      "why": "A second reader on every pull request for a cent or two",
+      "id": {
+        "what": "Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout",
+        "use": "Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang",
+        "why": "Pembaca kedua di setiap pull request dengan biaya satu atau dua sen"
+      }
+    },
     "agent-be-hono/migration-guard": {
       "use": "Runs by itself before file writes",
       "why": "The database, the migration log and the schema keep agreeing",
@@ -44,6 +71,15 @@
         "what": "Menolak edit tangan pada migrasi Drizzle hasil generator",
         "use": "Berjalan sendiri sebelum penulisan file",
         "why": "Database, log migrasi, dan skema tetap selaras"
+      }
+    },
+    "agent-be-hono/quality-gate": {
+      "use": "Answer `ci-gate=yes` (recommended); runs on every pull request",
+      "why": "Every pull request runs the same gates as the pre-commit hook, and more",
+      "id": {
+        "what": "Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit",
+        "use": "Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request",
+        "why": "Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih"
       }
     },
     "agent-be-hono/reviewer": {
@@ -100,6 +136,15 @@
         "why": "Sesi berikutnya mulai dari titik akhir sesi ini"
       }
     },
+    "agent-core/codeql": {
+      "use": "Runs by itself on every pull request",
+      "why": "Code scanning without a weekly schedule",
+      "id": {
+        "what": "Pemindaian kode CodeQL di setiap pull request, untuk bahasa yang ada di repo",
+        "use": "Berjalan sendiri di setiap pull request",
+        "why": "Pemindaian kode tanpa jadwal mingguan"
+      }
+    },
     "agent-core/commit": {
       "use": "`/agent-core:commit`",
       "why": "A red gate never becomes a commit",
@@ -125,6 +170,15 @@
         "what": "Meloloskan satu pernyataan SQL baca-saja; menahan penulisan sampai Anda membuka `db`",
         "use": "Berjalan sendiri sebelum tool SQL produksi",
         "why": "Tidak ada `DELETE` mendadak di produksi"
+      }
+    },
+    "agent-core/dependency-review": {
+      "use": "Runs by itself on every pull request",
+      "why": "Vulnerable dependencies are stopped when they are added, without Dependabot",
+      "id": {
+        "what": "Menggagalkan pull request yang menambah dependensi dengan kerentanan tinggi atau kritis",
+        "use": "Berjalan sendiri di setiap pull request",
+        "why": "Dependensi rentan dihentikan saat ditambahkan, tanpa Dependabot"
       }
     },
     "agent-core/help": {
@@ -298,6 +352,24 @@
         "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
       }
     },
+    "agent-core/workflows-lint": {
+      "use": "Runs when a pull request touches `.github/` or `actions/`",
+      "why": "Unpinned actions and injectable workflows never merge",
+      "id": {
+        "what": "actionlint, zizmor, dan pinact atas file GitHub Actions saat pull request mengubahnya",
+        "use": "Berjalan saat pull request menyentuh `.github/` atau `actions/`",
+        "why": "Action yang tidak di-pin dan workflow yang bisa diinjeksi tidak pernah masuk"
+      }
+    },
+    "agent-deploy/deploy": {
+      "use": "Answer `deploy-on-merge=yes`, add `DEPLOY_WEBHOOK_URL`",
+      "why": "Deploys follow merges, and a refused deploy turns red",
+      "id": {
+        "what": "POST ke webhook deploy saat pull request di-merge ke `prod`; 3xx atau 4xx berarti gagal",
+        "use": "Jawab `deploy-on-merge=yes`, tambahkan `DEPLOY_WEBHOOK_URL`",
+        "why": "Deploy mengikuti merge, dan deploy yang ditolak menjadi merah"
+      }
+    },
     "agent-deploy/promote-deploy": {
       "use": "`/agent-deploy:promote-deploy internal/x`",
       "why": "Production does not go stale during a CI outage",
@@ -314,6 +386,15 @@
         "what": "Memasang skrip smoke test setelah deploy, pemicu webhook deploy opsional, dan izin tanya-dulu untuk keduanya setelah dry run yang Anda setujui",
         "use": "`/agent-deploy:setup`, sekali per repo",
         "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-deploy/strip-ai": {
+      "use": "Answer `strip-ai=yes`; runs after each merge into `prod`",
+      "why": "Production carries no agent instructions; `dev` keeps them",
+      "id": {
+        "what": "Menghapus konfigurasi agen dari `prod` setelah merge, lalu merge balik ke `dev` dan memeriksa keduanya",
+        "use": "Jawab `strip-ai=yes`; berjalan setelah setiap merge ke `prod`",
+        "why": "Produksi tidak membawa instruksi agen; `dev` tetap menyimpannya"
       }
     },
     "agent-deploy/sync": {
@@ -334,6 +415,33 @@
         "why": "Bukti deploy sampai ke produksi"
       }
     },
+    "agent-docs-nextra/changelog": {
+      "use": "Answer `ci-pipeline=yes`; runs after a merge into `prod` or the app's release",
+      "why": "Generated pages follow the application's releases",
+      "id": {
+        "what": "Membuat ulang changelog dan referensi API setelah rilis, lalu memanggil ci-cd",
+        "use": "Jawab `ci-pipeline=yes`; berjalan setelah merge ke `prod` atau rilis aplikasi",
+        "why": "Halaman hasil generator mengikuti rilis aplikasi"
+      }
+    },
+    "agent-docs-nextra/ci-cd": {
+      "use": "Called by `changelog.yaml`",
+      "why": "The site deploys only after its new pages landed",
+      "id": {
+        "what": "Build ekspor statis dan unggah ke Cloudflare Worker, dipanggil oleh changelog",
+        "use": "Dipanggil oleh `changelog.yaml`",
+        "why": "Situs hanya di-deploy setelah halaman barunya masuk"
+      }
+    },
+    "agent-docs-nextra/deepseek-review": {
+      "use": "Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run",
+      "why": "A second reader on every pull request for a cent or two",
+      "id": {
+        "what": "Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout",
+        "use": "Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang",
+        "why": "Pembaca kedua di setiap pull request dengan biaya satu atau dua sen"
+      }
+    },
     "agent-docs-nextra/generated-guard": {
       "use": "Runs by itself before file writes",
       "why": "Edits go to the source, not to a file the generator will overwrite",
@@ -341,6 +449,24 @@
         "what": "Menolak edit tangan pada halaman dan data hasil generator",
         "use": "Berjalan sendiri sebelum penulisan file",
         "why": "Perubahan masuk ke sumbernya, bukan ke file yang akan ditimpa generator"
+      }
+    },
+    "agent-docs-nextra/quality-gate": {
+      "use": "Installed by setup; runs on every pull request into `dev` or `prod`",
+      "why": "Every pull request runs the same gates as the pre-commit hook, and more",
+      "id": {
+        "what": "Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit",
+        "use": "Dipasang oleh setup; berjalan di setiap pull request ke `dev` atau `prod`",
+        "why": "Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih"
+      }
+    },
+    "agent-docs-nextra/react-doctor": {
+      "use": "Answer `react-doctor=yes`",
+      "why": "React findings in the pull request; never blocks",
+      "id": {
+        "what": "Temuan React Doctor sebagai komentar dan status commit di pull request; hanya saran",
+        "use": "Jawab `react-doctor=yes`",
+        "why": "Temuan React muncul di pull request; tidak pernah memblokir"
       }
     },
     "agent-docs-nextra/security-guard": {
@@ -388,6 +514,15 @@
         "why": "Menguji apa yang diterima pengunjung"
       }
     },
+    "agent-fe-nextjs-static/deepseek-review": {
+      "use": "Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run",
+      "why": "A second reader on every pull request for a cent or two",
+      "id": {
+        "what": "Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout",
+        "use": "Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang",
+        "why": "Pembaca kedua di setiap pull request dengan biaya satu atau dua sen"
+      }
+    },
     "agent-fe-nextjs-static/i18n-guard": {
       "use": "Ask after i18n changes",
       "why": "Languages work without middleware",
@@ -404,6 +539,24 @@
         "what": "Tabel PASS / FAIL / MANUAL sebelum peluncuran",
         "use": "`/agent-fe-nextjs-static:launch-checklist https://…`",
         "why": "Tidak ada yang terlupa di hari peluncuran"
+      }
+    },
+    "agent-fe-nextjs-static/quality-gate": {
+      "use": "Answer `ci-gate=yes` (recommended); runs on every pull request",
+      "why": "Every pull request runs the same gates as the pre-commit hook, and more",
+      "id": {
+        "what": "Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit",
+        "use": "Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request",
+        "why": "Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih"
+      }
+    },
+    "agent-fe-nextjs-static/react-doctor": {
+      "use": "Answer `react-doctor=yes`",
+      "why": "React findings in the pull request; never blocks",
+      "id": {
+        "what": "Temuan React Doctor sebagai komentar dan status commit di pull request; hanya saran",
+        "use": "Jawab `react-doctor=yes`",
+        "why": "Temuan React muncul di pull request; tidak pernah memblokir"
       }
     },
     "agent-fe-nextjs-static/review": {
@@ -469,6 +622,15 @@
         "why": "Nama aksesibel, alt text, dan gaya fokus yang hilang ketahuan sebelum rilis"
       }
     },
+    "agent-fe-nextjs/deepseek-review": {
+      "use": "Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run",
+      "why": "A second reader on every pull request for a cent or two",
+      "id": {
+        "what": "Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout",
+        "use": "Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang",
+        "why": "Pembaca kedua di setiap pull request dengan biaya satu atau dua sen"
+      }
+    },
     "agent-fe-nextjs/generated-guard": {
       "use": "Runs by itself before file writes",
       "why": "Edits go to the source, not to a file the generator will overwrite",
@@ -496,6 +658,15 @@
         "why": "Perubahan kontrak direncanakan, bukan ditemukan belakangan"
       }
     },
+    "agent-fe-nextjs/quality-gate": {
+      "use": "Installed by setup; runs on every pull request",
+      "why": "Every pull request runs the same gates as the pre-commit hook, and more",
+      "id": {
+        "what": "Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit",
+        "use": "Dipasang oleh setup; berjalan di setiap pull request",
+        "why": "Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih"
+      }
+    },
     "agent-fe-nextjs/react-doctor": {
       "use": "`/agent-fe-nextjs:react-doctor`",
       "why": "Security, performance and a11y issues before commit",
@@ -503,6 +674,15 @@
         "what": "Memindai kode React dengan React Doctor CLI milik proyek, atau mengunduh versi yang di-pin sekali setelah Anda setuju; telemetri dimatikan",
         "use": "`/agent-fe-nextjs:react-doctor`",
         "why": "Masalah keamanan, performa, dan a11y ketahuan sebelum commit"
+      }
+    },
+    "agent-fe-nextjs/react-doctor.workflow": {
+      "use": "Answer `react-doctor-ci=yes`",
+      "why": "React findings in the pull request; never blocks",
+      "id": {
+        "what": "Temuan React Doctor sebagai komentar dan status commit di pull request; hanya saran",
+        "use": "Jawab `react-doctor-ci=yes`",
+        "why": "Temuan React muncul di pull request; tidak pernah memblokir"
       }
     },
     "agent-fe-nextjs/review-soc": {

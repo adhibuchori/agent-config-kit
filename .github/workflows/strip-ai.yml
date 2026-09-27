@@ -1,0 +1,109 @@
+# Strip the agent config from the production branch after a merge, as a reusable workflow.
+# agent-deploy's setup installs a caller (.github/workflows/strip-ai.yml) when you answer
+# strip-ai=yes. Anyone can call it the same way, pinned to one commit of agent-config-kit:
+#
+#     on:
+#       pull_request:
+#         types: [closed]
+#         branches: [prod]
+#     permissions:
+#       contents: read
+#     concurrency:
+#       group: prod-strip-ai
+#       cancel-in-progress: false
+#     jobs:
+#       strip-ai:
+#         if: github.event.pull_request.merged == true
+#         permissions:
+#           contents: write
+#         uses: adhibuchori/agent-config-kit/.github/workflows/strip-ai.yml@<40-hex sha> # v1.2.0
+#
+# What it does (actions/strip-ai): removes .claude/, AGENTS.md, CLAUDE.md, .mcp.json and the rest of
+# the list from the production branch and pushes that commit; merges the production branch back
+# into the development branch, keeping the development branch's copy of every stripped file; and
+# verifies both branches.
+#
+# The checkout keeps no token. git gets the job's token for its fetches and pushes from a credential
+# helper that reads it from the environment of that one step, so nothing writes it to .git/config.
+# The job's token may push (contents: write) and do nothing else. Give the strip its own concurrency
+# group in the caller: a strip queued in the deploy's group can be cancelled silently. Runner:
+# CI_RUNNER, then ubuntu-latest (post-merge, nobody waits on it).
+name: Strip AI Config
+
+on:
+  workflow_call:
+    inputs:
+      prod-branch:
+        description: The branch that deploys and must not carry agent config. The job runs only when the merged pull request targeted it.
+        type: string
+        required: false
+        default: prod
+      dev-branch:
+        description: The branch that keeps the agent config; the strip commit is merged back into it.
+        type: string
+        required: false
+        default: dev
+      paths:
+        description: Space-separated pathspecs that replace the default list. Empty keeps the default.
+        type: string
+        required: false
+        default: ''
+      extra-paths:
+        description: Space-separated pathspecs stripped in addition to the list (globs such as debug*.config.ts are git pathspecs).
+        type: string
+        required: false
+        default: ''
+      back-merge:
+        description: false strips and verifies the production branch only.
+        type: boolean
+        required: false
+        default: true
+      runs-on:
+        description: Runner label; empty uses the caller repository's CI_RUNNER, then ubuntu-latest.
+        type: string
+        required: false
+        default: ''
+      timeout-minutes:
+        description: Job timeout in minutes.
+        type: number
+        required: false
+        default: 15
+
+permissions:
+  contents: read
+
+jobs:
+  strip-ai:
+    name: Strip AI Config
+    # Only a pull request merged into the production branch strips it.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == inputs.prod-branch
+    runs-on: ${{ inputs.runs-on || vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    permissions:
+      contents: write # push the strip commit to the production branch and the back-merge to the development branch
+
+    steps:
+      # Full history: the back-merge needs both branches and a real merge base.
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.prod-branch }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Strip AI Config
+        uses: $/actions/strip-ai
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: credential.helper
+          GIT_CONFIG_VALUE_0: '!f() { test "$1" = get || return 0; printf "username=x-access-token\npassword=%s\n" "$GH_TOKEN"; }; f'
+        with:
+          prod-branch: ${{ inputs.prod-branch }}
+          dev-branch: ${{ inputs.dev-branch }}
+          paths: ${{ inputs.paths }}
+          extra-paths: ${{ inputs.extra-paths }}
+          back-merge: ${{ inputs.back-merge }}

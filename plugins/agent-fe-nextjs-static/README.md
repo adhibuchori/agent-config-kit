@@ -79,6 +79,9 @@ Every component, generated from the manifests and the docs pages; each links to 
 | `agent-fe-nextjs-static:i18n-guard` | Agent | Validates next-intl usage in a static-site diff. Locale routing that works without middleware (app/[locale] with generateStaticParams and setRequestLocale), catalogue key parity, hardcoded user-facing strings, locale-aware formatting, and complete reciprocal hreflang alternates. Use after touching message catalogues, locale routing or localized metadata. Optional; reports only. | Ask after i18n changes | Languages work without middleware | [i18n-guard](../../docs/agent-fe-nextjs-static/i18n-guard.md) |
 | `agent-fe-nextjs-static:security-guard` | Agent | Reviews a static-site diff for security regressions. Response headers in the host's config (the _headers file or nginx, not next.config under export), a hash-based CSP that still matches the build, secrets in public variables, XSS sinks and unsafe URLs, form endpoints, third-party scripts, and edits to the agent's own guard files. Use before committing a change to headers, next.config, forms, scripts or rendered HTML. Reports only. | Via `/agent-fe-nextjs-static:review` | Static hosting has its own traps | [security-guard](../../docs/agent-fe-nextjs-static/security-guard.md) |
 | `agent-fe-nextjs-static:seo-validator` | Agent | Validates search and sharing metadata of a static Next.js site in a diff or a full audit. robots and the sitemap, canonical and hreflang links, per-route titles and descriptions, Open Graph images, JSON-LD validity and fit, preview indexing. Use after changing public pages, metadata, robots, the sitemap, share images or structured data. Reports only. | Via `/agent-fe-nextjs-static:seo-audit` | Judges what scripts cannot | [seo-validator](../../docs/agent-fe-nextjs-static/seo-validator.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](../../docs/agent-fe-nextjs-static/deepseek-review.md) |
+| `.github/workflows/quality-gate.yaml` | Workflow (optional) | `.github/workflows/quality-gate.yaml` runs agent-config-kit's `fe-nextjs-static-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Answer `ci-gate=yes` (recommended); runs on every pull request | Every pull request runs the same gates as the pre-commit hook, and more | [quality-gate](../../docs/agent-fe-nextjs-static/quality-gate.md) |
+| `.github/workflows/react-doctor.yml` | Workflow (optional) | `.github/workflows/react-doctor.yml` runs the React Doctor action on each pull request and reports security, performance, correctness, accessibility and architecture findings as review comments on the changed lines, one summary comment and a commit status. | Answer `react-doctor=yes` | React findings in the pull request; never blocks | [react-doctor](../../docs/agent-fe-nextjs-static/react-doctor.md) |
 <!-- catalog:end -->
 
 ### Hooks
@@ -92,7 +95,9 @@ headers, performance, responsive, forms on static hosting, analytics consent, he
 11 anti-patterns, the site checks under `scripts/check/` (static export, sitemap and robots,
 metadata, share images, JSON-LD, broken links, image, font and bundle budgets, security headers,
 accessibility, a local static server), `scripts/check/site.config.json` (mode `auto`, `export` or
-`ssg-with-endpoints`), lint and budget configs, `public/_headers` and a pull-request-only CI caller.
+`ssg-with-endpoints`), lint and budget configs, `public/_headers`, a pull-request-only CI caller and
+a CODEOWNERS starter. Optional: React Doctor on pull requests (`react-doctor`) and a DeepSeek review
+of each pull request (`deepseek-review`, needs the `DEEPSEEK_API_KEY` secret).
 
 ## Configuration
 

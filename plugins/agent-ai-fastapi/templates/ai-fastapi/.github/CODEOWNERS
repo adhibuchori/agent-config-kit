@@ -1,0 +1,31 @@
+# Code owners: GitHub asks them to review every pull request that touches a matching path. Without
+# a branch ruleset that requires code-owner review this is a request, not a gate. The last matching
+# line wins, so the paths below override the catch-all. Replace @your-github-handle with a user or
+# an @org/team; setup created this file once, and it is yours now.
+
+*                                @your-github-handle
+
+# CI, and what decides what reaches production.
+/.github/                        @your-github-handle
+/.gitleaks.toml                  @your-github-handle
+/Dockerfile                      @your-github-handle
+/.dockerignore                   @your-github-handle
+/pyproject.toml                  @your-github-handle
+/uv.lock                         @your-github-handle
+
+# The agent's guardrails: what it may run and reach, the lock that turns the hooks on, and the
+# checks and scripts that judge and unlock its work. A one-line edit here can switch a guard off.
+/.claude/settings.json           @your-github-handle
+/.claude/agent-config-kit.lock   @your-github-handle
+/.claude/agent-config.json       @your-github-handle
+/.mcp.json                       @your-github-handle
+/scripts/check/                  @your-github-handle
+/scripts/ops/                    @your-github-handle
+/scripts/env/                    @your-github-handle
+/.skillspector-baseline.yaml     @your-github-handle
+/.pre-commit-config.yaml         @your-github-handle
+
+# Startup, validated settings and the database: a mistake here breaks every request.
+/src/app/main.py                 @your-github-handle
+/src/app/core/settings/          @your-github-handle
+/src/app/db/                     @your-github-handle

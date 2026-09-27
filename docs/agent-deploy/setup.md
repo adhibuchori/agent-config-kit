@@ -4,7 +4,7 @@ Command · agent-deploy · `/agent-deploy:setup [--answer id=value …]` · only
 
 ## What it does
 
-`/agent-deploy:setup` installs what a plugin cannot ship by itself into your repo: the outside smoke test `scripts/deploy/verify-deploy.sh`, the optional deploy-webhook trigger, and ask-first permissions for both.
+`/agent-deploy:setup` installs what a plugin cannot ship by itself into your repo: the outside smoke test `scripts/deploy/verify-deploy.sh`, the optional deploy-webhook trigger, ask-first permissions for both, and, if you want them, two CI callers that run when a pull request is merged into `prod`: a deploy through your webhook (`deploy.yml`) and the strip of agent config from `prod` (`strip-ai.yml`).
 
 It explores your repo, asks one question at a time with a recommended answer, shows the exact draft,
 and writes only when you reply **go**. It never overwrites or deletes a file. The lock
@@ -26,6 +26,8 @@ The questions (answer "ok" to take the recommended one):
 | Question id | What it asks | Choices | Recommended |
 | --- | --- | --- | --- |
 | `webhook` | Does a deploy start when something POSTs to a deploy webhook URL? | yes / no | `no` |
+| `deploy-on-merge` | Deploy from CI when a pull request is merged into prod, by POSTing to the deploy webhook (.github/workflows/deploy.yml)? | yes / no | `no` |
+| `strip-ai` | Strip the agent config from prod after each merge, and merge prod back into dev (.github/workflows/strip-ai.yml)? | yes / no | `no` |
 
 The draft lists every action: `create`, `same`, `keep`, `seed`, `merge`, `conflict`, `block`,
 `alias`, `by-hand`, `warn` and `lock`, then a `digest`. `apply` is not pre-approved, so your
@@ -50,6 +52,10 @@ Your `.claude/settings.json` already wires a hook script the plugin also runs, s
 - The draft ends with a `digest sha256:…` line, and after **go** the last line apply prints is
   `wrote    .claude/agent-config-kit.lock`.
 - `/agent-deploy:sync --check` then ends with `result: in sync (0 findings; exit 0)`.
+- Every CI caller is pinned to a release commit of agent-config-kit. A caller that still holds the
+  all-zero release placeholder (a new caller, until the plugin release that pins it) is not
+  installed: the draft shows `warn     .github/workflows/<name>.y…ml  not installed: …`, `--check`
+  lists it as `held`, and the next release installs it through sync.
 - `git status` shows the new files; commit them with the lock.
 
 ## Where it fits

@@ -9,7 +9,11 @@ the production branch, it:
 3. verifies that the production branch tracks none of the stripped paths and that the development
    branch still has every file the strip removed.
 
-The plugins never install it: a repository opts in by adding the workflow below.
+agent-deploy's setup installs a caller when you answer `strip-ai=yes`
+(`/agent-deploy:setup --answer strip-ai=yes`). The caller runs the reusable workflow
+[`.github/workflows/strip-ai.yml`](../../.github/workflows/strip-ai.yml), which checks out the
+production branch without storing a token and hands git the job's token through a credential helper
+for the pushes.
 
 ## What it strips
 
@@ -43,7 +47,7 @@ on:
 permissions:
   contents: read
 
-# Not the deploy's group: a strip queued behind a deploy was cancelled silently there.
+# Not the deploy's group: a strip queued behind a deploy in a shared group can be cancelled silently.
 concurrency:
   group: prod-strip-ai
   cancel-in-progress: false
@@ -52,22 +56,18 @@ jobs:
   strip-ai:
     name: Strip AI Config
     # A closed pull request that was not merged starts the workflow but runs nothing.
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'prod'
-    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
-    timeout-minutes: 15
+    if: github.event.pull_request.merged == true
     permissions:
       contents: write # push the strip commit to prod and the back-merge to dev
-    steps:
-      # The scripts push with the token the checkout stores, so this checkout keeps it. The job runs
-      # nothing else and uploads no artifact.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: prod
-          fetch-depth: 0
-          persist-credentials: true
-
-      - uses: adhibuchori/agent-config-kit/actions/strip-ai@<40-hex sha> # v1.0.0
+    uses: adhibuchori/agent-config-kit/.github/workflows/strip-ai.yml@<40-hex sha> # v1.2.0
+    with: # every input is optional
+      prod-branch: prod
+      dev-branch: dev
 ```
+
+The reusable workflow takes the action's inputs (`prod-branch`, `dev-branch`, `paths`,
+`extra-paths`, `back-merge`) plus `runs-on` (empty uses the repository variable `CI_RUNNER`, then
+`ubuntu-latest`) and `timeout-minutes` (15).
 
 - Branch protection on either branch rejects the bot's push unless the workflow's token may bypass
   it.

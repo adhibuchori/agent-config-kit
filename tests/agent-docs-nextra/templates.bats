@@ -81,7 +81,7 @@ for g in cfg["seed"]:
 print(len(cfg["questions"]), "questions,", len(dests), "template files")
 PY
   [ "$status" -eq 0 ]
-  [[ "$output" == "4 questions,"* ]] || false
+  [[ "$output" == "5 questions,"* ]] || false
 }
 
 @test "the template tree holds nothing the kit forbids" {
@@ -180,8 +180,9 @@ PY
 import os, re, sys
 wdir = sys.argv[1]
 ALLOWED = {"pull_request", "workflow_call"}
-# The one documented exception (ADR 0004): the changelog also runs on the app's release event.
-EXTRA = {"changelog.yaml": {"repository_dispatch"}}
+# The documented exceptions (ADR 0004): the changelog also runs on the app's release event, and the
+# DeepSeek review on an /ask-deepseek comment (scripts/workflow-policy.py checks its safe shape).
+EXTRA = {"changelog.yaml": {"repository_dispatch"}, "deepseek-review.yml": {"issue_comment"}}
 problems = []
 for name in sorted(os.listdir(wdir)):
     lines = open(os.path.join(wdir, name)).read().split("\n")

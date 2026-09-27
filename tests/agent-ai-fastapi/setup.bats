@@ -12,7 +12,7 @@ setup() {
   ai_args
 }
 
-@test "questions: agent-core's layer first, then this plugin's five, each recommending one of its choices" {
+@test "questions: agent-core's layer first, then this plugin's six, each recommending one of its choices" {
   run -0 --separate-stderr "$SETUP_BIN" questions "${ARGS[@]}" --json
   run -0 python3 -c '
 import json, sys
@@ -20,7 +20,8 @@ d = json.loads(sys.argv[1])
 assert d["plugin"] == "agent-ai-fastapi" and d["stack"] == "ai-fastapi", d
 ids = [(q["plugin"], q["id"]) for q in d["questions"]]
 assert ids[0] == ("agent-core", "language"), ids
-assert [i for p, i in ids if p == "agent-ai-fastapi"] == ["pipeline", "ci-gate", "pr-templates", "analytics", "serena-workspace"], ids
+assert [i for p, i in ids if p == "agent-ai-fastapi"] == ["pipeline", "ci-gate", "deepseek-review", "pr-templates", "analytics",
+                                                                   "serena-workspace"], ids
 assert all(q["recommended"] in q["choices"] and q["why"] for q in d["questions"])
 print("ok")' "$output"
   [ "$output" = ok ]
@@ -102,8 +103,8 @@ lock = json.load(open(root + "/.claude/agent-config-kit.lock"))
 me = lock["plugins"]["agent-ai-fastapi"]
 version = json.load(open(tpl + "/../../.claude-plugin/plugin.json"))["version"]
 assert me["stack"] == "ai-fastapi" and me["version"] == version, me
-assert me["answers"] == {"pipeline": "no", "ci-gate": "yes", "pr-templates": "yes", "analytics": "no",
-                         "serena-workspace": "no"}, me["answers"]
+assert me["answers"] == {"pipeline": "no", "ci-gate": "yes", "deepseek-review": "no", "pr-templates": "yes",
+                         "analytics": "no", "serena-workspace": "no"}, me["answers"]
 assert me["kept"] == ["pyproject.toml"], me["kept"]
 assert "packageScripts" not in me or me["packageScripts"] == {}, me
 held = re.search(r"@0{40}", open(tpl + "/.github/workflows/quality-gate.yml").read())

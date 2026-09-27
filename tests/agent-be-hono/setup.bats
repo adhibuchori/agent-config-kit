@@ -29,14 +29,14 @@ do_install() {
   setup_cli apply "$@" --digest "$digest"
 }
 
-@test "questions: agent-core's layer first, then this stack's four, each with a recommended choice" {
+@test "questions: agent-core's layer first, then this stack's five, each with a recommended choice" {
   run -0 --separate-stderr setup_cli questions --json
   printf '%s' "$output" | python3 -c '
 import json, sys
 d = json.load(sys.stdin)
 ids = [q["id"] for q in d["questions"]]
-assert ids[-4:] == ["ci-gate", "pr-templates", "analytics", "serena-workspace"], ids
-assert "language" in ids[:-4], ids
+assert ids[-5:] == ["ci-gate", "deepseek-review", "pr-templates", "analytics", "serena-workspace"], ids
+assert "language" in ids[:-5], ids
 assert all(q["recommended"] in q["choices"] for q in d["questions"])
 '
 }

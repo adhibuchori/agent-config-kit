@@ -1,0 +1,41 @@
+# Deploys when a pull request is merged into prod, installed by /agent-deploy:setup when you answer
+# deploy-on-merge=yes. It POSTs to your deploy platform's webhook through agent-config-kit's reusable
+# deploy-webhook workflow, pinned below to one commit; /agent-deploy:sync brings a new pin when a
+# plugin release moves it.
+#
+# Add the repository secret DEPLOY_WEBHOOK_URL. Without it the job fails and says so: a deploy is
+# never skipped in silence. A 3xx or 4xx answer is a refusal and fails the job; a busy platform is
+# asked again. Green means the platform accepted the deploy; /agent-deploy:verify-deploy confirms it
+# went live. A pull request closed without merging starts the workflow but runs nothing.
+
+name: Deploy
+
+on:
+  pull_request:
+    types: [closed]
+    # Your production branch. The deploy is of the branch the pull request merged into.
+    branches: [prod]
+
+permissions:
+  contents: read
+
+# Deploys queue behind each other and none is cancelled: each merge into prod gets its deploy, in
+# order.
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    if: github.event.pull_request.merged == true
+    permissions:
+      contents: read
+    uses: adhibuchori/agent-config-kit/.github/workflows/deploy-webhook.yml@0000000000000000000000000000000000000000 # v1.2.0
+    # with: # every input is optional
+    #   # A docs site built with agent-docs-nextra regenerates its pages on this event. Needs the
+    #   # DOCS_DISPATCH_TOKEN secret: a token that may send events to that repository.
+    #   docs-repository: <owner>/<docs-repo>
+    secrets:
+      DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+      DOCS_DISPATCH_TOKEN: ${{ secrets.DOCS_DISPATCH_TOKEN }}

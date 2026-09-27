@@ -1,0 +1,130 @@
+# DeepSeek review of a pull request, as a reusable workflow. A stack plugin's setup installs a caller
+# (.github/workflows/deepseek-review.yml) when you answer deepseek-review=yes. Anyone can call it the
+# same way, pinned to one commit of agent-config-kit:
+#
+#     on:
+#       pull_request:
+#         types: [opened, reopened, ready_for_review]
+#       issue_comment:
+#         types: [created]
+#     permissions:
+#       contents: read
+#     jobs:
+#       deepseek-review:
+#         if: <the pull request is from this repository, or the comment is /ask-deepseek from an
+#              OWNER, MEMBER or COLLABORATOR on a pull request>
+#         permissions:
+#           contents: read
+#           pull-requests: write
+#         uses: adhibuchori/agent-config-kit/.github/workflows/deepseek-review.yml@<40-hex sha> # v1.2.0
+#         with: # every input is optional
+#           instructions: A Bun + Hono API on strict TypeScript.
+#         secrets:
+#           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+#
+# What it does (actions/deepseek-review): reads the pull request and its changed files over the
+# GitHub API, leaves out lockfiles and the `exclude` patterns, caps the diff at `max-diff-bytes`,
+# asks DeepSeek for a review and posts it as one comment that later runs update. It skips, and
+# passes, without the secret, for a fork's pull request, for a draft and for a closed pull request.
+#
+# Why it is safe on an issue_comment trigger (ADR 0004): no checkout, so no code from the pull
+# request runs; the diff is read over the API as data; the job below runs only for the pull request
+# event of a branch in this repository, or for a comment by the repository's owner, members and
+# collaborators; its token can read the code and write pull-request comments, nothing more. GitHub
+# runs an issue_comment workflow from the default branch, so a pull request cannot change it.
+#
+# Cost: DeepSeek bills tokens. With the defaults the diff cap and `max-tokens` bound one review to
+# about ten US cents at peak prices, usually a cent or two; each comment ends with the tokens it used. Runner: CI_RUNNER, then ubuntu-latest
+# (nobody waits on an advisory review, so it stays off the fast pool).
+name: DeepSeek Review
+
+on:
+  workflow_call:
+    inputs:
+      instructions:
+        description: Notes about the project for the reviewer (the stack, rules no gate checks). Written by you, never taken from the pull request.
+        type: string
+        required: false
+        default: ''
+      exclude:
+        description: More file patterns to leave out, separated by commas, spaces or newlines (lockfiles, minified files and source maps are always left out). A pattern with a slash matches the path, one without the file name; * matches anything.
+        type: string
+        required: false
+        default: ''
+      model:
+        description: The DeepSeek model, such as deepseek-v4-pro or the cheaper deepseek-flash.
+        type: string
+        required: false
+        default: deepseek-v4-pro
+      base-url:
+        description: The API's base URL (https only). The key is sent to this host and nowhere else.
+        type: string
+        required: false
+        default: https://api.deepseek.com
+      max-diff-bytes:
+        description: The most diff to send, in bytes; whole files are added until the next would pass it.
+        type: number
+        required: false
+        default: 100000
+      max-tokens:
+        description: The most the model may write, its reasoning included.
+        type: number
+        required: false
+        default: 16384
+      reasoning-effort:
+        description: none, low, high or max; empty leaves the API's default. Reasoning tokens are billed as output.
+        type: string
+        required: false
+        default: low
+      runs-on:
+        description: Runner label; empty uses the caller repository's CI_RUNNER, then ubuntu-latest.
+        type: string
+        required: false
+        default: ''
+      timeout-minutes:
+        description: Job timeout in minutes.
+        type: number
+        required: false
+        default: 10
+    secrets:
+      DEEPSEEK_API_KEY:
+        description: The DeepSeek API key. Without it the job passes with a notice and sends nothing.
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  deepseek-review:
+    name: DeepSeek Review
+    # The same guard as the caller's, so a caller that forgets it still never reviews on a stranger's
+    # comment: a pull request from a branch of this repository, or a comment on a pull request by
+    # the repository's owner, a member or a collaborator.
+    if: >-
+      (github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+    runs-on: ${{ inputs.runs-on || vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    permissions:
+      contents: read # read the pull request and its changed files over the API
+      pull-requests: write # post or update the one review comment
+
+    steps:
+      # No checkout, on purpose: nothing from the pull request is ever on the runner.
+      - name: DeepSeek Review
+        uses: $/actions/deepseek-review
+        with:
+          api-key: ${{ secrets.DEEPSEEK_API_KEY }}
+          instructions: ${{ inputs.instructions }}
+          exclude: ${{ inputs.exclude }}
+          model: ${{ inputs.model }}
+          base-url: ${{ inputs.base-url }}
+          max-diff-bytes: ${{ inputs.max-diff-bytes }}
+          max-tokens: ${{ inputs.max-tokens }}
+          reasoning-effort: ${{ inputs.reasoning-effort }}
+          # Five minutes, retries included: well inside the job's timeout, so a stalled answer ends
+          # with a warning instead of a killed job.
+          request-timeout: 300

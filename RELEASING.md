@@ -44,7 +44,8 @@ Users receive the update when they run `claude plugin update <p>@agent-config-ki
 
 The reusable workflows and `actions/` are released together with the repository release number.
 
-1. Merge the changes to `.github/workflows/*-quality-gate.yml` and `actions/` first.
+1. Merge the changes to the reusable workflows (`.github/workflows/*` with `workflow_call`) and
+   `actions/` first.
 2. Tag that merge commit `vX.Y.Z` and publish a GitHub release for it; with immutable releases
    turned on, the tag and assets can no longer change.
 3. Move `v1` to the same commit: `git tag -f v1 <sha>` and `git push -f origin v1` (the only tag

@@ -72,6 +72,8 @@ Every component, generated from the manifests and the docs pages; each links to 
 | `/agent-be-hono:setup` | Command (you start it) | Install agent-be-hono's backend rules, anti-patterns, gate scripts, lint and test config and pull-request CI into this Bun + Hono + Drizzle repo, after a dry run you approve | `/agent-be-hono:setup`, once per repo | Plugins cannot ship permissions or rules; you see every write first | [setup](../../docs/agent-be-hono/setup.md) |
 | `/agent-be-hono:sync` | Command (you start it) | Check this repo against agent-be-hono's installed files with --check (read-only, exits non-zero on drift or double hook wiring), or update them after a dry run you approve | `/agent-be-hono:sync --check` | Drift and double hook wiring show up with an exit code | [sync](../../docs/agent-be-hono/sync.md) |
 | `agent-be-hono:reviewer` | Agent | Reviews the uncommitted diff of a Bun + Hono + Drizzle API against this repo's AGENTS.md rules (layer boundaries, error contract, database access, query shape and indexes, tests, code quality) and reports each violation with its rule number. Changes no file. | Via `/agent-core:review` | Slow queries and leaky errors are caught in review | [reviewer](../../docs/agent-be-hono/reviewer.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](../../docs/agent-be-hono/deepseek-review.md) |
+| `.github/workflows/quality-gate.yml` | Workflow (optional) | `.github/workflows/quality-gate.yml` runs agent-config-kit's `be-hono-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Answer `ci-gate=yes` (recommended); runs on every pull request | Every pull request runs the same gates as the pre-commit hook, and more | [quality-gate](../../docs/agent-be-hono/quality-gate.md) |
 <!-- catalog:end -->
 
 ### Hooks
@@ -84,8 +86,9 @@ Every component, generated from the manifests and the docs pages; each links to 
 error codes), anti-patterns, the check scripts (constants, coverage, migrations, index coverage,
 module mocks) with `gates.list`, `scripts/check/ci-env.sh` and `.env.ci.example` (the unit tests
 run with CI's variables only), oxlint, oxfmt, knip and `bunfig.toml` config, `.husky/pre-commit`,
-a pull-request-only CI caller of `be-hono-quality-gate`, PR templates, and package scripts such as
-`db:generate`, `type-check` and `test:coverage`.
+a pull-request-only CI caller of `be-hono-quality-gate`, PR templates, a CODEOWNERS starter, and
+package scripts such as `db:generate`, `type-check` and `test:coverage`. Optional: a DeepSeek review
+of each pull request (`deepseek-review`, needs the `DEEPSEEK_API_KEY` secret).
 
 ## Configuration
 

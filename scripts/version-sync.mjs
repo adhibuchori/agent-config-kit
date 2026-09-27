@@ -21,7 +21,10 @@
 //     plugin.json means the manifest fell behind a release. The reusable workflows are released as
 //     `vX.Y.Z`: every template's call to them pins a `# vX.Y.Z` comment that must be a release in
 //     CHANGELOG.md (a warning when it is not the newest).
-//   - With --base: a change to actions/ or a *-quality-gate.yml workflow also needs a CHANGELOG entry.
+//   - With --base: a change to actions/ or to a reusable workflow (one with workflow_call) also needs
+//     a CHANGELOG entry.
+//   - A caller pinned to the all-zero placeholder (before its release commit exists) names the coming
+//     release: a version newer than the newest in CHANGELOG.md.
 //
 // Node 20 or newer, no dependencies. Exit 0 clean, 1 out of sync, 2 usage or unreadable input.
 import { execFileSync } from 'node:child_process';
@@ -31,7 +34,8 @@ import { fileURLToPath } from 'node:url';
 
 const CORE = 'agent-core';
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
-const CALL = /uses:\s*adhibuchori\/agent-config-kit\/\.github\/workflows\/[A-Za-z0-9._-]+@[0-9a-f]{40}\s*#\s*v(\S+)/g;
+const CALL = /uses:\s*adhibuchori\/agent-config-kit\/\.github\/workflows\/[A-Za-z0-9._-]+@([0-9a-f]{40})\s*#\s*v(\S+)/g;
+const PLACEHOLDER = '0'.repeat(40);
 
 function usage(message) {
   console.error(`version-sync: ${message}`);
@@ -171,9 +175,15 @@ if (existsSync(pluginsDir)) {
       if (!existsSync(wdir)) continue;
       for (const f of readdirSync(wdir).filter((f) => /\.ya?ml$/.test(f))) {
         const rel = `plugins/${p}/templates/${stack}/.github/workflows/${f}`;
-        for (const m of readFileSync(join(wdir, f), 'utf8').matchAll(CALL)) {
-          if (!releaseSet.has(m[1])) problem(`${rel}: pins # v${m[1]}, which is not a release in CHANGELOG.md`);
-          else if (m[1] !== newest) warnings.push(`${rel}: pins # v${m[1]}; the newest release is v${newest}`);
+        for (const [, sha, version] of readFileSync(join(wdir, f), 'utf8').matchAll(CALL)) {
+          // The all-zero placeholder names the release that will replace it (RELEASING.md): a version
+          // newer than every release so far, not one that exists yet.
+          if (sha === PLACEHOLDER) {
+            if (!SEMVER.test(version) || (newest && cmp(version, newest) <= 0)) {
+              problem(`${rel}: the placeholder pin names # v${version}; it must name the coming release, newer than v${newest}`);
+            } else warnings.push(`${rel}: placeholder pin for v${version}; the release commit replaces it`);
+          } else if (!releaseSet.has(version)) problem(`${rel}: pins # v${version}, which is not a release in CHANGELOG.md`);
+          else if (version !== newest) warnings.push(`${rel}: pins # v${version}; the newest release is v${newest}`);
         }
       }
     }
@@ -206,7 +216,9 @@ if (base !== null) {
       problem(`plugins/${p.name}: ${touched.length} file(s) changed since ${base} but the version is still ${p.version} (was ${before}); bump it in plugin.json`);
     }
   }
-  if (changed.some((f) => f.startsWith('actions/') || /^\.github\/workflows\/[^/]+-quality-gate\.yml$/.test(f))) needsChangelog = true;
+  // actions/ and the reusable workflows (any .github/workflows file a caller can call) ship to users.
+  const reusable = (f) => /^\.github\/workflows\/[^/]+\.ya?ml$/.test(f) && existsSync(join(root, f)) && /^\s*workflow_call:/m.test(readFileSync(join(root, f), 'utf8'));
+  if (changed.some((f) => f.startsWith('actions/') || reusable(f))) needsChangelog = true;
   if (needsChangelog && !changed.includes('CHANGELOG.md')) {
     problem(`CHANGELOG.md: a plugin, an action or a reusable workflow changed since ${base}, but the changelog did not`);
   }

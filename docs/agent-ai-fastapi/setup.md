@@ -4,7 +4,7 @@ Command · agent-ai-fastapi · `/agent-ai-fastapi:setup [--answer id=value …]`
 
 ## What it does
 
-`/agent-ai-fastapi:setup` installs what a plugin cannot ship by itself into your repo: backend and Python rules (FastAPI, providers, performance, testing, coverage), anti-patterns, the pre-commit config, the gate list, a vulture whitelist, a pull-request-only CI caller, PR templates and, if you want it, the pipeline example; `pyproject.toml` tool sections are printed for you to add by hand.
+`/agent-ai-fastapi:setup` installs what a plugin cannot ship by itself into your repo: backend and Python rules (FastAPI, providers, performance, testing, coverage), anti-patterns, the pre-commit config, the gate list, a vulture whitelist, a pull-request-only CI caller, an optional DeepSeek review of each pull request, PR templates, a CODEOWNERS starter and, if you want it, the pipeline example; `pyproject.toml` tool sections are printed for you to add by hand.
 
 It explores your repo, asks one question at a time with a recommended answer, shows the exact draft,
 and writes only when you reply **go**. It never overwrites or deletes a file. The lock
@@ -29,6 +29,7 @@ The questions (answer "ok" to take the recommended one):
 | --- | --- | --- | --- |
 | `pipeline` | Does this service own its database schema and run Alembic migrations here (the pipeline shape)? | yes / no | `no` |
 | `ci-gate` | Run agent-config-kit's FastAPI quality gate on every pull request into dev, prod, main or master (.github/workflows/quality-gate.yml)? | yes / no | `yes` |
+| `deepseek-review` | Review each pull request with DeepSeek, a low-cost paid AI model (.github/workflows/deepseek-review.yml)? | yes / no | `no` |
 | `pr-templates` | Add pull-request templates for work pull requests and dev → prod promotions (.github/PULL_REQUEST_TEMPLATE/)? | yes / no | `yes` |
 | `analytics` | Does an agent need to read a self-hosted analytics API from this repo? | yes / no | `no` |
 | `serena-workspace` | Do you open several repositories as one Serena workspace (for example this service and the repo that owns its schema)? | yes / no | `no` |
@@ -58,10 +59,10 @@ Your `.claude/settings.json` already wires a hook script the plugin also runs, s
 - The draft ends with a `digest sha256:…` line, and after **go** the last line apply prints is
   `wrote    .claude/agent-config-kit.lock`.
 - `/agent-ai-fastapi:sync --check` then ends with `result: in sync (0 findings; exit 0)`.
-- The CI caller is pinned to the v1.0.0 release commit. A caller that still holds the all-zero
-  release placeholder (as in 1.0.0) is not installed: the draft shows
-  `warn     .github/workflows/quality-gate.y…ml  not installed: …`, `--check` lists it as `held`,
-  and the next release installs it through sync.
+- Every CI caller is pinned to a release commit of agent-config-kit. A caller that still holds the
+  all-zero release placeholder (a new caller, until the plugin release that pins it) is not
+  installed: the draft shows `warn     .github/workflows/<name>.y…ml  not installed: …`, `--check`
+  lists it as `held`, and the next release installs it through sync.
 - `git status` shows the new files; commit them with the lock.
 
 ## Where it fits

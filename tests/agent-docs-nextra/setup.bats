@@ -18,14 +18,14 @@ dn_setup_all() {
   run -0 --separate-stderr "$DN_CORE/bin/agent-setup" apply "${ARGS[@]}" "$@" --digest "$DIGEST"
 }
 
-@test "questions: agent-core's layer first, then this plugin's four, each with a recommended answer" {
+@test "questions: agent-core's layer first, then this plugin's five, each with a recommended answer" {
   run -0 --separate-stderr "$DN_CORE/bin/agent-setup" questions "${ARGS[@]}" --json
   run -0 python3 -c '
 import json, sys
 d = json.loads(sys.argv[1])
 ids = [q["id"] for q in d["questions"]]
 assert d["plugin"] == "agent-docs-nextra" and d["stack"] == "docs-nextra", d
-assert ids[-4:] == ["generated-pages", "ci-pipeline", "react-doctor", "analytics"], ids
+assert ids[-5:] == ["generated-pages", "ci-pipeline", "react-doctor", "deepseek-review", "analytics"], ids
 assert all(q["recommended"] in q["choices"] for q in d["questions"])
 print("ok")' "$output"
   [ "$output" = ok ]

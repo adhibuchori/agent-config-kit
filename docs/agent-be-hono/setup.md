@@ -4,7 +4,7 @@ Command · agent-be-hono · `/agent-be-hono:setup [--answer id=value …]` · on
 
 ## What it does
 
-`/agent-be-hono:setup` installs what a plugin cannot ship by itself into your repo: backend rules (Hono, Drizzle, performance, testing), anti-patterns, the gate scripts (constants, coverage, migrations, index coverage, module mocks), `scripts/check/ci-env.sh` with a seeded `.env.ci.example` so the unit tests run with CI's variables and nothing from your shell or `.env`, oxlint, oxfmt, knip and bun test config, the husky pre-commit hook, a pull-request-only CI caller and PR templates, plus the package scripts they need.
+`/agent-be-hono:setup` installs what a plugin cannot ship by itself into your repo: backend rules (Hono, Drizzle, performance, testing), anti-patterns, the gate scripts (constants, coverage, migrations, index coverage, module mocks), `scripts/check/ci-env.sh` with a seeded `.env.ci.example` so the unit tests run with CI's variables and nothing from your shell or `.env`, oxlint, oxfmt, knip and bun test config, the husky pre-commit hook, a pull-request-only CI caller, an optional DeepSeek review of each pull request, PR templates and a CODEOWNERS starter, plus the package scripts they need.
 
 It explores your repo, asks one question at a time with a recommended answer, shows the exact draft,
 and writes only when you reply **go**. It never overwrites or deletes a file. It adds 13 package script(s) to an existing `package.json` (never creates one) and keeps any script you already have. The lock
@@ -28,6 +28,7 @@ The questions (answer "ok" to take the recommended one):
 | Question id | What it asks | Choices | Recommended |
 | --- | --- | --- | --- |
 | `ci-gate` | Run agent-config-kit's backend quality gate on every pull request (.github/workflows/quality-gate.yml)? | yes / no | `yes` |
+| `deepseek-review` | Review each pull request with DeepSeek, a low-cost paid AI model (.github/workflows/deepseek-review.yml)? | yes / no | `no` |
 | `pr-templates` | Add pull-request templates for work pull requests and dev → prod promotions (.github/PULL_REQUEST_TEMPLATE/)? | yes / no | `yes` |
 | `analytics` | Does an agent need to read a self-hosted analytics API from this repo? | yes / no | `no` |
 | `serena-workspace` | Do you open several repositories as one Serena workspace? | yes / no | `no` |
@@ -55,10 +56,10 @@ Your `.claude/settings.json` already wires a hook script the plugin also runs, s
 - The draft ends with a `digest sha256:…` line, and after **go** the last line apply prints is
   `wrote    .claude/agent-config-kit.lock`.
 - `/agent-be-hono:sync --check` then ends with `result: in sync (0 findings; exit 0)`.
-- The CI caller is pinned to the v1.0.0 release commit. A caller that still holds the all-zero
-  release placeholder (as in 1.0.0) is not installed: the draft shows
-  `warn     .github/workflows/quality-gate.y…ml  not installed: …`, `--check` lists it as `held`,
-  and the next release installs it through sync.
+- Every CI caller is pinned to a release commit of agent-config-kit. A caller that still holds the
+  all-zero release placeholder (a new caller, until the plugin release that pins it) is not
+  installed: the draft shows `warn     .github/workflows/<name>.y…ml  not installed: …`, `--check`
+  lists it as `held`, and the next release installs it through sync.
 - `git status` shows the new files; commit them with the lock.
 
 ## Where it fits

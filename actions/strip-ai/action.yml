@@ -4,13 +4,14 @@
 # the development branch keeps its copy, and verifies both. For teams that keep agent config out of
 # what they deploy. README.md next to this file has the full caller workflow.
 #
-# The caller needs, and this action cannot set for it:
+# The reusable workflow .github/workflows/strip-ai.yml is the supported caller; agent-deploy's setup
+# installs a caller of it. A job that uses this action directly needs, and this action cannot set:
 #   - a trigger on the merged pull request only: `pull_request: types: [closed]`, `branches: [prod]`,
 #     and a job `if: github.event.pull_request.merged == true`;
 #   - `permissions: contents: write` on that job, the only permission it needs;
-#   - actions/checkout with `ref: <prod branch>`, `fetch-depth: 0` and `persist-credentials: true`:
-#     the scripts push with the token the checkout stores. This is the one kit job that keeps it, so
-#     the job must run nothing else and upload no artifact.
+#   - actions/checkout with `ref: <prod branch>`, `fetch-depth: 0` and `persist-credentials: false`,
+#     and a token git can push with: the reusable workflow hands git the job's token through a
+#     credential helper in this step's environment (GIT_CONFIG_*), so the checkout stores none.
 name: agent-config-kit strip AI config
 description: Removes agent config from the production branch after a merge, back-merges so the development branch keeps it, and verifies both branches.
 author: Mochammad Adhi Buchori

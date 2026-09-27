@@ -1,0 +1,100 @@
+# Deploy on merge, as a reusable workflow: when a pull request is merged into the production branch,
+# POST to the deploy platform's webhook. agent-deploy's setup installs a caller
+# (.github/workflows/deploy.yml) when you answer deploy-on-merge=yes. Anyone can call it the same
+# way, pinned to one commit of agent-config-kit:
+#
+#     on:
+#       pull_request:
+#         types: [closed]
+#         branches: [prod]
+#     permissions:
+#       contents: read
+#     concurrency:
+#       group: deploy-prod
+#       cancel-in-progress: false
+#     jobs:
+#       deploy:
+#         if: github.event.pull_request.merged == true
+#         permissions:
+#           contents: read
+#         uses: adhibuchori/agent-config-kit/.github/workflows/deploy-webhook.yml@<40-hex sha> # v1.2.0
+#         secrets:
+#           DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+#
+# What it does (actions/deploy-webhook): one POST to DEPLOY_WEBHOOK_URL with a push-shaped payload
+# for refs/heads/<the branch the pull request merged into>. A 3xx or 4xx is a refusal and fails the
+# job; no answer or a 5xx is retried after 30, 90 and 180 seconds. The URL is never printed. With
+# `docs-repository` and the DOCS_DISPATCH_TOKEN secret, it then sends `app-deployed` to that
+# repository, which agent-docs-nextra's changelog.yaml answers.
+#
+# A missing DEPLOY_WEBHOOK_URL fails the job: a deploy is never skipped in silence. A green run means
+# the platform accepted the deploy, not that it finished; /agent-deploy:verify-deploy checks that.
+# Put the concurrency group in the caller (one queue, never cancelled): a called workflow that shared
+# its caller's group would wait on itself. Runner: CI_RUNNER, then ubuntu-latest (post-merge, nobody
+# waits on it). No checkout; the job's token only reads.
+name: Deploy (webhook)
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: What to deploy, refs/heads/<branch> or refs/tags/<tag>; empty deploys the branch the pull request merged into.
+        type: string
+        required: false
+        default: ''
+      retry-delays:
+        description: Seconds to wait before each retry while the platform does not answer or answers 5xx, separated by spaces.
+        type: string
+        required: false
+        default: 30 90 180
+      webhook-timeout:
+        description: Seconds per attempt.
+        type: number
+        required: false
+        default: 60
+      docs-repository:
+        description: owner/name of a docs repository to send app-deployed to once the deploy is accepted; empty sends nothing.
+        type: string
+        required: false
+        default: ''
+      runs-on:
+        description: Runner label; empty uses the caller repository's CI_RUNNER, then ubuntu-latest.
+        type: string
+        required: false
+        default: ''
+      timeout-minutes:
+        description: Job timeout in minutes. Keep it above the retry window (five minutes plus the attempts with the defaults).
+        type: number
+        required: false
+        default: 12
+    secrets:
+      DEPLOY_WEBHOOK_URL:
+        description: The deploy webhook URL (https). Whoever holds it can deploy.
+        required: false
+      DOCS_DISPATCH_TOKEN:
+        description: A token that may send events to docs-repository. Only needed with docs-repository.
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy
+    # Only a merged pull request deploys, whatever the caller's own guard says.
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    runs-on: ${{ inputs.runs-on || vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Deploy
+        uses: $/actions/deploy-webhook
+        with:
+          webhook-url: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          ref: ${{ inputs.ref || format('refs/heads/{0}', github.event.pull_request.base.ref) }}
+          retry-delays: ${{ inputs.retry-delays }}
+          webhook-timeout: ${{ inputs.webhook-timeout }}
+          docs-repository: ${{ inputs.docs-repository }}
+          docs-token: ${{ secrets.DOCS_DISPATCH_TOKEN }}

@@ -1,0 +1,36 @@
+# Strips the agent config from prod after each merge, installed by /agent-deploy:setup when you
+# answer strip-ai=yes. agent-config-kit's reusable strip-ai workflow, pinned below to one commit,
+# removes .claude/, AGENTS.md, CLAUDE.md, .mcp.json and the rest of its list from prod, merges prod
+# back into dev while dev keeps its copy of every stripped file, and checks both branches.
+# /agent-deploy:sync brings a new pin when a plugin release moves it.
+#
+# The job's token pushes to prod and dev, so a branch ruleset on either must let GitHub Actions
+# push. A back-merge that meets a real conflict stops and lists the files. A pull request closed
+# without merging starts the workflow but runs nothing.
+
+name: Strip AI Config
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [prod]
+
+permissions:
+  contents: read
+
+# Not the deploy's group: a strip queued behind a deploy in a shared group can be cancelled silently.
+concurrency:
+  group: prod-strip-ai
+  cancel-in-progress: false
+
+jobs:
+  strip-ai:
+    name: Strip AI Config
+    if: github.event.pull_request.merged == true
+    permissions:
+      contents: write # push the strip commit to prod and the back-merge to dev
+    uses: adhibuchori/agent-config-kit/.github/workflows/strip-ai.yml@0000000000000000000000000000000000000000 # v1.2.0
+    # with: # every input is optional
+    #   prod-branch: prod
+    #   dev-branch: dev
+    #   extra-paths: debug*.config.ts

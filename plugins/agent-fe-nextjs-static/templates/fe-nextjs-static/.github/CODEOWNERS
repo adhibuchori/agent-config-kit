@@ -1,0 +1,25 @@
+# Code owners: GitHub asks them to review every pull request that touches a matching path. Without
+# a branch ruleset that requires code-owner review this is a request, not a gate. The last matching
+# line wins, so the paths below override the catch-all. Replace @your-github-handle with a user or
+# an @org/team; setup created this file once, and it is yours now.
+
+*                                @your-github-handle
+
+# CI, and what decides what the site serves: its headers, its build and its budgets.
+/.github/                        @your-github-handle
+/.gitleaks.toml                  @your-github-handle
+/public/_headers                 @your-github-handle
+/next.config.*                   @your-github-handle
+/lighthouserc.json               @your-github-handle
+
+# The agent's guardrails: what it may run and reach, the lock that turns the hooks on, and the
+# checks and scripts that judge and unlock its work. A one-line edit here can switch a guard off.
+/.claude/settings.json           @your-github-handle
+/.claude/agent-config-kit.lock   @your-github-handle
+/.claude/agent-config.json       @your-github-handle
+/.mcp.json                       @your-github-handle
+/scripts/check/                  @your-github-handle
+/scripts/ops/                    @your-github-handle
+/scripts/env/                    @your-github-handle
+/.skillspector-baseline.yaml     @your-github-handle
+/.husky/                         @your-github-handle
