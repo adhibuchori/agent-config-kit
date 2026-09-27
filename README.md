@@ -1609,7 +1609,9 @@ read permission from the chat, scheduled CI, or network access in hooks.
 - [SECURITY.md](SECURITY.md): report vulnerabilities privately; hook bypasses count.
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md): Contributor Covenant 3.0.
 - [CONTEXT.md](CONTEXT.md): the glossary; every term here means one thing.
-- [docs/adr/](docs/adr/0001-plugins-cannot-carry-permissions.md): why the hard-to-reverse choices were made.
+- [docs/adr/](docs/adr/0001-plugins-cannot-carry-permissions.md): why the hard-to-reverse choices were made;
+  [ADR 0006](docs/adr/0006-design-choices.md) collects the smaller choices behind the guards,
+  permissions, commands and templates, each with its reason.
 - [.out-of-scope/](.out-of-scope/README.md): what the kit deliberately does not do.
 - License: [MIT](LICENSE), except one adapted skill. `plugins/agent-fe-nextjs/skills/react-doctor/`
   keeps Million Software's Modified MIT License ([its LICENSE](plugins/agent-fe-nextjs/skills/react-doctor/LICENSE)):
