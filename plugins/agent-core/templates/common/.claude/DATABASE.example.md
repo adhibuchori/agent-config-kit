@@ -92,7 +92,8 @@ time. The server name, which appears in every tool call, is the other half of th
   incidents, where it becomes the gate.
 
 `bypassPermissions` mode skips `ask` rules, which is why restricted mode, not the prompt, is what
-holds production read-only.
+holds production read-only. MCP permissions live in `.claude/settings.json`; `.mcp.json` has no
+permission field Claude Code reads.
 
 - `explain_query` and `analyze_query_indexes` also run the SQL they are handed: `EXPLAIN ANALYZE` of
   a write, or a stacked statement, is a real run. A repo that makes `db-prod` writable for incidents
@@ -102,8 +103,7 @@ holds production read-only.
   guard can tell it apart. Call one only while `unlock db` is open; otherwise hand the statement to
   the user.
 - Write down the backup schedule and how many backups are kept, beside the topology above, so
-  "check the latest backup" has something to check against. MCP permissions live in `.claude/settings.json`; `.mcp.json` has no
-permission field Claude Code reads.
+  "check the latest backup" has something to check against.
 
 A production write happens outside MCP, by a person, as the owner role, and only after confirming
 the latest backup actually exists (through the backup tool or the deploy platform), rather than

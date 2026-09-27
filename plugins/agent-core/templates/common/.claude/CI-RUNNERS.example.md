@@ -82,7 +82,8 @@ bills one minute however fast it gets, so a cache adds invalidation surface for 
 Revisit when a job crosses the minute.
 
 **No path filters on markdown.** The quality gate reads markdown (the AI-config check, the workflow
-mirror check, rule citations), so a `paths-ignore` on `**.md` would silently disable real checks. A workflow that does filter by path (a workflows linter that reads only `.github/`) must never be a
+mirror check, rule citations), so a `paths-ignore` on `**.md` would silently disable real checks.
+A workflow that does filter by path (a workflows linter that reads only `.github/`) must never be a
 required check: a required check that never reports blocks the merge.
 
 ## Quota monitoring is already native
