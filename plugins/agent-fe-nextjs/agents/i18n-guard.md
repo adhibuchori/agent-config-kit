@@ -13,7 +13,8 @@ key is absent, take the catalogues under `src/messages/`. You validate and flag;
 
 ## Scope
 
-The uncommitted diff (`git diff` plus `git diff --staged`), read unfiltered: every changed
+The uncommitted diff (`git diff` plus `git diff --staged`; with RTK installed, through
+`rtk proxy git diff …`, since its rewrite condenses a diff), read whole: every changed
 `.tsx` / `.ts` file under `src/` and every changed catalogue. If the diff touches neither, say so
 and stop.
 

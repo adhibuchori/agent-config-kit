@@ -8,7 +8,8 @@ disable-model-invocation: true
 
 1. On `dev`, `prod` or the default branch, stop and offer to branch to `internal/{scope}` first (the
    branch model in CLAUDE.md § Branching).
-2. List what changed with `git status --short`, then stage the paths this session wrote, by name:
+2. List what changed with `git status --short` (with RTK installed, `rtk proxy git status --short`:
+   every path is needed), then stage the paths this session wrote, by name:
    `git add -- <paths>`. Never `git add -A`: staging everything is `/agent-core:ship`'s alone, because only
    `/agent-core:ship` runs the guards that make it safe. Name any changed file you did not write and leave it
    out. Never stage a `.env*` file other than an `.example` template.

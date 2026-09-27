@@ -22,8 +22,8 @@ against `.claude/rules/` only.
 
 Review the uncommitted diff — `git diff` plus `git diff --staged`. Limit yourself to `.py` files the
 diff actually touches, plus `alembic.ini` and `pyproject.toml` when they changed. Read the diff
-unfiltered: if shell output passes through a wrapper that summarises or truncates, bypass it for the
-diff, because a dropped line is a finding you never see.
+whole: with RTK installed, run `rtk proxy git diff` and `rtk proxy git diff --staged`, because its
+rewrite condenses a diff and a dropped line is a finding you never see.
 
 Skip entirely:
 

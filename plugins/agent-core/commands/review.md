@@ -19,8 +19,9 @@ Review the **staged** changes when there are any (`git diff --cached`): that is 
 `/agent-core:commit` and `/agent-core:ship` hand you. Otherwise review the branch
 (`git diff origin/dev...HEAD`; the default branch where the repo has no `dev`).
 
-Read the diff unfiltered. An output wrapper or proxy can drop lines without saying so, and a review
-of a truncated diff reports "clean".
+Read the diff whole. With RTK installed, run every `git diff` here as `rtk proxy git diff …`: its
+rewrite condenses a diff and prints a line even for an empty one, so a truncated diff reviews as
+"clean" and an empty index looks staged.
 
 ## Step 2: Pick the reviewer
 

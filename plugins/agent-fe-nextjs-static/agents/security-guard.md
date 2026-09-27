@@ -12,7 +12,8 @@ You review the changed code of this static site for security regressions. The bi
 
 ## Scope
 
-The uncommitted diff (`git diff` plus `git diff --staged`), read unfiltered, plus any file it
+The uncommitted diff (`git diff` plus `git diff --staged`), read whole (with RTK installed, through
+`rtk proxy git diff …`, since its rewrite condenses a diff), plus any file it
 touches that the checks below name. Never open a `.env*` file: list one with
 `bash scripts/env/show.sh <file>`, which masks secrets. If the diff is empty, say so and stop.
 
