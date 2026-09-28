@@ -10,6 +10,34 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-09-28
+
+The CI callers added in 1.2.0 are pinned to its release commit, so setup now installs the review,
+deploy and strip workflows. The runner guide places jobs by what must not die and shows how to
+spend two free pools of minutes, with Blacksmith as the example fast pool. The payload rule names
+the `ENVELOPE_*` refusal codes.
+
+### agent-be-hono 1.2.2
+
+#### Fixed
+
+- The payload rule names the refusal codes the contract and the code use, `ENVELOPE_*`; it said
+  `PAYLOAD_*`.
+
+### agent-fe-nextjs 1.2.2
+
+#### Fixed
+
+- The payload rule names the refusal codes the contract and the code use, `ENVELOPE_*`; it said
+  `PAYLOAD_*`.
+
+### agent-ai-fastapi 1.2.2
+
+#### Fixed
+
+- The payload rule names the refusal codes the contract and the code use, `ENVELOPE_*`; it said
+  `PAYLOAD_*`.
+
 ### agent-core 1.1.1
 
 #### Changed
@@ -602,7 +630,8 @@ First release.
 - Templates: the 3D scene rule, the glTF/GLB asset budget check with its config, and a guide to
   adding 3D skills by reference.
 
-[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.2.1
 [1.2.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.2.0
 [1.1.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.1.0
 [1.0.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.0.0

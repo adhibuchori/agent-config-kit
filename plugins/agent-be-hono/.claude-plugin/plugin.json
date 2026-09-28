@@ -1,7 +1,7 @@
 {
   "name": "agent-be-hono",
   "displayName": "Agent for Bun + Hono APIs",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Rules, a reviewer and checks for Bun + Hono + Drizzle APIs in Claude Code, on top of agent-core. Hook: migration-guard refuses hand edits to generated Drizzle migrations (folders in .claude/agent-config.json; a repo without one is unaffected). Commands: setup and sync install and verify the backend and TypeScript rules, anti-patterns, quality-gate check scripts (migrations, index coverage, coverage policy, module mocks, constants), lint and test config, a pull-request-only CI caller, an optional DeepSeek review of each pull request and a CODEOWNERS starter. Agent: reviewer. The hook runs on your machine, opens no network connection and stays silent until the project opts in.",
   "author": {
     "name": "Mochammad Adhi Buchori",
