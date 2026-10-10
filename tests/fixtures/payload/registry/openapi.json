@@ -1,0 +1,57 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "notes", "version": "1.0.0" },
+  "paths": {
+    "/api/payload/handshake": {
+      "get": {
+        "operationId": "getPayloadHandshake",
+        "responses": { "200": { "description": "The server's public key and the mode" } }
+      }
+    },
+    "/api/notes": {
+      "get": { "operationId": "listNotes", "responses": { "200": { "description": "The notes" } } },
+      "post": { "operationId": "createNote", "responses": { "201": { "description": "The note" } } }
+    },
+    "/api/notes/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "get": { "operationId": "getNote", "responses": { "200": { "description": "The note" } } },
+      "patch": { "operationId": "updateNote", "responses": { "200": { "description": "The note" } } },
+      "delete": { "operationId": "deleteNote", "responses": { "204": { "description": "Gone" } } }
+    },
+    "/api/notes/{id}/attachments/{attachmentId}/content": {
+      "put": {
+        "operationId": "uploadNoteAttachmentContentForTheNoteThatOwnsIt",
+        "responses": { "204": { "description": "Stored" } }
+      }
+    },
+    "/api/events": {
+      "get": { "operationId": "streamEvents", "responses": { "200": { "description": "The stream" } } }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Problem": {
+        "type": "object",
+        "required": ["type", "title", "status", "code"],
+        "properties": {
+          "type": { "type": "string", "format": "uri" },
+          "title": { "type": "string" },
+          "status": { "type": "integer" },
+          "code": { "$ref": "#/components/schemas/ErrorCode" }
+        }
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "NOT_FOUND",
+          "VALIDATION_FAILED",
+          "ENVELOPE_REQUIRED",
+          "ENVELOPE_MALFORMED",
+          "ENVELOPE_EXPIRED",
+          "ENVELOPE_KEY_UNKNOWN",
+          "ENVELOPE_REJECTED"
+        ]
+      }
+    }
+  }
+}

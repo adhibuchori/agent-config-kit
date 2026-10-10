@@ -847,7 +847,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-be-axum</strong>: 86 berkas</summary>
+<summary><strong>agent-be-axum</strong>: 89 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -909,10 +909,13 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/coverage.sh` | selalu; sync menjaganya tetap terbaru | COVER: every test, with coverage, then each file at 100% of its lines and functions (.claude/rules/rust/coverage.md). |
 | `scripts/check/gates.list` | sekali; lalu milik Anda | This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .githooks/pre-commit. |
 | `scripts/check/migrations.sh` | selalu; sync menjaganya tetap terbaru | The sqlx migrations in migrations/ (Rules 11 and 12). |
+| `scripts/check/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
 | `scripts/check/payload-vectors.json` | selalu; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
 | `scripts/check/pooler.sh` | sekali; lalu milik Anda | The pooler tier: tests/pooler runs the service's own pool through PgBouncer in transaction mode, where prepared statements, startup parameters and session settings break without an error. |
 | `scripts/check/rust-source.mjs` | selalu; sync menjaganya tetap terbaru | Rust source checks that the compiler and clippy do not make, over every tracked or new *.rs file (target/ and .sqlx/ aside, and a file that says @generated in its first five lines) |
 | `scripts/check/rustfmt.sh` | selalu; sync menjaganya tetap terbaru | The format gate: `cargo fmt --check` over the whole crate, read-only. |
+| `scripts/generate/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | Writes the payload registry from the OpenAPI document and payload.config.json. |
+| `scripts/lib/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | The payload registry's shared half for the Go, Rust and Swift stacks. |
 | `src/bin/openapi.rs` | sekali; lalu milik Anda | Writes the `OpenAPI` document to openapi.json at the crate root: `cargo run --locked --quiet --bin openapi`. |
 | `src/lib.rs` | sekali; lalu milik Anda | The service as a library: `main.rs`, `bin/openapi.rs` and the tests build it through [`app`] and [`openapi`]. |
 | `src/main.rs` | sekali; lalu milik Anda | Starts the service: configuration, the startup checks, the pool, and a server that drains in bounded time on SIGTERM or Ctrl-C. |
@@ -941,7 +944,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-be-go</strong>: 94 berkas</summary>
+<summary><strong>agent-be-go</strong>: 97 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -1032,9 +1035,12 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/generated.sh` | selalu; sync menjaganya tetap terbaru | Generated-code gate. |
 | `scripts/check/lint.sh` | selalu; sync menjaganya tetap terbaru | Lint gate: golangci-lint over the whole module with .golangci.yml, at the version scripts/check/tools.env pins. |
 | `scripts/check/migrations.sh` | selalu; sync menjaganya tetap terbaru | Migration gate for goose SQL files in db/migrations (Rules 11 and 12). |
+| `scripts/check/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
 | `scripts/check/payload-vectors.json` | selalu; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
 | `scripts/check/pooler.sh` | selalu; sync menjaganya tetap terbaru | Pooler check: the service's own pool behind a transaction pooler (PgBouncer). |
 | `scripts/check/tools.env` | sekali; lalu milik Anda | The tool versions outside go.mod that the gates and the quality gate pin. |
+| `scripts/generate/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | Writes the payload registry from the OpenAPI document and payload.config.json. |
+| `scripts/lib/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | The payload registry's shared half for the Go, Rust and Swift stacks. |
 | `sqlc.yaml` | sekali; lalu milik Anda | sqlc: the Go in internal/postgres/db is generated from the SQL in db/queries, type-checked against the schema the goose migrations build (it reads them in name order and ignores their Down parts). |
 | `CLAUDE.md` | satu blok terkelola, ditambahkan di akhir | `## Agent config kit` |
 | `.gitignore` | satu blok terkelola (10 baris) | `.env`, `.env.*`, `!.env.ci.example`, `!.env.*.example`, `.envrc`, `.serena/`, `.skillspector/`, `/bin/`, `/coverage/`, `*.test` |
@@ -1446,7 +1452,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-ios-swiftui</strong>: 64 berkas</summary>
+<summary><strong>agent-ios-swiftui</strong>: 67 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -1507,11 +1513,14 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/lint-suppressions.sh` | selalu; sync menjaganya tetap terbaru | Every suppression says why, and the ones nothing can prove stale are not allowed at all (AGENTS.md Rule 17). |
 | `scripts/check/package-graph.json` | sekali; lalu milik Anda | Lapisan paket logika dan plugin build-tool yang diizinkan, dibaca package-graph.sh |
 | `scripts/check/package-graph.sh` | selalu; sync menjaganya tetap terbaru | The logic packages keep the shape the rules describe (AGENTS.md Rules 1, 2, 21 and 22; .claude/rules/ios/packages.md). |
+| `scripts/check/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
 | `scripts/check/payload-vectors.json` | selalu; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
 | `scripts/check/privacy-manifest.sh` | selalu; sync menjaganya tetap terbaru | The privacy manifest names a reason for every required-reason API the app's code uses (AGENTS.md Rule 25). |
 | `scripts/check/xcode-settings.sh` | selalu; sync menjaganya tetap terbaru | The Xcode project's build settings live in Config/*.xcconfig, and say what the rules need (AGENTS.md Rules 19, 20 and 28; .claude/rules/ios/swiftui.md). |
+| `scripts/generate/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | Writes the payload registry from the OpenAPI document and payload.config.json. |
 | `scripts/ios/api-client.sh` | selalu; sync menjaganya tetap terbaru | Regenerates the API client from the backend's spec copy (AGENTS.md Rule 11). |
 | `scripts/ios/app.sh` | selalu; sync menjaganya tetap terbaru | Builds and tests the app target for the simulator, and never signs (CODE_SIGNING_ALLOWED=NO). |
+| `scripts/lib/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | The payload registry's shared half for the Go, Rust and Swift stacks. |
 | `CLAUDE.md` | satu blok terkelola, ditambahkan di akhir | `## Agent config kit` |
 | `.gitignore` | satu blok terkelola (12 baris) | `.serena/`, `.skillspector/`, `.env`, `.env.*`, `!.env.example`, `!.env.*.example`, `.build/`, `.swiftpm/`, `/coverage`, `DerivedData/`, `xcuserdata/`, `*.xcresult` |
 

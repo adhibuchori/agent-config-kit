@@ -837,7 +837,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-be-axum</strong>: 86 files</summary>
+<summary><strong>agent-be-axum</strong>: 89 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
@@ -899,10 +899,13 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `scripts/check/coverage.sh` | always; sync keeps it current | COVER: every test, with coverage, then each file at 100% of its lines and functions (.claude/rules/rust/coverage.md). |
 | `scripts/check/gates.list` | once; then yours | This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .githooks/pre-commit. |
 | `scripts/check/migrations.sh` | always; sync keeps it current | The sqlx migrations in migrations/ (Rules 11 and 12). |
+| `scripts/check/payload-registry.mjs` | always; sync keeps it current | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
 | `scripts/check/payload-vectors.json` | always; sync keeps it current | Shared test vectors every implementation of the envelope must open and refuse, its key agreement included; never regenerated to pass |
 | `scripts/check/pooler.sh` | once; then yours | The pooler tier: tests/pooler runs the service's own pool through PgBouncer in transaction mode, where prepared statements, startup parameters and session settings break without an error. |
 | `scripts/check/rust-source.mjs` | always; sync keeps it current | Rust source checks that the compiler and clippy do not make, over every tracked or new *.rs file (target/ and .sqlx/ aside, and a file that says @generated in its first five lines) |
 | `scripts/check/rustfmt.sh` | always; sync keeps it current | The format gate: `cargo fmt --check` over the whole crate, read-only. |
+| `scripts/generate/payload-registry.mjs` | always; sync keeps it current | Writes the payload registry from the OpenAPI document and payload.config.json. |
+| `scripts/lib/payload-registry.mjs` | always; sync keeps it current | The payload registry's shared half for the Go, Rust and Swift stacks. |
 | `src/bin/openapi.rs` | once; then yours | Writes the `OpenAPI` document to openapi.json at the crate root: `cargo run --locked --quiet --bin openapi`. |
 | `src/lib.rs` | once; then yours | The service as a library: `main.rs`, `bin/openapi.rs` and the tests build it through [`app`] and [`openapi`]. |
 | `src/main.rs` | once; then yours | Starts the service: configuration, the startup checks, the pool, and a server that drains in bounded time on SIGTERM or Ctrl-C. |
@@ -931,7 +934,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-be-go</strong>: 94 files</summary>
+<summary><strong>agent-be-go</strong>: 97 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
@@ -1022,9 +1025,12 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `scripts/check/generated.sh` | always; sync keeps it current | Generated-code gate. |
 | `scripts/check/lint.sh` | always; sync keeps it current | Lint gate: golangci-lint over the whole module with .golangci.yml, at the version scripts/check/tools.env pins. |
 | `scripts/check/migrations.sh` | always; sync keeps it current | Migration gate for goose SQL files in db/migrations (Rules 11 and 12). |
+| `scripts/check/payload-registry.mjs` | always; sync keeps it current | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
 | `scripts/check/payload-vectors.json` | always; sync keeps it current | Shared test vectors every implementation of the envelope must open and refuse, its key agreement included; never regenerated to pass |
 | `scripts/check/pooler.sh` | always; sync keeps it current | Pooler check: the service's own pool behind a transaction pooler (PgBouncer). |
 | `scripts/check/tools.env` | once; then yours | The tool versions outside go.mod that the gates and the quality gate pin. |
+| `scripts/generate/payload-registry.mjs` | always; sync keeps it current | Writes the payload registry from the OpenAPI document and payload.config.json. |
+| `scripts/lib/payload-registry.mjs` | always; sync keeps it current | The payload registry's shared half for the Go, Rust and Swift stacks. |
 | `sqlc.yaml` | once; then yours | sqlc: the Go in internal/postgres/db is generated from the SQL in db/queries, type-checked against the schema the goose migrations build (it reads them in name order and ignores their Down parts). |
 | `CLAUDE.md` | one managed block, appended | `## Agent config kit` |
 | `.gitignore` | one managed block (10 lines) | `.env`, `.env.*`, `!.env.ci.example`, `!.env.*.example`, `.envrc`, `.serena/`, `.skillspector/`, `/bin/`, `/coverage/`, `*.test` |
@@ -1436,7 +1442,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-ios-swiftui</strong>: 64 files</summary>
+<summary><strong>agent-ios-swiftui</strong>: 67 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
@@ -1497,11 +1503,14 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `scripts/check/lint-suppressions.sh` | always; sync keeps it current | Every suppression says why, and the ones nothing can prove stale are not allowed at all (AGENTS.md Rule 17). |
 | `scripts/check/package-graph.json` | once; then yours | The logic package's layers and the build-tool plugins allowed, read by package-graph.sh |
 | `scripts/check/package-graph.sh` | always; sync keeps it current | The logic packages keep the shape the rules describe (AGENTS.md Rules 1, 2, 21 and 22; .claude/rules/ios/packages.md). |
+| `scripts/check/payload-registry.mjs` | always; sync keeps it current | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
 | `scripts/check/payload-vectors.json` | always; sync keeps it current | Shared test vectors every implementation of the envelope must open and refuse, its key agreement included; never regenerated to pass |
 | `scripts/check/privacy-manifest.sh` | always; sync keeps it current | The privacy manifest names a reason for every required-reason API the app's code uses (AGENTS.md Rule 25). |
 | `scripts/check/xcode-settings.sh` | always; sync keeps it current | The Xcode project's build settings live in Config/*.xcconfig, and say what the rules need (AGENTS.md Rules 19, 20 and 28; .claude/rules/ios/swiftui.md). |
+| `scripts/generate/payload-registry.mjs` | always; sync keeps it current | Writes the payload registry from the OpenAPI document and payload.config.json. |
 | `scripts/ios/api-client.sh` | always; sync keeps it current | Regenerates the API client from the backend's spec copy (AGENTS.md Rule 11). |
 | `scripts/ios/app.sh` | always; sync keeps it current | Builds and tests the app target for the simulator, and never signs (CODE_SIGNING_ALLOWED=NO). |
+| `scripts/lib/payload-registry.mjs` | always; sync keeps it current | The payload registry's shared half for the Go, Rust and Swift stacks. |
 | `CLAUDE.md` | one managed block, appended | `## Agent config kit` |
 | `.gitignore` | one managed block (12 lines) | `.serena/`, `.skillspector/`, `.env`, `.env.*`, `!.env.example`, `!.env.*.example`, `.build/`, `.swiftpm/`, `/coverage`, `DerivedData/`, `xcuserdata/`, `*.xcresult` |
 

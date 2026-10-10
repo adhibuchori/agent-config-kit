@@ -452,6 +452,14 @@ problem_case() {
   cmp "$TPL/.claude/rules/common/error-codes.md" "$FE_TPL/.claude/rules/common/error-codes.md"
 }
 
+@test "the Go, Rust and Swift stacks carry one payload registry generator and checker" {
+  local f
+  for f in lib/payload-registry.mjs generate/payload-registry.mjs check/payload-registry.mjs; do
+    cmp "$GO_TPL/scripts/$f" "$AXUM_TPL/scripts/$f"
+    cmp "$GO_TPL/scripts/$f" "$IOS_TPL/scripts/$f"
+  done
+}
+
 @test "the committed vectors are exactly what the kit's own implementation produces" {
   run --separate-stderr "${TS[@]}" "$KIT_ROOT/tests/fixtures/payload/make-vectors.ts"
   [ "$status" -eq 0 ]
