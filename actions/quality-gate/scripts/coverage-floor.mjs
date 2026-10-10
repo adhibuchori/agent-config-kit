@@ -1,20 +1,23 @@
 #!/usr/bin/env node
-// The quality gate's coverage floor: reads the newest coverage report under the given folders and
-// fails when lines, statements, functions or branches fall below the threshold. Each metric counts
-// only when the report measured it (bun measures no branches, for example).
-//
-//   node coverage-floor.mjs --threshold 100 <dir>...
-//
-// Reports, by file name (searched up to 4 folders deep; node_modules is skipped):
-//   lcov.info              bun (coverageReporter "lcov"), vitest or jest with the lcov reporter
-//   coverage-summary.json  istanbul json-summary reporter
-//   coverage-final.json    istanbul json reporter (vitest's default reporters include it)
-//
-// Exit: 0 at or above the floor, 1 below it, 2 bad usage or an unreadable report, 3 no report found.
+/**
+ * The quality gate's coverage floor: reads the newest coverage report under the given folders and
+ * fails when lines, statements, functions or branches fall below the threshold. Each metric counts
+ * only when the report measured it (bun measures no branches, for example).
+ *
+ *   node coverage-floor.mjs --threshold 100 <dir>...
+ *
+ * Reports, by file name (searched up to 4 folders deep; node_modules is skipped):
+ *   lcov.info              bun (coverageReporter "lcov"), vitest or jest with the lcov reporter
+ *   coverage-summary.json  istanbul json-summary reporter
+ *   coverage-final.json    istanbul json reporter (vitest's default reporters include it)
+ *   coverage.out           Go's cover profile (go test -coverprofile), which measures statements
+ *
+ * Exit: 0 at or above the floor, 1 below it, 2 bad usage or an unreadable report, 3 no report found.
+ */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-const NAMES = new Set(['lcov.info', 'coverage-summary.json', 'coverage-final.json']);
+const NAMES = new Set(['lcov.info', 'coverage-summary.json', 'coverage-final.json', 'coverage.out']);
 const MAX_DEPTH = 4;
 
 function usage(message) {
@@ -150,11 +153,38 @@ function fromFinal(json) {
   return m;
 }
 
+/**
+ * Go's cover profile (go test -coverprofile): "mode: set|count|atomic", then one line per block,
+ * "file:startLine.col,endLine.col statements count". Go measures statements only. One block appears
+ * once per test binary that instrumented it, so blocks are merged by position, keeping the highest
+ * count.
+ */
+function fromGoProfile(text) {
+  const lines = text.split('\n');
+  if (!/^mode: (set|count|atomic)$/.test(lines[0].trim())) throw new Error('no "mode:" line, so not a Go cover profile');
+  const blocks = new Map();
+  for (const raw of lines.slice(1)) {
+    const line = raw.trim();
+    if (line === '') continue;
+    const m = line.match(/^(.+:\d+\.\d+,\d+\.\d+) (\d+) (\d+)$/);
+    if (!m) throw new Error(`unreadable profile line: ${line}`);
+    const seen = blocks.get(m[1]);
+    blocks.set(m[1], { stmts: Number(m[2]), count: Math.max(seen?.count ?? 0, Number(m[3])) });
+  }
+  const statements = metric();
+  for (const { stmts, count } of blocks.values()) {
+    statements.total += stmts;
+    if (count > 0) statements.covered += stmts;
+  }
+  return { statements };
+}
+
 let metrics;
 try {
   const text = readFileSync(report, 'utf8');
   if (report.endsWith('lcov.info')) metrics = fromLcov(text);
   else if (report.endsWith('coverage-summary.json')) metrics = fromSummary(JSON.parse(text));
+  else if (report.endsWith('coverage.out')) metrics = fromGoProfile(text);
   else metrics = fromFinal(JSON.parse(text));
 } catch (err) {
   console.error(`coverage-floor: cannot read ${report}: ${err.message}`);

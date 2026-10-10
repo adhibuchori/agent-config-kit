@@ -26,7 +26,7 @@
 # SHA pin covers this file, the action and every script it runs; nothing moves until the caller
 # changes its pin. It needs github.com with runner 2.336.0 or newer (GitHub-hosted runners are);
 # GitHub Enterprise Server does not support it. actionlint 1.7.12 does not know the form yet, so
-# .github/actionlint.yaml ignores that one message for the five *-quality-gate.yml files.
+# .github/actionlint.yaml ignores that one message for the eight *-quality-gate.yml files.
 #
 # Permissions: contents: read only. No secret is needed; nothing is pushed or uploaded, and the
 # checkout keeps no token.

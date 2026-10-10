@@ -188,6 +188,21 @@ PY
   write_then_check
 }
 
+@test "catalog: Go, Rust and Swift runners are bare runners too; named commands pass" {
+  local rule
+  for rule in 'Bash(go run:*)' 'Bash(go generate:*)' 'Bash(go get:*)' 'Bash(go install:*)' 'Bash(cargo run:*)' \
+    'Bash(cargo install:*)' 'Bash(cargo add:*)' 'Bash(swift run:*)' 'Bash(swift package:*)' 'Bash(xcodebuild:*)' \
+    'Bash(xcrun:*)' 'Bash(xcrun *)' 'Bash(cargo run)'; do
+    printf '{ "permissions": { "allow": ["%s"] } }\n' "$rule" >"$K/plugins/agent-demo/templates/demo/.claude/settings.json"
+    catalog --check
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"allow rule $rule runs any code without a prompt"* ]] || { echo "not refused: $rule" >&2; return 1; }
+  done
+  printf '{ "permissions": { "allow": ["Bash(go test:*)", "Bash(cargo clippy --locked --all-targets)", "Bash(swift test:*)", "Bash(xcodebuild -version)", "Bash(xcrun swift-format lint:*)", "Bash(go tool golangci-lint:*)"], "ask": ["Bash(cargo run:*)", "Bash(xcodebuild:*)"] } }\n' \
+    >"$K/plugins/agent-demo/templates/demo/.claude/settings.json"
+  write_then_check
+}
+
 @test "catalog: a component without a page, and a page without a component, fail" {
   rm "$K/docs/agent-demo/tidy.md"
   printf '# ghost\n' >"$K/docs/agent-demo/ghost.md"
@@ -338,6 +353,20 @@ PY
   printf 'import subprocess\nsubprocess.run(["curl", "x"])\n' >"$K/plugins/agent-core/scripts/guard.sh"
   catalog
   [ "$status" -eq 1 ]
+}
+
+@test "catalog: runtime code that runs a Rust, Swift or Homebrew installer fails; a pinned toolchain call does not" {
+  local line
+  for line in 'cargo install sqlx-cli' 'rustup toolchain install' 'x=1; rustup component add clippy' \
+    'brew install swiftlint' 'mint install realm/SwiftLint'; do
+    printf '#!/usr/bin/env bash\n%s\n' "$line" >"$K/plugins/agent-core/scripts/guard.sh"
+    catalog
+    [ "$status" -eq 1 ] || { echo "not refused: $line" >&2; return 1; }
+    [[ "$output" == *"plugins/agent-core/scripts/guard.sh:2: runtime code must not download"* ]] || false
+  done
+  printf '#!/usr/bin/env bash\n# never: cargo install, rustup, brew install\nRUSTUP_AUTO_INSTALL=0 cargo clippy --locked\nmsg="run rustup yourself"\n' \
+    >"$K/plugins/agent-core/scripts/guard.sh"
+  write_then_check
 }
 
 @test "catalog: a hook script must be executable, on disk and in the git index" {

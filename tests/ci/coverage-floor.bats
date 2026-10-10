@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
-# actions/quality-gate/scripts/coverage-floor.mjs: lcov, istanbul summary and final reports; the
-# newest report wins; every measured metric counts; exit 1 below, 3 with no report, 2 on bad input.
+# actions/quality-gate/scripts/coverage-floor.mjs: lcov, istanbul summary and final reports, and Go's
+# cover profile; the newest report wins; every measured metric counts; exit 1 below, 3 with no
+# report, 2 on bad input.
 
 load helpers
 
@@ -66,6 +67,46 @@ EOF
   [[ "$output" == *"branches"*"1 / 2"* ]]
   floor 100
   [ "$status" -eq 1 ]
+}
+
+@test "coverage-floor: a Go cover profile counts statements; one missed block fails 100" {
+  printf 'mode: atomic\nexample.com/svc/a.go:3.20,5.2 2 4\nexample.com/svc/a.go:7.10,9.3 3 1\nexample.com/svc/b.go:1.1,2.2 1 9\n' \
+    >"$D/coverage/coverage.out"
+  floor 100
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"coverage.out (floor 100%)"* ]] || false
+  [[ "$output" == *"statements"*"6 / 6"*"ok"* ]] || false
+  [[ "$output" != *"lines"* ]] || false
+  printf 'mode: set\nexample.com/svc/a.go:3.20,5.2 2 1\nexample.com/svc/a.go:7.10,9.3 3 0\n' >"$D/coverage/coverage.out"
+  floor 100
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"statements"*"2 / 5"*"BELOW"* ]] || false
+  floor 40
+  [ "$status" -eq 0 ]
+}
+
+@test "coverage-floor: a block two test binaries both report counts once, covered if either ran it" {
+  # The same block appears once per test binary that instrumented it: 0 in one, 3 in the other.
+  printf 'mode: count\nexample.com/svc/a.go:3.20,5.2 2 0\nexample.com/svc/a.go:3.20,5.2 2 3\nexample.com/svc/a.go:7.1,8.2 1 1\n' \
+    >"$D/coverage/coverage.out"
+  floor 100
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"statements"*"3 / 3"* ]] || false
+}
+
+@test "coverage-floor: a Go profile with no mode line or an unreadable line exits 2; raw.out is not read" {
+  printf 'example.com/svc/a.go:3.20,5.2 2 4\n' >"$D/coverage/coverage.out"
+  floor 100
+  [ "$status" -eq 2 ]
+  [[ "$stderr" == *'no "mode:" line'* ]] || false
+  printf 'mode: set\nnot a block\n' >"$D/coverage/coverage.out"
+  floor 100
+  [ "$status" -eq 2 ]
+  [[ "$stderr" == *"unreadable profile line: not a block"* ]] || false
+  rm "$D/coverage/coverage.out"
+  printf 'mode: set\nexample.com/svc/a.go:3.20,5.2 2 0\n' >"$D/coverage/raw.out"
+  floor 100
+  [ "$status" -eq 3 ]
 }
 
 @test "coverage-floor: the newest report wins over an older one" {

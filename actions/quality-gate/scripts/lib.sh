@@ -10,7 +10,18 @@
 
 QG_FAILED=0
 QG_SKIPPED=""
-QG_STACKS="fe-nextjs fe-nextjs-static be-hono ai-fastapi docs-nextra"
+QG_STACKS="fe-nextjs fe-nextjs-static be-hono ai-fastapi docs-nextra be-go be-axum ios-swiftui"
+
+# The names an env file may not set, because they change how the runner, git or a toolchain behaves
+# (GOFLAGS, CARGO_HOME, RUSTFLAGS, SQLX_OFFLINE, DEVELOPER_DIR, ...). GO alone or GO followed by
+# letters and digits is Go's own; GOOGLE_CLIENT_ID is not. One extended regex, the same bytes as
+# REFUSED in each stack's scripts/check/ci-env.sh (tests/ci/quality-gate.bats compares them).
+QG_REFUSED_ENV='^(PATH|HOME|SHELL|ENV|BASH_ENV|IFS|CDPATH|PS4|TMPDIR|CI|LD_.*|DYLD_.*|NODE_OPTIONS|NODE_PATH|PYTHON.*|GITHUB_.*|RUNNER_.*|ACTIONS_.*|GIT_.*|BUN_.*|NPM_CONFIG_.*|UV_.*|QG_.*|GO[A-Z0-9]*|GO_.*|GOROOT_.*|CGO_.*|CARGO_.*|RUSTUP_.*|RUSTC.*|RUSTDOCFLAGS|RUSTFLAGS|SQLX_.*|DEVELOPER_DIR)$'
+
+# The be-go and be-axum workflows start PostgreSQL 18.6 as a service on 127.0.0.1:5432 with trust
+# auth, so no password exists anywhere. The gate's own database steps connect as its superuser; set
+# QG_PG_ADMIN_URL to run them against another server by hand.
+QG_PG_ADMIN_URL="${QG_PG_ADMIN_URL:-postgresql://postgres@127.0.0.1:5432/postgres?sslmode=disable}"
 
 # The lines a pull request adds to its own code, for the diff scans: every JavaScript and TypeScript
 # file except tests, declarations, the kit's installed check scripts, CI files and content pages,
@@ -61,7 +72,7 @@ qg_quote() {
   echo "::${token}::"
 }
 
-# qg_is_stack <id>: one of the five stacks this action knows.
+# qg_is_stack <id>: one of the stacks this action knows.
 qg_is_stack() {
   case " $QG_STACKS " in *" $1 "*) return 0 ;; esac
   return 1
@@ -83,6 +94,12 @@ qg_valid_threshold() {
 
 qg_threshold_off() {
   printf '%s' "$1" | grep -Eq '^0+(\.0+)?$'
+}
+
+# qg_js_stack <id>: a stack that installs JavaScript dependencies from a lockfile.
+qg_js_stack() {
+  case "$1" in fe-nextjs | fe-nextjs-static | be-hono | docs-nextra) return 0 ;; esac
+  return 1
 }
 
 # qg_resolve_base <ref>: the commit the diff checks compare against. A branch name resolves to its
@@ -196,12 +213,10 @@ qg_load_env_file() {
       qg_fail "env-file $f: a line is not KEY=VALUE with an upper-case KEY"
       return 1
     fi
-    case "$key" in
-    PATH | HOME | SHELL | ENV | BASH_ENV | IFS | CDPATH | PS4 | TMPDIR | CI | LD_* | DYLD_* | NODE_OPTIONS | NODE_PATH | PYTHON* | GITHUB_* | RUNNER_* | ACTIONS_* | GIT_* | BUN_* | NPM_CONFIG_* | UV_* | QG_*)
+    if printf '%s' "$key" | grep -Eq "$QG_REFUSED_ENV"; then
       qg_fail "env-file $f: $key changes how the runner or a toolchain behaves; the gate refuses it"
       return 1
-      ;;
-    esac
+    fi
     if [ -n "${!key:-}" ]; then
       kept="${kept} ${key}"
       continue
@@ -248,7 +263,7 @@ qg_coverage_floor() {
   case $? in
   0) ;;
   1) qg_fail "coverage is below the ${QG_COVERAGE_THRESHOLD}% floor" ;;
-  3) qg_skip "Coverage Floor" "no coverage report (lcov.info, coverage-summary.json or coverage-final.json) under coverage/: run the tests with coverage in scripts/check/gates.list, or pass coverage-threshold: 0" ;;
+  3) qg_skip "Coverage Floor" "no coverage report (lcov.info, coverage-summary.json, coverage-final.json or Go's coverage.out) under coverage/: run the tests with coverage in scripts/check/gates.list, or pass coverage-threshold: 0" ;;
   *) qg_fail "Coverage Floor could not read the coverage report" ;;
   esac
 }
@@ -367,6 +382,225 @@ qg_js_audit() {
   else
     echo "No scripts/check/audit.ts for $QG_PM; dependency-review.yml checks the dependencies this pull request adds"
   fi
+}
+
+# qg_repo_script <name> <script> [args...]: one of the repo's own check scripts, which the stack
+# plugin's setup installs; a missing one is a check that did not run.
+qg_repo_script() {
+  local name="$1" script="$2"
+  shift 2
+  if [ -f "$script" ]; then
+    qg_run "$name" bash "$script" "$@"
+  else
+    qg_step "$name"
+    # shellcheck disable=SC2153 # gate.sh sets QG_STACK before it runs a stack's checks
+    qg_skip "$name" "$script is missing: run /agent-${QG_STACK}:setup"
+  fi
+}
+
+# qg_docker_build <name>: the repo's Dockerfile, when it has one, built without pulling newer bases.
+qg_docker_build() {
+  qg_step "$1"
+  if [ ! -f Dockerfile ]; then
+    echo "No Dockerfile; no image to build"
+    return
+  fi
+  if ! command -v docker >/dev/null 2>&1; then
+    qg_skip "$1" "the runner has no docker"
+    return
+  fi
+  docker build --pull=false -t quality-gate-build . || qg_fail "docker build failed"
+}
+
+# ── PostgreSQL (be-go, be-axum) ──────────────────────────────────────────────────────────────
+# The workflow's `database` input: false says the repo owns no schema, so no PostgreSQL starts and
+# each database step says so instead of running.
+qg_db_on() {
+  [ "${QG_DATABASE:-true}" = true ]
+}
+
+qg_db_off_note() {
+  echo "database is false: this repo owns no schema, so no PostgreSQL runs"
+}
+
+# qg_db_repo_script <name> <script> [args...]: qg_repo_script for a check about the repo's schema.
+qg_db_repo_script() {
+  if qg_db_on; then
+    qg_repo_script "$@"
+  else
+    qg_step "$1"
+    qg_db_off_note
+  fi
+}
+
+# qg_db_url <name>: the superuser URL with another database name.
+qg_db_url() {
+  printf '%s' "$QG_PG_ADMIN_URL" | sed -E "s#^(postgres(ql)?://[^/?]*)(/[^?]*)?#\\1/$1#"
+}
+
+# The roles (and databases) the repo's tests connect with: db/roles.sql, once, as the superuser,
+# before gates.list runs the tests. Without one, the tests connect as the env file says.
+qg_db_roles() {
+  qg_step "Database Roles (db/roles.sql)"
+  if ! qg_db_on; then
+    qg_db_off_note
+    return
+  fi
+  if [ ! -f db/roles.sql ]; then
+    echo "No db/roles.sql; the tests connect as the env file says"
+    return
+  fi
+  if ! command -v psql >/dev/null 2>&1; then
+    qg_skip "Database Roles" "psql is not installed on this runner"
+    return
+  fi
+  psql "$QG_PG_ADMIN_URL" -X -q -v ON_ERROR_STOP=1 -f db/roles.sql ||
+    qg_fail "db/roles.sql failed on an empty PostgreSQL"
+}
+
+# qg_db_migrate <name> <dir> <apply> <ready>: every migration in <dir>, applied from zero to the new
+# empty database qg_migrations on a direct connection (a migrator holds a session-level advisory
+# lock, so never through a pooler). <ready> prints why the migrator cannot run and fails, or
+# succeeds silently; <apply> applies the migrations to $QG_MIGRATIONS_URL. QG_DB_STATE then says
+# what the catalog checks can read: off, none (no migration yet), skipped, failed or ok.
+qg_db_migrate() {
+  local name="$1" dir="$2" apply="$3" ready="$4" why
+  QG_DB_STATE=skipped
+  qg_step "$name"
+  if ! qg_db_on; then
+    QG_DB_STATE=off
+    qg_db_off_note
+    return
+  fi
+  if [ -z "$(find "$dir" -maxdepth 1 -name '*.sql' 2>/dev/null | head -1)" ]; then
+    QG_DB_STATE=none
+    echo "No migration in $dir/ yet; nothing to apply"
+    return
+  fi
+  if ! command -v psql >/dev/null 2>&1; then
+    qg_skip "$name" "psql is not installed on this runner"
+    return
+  fi
+  if ! why=$("$ready"); then
+    qg_skip "$name" "$why"
+    return
+  fi
+  if ! psql "$QG_PG_ADMIN_URL" -X -q -v ON_ERROR_STOP=1 -c 'set client_min_messages = warning' \
+    -c 'drop database if exists qg_migrations' -c 'create database qg_migrations'; then
+    QG_DB_STATE=failed
+    qg_fail "$name could not create an empty database"
+    return
+  fi
+  QG_MIGRATIONS_URL=$(qg_db_url qg_migrations)
+  if "$apply"; then
+    QG_DB_STATE=ok
+  else
+    QG_DB_STATE=failed
+    qg_fail "$name: the migrations do not apply to an empty database"
+  fi
+}
+
+# qg_db_no_rows <name> <sql file> <what a row means>: a catalog query on the migrated database that
+# must return nothing. The rows name tables and indexes from the pull request, so they print quoted.
+qg_db_no_rows() {
+  local name="$1" rows
+  qg_step "$name"
+  case "${QG_DB_STATE:-skipped}" in
+  off) qg_db_off_note && return ;;
+  none) echo "No migration yet; nothing to check" && return ;;
+  failed) echo "The migrations failed above; nothing to check" && return ;;
+  skipped)
+    qg_skip "$name" "the migrations did not run"
+    return
+    ;;
+  esac
+  if ! rows=$(psql "$QG_MIGRATIONS_URL" -X -q -A -t -F ' | ' -v ON_ERROR_STOP=1 -f "$QG_HERE/sql/$2"); then
+    qg_fail "$name could not query the migrated database"
+    return
+  fi
+  if [ -n "$rows" ]; then
+    printf '%s\n' "$rows" | qg_quote
+    qg_fail "$3"
+  else
+    echo "Clean"
+  fi
+}
+
+qg_db_catalog() {
+  qg_db_no_rows "Foreign Key Index Check" unindexed-fks.sql \
+    "a foreign key has no index that leads with its columns (table | constraint | columns | references)"
+  qg_db_no_rows "Invalid Index Check" invalid-indexes.sql \
+    "an index is INVALID after the migrations (a failed CREATE INDEX CONCURRENTLY; schema | index | table)"
+}
+
+# The optional pooler check (input pgbouncer-tests): the repo's scripts/check/pooler.sh, run while
+# PgBouncer 1.26.0 listens on 127.0.0.1:6432 in transaction mode. The repo's env file names the URL
+# its tests use through it, TEST_POOLER_DATABASE_URL.
+qg_pgbouncer_tests() {
+  local name="PgBouncer Check (scripts/check/pooler.sh behind PgBouncer)"
+  qg_step "$name"
+  if [ "${QG_PGBOUNCER_TESTS:-false}" != true ]; then
+    echo "pgbouncer-tests is off"
+    return
+  fi
+  if ! qg_db_on; then
+    qg_db_off_note
+    return
+  fi
+  if [ ! -f scripts/check/pooler.sh ]; then
+    qg_skip "PgBouncer Check" "scripts/check/pooler.sh is missing: run /agent-${QG_STACK}:setup"
+    return
+  fi
+  if ! command -v docker >/dev/null 2>&1; then
+    qg_skip "PgBouncer Check" "the runner has no docker to run PgBouncer in"
+    return
+  fi
+  if [ -z "${TEST_POOLER_DATABASE_URL:-}" ]; then
+    qg_fail "TEST_POOLER_DATABASE_URL is not set: add it to the env file (postgres://<role>@127.0.0.1:6432/<database>?sslmode=disable)"
+    return
+  fi
+  bash "$QG_HERE/pgbouncer.sh" "$QG_TMP/pgbouncer" bash scripts/check/pooler.sh
+  case $? in
+  0) ;;
+  3) qg_fail "PgBouncer did not start (the reason is above)" ;;
+  *) qg_fail "scripts/check/pooler.sh failed behind PgBouncer" ;;
+  esac
+}
+
+# qg_squawk <dir> [goose]: squawk over the migration files this pull request adds or changes, with
+# the repo's .squawk.toml. A goose file keeps its down migration below `-- +goose Down`; that part
+# never runs on deploy, so only the part above it is linted.
+qg_squawk() {
+  local dir="$1" flavor="${2:-}" name="Migration Lint (squawk)" files=() f rc bad=0
+  qg_step "$name"
+  if ! qg_db_on; then
+    qg_db_off_note
+    return
+  fi
+  while IFS= read -r f; do
+    [ -f "$f" ] && files+=("$f")
+  done < <(git diff --name-only --diff-filter=AM "${QG_BASE}...HEAD" -- "$dir/*.sql")
+  if [ ${#files[@]} -eq 0 ]; then
+    echo "No migration added or changed under $dir/"
+    return
+  fi
+  if ! command -v squawk >/dev/null 2>&1; then
+    qg_skip "$name" "squawk is not installed on this runner"
+    return
+  fi
+  for f in "${files[@]}"; do
+    if [ "$flavor" = goose ]; then
+      awk 'tolower($0) ~ /^--[[:space:]]*\+goose[[:space:]]+down/ { exit } { print }' "$f" |
+        squawk --stdin-filepath "$f" >"$QG_TMP/squawk.out" 2>&1
+      rc=${PIPESTATUS[1]}
+    else
+      squawk "$f" >"$QG_TMP/squawk.out" 2>&1
+      rc=$?
+    fi
+    qg_quote <"$QG_TMP/squawk.out"
+    [ "$rc" -eq 0 ] || bad=1
+  done
+  [ "$bad" -eq 0 ] || qg_fail "squawk found an unsafe statement in a migration this pull request adds"
 }
 
 # The summary: failures, then what did not run. Returns the gate's exit code.

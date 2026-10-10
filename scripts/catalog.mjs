@@ -71,15 +71,23 @@ const SETTINGS_KEYS = new Set(['$schema', 'permissions', 'sandbox', 'env', 'extr
 // Zero-width, bidirectional controls, word joiners, BOM, soft hyphen, and C0/C1 controls other than
 // tab, newline and carriage return.
 const HIDDEN = /[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/u;
-const DOWNLOAD = /(?:^|[;&|(`]|\$\()\s*(?:sudo\s+)?(?:curl|wget|npx|bunx|uvx|pipx|pnpx|pip3?\s+install|npm\s+(?:install|i|ci)|uv\s+tool\s+install|bun\s+(?:add|install)|go\s+install)(?:\s|$)/;
+/*
+ * A command that downloads or installs code: the tools the header names, and the Rust, Swift and
+ * Homebrew installers (cargo install, rustup, brew install, mint install).
+ */
+const DOWNLOAD = /(?:^|[;&|(`]|\$\()\s*(?:sudo\s+)?(?:curl|wget|npx|bunx|uvx|pipx|pnpx|pip3?\s+install|npm\s+(?:install|i|ci)|uv\s+tool\s+install|bun\s+(?:add|install)|go\s+install|cargo\s+install|rustup|brew\s+install|mint\s+install)(?:\s|$)/;
 const DOWNLOAD_EXEC = /\[\s*["'](?:curl|wget|npx|bunx|uvx|pipx|pnpx)["']/;
 const MARK = {
   catalog: ['<!-- catalog:start -->', '<!-- catalog:end -->'],
   install: ['<!-- install:start -->', '<!-- install:end -->'],
   files: ['<!-- files:start -->', '<!-- files:end -->'],
 };
-// A permission that lets Claude run any code without a prompt.
-const BROAD_ALLOW = /^Bash\((?:(?:npm|pnpm|yarn|bun) run|uv run|uvx|npx|bunx|pnpx|pnpm dlx|yarn dlx|docker(?: compose)?|node|bun|python3?|bash|sh|eval)(?::\*|\s\*)?\)$/;
+/*
+ * A permission that lets Claude run any code without a prompt. Go, Rust and Swift runners count:
+ * `go run`, a cargo build script or proc-macro, and a Swift package plugin all execute third-party
+ * code, and bare `xcodebuild`/`xcrun` reach every build phase and developer tool.
+ */
+const BROAD_ALLOW = /^Bash\((?:(?:npm|pnpm|yarn|bun) run|uv run|uvx|npx|bunx|pnpx|pnpm dlx|yarn dlx|docker(?: compose)?|node|bun|python3?|bash|sh|eval|go (?:run|generate|get|install)|cargo (?:run|install|add)|swift (?:run|package)|xcodebuild|xcrun)(?::\*|\s\*)?\)$/;
 // Commands a user must type themselves: they commit, push, merge, post to GitHub or install files.
 const USER_ONLY = new Set(['setup', 'sync', 'branch-cleanup', 'checkpoint', 'commit', 'create-pr', 'merge-pr',
   'promote', 'resolve-pr-review', 'ship', 'promote-deploy', 'verify-deploy']);

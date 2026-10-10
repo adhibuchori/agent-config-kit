@@ -7,9 +7,11 @@
 #   bash scripts/check/ci-env.sh bun run test:coverage
 #
 # CI's test variables, found through .github/workflows/quality-gate.yml (or .yaml):
-#   - a caller of agent-config-kit's be-hono-quality-gate: the committed file it passes as
-#     `env-file:` (default .env.ci.example), read as the gate reads it: KEY=VALUE lines, # comments,
-#     one layer of quotes, no expansion, and the same names refused;
+#   - a caller of any of agent-config-kit's <stack>-quality-gate workflows: the committed file it
+#     passes as `env-file:` (default .env.ci.example), read as the gate reads it: KEY=VALUE lines,
+#     # comments, one layer of quotes, no expansion, and the same names refused (those that steer
+#     the runner, git or a toolchain: NODE_OPTIONS, GOFLAGS, CARGO_*, RUSTFLAGS, SQLX_*,
+#     DEVELOPER_DIR and the like);
 #   - a workflow that runs the tests itself: its env: blocks, the job's over the workflow's;
 #   - no workflow at all: .env.ci.example.
 # Bun reads .env, .env.test and .env.local by itself; BUN_OPTIONS=--no-env-file stops every bun
@@ -30,8 +32,8 @@ fi
 read -r -d '' PARSE <<'PY' || true
 import os, re, sys
 
-REFUSED = re.compile(r"^(PATH|HOME|SHELL|ENV|BASH_ENV|IFS|CDPATH|PS4|TMPDIR|CI|LD_.*|DYLD_.*|NODE_OPTIONS|"
-                     r"NODE_PATH|PYTHON.*|GITHUB_.*|RUNNER_.*|ACTIONS_.*|GIT_.*|BUN_.*|NPM_CONFIG_.*|UV_.*|QG_.*)$")
+# The same bytes as QG_REFUSED_ENV in the quality gate's lib.sh.
+REFUSED = re.compile(r"^(PATH|HOME|SHELL|ENV|BASH_ENV|IFS|CDPATH|PS4|TMPDIR|CI|LD_.*|DYLD_.*|NODE_OPTIONS|NODE_PATH|PYTHON.*|GITHUB_.*|RUNNER_.*|ACTIONS_.*|GIT_.*|BUN_.*|NPM_CONFIG_.*|UV_.*|QG_.*|GO[A-Z0-9]*|GO_.*|GOROOT_.*|CGO_.*|CARGO_.*|RUSTUP_.*|RUSTC.*|RUSTDOCFLAGS|RUSTFLAGS|SQLX_.*|DEVELOPER_DIR)$")
 
 
 def fail(msg):
@@ -69,7 +71,7 @@ def env_block(indent):
     return found
 
 
-if any(re.match(r"^\s*uses:\s*\S*be-hono-quality-gate\.ya?ml@", line) for line in lines) or not workflow:
+if any(re.match(r"^\s*uses:\s*\S*/[a-z0-9-]+-quality-gate\.ya?ml@", line) for line in lines) or not workflow:
     # A caller of the reusable gate (whose own env does not reach the called workflow), or no CI
     # workflow here: the committed env file.
     env_file = ".env.ci.example"
@@ -100,7 +102,7 @@ else:
     # A workflow that runs the tests itself: its env blocks, the job's over the workflow's.
     found = env_block(0) + env_block(4)
     if not found:
-        fail(f"{workflow} neither calls agent-config-kit's be-hono-quality-gate nor sets an env: block, so "
+        fail(f"{workflow} neither calls one of agent-config-kit's *-quality-gate workflows nor sets an env: block, so "
              "the variables CI's tests run with are unknown")
     print("\n".join(found))
 PY

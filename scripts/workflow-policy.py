@@ -19,6 +19,9 @@ Per file:
   - A `pull_request: types: [closed]` workflow runs no job without a merge guard (the job's `if:`
     tests `merged`, directly or through every job it needs).
   - A top-level `permissions:` block; no `secrets: inherit`.
+  - Every job that runs steps sets `timeout-minutes:` (a hung job otherwise bills until the
+    platform's own limit, six hours on GitHub-hosted runners). A job that calls a reusable workflow
+    has no steps of its own; the called workflow's jobs carry their timeouts.
   - Every actions/checkout step says `persist-credentials:` explicitly.
   - A call to this repository's reusable workflows
     (adhibuchori/agent-config-kit/.github/workflows/<name>@<sha> # vX.Y.Z) names a workflow that
@@ -185,6 +188,8 @@ def main():
                 continue
             if job.get("secrets") == "inherit":
                 problems.append(f"{rel}: job `{name}` uses `secrets: inherit`; pass named secrets")
+            if job.get("steps") and "timeout-minutes" not in job:
+                problems.append(f"{rel}: job `{name}` runs steps without `timeout-minutes:`")
             for i, step in enumerate(job.get("steps") or []):
                 if not isinstance(step, dict):
                     continue
