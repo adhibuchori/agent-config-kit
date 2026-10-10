@@ -35,7 +35,8 @@ if s["conflictsWith"] != ["agent-ai-fastapi", "agent-be-go", "agent-be-hono", "a
                           "agent-fe-nextjs", "agent-fe-nextjs-static", "agent-ios-swiftui"]:
     bad.append(f"conflictsWith {s['conflictsWith']}")
 ids = [q["id"] for q in s["questions"]]
-if ids != ["migrations", "ci-gate", "deepseek-review", "pr-templates", "analytics", "serena-workspace"]:
+if ids != ["migrations", "ci-gate", "deepseek-review", "pr-templates", "analytics", "serena-workspace",
+           "payload-encryption"]:
     bad.append(f"questions {ids}")
 for q in s["questions"]:
     if q["recommended"] not in q["choices"] or not set(q.get("install", {})) <= set(q["choices"]):
@@ -145,7 +146,7 @@ PY
   [ -x "$TPL/.githooks/pre-commit" ]
 }
 
-@test "AGENTS.md.starter defines rules 1 to 29, each with an enforcer, and every cited rule exists" {
+@test "AGENTS.md.starter defines rules 1 to 34, each with an enforcer, and every cited rule exists" {
   py <<'PY'
 import glob, os, re, sys
 root = sys.argv[1]
@@ -154,7 +155,7 @@ text = open(f"{tpl}/AGENTS.md.starter", encoding="utf-8").read()
 rows = [l for l in text.split("\n## Rules\n", 1)[1].splitlines() if re.match(r"^\| [0-9]+ \|", l)]
 numbers = [int(l.split("|")[1]) for l in rows]
 bad = []
-if numbers != list(range(1, 30)):
+if numbers != list(range(1, 35)):
     bad.append(f"rules {numbers}")
 for l in rows:
     cells = [c.strip() for c in l.strip().strip("|").split("|")]

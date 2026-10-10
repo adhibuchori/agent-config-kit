@@ -17,10 +17,13 @@ use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 
 use super::config::Config;
-use super::error::{ErrorCode, PROBLEM_JSON, REQUEST_ID, problem};
+use super::error::{ErrorCode, REQUEST_ID, problem};
 
 /// The header that carries the request id in and out.
 const REQUEST_ID_HEADER: HeaderName = HeaderName::from_static("x-request-id");
+
+/// The structured syntax suffix of a JSON media type (RFC 6839 §3.1).
+const STRUCTURED_JSON: &str = "+json";
 
 /// Wraps the routed service in the layers, listed outermost first.
 pub(crate) fn layers(router: Router, config: &Config) -> Router {
@@ -88,7 +91,9 @@ fn span_for(request: &Request<Body>) -> tracing::Span {
 }
 
 /// Runs the request with its id in reach of [`problem`], and turns a bare error status from a
-/// layer (no route, wrong method, body too large, timeout, panic) into a problem body.
+/// layer (no route, wrong method, body too large, timeout, panic) into a problem body. A body that
+/// already names a structured JSON type is kept: `application/problem+json`, and a sealed envelope
+/// (`application/vnd.payload-envelope+json`), whose code a replacement would drop and send in clear.
 async fn problems(request: Request, next: Next) -> Response {
     let id = request
         .headers()
@@ -98,11 +103,12 @@ async fn problems(request: Request, next: Next) -> Response {
         .to_owned();
     let response = REQUEST_ID.scope(id.clone(), next.run(request)).await;
     let status = response.status();
-    let is_problem = response
+    let is_structured = response
         .headers()
         .get(CONTENT_TYPE)
-        .is_some_and(|value| value == PROBLEM_JSON);
-    if is_problem || !(status.is_client_error() || status.is_server_error()) {
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value.ends_with(STRUCTURED_JSON));
+    if is_structured || !(status.is_client_error() || status.is_server_error()) {
         return response;
     }
     REQUEST_ID.sync_scope(id, || problem(status, code_for(status), Vec::new()))

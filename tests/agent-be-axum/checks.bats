@@ -207,12 +207,19 @@ handler() {
   [ "$status" -eq 0 ]
 }
 
-@test "rust-source passes the seeded skeleton as setup installs it" {
+@test "rust-source passes the seeded skeleton as setup installs it, with and without the payload code" {
   cp -R "$TPL/src" "$TPL/tests" "$REPO/"
+  rm -rf "$REPO/src/payload" "$REPO"/src/routes/payload*.rs
   commit_all skeleton
   source_check
   [ "$status" -eq 0 ]
   [[ "$output" == *"rust-source: 21 file(s); LINES HANDLERS ROUTES LAYERS SQL ALLOW clean"* ]] || false
+  # payload-encryption=yes: 29 more files; the @generated registry is not checked.
+  cp -R "$TPL/src" "$REPO/"
+  commit_all payload
+  source_check
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"rust-source: 50 file(s); LINES HANDLERS ROUTES LAYERS SQL ALLOW clean"* ]] || false
 }
 
 # ── rustfmt.sh ──────────────────────────────────────────────────────────────────────────────────

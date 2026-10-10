@@ -12,8 +12,8 @@ fails is not yours: run `bash scripts/check/gates.sh` when unsure and cite its r
 
 ## Scope
 
-The range the caller names, else `git diff` plus `git diff --staged`; `.rs`, `.sql` and
-`openapi.json` hunks only. Files under `.sqlx` and files starting with `// @generated` are never
+The range the caller names, else `git diff` plus `git diff --staged`; `.rs`, `.sql`,
+`openapi.json` and `payload.config.json` hunks only. Files under `.sqlx` and files starting with `// @generated` are never
 reviewed; a hand edit to one is itself the finding. Without an `AGENTS.md`, say so and stop.
 
 ## How to check
@@ -25,7 +25,9 @@ reviewed; a hand edit to one is itself the finding. Without an `AGENTS.md`, say 
    filter or foreign key with no index in the same migration, a transaction that calls the
    network, an `AssertSqlSafe` whose reason does not hold, an error leaving without its
    `ErrorCode`, `serde_json::Value` crossing into a domain type, a trait with one implementation,
-   and a test that replaces a module of this crate.
+   and a test that replaces a module of this crate. Where `payload.config.json` exists, also: a
+   payload key or an opened body in a log line, a route merged after `routes::payload::seal`, and
+   an exemption whose reason judges how sensitive the body is instead of what it needs.
 
 Each finding: rule number, file:line, the quoted hunk, the fix. A smell no rule names is reported as
 `possible <smell>`. Done when every changed hunk was read against every rule that applies to its

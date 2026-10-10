@@ -1185,6 +1185,46 @@
       "en": "Names vulture must not report as dead code",
       "id": "Nama yang tidak boleh dilaporkan vulture sebagai dead code"
     },
+    "src/payload/boundary_tests.rs": {
+      "en": "Unit tests of the payload boundary: startup refusals, which sides a route seals, the exchange key, opening and sealing",
+      "id": "Unit test boundary payload: penolakan saat start, sisi yang disegel tiap rute, kunci pertukaran, membuka dan menyegel"
+    },
+    "src/payload/cipher_tests.rs": {
+      "en": "Unit tests of AES-256-GCM: a fresh nonce per seal, one refusal for every failure, a key that never prints",
+      "id": "Unit test AES-256-GCM: nonce baru tiap segel, satu penolakan untuk setiap kegagalan, kunci yang tidak pernah tercetak"
+    },
+    "src/payload/code_tests.rs": {
+      "en": "Unit tests of the ENVELOPE_* codes: wire names, titles and problem types from the contract table",
+      "id": "Unit test kode ENVELOPE_*: nama di wire, judul, dan problem type dari tabel kontrak"
+    },
+    "src/payload/codec_tests.rs": {
+      "en": "Unit tests of sealing and opening JSON: freshness first, base64url fields, plaintext that is not JSON",
+      "id": "Unit test menyegel dan membuka JSON: kesegaran dicek dulu, field base64url, plaintext yang bukan JSON"
+    },
+    "src/payload/encoding_tests.rs": {
+      "en": "Unit tests of base64url: unpadded on the wire, standard base64 read too",
+      "id": "Unit test base64url: tanpa padding di wire, base64 standar tetap terbaca"
+    },
+    "src/payload/envelope_tests.rs": {
+      "en": "Unit tests of the envelope: version 1 only, the two-minute window, the AAD strings",
+      "id": "Unit test envelope: hanya versi 1, jendela dua menit, string AAD"
+    },
+    "src/payload/keyring_tests.rs": {
+      "en": "Unit tests of the key ring: kid:base64key, rotation with _NEXT, refusals by variable name",
+      "id": "Unit test key ring: kid:base64key, rotasi dengan _NEXT, penolakan menyebut nama variabelnya"
+    },
+    "src/payload/mode_tests.rs": {
+      "en": "Unit tests of the strict/off switch: the variable wins, a typo is refused, off never in production",
+      "id": "Unit test sakelar strict/off: variabel menang, salah ketik ditolak, off tidak pernah di produksi"
+    },
+    "src/payload/policy_tests.rs": {
+      "en": "Unit tests of the policies and the registry lookup, the generated registry included",
+      "id": "Unit test kebijakan dan pencarian registry, termasuk registry hasil generator"
+    },
+    "src/payload/setup_tests.rs": {
+      "en": "Unit tests of the startup errors: each names what to fix, never a value",
+      "id": "Unit test error saat start: masing-masing menyebut apa yang harus diperbaiki, tidak pernah nilainya"
+    },
     "src/platform/config_tests.rs": {
       "en": "Unit tests of the configuration reader",
       "id": "Unit test pembaca konfigurasi"

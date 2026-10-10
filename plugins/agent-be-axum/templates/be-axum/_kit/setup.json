@@ -55,6 +55,31 @@
       "recommended": "no",
       "detect": ".mcp.json runs Serena and a .serena/project.yml above this repo lists several folders, or AGENT_WORKSPACE_ROOT is set",
       "install": { "yes": [".claude/SERENA-WORKSPACE.example.md"] }
+    },
+    {
+      "id": "payload-encryption",
+      "ask": "Seal request and response bodies between this API and its callers (the payload contract: encrypted envelopes, one endpoint registry, checked before merge)?",
+      "why": "Yes installs the payload contract: src/payload/ (AES-256-GCM envelopes bound to method, route and status; P-256 key agreement for public clients such as an iOS app; pre-shared key rings for server callers; the strict/off switch; the generated endpoint registry) and src/routes/payload.rs with payload_layer.rs (a route_layer that opens a sealed request before ValidJson and seals the answer, and the GET /api/payload/handshake handler), with tests at 100% that include the shared test vectors; payload.config.json, scripts/check/payload-vectors.json, scripts/generate/payload-server-key.mjs, the contract document and two rules. Setup leaves it unwired, and cargo compiles no module nothing declares, so the skeleton stays green until you wire it in by hand, as src/payload/mod.rs lists: cargo add p256, aes-gcm, sha2 and base64; the four PAYLOAD_* fields in src/platform/config.rs; the PAYLOAD_HANDSHAKE constant in src/routes/paths.rs; mod payload; and the route_layer (routes::payload::seal) in src/lib.rs, after every route is merged; the handshake routes in src/routes/mod.rs; check_payload_settings in src/main.rs. The gate node scripts/check/payload-registry.mjs, installed either way, passes as not adopted without payload.config.json; with it, the gate stays red until openapi.json lists the five ENVELOPE_* codes and the handshake, so a contract adopted halfway never passes quietly. Answer no when bodies need no sealing beyond TLS.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "payload.config.json or src/payload/ already exists, or a client of this API (an app, a frontend) seals its bodies",
+      "install": {
+        "yes": [
+          ".claude/PAYLOAD-CONTRACT.md",
+          ".claude/rules/backend/payload.md",
+          ".claude/rules/common/payload-contract.md",
+          "payload.config.json",
+          "scripts/check/payload-vectors.json",
+          "scripts/generate/payload-server-key.mjs",
+          "src/payload/**",
+          "src/routes/payload*.rs"
+        ]
+      },
+      "settings": {
+        "yes": {
+          "/permissions/allow": ["Bash(node scripts/check/payload-registry.mjs:*)", "Bash(node scripts/generate/payload-registry.mjs:*)"]
+        }
+      }
     }
   ],
   "seed": [
@@ -72,6 +97,7 @@
     "db/roles.sql",
     "deny.toml",
     "openapi.json",
+    "payload.config.json",
     "rust-toolchain.toml",
     "rustfmt.toml",
     "scripts/check/coverage-exempt.txt",

@@ -8,6 +8,8 @@
       "Bash(bash scripts/check/migrations.sh:*)",
       "Bash(bash scripts/check/ci-env.sh bash scripts/check/coverage.sh:*)",
       "Bash(node scripts/check/rust-source.mjs:*)",
+      "Bash(node scripts/check/payload-registry.mjs:*)",
+      "Bash(node scripts/generate/payload-registry.mjs:*)",
       "Bash(cargo fmt:*)",
       "Bash(cargo clippy --locked:*)",
       "Bash(cargo check --locked:*)",

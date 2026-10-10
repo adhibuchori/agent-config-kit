@@ -99,13 +99,22 @@ database roles (`db/roles.sql`, shared with agent-be-go), clippy, rustfmt,
 cargo-deny, nextest and toolchain config, the check scripts with `gates.list`, `.githooks/pre-commit`,
 a pull-request-only CI caller of `be-axum-quality-gate`, PR templates and a CODEOWNERS starter.
 `Cargo.toml` comes from a starter in a new repo; an existing one takes a by-hand snippet. Optional:
-a DeepSeek review of each pull request (`deepseek-review`, needs the `DEEPSEEK_API_KEY` secret).
+a DeepSeek review of each pull request (`deepseek-review`, needs the `DEEPSEEK_API_KEY` secret),
+and the payload contract (`payload-encryption`, recommended no): sealed request and response
+bodies, ECDH P-256 key agreement for public clients such as an iOS app, key rings for server
+callers and a generated endpoint registry, in `src/payload/` and `src/routes/payload*.rs`. It is
+installed unwired; `src/payload/mod.rs` lists the by-hand steps, and the registry gate stays red
+until the spec lists the `ENVELOPE_*` codes.
 
 ## Configuration
 
 `.claude/agent-config.json`, written by setup when the service owns its schema: `generatedPaths`
 (`.sqlx`, `openapi.json`) and `appendOnlyMigrationsDirs` (`migrations`); see
 [agent-core's table](../agent-core/README.md#configuration).
+
+`payload.config.json`, written by setup when you answer `payload-encryption=yes`: the committed
+switch (`strict`), the route exemptions with their reasons, the handshake operation, and the
+peers to compare with.
 
 ## Enabling and disabling
 

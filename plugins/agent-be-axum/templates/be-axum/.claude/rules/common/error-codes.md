@@ -17,8 +17,9 @@ A client knows a failure by its code. A code the client has no message for reach
 ## The contract
 
 - Every code is a variant of `ErrorCode` in `src/platform/error.rs`, `pub(crate)`. `problem()`
-  takes an `ErrorCode`, so an unlisted code does not compile, and a variant nothing builds fails
-  the build through `dead_code`. `ErrorCode` never derives `Deserialize`: the derived parser would
+  takes a `WireCode`, which `ErrorCode` is, so an unlisted code does not compile, and a variant
+  nothing builds fails the build through `dead_code`. A contract with a closed list of its own (the
+  payload contract's `PayloadCode`) implements `WireCode` too, and lists its codes in the spec. `ErrorCode` never derives `Deserialize`: the derived parser would
   build every variant and hide the unused ones (`rust-source.mjs` refuses it).
 - Every error body comes from `problem()`: `application/problem+json` (RFC 9457) with `type`,
   `title`, `status`, `code`, the request's `requestId`, and on a 422 `fields`: each refused field

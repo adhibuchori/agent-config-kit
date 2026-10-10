@@ -836,12 +836,13 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-be-axum</strong>: 89 files</summary>
+<summary><strong>agent-be-axum</strong>: 124 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
 | `.cargo/config.toml` | once; then yours | Cargo reads this on every call in the repo, so the hook, the gates, CI and every laptop agree. |
 | `.claude/ANALYTICS.example.md` | with `analytics=yes`; sync keeps it current | Analytics — Read API Access |
+| `.claude/PAYLOAD-CONTRACT.md` | with `payload-encryption=yes`; sync keeps it current | Payload Contract: Sealed Bodies and One Endpoint Registry |
 | `.claude/SERENA-WORKSPACE.example.md` | with `serena-workspace=yes`; sync keeps it current | Serena — Multi-Repo Workspace Scoping |
 | `.claude/agent-config.json` | with `migrations=yes`; once; then yours | This stack's hook settings, such as generatedPaths or migrationsDirs |
 | `.claude/anti-patterns/INDEX.md` | once; then yours | Anti-Patterns Index |
@@ -865,10 +866,12 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.claude/anti-patterns/timeoutlayer-new-answers-408.md` | always; sync keeps it current | `TimeoutLayer::new` answers 408, and it is deprecated |
 | `.claude/anti-patterns/unindexed-foreign-keys.md` | always; sync keeps it current | Foreign keys without an index |
 | `.claude/anti-patterns/utoipa-route-bypasses-spec.md` | always; sync keeps it current | A route added with `.route()` is served but missing from `openapi.json` |
+| `.claude/rules/backend/payload.md` | with `payload-encryption=yes`; sync keeps it current | Payload contract in Rust (Rules 30 to 34) |
 | `.claude/rules/backend/postgres.md` | always; sync keeps it current | PostgreSQL |
 | `.claude/rules/backend/rust-service.md` | always; sync keeps it current | Rust + Axum service |
 | `.claude/rules/backend/testing.md` | always; sync keeps it current | Testing (Rule 25, Rule 26) |
 | `.claude/rules/common/error-codes.md` | always; sync keeps it current | Error codes (Rules 6 to 9) |
+| `.claude/rules/common/payload-contract.md` | with `payload-encryption=yes`; sync keeps it current | Payload Contract (short form) |
 | `.claude/rules/rust/coverage.md` | always; sync keeps it current | COVER: coverage in Rust (Rule 25) |
 | `.claude/settings.json` | merged into yours (additive; your values win) | Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox |
 | `.config/nextest.toml` | once; then yours | cargo-nextest runs each test in its own process. |
@@ -888,6 +891,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `db/roles.sql` | with `migrations=yes`; once; then yours | The database roles: the migrator, the service (DML only, its timeouts) and the read-only agent role |
 | `deny.toml` | once; then yours | cargo-deny: advisories, bans, licenses and sources over the crates the build really uses. |
 | `openapi.json` | once; then yours | The OpenAPI document cargo run --bin openapi writes from the handlers; generated, never edited |
+| `payload.config.json` | with `payload-encryption=yes`; once; then yours | The payload contract switch (strict, committed), the route exemptions with their reasons, and the peers to check |
 | `rust-toolchain.toml` | once; then yours | The toolchain every cargo call in this repo uses: an exact release, the same on every laptop and in CI. |
 | `rustfmt.toml` | once; then yours | rustfmt, stable options only: stable rustfmt ignores an unstable key with a warning and exit 0, so scripts/check/rustfmt.sh fails on that warning. |
 | `scripts/check/cargo-policy.sh` | always; sync keeps it current | The settings every cargo call in this repo depends on, held in place (Rules 27 to 29): - .cargo/config.toml sets [build] warnings = "deny" and [env] SQLX_OFFLINE = "true", and holds no [source], [registries], [registry] or [net] table and no runner: those would swap where crates come from or what runs the binaries, for every cargo call at once; - clippy.toml is at the root (without it clippy reads one from a parent folder); - rust-toolchain.toml pins an exact release, and Cargo.toml's rust-version, when set, names it; - Cargo.lock is tracked, and every cargo build, check, clippy, test, nextest, llvm-cov, run, doc, bench or install in gates.list, .githooks/, .github/workflows/ and a Dockerfile passes --locked (or --frozen); - [profile.release] sets overflow-checks = true, and no profile sets panic = "abort", which would end the process where CatchPanicLayer answers 500, while every test still passes. |
@@ -899,15 +903,41 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `scripts/check/gates.list` | once; then yours | This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .githooks/pre-commit. |
 | `scripts/check/migrations.sh` | always; sync keeps it current | The sqlx migrations in migrations/ (Rules 11 and 12). |
 | `scripts/check/payload-registry.mjs` | always; sync keeps it current | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
-| `scripts/check/payload-vectors.json` | always; sync keeps it current | Shared test vectors every implementation of the envelope must open and refuse, its key agreement included; never regenerated to pass |
+| `scripts/check/payload-vectors.json` | with `payload-encryption=yes`; sync keeps it current | Shared test vectors every implementation of the envelope must open and refuse, its key agreement included; never regenerated to pass |
 | `scripts/check/pooler.sh` | once; then yours | The pooler tier: tests/pooler runs the service's own pool through PgBouncer in transaction mode, where prepared statements, startup parameters and session settings break without an error. |
 | `scripts/check/rust-source.mjs` | always; sync keeps it current | Rust source checks that the compiler and clippy do not make, over every tracked or new *.rs file (target/ and .sqlx/ aside, and a file that says @generated in its first five lines) |
 | `scripts/check/rustfmt.sh` | always; sync keeps it current | The format gate: `cargo fmt --check` over the whole crate, read-only. |
 | `scripts/generate/payload-registry.mjs` | always; sync keeps it current | Writes the payload registry from the OpenAPI document and payload.config.json. |
+| `scripts/generate/payload-server-key.mjs` | with `payload-encryption=yes`; sync keeps it current | Writes a new P-256 key pair for the payload contract's key agreement, in the form PAYLOAD_SERVER_JWK holds it: base64url of the UTF-8 JSON {kty, crv, d, x, y}. |
 | `scripts/lib/payload-registry.mjs` | always; sync keeps it current | The payload registry's shared half for the Go, Rust and Swift stacks. |
 | `src/bin/openapi.rs` | once; then yours | Writes the `OpenAPI` document to openapi.json at the crate root: `cargo run --locked --quiet --bin openapi`. |
 | `src/lib.rs` | once; then yours | The service as a library: `main.rs`, `bin/openapi.rs` and the tests build it through [`app`] and [`openapi`]. |
 | `src/main.rs` | once; then yours | Starts the service: configuration, the startup checks, the pool, and a server that drains in bounded time on SIGTERM or Ctrl-C. |
+| `src/payload/boundary.rs` | with `payload-encryption=yes`; once; then yours | The boundary: everything the HTTP glue (`src/routes/payload.rs`) asks of the contract, with no HTTP type in it. |
+| `src/payload/boundary_tests.rs` | with `payload-encryption=yes`; once; then yours | Unit tests of the payload boundary: startup refusals, which sides a route seals, the exchange key, opening and sealing |
+| `src/payload/cipher.rs` | with `payload-encryption=yes`; once; then yours | The one cipher on the wire: AES-256-GCM with a 96-bit nonce and the 128-bit tag appended. |
+| `src/payload/cipher_tests.rs` | with `payload-encryption=yes`; once; then yours | Unit tests of AES-256-GCM: a fresh nonce per seal, one refusal for every failure, a key that never prints |
+| `src/payload/code.rs` | with `payload-encryption=yes`; once; then yours | The closed set of ways an envelope can fail to become a payload (Rule 34). |
+| `src/payload/code_tests.rs` | with `payload-encryption=yes`; once; then yours | Unit tests of the ENVELOPE_* codes: wire names, titles and problem types from the contract table |
+| `src/payload/codec.rs` | with `payload-encryption=yes`; once; then yours | A JSON body into an envelope and back: the one place that decides the order of operations. |
+| `src/payload/codec_tests.rs` | with `payload-encryption=yes`; once; then yours | Unit tests of sealing and opening JSON: freshness first, base64url fields, plaintext that is not JSON |
+| `src/payload/ecdh.rs` | with `payload-encryption=yes`; once; then yours | Key agreement for public clients (a browser, an app), which can hold no secret: a bundle is readable. |
+| `src/payload/ecdh_tests.rs` | with `payload-encryption=yes`; once; then yours | Unit tests of the server key and the key agreement. |
+| `src/payload/encoding.rs` | with `payload-encryption=yes`; once; then yours | Bytes on the wire: every binary field of an envelope (nonce, ciphertext, a public key) travels inside JSON or a header as unpadded base64url, the characters a URL, a header parser or a log pipeline leaves alone. |
+| `src/payload/encoding_tests.rs` | with `payload-encryption=yes`; once; then yours | Unit tests of base64url: unpadded on the wire, standard base64 read too |
+| `src/payload/endpoints_generated.rs` | with `payload-encryption=yes`; once; then yours | @generated by scripts/generate/payload-registry.mjs. |
+| `src/payload/envelope.rs` | with `payload-encryption=yes`; once; then yours | The wire format: what an envelope is, and what its ciphertext is bound to. |
+| `src/payload/envelope_tests.rs` | with `payload-encryption=yes`; once; then yours | Unit tests of the envelope: version 1 only, the two-minute window, the AAD strings |
+| `src/payload/keyring.rs` | with `payload-encryption=yes`; once; then yours | Pre-shared keys for server callers, which never reach a client a person runs. |
+| `src/payload/keyring_tests.rs` | with `payload-encryption=yes`; once; then yours | Unit tests of the key ring: kid:base64key, rotation with _NEXT, refusals by variable name |
+| `src/payload/mod.rs` | with `payload-encryption=yes`; once; then yours | The payload contract's core (`.claude/PAYLOAD-CONTRACT.md`, Rules 30 to 34): envelopes, the cipher, key agreement, the key ring, the switch and the endpoint registry. |
+| `src/payload/mode.rs` | with `payload-encryption=yes`; once; then yours | The switch: whether this service enforces the contract (Rule 33). |
+| `src/payload/mode_tests.rs` | with `payload-encryption=yes`; once; then yours | Unit tests of the strict/off switch: the variable wins, a typo is refused, off never in production |
+| `src/payload/policy.rs` | with `payload-encryption=yes`; once; then yours | The registry's types, and the one place that decides what a policy seals (Rule 30). |
+| `src/payload/policy_tests.rs` | with `payload-encryption=yes`; once; then yours | Unit tests of the policies and the registry lookup, the generated registry included |
+| `src/payload/setup.rs` | with `payload-encryption=yes`; once; then yours | What the boundary is built from at startup, and why it refuses to start. |
+| `src/payload/setup_tests.rs` | with `payload-encryption=yes`; once; then yours | Unit tests of the startup errors: each names what to fix, never a value |
+| `src/payload/vectors_tests.rs` | with `payload-encryption=yes`; once; then yours | The shared known answers, `scripts/check/payload-vectors.json`, identical in every repo that speaks the format: this copy's AAD, cipher and key agreement against them (Rule 34). |
 | `src/platform/config.rs` | once; then yours | The one reader of the process environment (Rule 19). |
 | `src/platform/config_tests.rs` | once; then yours | Unit tests of the configuration reader |
 | `src/platform/db.rs` | once; then yours | The connection pool: every limit set on purpose, none left at its default (Rule 17). |
@@ -922,6 +952,11 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `src/routes/health.rs` | once; then yours | Liveness and readiness. |
 | `src/routes/mod.rs` | once; then yours | Every route the service serves. |
 | `src/routes/paths.rs` | once; then yours | The route registry (Rule 10): every path the service serves is spelled once, here, and named by its handler's `#[utoipa::path(path = paths::...)]`. |
+| `src/routes/payload.rs` | with `payload-encryption=yes`; once; then yours | The payload contract at this service's edge (Rules 30 to 34; the wiring steps are in `src/payload/mod.rs`): the handshake a public client agrees its key through, the `ENVELOPE_*` codes in the document, the settings check `main.rs` runs, and [`seal`], which puts the layer (`payload_layer.rs`) in front of every merged route. |
+| `src/routes/payload_client_tests.rs` | with `payload-encryption=yes`; once; then yours | What the layer tests share: a router of their own behind the layer, and a client written straight against the crates (the way another implementation would), so a test passes only when the two really interoperate. |
+| `src/routes/payload_layer.rs` | with `payload-encryption=yes`; once; then yours | The payload layer, a `route_layer` over every merged route (Rules 30 and 31). |
+| `src/routes/payload_layer_tests.rs` | with `payload-encryption=yes`; once; then yours | The layer through a router of its own and the client in `payload_client_tests.rs`. |
+| `src/routes/payload_tests.rs` | with `payload-encryption=yes`; once; then yours | The contract wired into the real service: the handshake, the codes in the document, and settings that do not hold. |
 | `tests/api/main.rs` | once; then yours | Handler tier: the real router and layers through `oneshot`, the way a client meets them, with a pool that never connects (Rule 26). |
 | `tests/api/openapi.rs` | once; then yours | The contract: the committed openapi.json is what the code declares (Rule 10), and every operation declares its errors the way clients read them (Rule 8). |
 | `tests/db/main.rs` | once; then yours | Database tier: each `#[sqlx::test]` gets its own database on the server `DATABASE_URL` names, with migrations/ applied, and reaches it through the same router a client does (Rule 26). |

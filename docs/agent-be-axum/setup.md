@@ -4,7 +4,7 @@ Command · agent-be-axum · `/agent-be-axum:setup [--answer id=value …]` · on
 
 ## What it does
 
-`/agent-be-axum:setup` installs what a plugin cannot ship by itself into your Rust + Axum repo: backend rules (the service layout, PostgreSQL, testing, error codes, coverage), anti-patterns, a service skeleton whose error module, extractor, layers and tests already pass the gates, the gate scripts (rustfmt, cargo policy, Rust source checks, migrations, coverage, the pooler tier) with `gates.list` and `.githooks/pre-commit`, clippy, rustfmt, cargo-deny, nextest and toolchain config, `scripts/check/ci-env.sh` with a seeded `.env.ci.example`, a pull-request-only CI caller, an optional DeepSeek review of each pull request, PR templates and a CODEOWNERS starter.
+`/agent-be-axum:setup` installs what a plugin cannot ship by itself into your Rust + Axum repo: backend rules (the service layout, PostgreSQL, testing, error codes, coverage), anti-patterns, a service skeleton whose error module, extractor, layers and tests already pass the gates, the gate scripts (rustfmt, cargo policy, Rust source checks, migrations, coverage, the pooler tier) with `gates.list` and `.githooks/pre-commit`, clippy, rustfmt, cargo-deny, nextest and toolchain config, `scripts/check/ci-env.sh` with a seeded `.env.ci.example`, a pull-request-only CI caller, an optional DeepSeek review of each pull request, an optional payload contract (sealed bodies, key agreement and the endpoint registry), PR templates and a CODEOWNERS starter.
 
 It explores your repo, asks one question at a time with a recommended answer, shows the exact draft,
 and writes only when you reply **go**. It never overwrites or deletes a file, and it adds no
@@ -35,6 +35,7 @@ The questions (answer "ok" to take the recommended one):
 | `pr-templates` | Add pull-request templates for work pull requests and dev → prod promotions (.github/PULL_REQUEST_TEMPLATE/)? | yes / no | `yes` |
 | `analytics` | Does an agent need to read a self-hosted analytics API from this repo? | yes / no | `no` |
 | `serena-workspace` | Do you open several repositories as one Serena workspace? | yes / no | `no` |
+| `payload-encryption` | Seal request and response bodies between this API and its callers (the payload contract: encrypted envelopes, one endpoint registry, checked before merge)? | yes / no | `no` |
 
 The draft lists every action: `create`, `same`, `keep`, `seed`, `merge`, `conflict`, `block`,
 `alias`, `by-hand`, `warn` and `lock`, then a `digest`. `apply` is not pre-approved, so your
@@ -59,6 +60,18 @@ Every skeleton file that is missing is seeded next to your code, and none of the
 Run `cargo generate-lockfile` once in a new repo and commit `Cargo.lock`, turn the commit gate on
 with `git config core.hooksPath .githooks`, and set `PROBLEM_TYPE_BASE` in `src/platform/error.rs`
 before the first release.
+
+**I answered `payload-encryption=yes`. Why is nothing sealed yet?**
+Setup installs the contract unwired: cargo compiles no module nothing declares, so the skeleton
+stays green. Wire it in by hand, in the order `src/payload/mod.rs` lists: `cargo add` p256,
+aes-gcm, sha2 and base64; the four `PAYLOAD_*` fields in `src/platform/config.rs`; the
+`PAYLOAD_HANDSHAKE` path; `pub(crate) mod payload;` with its routes and `payload::document` in
+`src/routes/mod.rs`; `mod payload;` and `routes::payload::seal` (a `route_layer`, after every
+route is merged) in `src/lib.rs`; `check_payload_settings` in `src/main.rs`. Then
+`cargo run --locked --quiet --bin openapi` and `node scripts/generate/payload-registry.mjs`. Until
+the spec lists the five `ENVELOPE_*` codes and the handshake, `node scripts/check/payload-registry.mjs`
+fails on purpose. The key pair comes from `node scripts/generate/payload-server-key.mjs`, piped
+straight into `scripts/env/set.sh`.
 
 **It says `command -v agent-setup` found nothing.**
 agent-core is not enabled in this session, or you are on claude.ai or Cowork, which do not install plugins with a `bin/` folder. Enable agent-core with `/plugin` and restart.

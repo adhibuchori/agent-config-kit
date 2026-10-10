@@ -10,7 +10,8 @@
  *             .nest_service( and Router::new() only in src/routes/mod.rs and src/lib.rs (Rule 10).
  *   LAYERS    no sqlx in src/routes/; no axum, tower, tower_http or http in a domain folder; no
  *             crate::routes or crate::<domain> in src/platform/; .begin( only in a repo.rs
- *             (Rules 2 and 16).
+ *             (Rules 2 and 16); crate::payload only in src/routes/, src/lib.rs and src/payload/
+ *             itself, so the payload contract stays at the edge (Rule 31).
  *   SQL       no SELECT *; a query read with fetch_all or fetch has a LIMIT (or = ANY(...));
  *             AssertSqlSafe( only under a `// sql-safe: <reason>` comment (Rule 14).
  *   ALLOW     no #![allow( anywhere, since clippy's allow_attributes reads outer attributes only;
@@ -200,6 +201,10 @@ function checkLayers(path, { blanked }, domains) {
   }
   if (!path.endsWith('/repo.rs')) {
     for (const m of blanked.matchAll(/\.begin\s*\(/g)) report(path, at(m), 'LAYERS', 'a transaction opens only in a repo.rs, and stays short');
+  }
+  /* src/platform/ is held above when src/payload/ exists, as a domain the platform never names. */
+  if (path !== 'src/lib.rs' && !['routes', 'payload', 'platform'].includes(top)) {
+    for (const m of blanked.matchAll(/\bcrate::payload\b/g)) report(path, at(m), 'LAYERS', 'crate::payload outside src/routes/ and src/lib.rs: the payload layer opens and seals bodies at the edge, so handlers and domains see plaintext');
   }
 }
 

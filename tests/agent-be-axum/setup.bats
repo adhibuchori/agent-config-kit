@@ -12,7 +12,7 @@ setup() {
   ax_args
 }
 
-@test "questions: agent-core's layer first, then this plugin's six, each recommending one of its choices" {
+@test "questions: agent-core's layer first, then this plugin's seven, each recommending one of its choices" {
   run -0 --separate-stderr "$SETUP_BIN" questions "${ARGS[@]}" --json
   run -0 python3 -c '
 import json, sys
@@ -21,7 +21,7 @@ assert d["plugin"] == "agent-be-axum" and d["stack"] == "be-axum", d
 ids = [(q["plugin"], q["id"]) for q in d["questions"]]
 assert ids[0] == ("agent-core", "language"), ids
 assert [i for p, i in ids if p == "agent-be-axum"] == ["migrations", "ci-gate", "deepseek-review", "pr-templates",
-                                                      "analytics", "serena-workspace"], ids
+                                                      "analytics", "serena-workspace", "payload-encryption"], ids
 assert all(q["recommended"] in q["choices"] and q["why"] for q in d["questions"])
 print("ok")' "$output"
   [ "$output" = ok ]

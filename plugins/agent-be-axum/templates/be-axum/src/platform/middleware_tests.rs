@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use axum::Router;
 use axum::body::{Body, Bytes};
+use axum::http::header::CONTENT_TYPE;
 use axum::http::{Request, StatusCode};
 use axum::response::Response;
 use axum::routing::{get, post};
@@ -10,6 +11,9 @@ use tower::ServiceExt as _;
 
 use super::super::config::Config;
 use super::layers;
+
+/// A sealed body's media type: a structured JSON type the layers keep as it is.
+const SEALED: &str = "application/vnd.payload-envelope+json";
 
 /// The real layers around handlers that misbehave on purpose.
 fn app() -> Router {
@@ -28,7 +32,11 @@ fn app() -> Router {
         .route("/panic", get(|| async { Vec::<&str>::new()[0] }))
         .route("/teapot", get(|| async { StatusCode::IM_A_TEAPOT }))
         .route("/unprocessable", get(|| async { StatusCode::UNPROCESSABLE_ENTITY }))
-        .route("/echo", post(|body: Bytes| async move { body }));
+        .route("/echo", post(|body: Bytes| async move { body }))
+        .route(
+            "/sealed",
+            get(|| async { (StatusCode::NOT_FOUND, [(CONTENT_TYPE, SEALED)], "{}") }),
+        );
     layers(router, &config)
 }
 
@@ -152,4 +160,23 @@ async fn an_allowed_origin_gets_cors_headers() {
     let response = send(request.expect("request")).await;
     let allowed = &response.headers()["access-control-allow-origin"];
     assert_eq!(allowed, "https://app.example.com", "the listed origin");
+}
+
+#[tokio::test]
+async fn an_error_whose_body_names_a_structured_json_type_is_kept() {
+    let response = send(get_request("/sealed")).await;
+    assert_eq!(
+        response.status(),
+        StatusCode::NOT_FOUND,
+        "the status it had"
+    );
+    assert_eq!(
+        response.headers()["content-type"],
+        SEALED,
+        "a sealed error body is never replaced in clear"
+    );
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("body");
+    assert_eq!(&bytes[..], b"{}", "the body as the handler wrote it");
 }

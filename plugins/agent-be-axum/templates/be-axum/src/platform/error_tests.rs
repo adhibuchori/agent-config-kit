@@ -4,8 +4,8 @@ use axum::response::{IntoResponse, Response};
 use serde_json::{Value, json};
 
 use super::{
-    AppError, ErrorCode, PROBLEM_TYPE_BASE, ProblemTypeBaseError, REQUEST_ID, check_base,
-    check_problem_type_base, problem,
+    AppError, ErrorCode, PROBLEM_TYPE_BASE, ProblemTypeBaseError, REQUEST_ID, WireCode as _,
+    check_base, check_problem_type_base, problem,
 };
 
 const EVERY_CODE: [ErrorCode; 8] = [

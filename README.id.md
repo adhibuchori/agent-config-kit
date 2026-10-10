@@ -846,12 +846,13 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-be-axum</strong>: 89 berkas</summary>
+<summary><strong>agent-be-axum</strong>: 124 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
 | `.cargo/config.toml` | sekali; lalu milik Anda | Cargo reads this on every call in the repo, so the hook, the gates, CI and every laptop agree. |
 | `.claude/ANALYTICS.example.md` | jika `analytics=yes`; sync menjaganya tetap terbaru | Analytics — Read API Access |
+| `.claude/PAYLOAD-CONTRACT.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Payload Contract: Sealed Bodies and One Endpoint Registry |
 | `.claude/SERENA-WORKSPACE.example.md` | jika `serena-workspace=yes`; sync menjaganya tetap terbaru | Serena — Multi-Repo Workspace Scoping |
 | `.claude/agent-config.json` | jika `migrations=yes`; sekali; lalu milik Anda | Pengaturan hook untuk stack ini, seperti generatedPaths atau migrationsDirs |
 | `.claude/anti-patterns/INDEX.md` | sekali; lalu milik Anda | Anti-Patterns Index |
@@ -875,10 +876,12 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.claude/anti-patterns/timeoutlayer-new-answers-408.md` | selalu; sync menjaganya tetap terbaru | `TimeoutLayer::new` answers 408, and it is deprecated |
 | `.claude/anti-patterns/unindexed-foreign-keys.md` | selalu; sync menjaganya tetap terbaru | Foreign keys without an index |
 | `.claude/anti-patterns/utoipa-route-bypasses-spec.md` | selalu; sync menjaganya tetap terbaru | A route added with `.route()` is served but missing from `openapi.json` |
+| `.claude/rules/backend/payload.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Payload contract in Rust (Rules 30 to 34) |
 | `.claude/rules/backend/postgres.md` | selalu; sync menjaganya tetap terbaru | PostgreSQL |
 | `.claude/rules/backend/rust-service.md` | selalu; sync menjaganya tetap terbaru | Rust + Axum service |
 | `.claude/rules/backend/testing.md` | selalu; sync menjaganya tetap terbaru | Testing (Rule 25, Rule 26) |
 | `.claude/rules/common/error-codes.md` | selalu; sync menjaganya tetap terbaru | Error codes (Rules 6 to 9) |
+| `.claude/rules/common/payload-contract.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Payload Contract (short form) |
 | `.claude/rules/rust/coverage.md` | selalu; sync menjaganya tetap terbaru | COVER: coverage in Rust (Rule 25) |
 | `.claude/settings.json` | digabung ke milik Anda (hanya menambah; nilai Anda yang menang) | Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash |
 | `.config/nextest.toml` | sekali; lalu milik Anda | cargo-nextest runs each test in its own process. |
@@ -898,6 +901,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `db/roles.sql` | jika `migrations=yes`; sekali; lalu milik Anda | Role database: migrator, layanan (hanya DML, beserta timeout-nya), dan role agen yang hanya membaca |
 | `deny.toml` | sekali; lalu milik Anda | cargo-deny: advisories, bans, licenses and sources over the crates the build really uses. |
 | `openapi.json` | sekali; lalu milik Anda | Dokumen OpenAPI yang ditulis cargo run --bin openapi dari handler; hasil generator, tidak pernah diedit |
+| `payload.config.json` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Sakelar kontrak payload (strict, di-commit), pengecualian rute beserta alasannya, dan repo peer yang ikut diperiksa |
 | `rust-toolchain.toml` | sekali; lalu milik Anda | The toolchain every cargo call in this repo uses: an exact release, the same on every laptop and in CI. |
 | `rustfmt.toml` | sekali; lalu milik Anda | rustfmt, stable options only: stable rustfmt ignores an unstable key with a warning and exit 0, so scripts/check/rustfmt.sh fails on that warning. |
 | `scripts/check/cargo-policy.sh` | selalu; sync menjaganya tetap terbaru | The settings every cargo call in this repo depends on, held in place (Rules 27 to 29): - .cargo/config.toml sets [build] warnings = "deny" and [env] SQLX_OFFLINE = "true", and holds no [source], [registries], [registry] or [net] table and no runner: those would swap where crates come from or what runs the binaries, for every cargo call at once; - clippy.toml is at the root (without it clippy reads one from a parent folder); - rust-toolchain.toml pins an exact release, and Cargo.toml's rust-version, when set, names it; - Cargo.lock is tracked, and every cargo build, check, clippy, test, nextest, llvm-cov, run, doc, bench or install in gates.list, .githooks/, .github/workflows/ and a Dockerfile passes --locked (or --frozen); - [profile.release] sets overflow-checks = true, and no profile sets panic = "abort", which would end the process where CatchPanicLayer answers 500, while every test still passes. |
@@ -909,15 +913,41 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/gates.list` | sekali; lalu milik Anda | This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .githooks/pre-commit. |
 | `scripts/check/migrations.sh` | selalu; sync menjaganya tetap terbaru | The sqlx migrations in migrations/ (Rules 11 and 12). |
 | `scripts/check/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
-| `scripts/check/payload-vectors.json` | selalu; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
+| `scripts/check/payload-vectors.json` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
 | `scripts/check/pooler.sh` | sekali; lalu milik Anda | The pooler tier: tests/pooler runs the service's own pool through PgBouncer in transaction mode, where prepared statements, startup parameters and session settings break without an error. |
 | `scripts/check/rust-source.mjs` | selalu; sync menjaganya tetap terbaru | Rust source checks that the compiler and clippy do not make, over every tracked or new *.rs file (target/ and .sqlx/ aside, and a file that says @generated in its first five lines) |
 | `scripts/check/rustfmt.sh` | selalu; sync menjaganya tetap terbaru | The format gate: `cargo fmt --check` over the whole crate, read-only. |
 | `scripts/generate/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | Writes the payload registry from the OpenAPI document and payload.config.json. |
+| `scripts/generate/payload-server-key.mjs` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Writes a new P-256 key pair for the payload contract's key agreement, in the form PAYLOAD_SERVER_JWK holds it: base64url of the UTF-8 JSON {kty, crv, d, x, y}. |
 | `scripts/lib/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | The payload registry's shared half for the Go, Rust and Swift stacks. |
 | `src/bin/openapi.rs` | sekali; lalu milik Anda | Writes the `OpenAPI` document to openapi.json at the crate root: `cargo run --locked --quiet --bin openapi`. |
 | `src/lib.rs` | sekali; lalu milik Anda | The service as a library: `main.rs`, `bin/openapi.rs` and the tests build it through [`app`] and [`openapi`]. |
 | `src/main.rs` | sekali; lalu milik Anda | Starts the service: configuration, the startup checks, the pool, and a server that drains in bounded time on SIGTERM or Ctrl-C. |
+| `src/payload/boundary.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The boundary: everything the HTTP glue (`src/routes/payload.rs`) asks of the contract, with no HTTP type in it. |
+| `src/payload/boundary_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit test boundary payload: penolakan saat start, sisi yang disegel tiap rute, kunci pertukaran, membuka dan menyegel |
+| `src/payload/cipher.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The one cipher on the wire: AES-256-GCM with a 96-bit nonce and the 128-bit tag appended. |
+| `src/payload/cipher_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit test AES-256-GCM: nonce baru tiap segel, satu penolakan untuk setiap kegagalan, kunci yang tidak pernah tercetak |
+| `src/payload/code.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The closed set of ways an envelope can fail to become a payload (Rule 34). |
+| `src/payload/code_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit test kode ENVELOPE_*: nama di wire, judul, dan problem type dari tabel kontrak |
+| `src/payload/codec.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | A JSON body into an envelope and back: the one place that decides the order of operations. |
+| `src/payload/codec_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit test menyegel dan membuka JSON: kesegaran dicek dulu, field base64url, plaintext yang bukan JSON |
+| `src/payload/ecdh.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Key agreement for public clients (a browser, an app), which can hold no secret: a bundle is readable. |
+| `src/payload/ecdh_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests of the server key and the key agreement. |
+| `src/payload/encoding.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Bytes on the wire: every binary field of an envelope (nonce, ciphertext, a public key) travels inside JSON or a header as unpadded base64url, the characters a URL, a header parser or a log pipeline leaves alone. |
+| `src/payload/encoding_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit test base64url: tanpa padding di wire, base64 standar tetap terbaca |
+| `src/payload/endpoints_generated.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | @generated by scripts/generate/payload-registry.mjs. |
+| `src/payload/envelope.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The wire format: what an envelope is, and what its ciphertext is bound to. |
+| `src/payload/envelope_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit test envelope: hanya versi 1, jendela dua menit, string AAD |
+| `src/payload/keyring.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Pre-shared keys for server callers, which never reach a client a person runs. |
+| `src/payload/keyring_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit test key ring: kid:base64key, rotasi dengan _NEXT, penolakan menyebut nama variabelnya |
+| `src/payload/mod.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The payload contract's core (`.claude/PAYLOAD-CONTRACT.md`, Rules 30 to 34): envelopes, the cipher, key agreement, the key ring, the switch and the endpoint registry. |
+| `src/payload/mode.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The switch: whether this service enforces the contract (Rule 33). |
+| `src/payload/mode_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit test sakelar strict/off: variabel menang, salah ketik ditolak, off tidak pernah di produksi |
+| `src/payload/policy.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The registry's types, and the one place that decides what a policy seals (Rule 30). |
+| `src/payload/policy_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit test kebijakan dan pencarian registry, termasuk registry hasil generator |
+| `src/payload/setup.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | What the boundary is built from at startup, and why it refuses to start. |
+| `src/payload/setup_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit test error saat start: masing-masing menyebut apa yang harus diperbaiki, tidak pernah nilainya |
+| `src/payload/vectors_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The shared known answers, `scripts/check/payload-vectors.json`, identical in every repo that speaks the format: this copy's AAD, cipher and key agreement against them (Rule 34). |
 | `src/platform/config.rs` | sekali; lalu milik Anda | The one reader of the process environment (Rule 19). |
 | `src/platform/config_tests.rs` | sekali; lalu milik Anda | Unit test pembaca konfigurasi |
 | `src/platform/db.rs` | sekali; lalu milik Anda | The connection pool: every limit set on purpose, none left at its default (Rule 17). |
@@ -932,6 +962,11 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `src/routes/health.rs` | sekali; lalu milik Anda | Liveness and readiness. |
 | `src/routes/mod.rs` | sekali; lalu milik Anda | Every route the service serves. |
 | `src/routes/paths.rs` | sekali; lalu milik Anda | The route registry (Rule 10): every path the service serves is spelled once, here, and named by its handler's `#[utoipa::path(path = paths::...)]`. |
+| `src/routes/payload.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The payload contract at this service's edge (Rules 30 to 34; the wiring steps are in `src/payload/mod.rs`): the handshake a public client agrees its key through, the `ENVELOPE_*` codes in the document, the settings check `main.rs` runs, and [`seal`], which puts the layer (`payload_layer.rs`) in front of every merged route. |
+| `src/routes/payload_client_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | What the layer tests share: a router of their own behind the layer, and a client written straight against the crates (the way another implementation would), so a test passes only when the two really interoperate. |
+| `src/routes/payload_layer.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The payload layer, a `route_layer` over every merged route (Rules 30 and 31). |
+| `src/routes/payload_layer_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The layer through a router of its own and the client in `payload_client_tests.rs`. |
+| `src/routes/payload_tests.rs` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The contract wired into the real service: the handshake, the codes in the document, and settings that do not hold. |
 | `tests/api/main.rs` | sekali; lalu milik Anda | Handler tier: the real router and layers through `oneshot`, the way a client meets them, with a pool that never connects (Rule 26). |
 | `tests/api/openapi.rs` | sekali; lalu milik Anda | The contract: the committed openapi.json is what the code declares (Rule 10), and every operation declares its errors the way clients read them (Rule 8). |
 | `tests/db/main.rs` | sekali; lalu milik Anda | Database tier: each `#[sqlx::test]` gets its own database on the server `DATABASE_URL` names, with migrations/ applied, and reaches it through the same router a client does (Rule 26). |

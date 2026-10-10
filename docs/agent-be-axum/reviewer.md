@@ -20,7 +20,8 @@ Use the agent-be-axum:reviewer subagent on the staged changes.
 It skips what clippy, rustfmt, the compiler and the gates already refuse, and looks for what they
 cannot see: a query in a loop, a list without a bound, a foreign key without an index, a
 transaction that calls the network, an error without its code, a test that replaces a module of the
-crate.
+crate. Where the payload contract is adopted, it also looks for a key or an opened body in a log
+line, a route merged after the payload layer, and an exemption reasoned by sensitivity.
 
 **Not for:** a repo without an `AGENTS.md`, where it stops; use
 [agent-core:reviewer](../agent-core/reviewer.md) instead.

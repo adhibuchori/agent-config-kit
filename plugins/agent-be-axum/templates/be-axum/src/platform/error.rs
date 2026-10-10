@@ -1,5 +1,6 @@
-//! The error contract (Rule 6, Rule 7). Every error a client sees carries an [`ErrorCode`], and
-//! [`problem`] is the only place its RFC 9457 body is built.
+//! The error contract (Rule 6, Rule 7). Every error a client sees carries an [`ErrorCode`] (or the
+//! code of another closed list, through [`WireCode`]), and [`problem`] is the only place its
+//! RFC 9457 body is built.
 
 use axum::http::header::{CONTENT_TYPE, RETRY_AFTER};
 use axum::http::{HeaderValue, StatusCode};
@@ -38,9 +39,25 @@ pub(crate) enum ErrorCode {
     Internal,
 }
 
-impl ErrorCode {
+/// A code a client can receive, from a closed list: [`ErrorCode`], or a contract's own list (the
+/// payload contract's `PayloadCode`), so [`problem`] stays the one builder of every error body
+/// without one enum holding variants a repo never builds.
+pub(crate) trait WireCode: Copy {
+    /// The code as the wire spells it.
+    fn as_str(self) -> &'static str;
+
+    /// The problem type's title: one per code, the same for every occurrence (RFC 9457 §3.1.3).
+    fn title(self) -> &'static str;
+
+    /// This code's problem `type`: [`PROBLEM_TYPE_BASE`] followed by the code.
+    fn type_uri(self) -> String {
+        format!("{PROBLEM_TYPE_BASE}{}", self.as_str())
+    }
+}
+
+impl WireCode for ErrorCode {
     /// The code as the wire spells it; a test holds it equal to the serialized form.
-    pub(crate) const fn as_str(self) -> &'static str {
+    fn as_str(self) -> &'static str {
         match self {
             Self::BadRequest => "BAD_REQUEST",
             Self::ValidationFailed => "VALIDATION_FAILED",
@@ -53,8 +70,7 @@ impl ErrorCode {
         }
     }
 
-    /// The problem type's title: one per code, the same for every occurrence (RFC 9457 §3.1.3).
-    pub(crate) const fn title(self) -> &'static str {
+    fn title(self) -> &'static str {
         match self {
             Self::BadRequest => "Bad request",
             Self::ValidationFailed => "Request validation failed",
@@ -65,11 +81,6 @@ impl ErrorCode {
             Self::DatabaseUnavailable => "Database unavailable",
             Self::Internal => "Internal error",
         }
-    }
-
-    /// This code's problem `type`: [`PROBLEM_TYPE_BASE`] followed by the code.
-    pub(crate) fn type_uri(self) -> String {
-        format!("{PROBLEM_TYPE_BASE}{}", self.as_str())
     }
 }
 
@@ -83,9 +94,10 @@ pub(crate) struct Problem {
     kind: String,
     title: &'static str,
     status: u16,
-    // Inline: a client reads the closed list of codes where it reads the body.
-    #[schema(inline)]
-    code: ErrorCode,
+    // Inline: a client reads the closed list of codes where it reads the body. A contract with
+    // codes of its own appends them to this list in the document (WireCode).
+    #[schema(inline, value_type = ErrorCode)]
+    code: &'static str,
     #[serde(skip_serializing_if = "Option::is_none")]
     request_id: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -93,12 +105,16 @@ pub(crate) struct Problem {
 }
 
 /// The only builder of a problem body (Rule 7). `fields` names what was refused, never its value.
-pub(crate) fn problem(status: StatusCode, code: ErrorCode, fields: Vec<FieldProblem>) -> Response {
+pub(crate) fn problem<C: WireCode>(
+    status: StatusCode,
+    code: C,
+    fields: Vec<FieldProblem>,
+) -> Response {
     let body = Problem {
         kind: code.type_uri(),
         title: code.title(),
         status: status.as_u16(),
-        code,
+        code: code.as_str(),
         request_id: REQUEST_ID.try_with(Clone::clone).ok(),
         fields,
     };
