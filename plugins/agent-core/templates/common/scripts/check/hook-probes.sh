@@ -511,6 +511,29 @@ guard allow migration-guard.sh "$E" Write "{\"file_path\": \"$E/src/db/migration
 mkdir -p "$E/.claude" "$E/db/sql" && echo '{"migrationsDirs": ["db/sql"]}' >"$E/.claude/agent-config.json"
 guard block migration-guard.sh "$E" Write "{\"file_path\": \"$E/db/sql/0002.sql\"}"
 rm -rf "$E/.claude" "$E/db"
+# Hand-written migrations (appendOnlyMigrationsDirs): a file a protected branch has, locally or as
+# origin's copy, never changes; a new one, or one only the work branch has, stays editable.
+AO="$TMP/append-only"
+repo "$AO" main
+mkdir -p "$AO/.claude" "$AO/db/migrations" "$AO/notes"
+echo '{"appendOnlyMigrationsDirs": ["db/migrations"]}' >"$AO/.claude/agent-config.json"
+echo 'CREATE TABLE merged ();' >"$AO/db/migrations/0001_merged.sql"
+git -C "$AO" add -A && git -C "$AO" commit -q -m merged
+git -C "$AO" checkout -q -b feature/probe
+echo 'CREATE TABLE fetched ();' >"$AO/db/migrations/0003_fetched.sql"
+git -C "$AO" add -A && git -C "$AO" commit -q -m fetched
+git -C "$AO" update-ref refs/remotes/origin/dev HEAD && git -C "$AO" reset -q --hard HEAD~1
+echo 'CREATE TABLE work ();' >"$AO/db/migrations/0002_work.sql"
+git -C "$AO" add -A && git -C "$AO" commit -q -m work
+ln -s ../db/migrations/0001_merged.sql "$AO/notes/merged-link.sql"
+guard block migration-guard.sh "$AO" Edit "{\"file_path\": \"$AO/db/migrations/0001_merged.sql\"}"
+guard block migration-guard.sh "$AO" Write "{\"file_path\": \"$AO/db/migrations/0003_fetched.sql\"}"
+guard block migration-guard.sh "$AO" Edit "{\"file_path\": \"$AO/notes/merged-link.sql\"}"
+guard allow migration-guard.sh "$AO" Edit "{\"file_path\": \"$AO/db/migrations/0002_work.sql\"}"
+guard allow migration-guard.sh "$AO" Write "{\"file_path\": \"$AO/db/migrations/0004_new.sql\"}"
+guard allow migration-guard.sh "$AO" Write "{\"file_path\": \"$AO/db/schema.sql\"}"
+rm "$AO/.claude/agent-config.json"
+guard allow migration-guard.sh "$AO" Edit "{\"file_path\": \"$AO/db/migrations/0001_merged.sql\"}"
 # Workspace mode: relative_path against the workspace root, from the repo or from the root itself.
 REL_GEN="group/app/src/lib/api/generated/x.ts"
 guard block generated-guard.sh "$APP" mcp__serena__replace_content "{\"relative_path\": \"$REL_GEN\"}" AGENT_WORKSPACE_ROOT="$WS"

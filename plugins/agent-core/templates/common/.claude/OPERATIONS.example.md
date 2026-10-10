@@ -46,14 +46,15 @@ stack. Per-repo settings live in `.claude/agent-config.json` (see
 `.claude/agent-config.example.json`), every key optional; a key the file sets replaces its default
 whole:
 
-| Key                 | Default                                        | Read by                                  |
-| ------------------- | ---------------------------------------------- | ---------------------------------------- |
-| `protectedBranches` | `dev`, `prod`, `main`, `master`                | `safety-check.sh`, `mcp-guard.sh`        |
-| `protectedPaths`    | source, test, script and agent-config folders  | `safety-check.sh` (destructive commands) |
-| `generatedPaths`    | a generated API client and an OpenAPI contract | `generated-guard.sh`                     |
-| `migrationsDirs`    | the usual drizzle and Alembic folders          | `migration-guard.sh`                     |
-| `commandWrappers`   | none                                           | `safety-check.sh`: wrappers peeled off   |
-| `localePairs`       | none                                           | `post-edit.sh`: files that change as one |
+| Key                        | Default                                        | Read by                                  |
+| -------------------------- | ---------------------------------------------- | ---------------------------------------- |
+| `protectedBranches`        | `dev`, `prod`, `main`, `master`                | `safety-check.sh`, `mcp-guard.sh`        |
+| `protectedPaths`           | source, test, script and agent-config folders  | `safety-check.sh` (destructive commands) |
+| `generatedPaths`           | a generated API client and an OpenAPI contract | `generated-guard.sh`                     |
+| `migrationsDirs`           | the usual drizzle and Alembic folders          | `migration-guard.sh`                     |
+| `appendOnlyMigrationsDirs` | none                                           | `migration-guard.sh`: merged files fixed |
+| `commandWrappers`          | none                                           | `safety-check.sh`: wrappers peeled off   |
+| `localePairs`              | none                                           | `post-edit.sh`: files that change as one |
 
 `commandWrappers` names commands that run another command (a secrets loader, an output filter), so
 the analyzer judges the command they wrap. Multi-repo workspaces stay off unless

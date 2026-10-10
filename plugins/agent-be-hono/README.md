@@ -80,7 +80,7 @@ Every component, generated from the manifests and the docs pages; each links to 
 
 | Hook | Event | Matcher | Data it reads | Block or warn | Timeout | Network |
 | --- | --- | --- | --- | --- | --- | --- |
-| [migration-guard](../../docs/agent-be-hono/migration-guard.md) | PreToolUse | `Write`, `Edit`, `MultiEdit` and Serena's write tools | the target path; `migrationsDirs` | **blocks** (exit 2) | 10 s | no |
+| [migration-guard](../../docs/agent-be-hono/migration-guard.md) | PreToolUse | `Write`, `Edit`, `MultiEdit` and Serena's write tools | the target path; `migrationsDirs`; `appendOnlyMigrationsDirs` and the protected branches' trees | **blocks** (exit 2) | 10 s | no |
 
 **What setup installs** (`/agent-be-hono:setup`): backend rules (Hono, Drizzle, performance, testing,
 error codes), anti-patterns, the check scripts (constants, coverage, migrations, index coverage,
@@ -93,7 +93,8 @@ of each pull request (`deepseek-review`, needs the `DEEPSEEK_API_KEY` secret).
 ## Configuration
 
 `migrationsDirs` in `.claude/agent-config.json` (default includes `drizzle` and
-`src/db/migrations`); see [agent-core's table](../agent-core/README.md#configuration).
+`src/db/migrations`); hand-written migrations go in `appendOnlyMigrationsDirs` instead (empty by
+default). See [agent-core's table](../agent-core/README.md#configuration).
 
 ## Enabling and disabling
 

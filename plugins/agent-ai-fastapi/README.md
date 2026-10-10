@@ -82,7 +82,7 @@ Every component, generated from the manifests and the docs pages; each links to 
 
 | Hook | Event | Matcher | Data it reads | Block or warn | Timeout | Network |
 | --- | --- | --- | --- | --- | --- | --- |
-| [migration-guard](../../docs/agent-ai-fastapi/migration-guard.md) | PreToolUse | `Write`, `Edit`, `MultiEdit` and Serena's write tools | the target path; `migrationsDirs` | **blocks** (exit 2) | 10 s | no |
+| [migration-guard](../../docs/agent-ai-fastapi/migration-guard.md) | PreToolUse | `Write`, `Edit`, `MultiEdit` and Serena's write tools | the target path; `migrationsDirs`; `appendOnlyMigrationsDirs` and the protected branches' trees | **blocks** (exit 2) | 10 s | no |
 
 **What setup installs** (`/agent-ai-fastapi:setup`): backend and Python rules (FastAPI, providers,
 performance, testing, coverage), anti-patterns, `.pre-commit-config.yaml`, `gates.list`, a vulture
@@ -94,7 +94,9 @@ its tool sections as a `by-hand` line.
 ## Configuration
 
 `migrationsDirs` in `.claude/agent-config.json` (default includes `alembic/versions` and
-`src/app/db/migrations/versions`). `"migrationsDirs": []` turns the guard off.
+`src/app/db/migrations/versions`). `"migrationsDirs": []` turns the guard off. Hand-written
+migrations go in `appendOnlyMigrationsDirs` instead (empty by default): see
+[agent-core's table](../agent-core/README.md#configuration).
 
 ## Enabling and disabling
 

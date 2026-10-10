@@ -146,6 +146,7 @@ want). A malformed key falls back to its default and Claude is warned. The templ
 | `localePairs` | post-edit | `[]` (off) | Files that change together, e.g. `[["messages/en.json", "messages/id.json"]]` |
 | `generatedPaths` | generated-guard (stack plugins) | `src/lib/api/generated`, `src/generated`, `openapi.json`, `openapi.yaml`, `openapi.yml` | Generated output Claude may not hand-edit |
 | `migrationsDirs` | migration-guard (stack plugins) | `src/db/migrations`, `drizzle`, `src/app/db/migrations/versions`, `alembic/versions`, `migrations/versions` | Generated migrations Claude may not hand-edit |
+| `appendOnlyMigrationsDirs` | migration-guard (stack plugins) | `[]` (a stack's setup seeds it) | Hand-written migrations Claude may add and edit until a protected branch has them, then never change ([ADR 0007](../../docs/adr/0007-hand-written-migrations-are-append-only.md)) |
 
 Environment variables, all optional: `AGENT_WORKSPACE_ROOT` (a folder that holds several repos, for
 multi-repo sessions) and `AGENT_HOOK_STATE_DIR` (where per-session hook state lives; default
