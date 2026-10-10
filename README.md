@@ -899,19 +899,19 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `scripts/lib/openapi-document.ts` | always; sync keeps it current | The OpenAPI document the app declares, built from `src/app.ts` without starting a server. |
 | `scripts/lib/openapi-endpoints.ts` | with `payload-encryption=yes`; sync keeps it current | The payload contract's configuration, and the endpoint registry an OpenAPI document implies. |
 | `scripts/lib/source-scan.ts` | always; sync keeps it current | Reading a source tree the way the payload checks need it: every TypeScript file, with comments and API prose blanked so a sentence that names a route is never read as code, and JSON compared by meaning rather than by formatting. |
-| `src/lib/endpoints/__tests__/endpoints.test.ts` | always; sync keeps it current | Unit tests for the endpoint registry: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/endpoints/__tests__/endpoints.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the endpoint registry: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `src/lib/endpoints/endpoints.generated.ts` | with `payload-encryption=yes`; once; then yours | Generated from `openapi.json` by `scripts/generate/endpoints.ts`. |
 | `src/lib/endpoints/endpoints.ts` | with `payload-encryption=yes`; once; then yours | Every route this service serves, and what happens to its payload (.claude/PAYLOAD-CONTRACT.md). |
-| `src/lib/payload/__tests__/aes-gcm.test.ts` | always; sync keeps it current | Unit tests for the AES-256-GCM layer: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
-| `src/lib/payload/__tests__/base64url.test.ts` | always; sync keeps it current | Unit tests for base64url and UTF-8 helpers: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
-| `src/lib/payload/__tests__/codec.test.ts` | always; sync keeps it current | Unit tests for sealing and opening JSON envelopes: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
-| `src/lib/payload/__tests__/ecdh.test.ts` | always; sync keeps it current | Unit tests for browser key agreement: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
-| `src/lib/payload/__tests__/envelope.test.ts` | always; sync keeps it current | Unit tests for the envelope shape, freshness and AAD builders: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
-| `src/lib/payload/__tests__/errors.test.ts` | always; sync keeps it current | Unit tests for the payload error codes: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
-| `src/lib/payload/__tests__/key-ring.test.ts` | always; sync keeps it current | Unit tests for pre-shared key rings: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
-| `src/lib/payload/__tests__/mode.test.ts` | always; sync keeps it current | Unit tests for the strict/off switch: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
-| `src/lib/payload/__tests__/policy.test.ts` | always; sync keeps it current | Unit tests for policies and the endpoint matcher: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
-| `src/lib/payload/__tests__/vectors.test.ts` | always; sync keeps it current | Unit tests for this copy against the shared test vectors: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/aes-gcm.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the AES-256-GCM layer: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/base64url.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for base64url and UTF-8 helpers: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/codec.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for sealing and opening JSON envelopes: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/ecdh.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for browser key agreement: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/envelope.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the envelope shape, freshness and AAD builders: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/errors.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the payload error codes: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/key-ring.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for pre-shared key rings: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/mode.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the strict/off switch: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/policy.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for policies and the endpoint matcher: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/vectors.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for this copy against the shared test vectors: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `src/lib/payload/aes-gcm.ts` | with `payload-encryption=yes`; once; then yours | The one cipher on the wire: AES-256-GCM through WebCrypto. |
 | `src/lib/payload/base64url.ts` | with `payload-encryption=yes`; once; then yours | Bytes on the wire: base64url and UTF-8, the same way in the browser, on Node and on Bun. |
 | `src/lib/payload/codec.ts` | with `payload-encryption=yes`; once; then yours | A JSON body into an envelope and back: the one place that decides the order of operations. |

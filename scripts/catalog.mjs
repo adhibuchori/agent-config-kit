@@ -184,8 +184,26 @@ const cell = (s) =>
     .replace(/\|/g, '\\|')
     .trim();
 
-// A setup.json install glob as a regular expression: ** crosses folders, * and ? do not.
-const globRe = (g) => new RegExp(`^${g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*\//g, '(?:.*/)?').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]')}$`);
+// A setup.json install glob as a regular expression: ** crosses folders, * and ? do not. One pass,
+// token by token, as the engine's glob_re (agentkit.py) does: replacing ** first and * afterwards
+// would rewrite the * inside the .* that ** became, so ** would stop at one folder.
+const globRe = (g) => {
+  let out = '';
+  for (let i = 0; i < g.length; ) {
+    if (g.startsWith('**/', i)) {
+      out += '(?:.*/)?';
+      i += 3;
+    } else if (g.startsWith('**', i)) {
+      out += '.*';
+      i += 2;
+    } else {
+      const c = g[i];
+      out += c === '*' ? '[^/]*' : c === '?' ? '[^/]' : c.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+      i += 1;
+    }
+  }
+  return new RegExp(`^${out}$`);
+};
 
 // ── Manifests ────────────────────────────────────────────────────────────────────────────────
 const marketplacePath = join(root, '.claude-plugin', 'marketplace.json');

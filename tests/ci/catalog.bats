@@ -109,6 +109,21 @@ write_then_check() {
   grep -qF '| `.claude/settings.json` | merged into yours (additive; your values win) |' "$K/README.md"
 }
 
+@test "catalog: ** in a setup glob crosses folders, * stays in one" {
+  local t="$K/plugins/agent-demo/templates/demo"
+  mkdir -p "$t/src/deep/a/b" "$t/src/flat/a"
+  printf '# Deep\n' >"$t/src/deep/a/b/file.md"
+  printf '# Flat\n' >"$t/src/flat/a/file.md"
+  cat >"$t/_kit/setup.json" <<'EOF'
+{ "stack": "demo", "questions": [ { "id": "extra", "choices": ["yes", "no"], "recommended": "no",
+  "install": { "yes": ["src/deep/**", "src/flat/*"] } } ] }
+EOF
+  write_then_check
+  # src/deep/** reaches two folders down; src/flat/* does not reach src/flat/a/file.md.
+  grep -qF '| `src/deep/a/b/file.md` | with `extra=yes`; sync keeps it current |' "$K/README.md"
+  grep -qF '| `src/flat/a/file.md` | always; sync keeps it current |' "$K/README.md"
+}
+
 @test "catalog: a long hook matcher becomes a short label, a short one stays code" {
   local h="$K/plugins/agent-core/hooks/hooks.json"
   python3 - "$h" <<'PY'
