@@ -1,0 +1,5 @@
+# Files the per-file coverage check leaves out (.claude/rules/go/coverage.md), one glob per line in
+# a closed category: `# composition root: <why>` or `# generated: <why>`. scripts/check/
+# coverage-policy.mjs fails a line without one. Generated Go needs no line: its
+# `// Code generated ... DO NOT EDIT.` header already leaves it out.
+cmd/*/main.go  # composition root: main only wires packages that have their own tests

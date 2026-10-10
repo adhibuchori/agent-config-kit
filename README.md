@@ -837,6 +837,107 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
+<summary><strong>agent-be-go</strong>: 93 files</summary>
+
+| File | When setup installs it | What it is |
+| --- | --- | --- |
+| `.claude/ANALYTICS.example.md` | with `analytics=yes`; sync keeps it current | Analytics — Read API Access |
+| `.claude/SERENA-WORKSPACE.example.md` | with `serena-workspace=yes`; sync keeps it current | Serena — Multi-Repo Workspace Scoping |
+| `.claude/agent-config.json` | once; then yours | This stack's hook settings, such as generatedPaths or migrationsDirs |
+| `.claude/anti-patterns/INDEX.md` | once; then yours | Anti-Patterns Index |
+| `.claude/anti-patterns/cached-plan-after-schema-change.md` | always; sync keeps it current | `cached plan must not change result type` after a migration |
+| `.claude/anti-patterns/cic-inside-transaction.md` | always; sync keeps it current | `CREATE INDEX CONCURRENTLY` inside a transaction |
+| `.claude/anti-patterns/cic-retry-keeps-invalid-index.md` | always; sync keeps it current | A retried `CREATE INDEX CONCURRENTLY IF NOT EXISTS` keeps an INVALID index |
+| `.claude/anti-patterns/closed-error-codes-are-not-closed.md` | always; sync keeps it current | A "closed" set of error codes that is not closed |
+| `.claude/anti-patterns/ddl-without-lock-timeout.md` | always; sync keeps it current | DDL without `lock_timeout` stalls every query on the table |
+| `.claude/anti-patterns/default-privileges-without-for-role.md` | always; sync keeps it current | `ALTER DEFAULT PRIVILEGES` without `FOR ROLE` |
+| `.claude/anti-patterns/enum-value-used-in-same-transaction.md` | always; sync keeps it current | A new enum value used in the transaction that added it |
+| `.claude/anti-patterns/golangci-lint-file-mode-and-fast-only.md` | always; sync keeps it current | golangci-lint on one file, or with `--fast-only`, checks the wrong thing |
+| `.claude/anti-patterns/goose-never-detects-edited-migrations.md` | always; sync keeps it current | goose never notices an edited migration |
+| `.claude/anti-patterns/json-decoder-accepts-unknown-and-case-insensitive-keys.md` | always; sync keeps it current | `encoding/json` accepts unknown keys and matches names without case |
+| `.claude/anti-patterns/pgbouncer-rejects-startup-parameters.md` | always; sync keeps it current | PgBouncer refuses timeouts sent as startup parameters |
+| `.claude/anti-patterns/pgx-describe-exec-behind-pooler.md` | always; sync keeps it current | pgx `describe_exec` (or a cache with no pooler support) behind PgBouncer |
+| `.claude/anti-patterns/pgxpool-size-follows-cpu-count.md` | always; sync keeps it current | pgxpool's size follows the machine's CPU count |
+| `.claude/anti-patterns/read-only-default-is-not-a-boundary.md` | always; sync keeps it current | A read-only default is not a read-only role |
+| `.claude/anti-patterns/servemux-404-405-skip-problem-json.md` | always; sync keeps it current | ServeMux answers 404 and 405 in plain text |
+| `.claude/anti-patterns/session-state-behind-transaction-pooler.md` | always; sync keeps it current | Session state behind a transaction pooler |
+| `.claude/anti-patterns/unindexed-foreign-keys.md` | always; sync keeps it current | Foreign keys without an index |
+| `.claude/rules/backend/go-service.md` | always; sync keeps it current | Go service |
+| `.claude/rules/backend/postgres.md` | always; sync keeps it current | PostgreSQL |
+| `.claude/rules/backend/testing.md` | always; sync keeps it current | Testing (Go) |
+| `.claude/rules/common/error-codes.md` | always; sync keeps it current | Error codes (Go API) |
+| `.claude/rules/go/coverage.md` | always; sync keeps it current | COVER — Test Coverage (Go) |
+| `.claude/settings.json` | merged into yours (additive; your values win) | Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox |
+| `.env.ci.example` | once; then yours | The variables the tests get in CI, and locally through scripts/check/ci-env.sh: dummy values only, never a real secret. |
+| `.githooks/pre-commit` | once; then yours | The commit gate: the gates scripts/check/gates.list names for what is staged. |
+| `.github/CODEOWNERS` | once; then yours | Code owners: GitHub asks them to review every pull request that touches a matching path. |
+| `.github/PULL_REQUEST_TEMPLATE/dev.md` | with `pr-templates=yes`; once; then yours | The pull-request template for work going into dev |
+| `.github/PULL_REQUEST_TEMPLATE/promotion.md` | with `pr-templates=yes`; once; then yours | The pull-request template for a dev to prod promotion |
+| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; sync keeps it current | An AI review of each pull request by DeepSeek, installed by /agent-be-go:setup when you answer deepseek-review=yes. |
+| `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; held until a release pins the reusable workflow to a real commit | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit: this repo's scripts/check/gates.list again, the coverage floor, a PostgreSQL 18 database migrated from scratch (roles, foreign-key indexes, invalid indexes, timeouts), the migrations against the base branch, squawk, govulncheck, secrets and the build. |
+| `.golangci.yml` | once; then yours | golangci-lint v2 (the version is pinned in scripts/check/tools.env): the linters and formatters scripts/check/lint.sh and the quality gate run. |
+| `.squawk.toml` | with `migrations=yes`; once; then yours | squawk, the migration linter (version pinned in scripts/check/tools.env). |
+| `AGENTS.md` | once, if missing; then yours | AGENTS.md: &lt;Project Name&gt; |
+| `CLAUDE.md` | the starter, when the repo has no CLAUDE.md | &lt;Project Name&gt; |
+| `api/oapi-codegen.yaml` | once; then yours | oapi-codegen's settings for the server in internal/httpapi. |
+| `api/openapi.json` | once; then yours | The contract exported for clients, generated from api/openapi.yaml |
+| `api/openapi.yaml` | once; then yours | The contract of this service: every route and every error code a client can receive. |
+| `cmd/api/main.go` | once; then yours | Command api serves the HTTP API: configuration from the environment, the problem-type check, one pool, one server with every timeout set, and a graceful shutdown on SIGINT or SIGTERM. |
+| `cmd/openapi/main.go` | once; then yours | Command openapi writes the contract clients generate from (api/openapi.json) from the spec the server embeds. |
+| `db/roles.sql` | once; then yours | The database roles: the migrator, the service (DML only, its timeouts) and the read-only agent role |
+| `go.mod` | once, if missing; then yours | The module, its Go version and the tool lines that pin the generators and checkers |
+| `go.sum` | once, if missing; then yours | The checksums of go.mod's modules |
+| `internal/apperr/codes.go` | once; then yours | Package apperr holds the closed set of error codes a client can receive and the one writer that turns an error into an RFC 9457 problem response. |
+| `internal/apperr/contract_test.go` | once; then yours | Tests that api/openapi.yaml publishes the registry: the code enum and the problem-type base. |
+| `internal/apperr/error.go` | once; then yours | The domain error: a registered code, a detail a client may see, and what only the logs see. |
+| `internal/apperr/registry_test.go` | once; then yours | Tests that every registered code is declared once, raised somewhere, and never minted elsewhere. |
+| `internal/apperr/scan_test.go` | once; then yours | The go/ast helpers the registry test reads the module with. |
+| `internal/apperr/types.go` | once; then yours | Problem types: the base every problem's type starts with, and the check main runs on it. |
+| `internal/apperr/types_test.go` | once; then yours | Tests for the problem-type base check and the type a code mints. |
+| `internal/apperr/write.go` | once; then yours | The one writer of error responses: RFC 9457 bodies with the request ID. |
+| `internal/apperr/write_test.go` | once; then yours | Tests for the problem writer: codes, statuses, the request ID, and no internal detail. |
+| `internal/config/config.go` | once; then yours | Package config reads the process configuration from the environment, once, at startup. |
+| `internal/config/config_test.go` | once; then yours | Tests for the configuration reader: defaults, every variable, and the first bad one. |
+| `internal/httpapi/api.gen.go` | once; then yours | go:build go1.22 |
+| `internal/httpapi/fallback.go` | once; then yours | The 404 and 405 answers as problems, instead of ServeMux's plain text. |
+| `internal/httpapi/generate.go` | once; then yours | The generator lines: the server code and the contract clients generate from both come from api/openapi.yaml. |
+| `internal/httpapi/handler_size_test.go` | once; then yours | Tests that every handler body stays at 15 code lines or fewer. |
+| `internal/httpapi/handlers.go` | once; then yours | The handlers: one method per operation in api/openapi.yaml. |
+| `internal/httpapi/middleware.go` | once; then yours | The middleware around the routes: request ID, access log, panic recovery, body limit. |
+| `internal/httpapi/router.go` | once; then yours | Package httpapi is the HTTP layer: the server oapi-codegen generates from api/openapi.yaml, the handlers that implement it, and the middleware around them. |
+| `internal/httpapi/router_test.go` | once; then yours | Tests through the whole router: routes, fallbacks, handler errors and panics. |
+| `internal/httpapi/server.go` | once; then yours | The HTTP server with every timeout set, and the export of the embedded spec. |
+| `internal/httpapi/server_test.go` | once; then yours | Tests for the server constructor and the spec export. |
+| `internal/httpapi/spec_test.go` | once; then yours | Tests that every operation in the spec declares the errors the router can answer. |
+| `internal/httpapi/unreadable_test.go` | once; then yours | Tests for the answer to a request the generated code cannot bind. |
+| `internal/httpapi/validate.go` | once; then yours | Request validation against the spec, before any handler reads the request. |
+| `internal/httpapi/validate_test.go` | once; then yours | Tests for request validation: fields, rules, unreadable and oversized bodies. |
+| `internal/logging/logging.go` | once; then yours | Package logging builds the process logger and carries the request ID through a context. |
+| `internal/logging/logging_test.go` | once; then yours | Tests for the logger and the request ID in a context. |
+| `internal/postgres/main_test.go` | once; then yours | The test database follows the branch's migrations before any test of this package runs. |
+| `internal/postgres/pool.go` | once; then yours | Package postgres owns the connection pool and the stores that adapt sqlc's queries to the interfaces the modules declare. |
+| `internal/postgres/pool_test.go` | once; then yours | Tests for the pool: its bounds, its refusals, and the role it runs as. |
+| `internal/postgres/pooler_test.go` | once; then yours | Tests of the service's pool behind a transaction pooler; only the quality gate builds them. |
+| `scripts/check/ci-env.sh` | always; sync keeps it current | Runs a command with the environment CI's unit tests get, and nothing else: PATH, HOME, TMPDIR, the locale, CI=true and CI's test variables. |
+| `scripts/check/coverage-exempt.txt` | once; then yours | Files the per-file coverage check leaves out (.claude/rules/go/coverage.md), one glob per line in a closed category: `# composition root: &lt;why&gt;` or `# generated: &lt;why&gt;`. |
+| `scripts/check/coverage-per-file.mjs` | always; sync keeps it current | Coverage per file: every measured file at 100%, in the metrics its toolchain reports. |
+| `scripts/check/coverage-policy.mjs` | always; sync keeps it current | COVER: refuses a coverage gate that was weakened. |
+| `scripts/check/coverage.sh` | always; sync keeps it current | Coverage gate (Rule 25, .claude/rules/go/coverage.md): every package's tests, with the race detector, against a real PostgreSQL, then 100% of statements in every hand-written file. |
+| `scripts/check/endpoints.sh` | always; sync keeps it current | Route-literal gate (Rule 10). |
+| `scripts/check/gates.list` | once; then yours | This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .githooks/pre-commit. |
+| `scripts/check/generated.sh` | always; sync keeps it current | Generated-code gate. |
+| `scripts/check/lint.sh` | always; sync keeps it current | Lint gate: golangci-lint over the whole module with .golangci.yml, at the version scripts/check/tools.env pins. |
+| `scripts/check/migrations.sh` | always; sync keeps it current | Migration gate for goose SQL files in db/migrations (Rules 11 and 12). |
+| `scripts/check/pooler.sh` | always; sync keeps it current | Pooler check: the service's own pool behind a transaction pooler (PgBouncer). |
+| `scripts/check/tools.env` | once; then yours | The tool versions outside go.mod that the gates and the quality gate pin. |
+| `sqlc.yaml` | once; then yours | sqlc: the Go in internal/postgres/db is generated from the SQL in db/queries, type-checked against the schema the goose migrations build (it reads them in name order and ignores their Down parts). |
+| `CLAUDE.md` | one managed block, appended | `## Agent config kit` |
+| `.gitignore` | one managed block (10 lines) | `.env`, `.env.*`, `!.env.ci.example`, `!.env.*.example`, `.envrc`, `.serena/`, `.skillspector/`, `/bin/`, `/coverage/`, `*.test` |
+| `go.mod` | by hand: the draft names `_kit/snippets/go.mod.tools` | |
+
+</details>
+
+<details>
 <summary><strong>agent-be-hono</strong>: 94 files</summary>
 
 | File | When setup installs it | What it is |
@@ -1289,6 +1390,20 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `agent-ai-fastapi:ai-reviewer` | Agent | Reviews the uncommitted diff of a FastAPI + LLM service against the repo's AGENTS.md rules that no gate checks - layer boundaries, the problem+json error contract, provider indirection, streaming and completion status, tests, security, typing past the Any ban, and one home per identifier. Reports findings; edits nothing. | Via `/agent-core:review` | LLM-service mistakes no gate sees | [ai-reviewer](docs/agent-ai-fastapi/ai-reviewer.md) |
 | `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](docs/agent-ai-fastapi/deepseek-review.md) |
 | `.github/workflows/quality-gate.yml` | Workflow (optional) | `.github/workflows/quality-gate.yml` runs agent-config-kit's `ai-fastapi-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Answer `ci-gate=yes` (recommended); runs on every pull request | Every pull request runs the same gates as the pre-commit hook, and more | [quality-gate](docs/agent-ai-fastapi/quality-gate.md) |
+
+### agent-be-go
+
+| Component | Kind | What it does | How to use | Why it helps | Docs |
+| --- | --- | --- | --- | --- | --- |
+| `migration-guard` | Hook (PreToolUse on file edits) | migration-guard refuses Claude's edits to a goose migration that a protected branch already has: files under the folders listed in `appendOnlyMigrationsDirs` in `.claude/agent-config.json` (setup seeds `db/migrations`). | Runs by itself before file writes | A migration a database may have run never changes; a fix is a new file | [migration-guard](docs/agent-be-go/migration-guard.md) |
+| `generated-guard` | Hook (PreToolUse on file edits) | generated-guard refuses hand edits to generated output: the server oapi-codegen writes, sqlc's query code and the exported OpenAPI contract, listed in `generatedPaths` in `.claude/agent-config.json` (setup seeds `api/openapi.json`, `internal/httpapi/api.gen.go` and `internal/postgres/db`). | Runs by itself before file writes | Changes land in the spec or the SQL, not in a file the generator overwrites | [generated-guard](docs/agent-be-go/generated-guard.md) |
+| `/agent-be-go:setup` | Command (you start it) | Install agent-be-go's backend rules, anti-patterns, service skeleton, gate scripts, lint and test config and pull-request CI into this Go HTTP service on PostgreSQL, after a dry run you approve | `/agent-be-go:setup`, once per repo | Plugins cannot ship permissions or rules; you see every write first | [setup](docs/agent-be-go/setup.md) |
+| `/agent-be-go:sync` | Command (you start it) | Check this repo against agent-be-go's installed files with --check (read-only, exits non-zero on drift or double hook wiring), or update them after a dry run you approve | `/agent-be-go:sync --check` | Drift and double hook wiring show up with an exit code | [sync](docs/agent-be-go/sync.md) |
+| `agent-be-go:reviewer` | Agent | Reviews the diff of a Go HTTP service against this repo's AGENTS.md rules and the rules under .claude/rules (layering, the error contract, database access, queries, tests) and reports each breach with its rule number, file, line and fix. The standards axis of a review; changes no file. | Via `/agent-core:review` | What no linter decides, a handler doing a service's work or a query in a loop, is caught in review | [reviewer](docs/agent-be-go/reviewer.md) |
+| `agent-be-go:api-endpoint` | Skill | Adds or changes an HTTP endpoint of this Go service contract first, as one tracer bullet - spec, generated interface, a failing test at the handler seam, then the code that turns it green. Use when the task adds, removes or changes a route, its request or response shape, or the error codes it can return. Not for a change inside a service that leaves every route's contract as it is, and not for a schema change, which the db-migration skill covers. | "add an endpoint", or `/agent-be-go:api-endpoint` | The spec, the generated server and one test per response move together | [api-endpoint](docs/agent-be-go/api-endpoint.md) |
+| `agent-be-go:db-migration` | Skill | Writes a PostgreSQL schema change for this Go service as a new goose migration that deploys without downtime - expand, backfill, contract - and regenerates the query code. Use when a task adds, alters or drops a table, column, index, constraint or enum value. Not for a query change on an unchanged schema, and never for editing a migration that is already merged. | "add a column", or `/agent-be-go:db-migration` | Schema changes deploy without downtime and never rewrite history | [db-migration](docs/agent-be-go/db-migration.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](docs/agent-be-go/deepseek-review.md) |
+| `.github/workflows/quality-gate.yml` | Workflow (optional) | `.github/workflows/quality-gate.yml` runs agent-config-kit's `be-go-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Answer `ci-gate=yes` (recommended); runs on every pull request | Every pull request runs the same gates as the pre-commit hook, plus a database built from scratch | [quality-gate](docs/agent-be-go/quality-gate.md) |
 
 ### agent-be-hono
 

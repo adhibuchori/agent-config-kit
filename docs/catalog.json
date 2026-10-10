@@ -55,6 +55,87 @@
         "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
       }
     },
+    "agent-be-go/api-endpoint": {
+      "use": "\"add an endpoint\", or `/agent-be-go:api-endpoint`",
+      "why": "The spec, the generated server and one test per response move together",
+      "id": {
+        "what": "Menambah atau mengubah endpoint HTTP secara kontrak-dulu sebagai tracer bullet: spesifikasi, antarmuka hasil generator, satu tes merah di seam handler, lalu kode yang membuatnya hijau",
+        "use": "\"add an endpoint\", atau `/agent-be-go:api-endpoint`",
+        "why": "Spesifikasi, server hasil generator, dan satu tes per respons bergerak bersama"
+      }
+    },
+    "agent-be-go/db-migration": {
+      "use": "\"add a column\", or `/agent-be-go:db-migration`",
+      "why": "Schema changes deploy without downtime and never rewrite history",
+      "id": {
+        "what": "Menulis perubahan skema PostgreSQL sebagai migrasi goose baru tanpa downtime (expand, backfill, contract) dan membangkitkan ulang kode query",
+        "use": "\"add a column\", atau `/agent-be-go:db-migration`",
+        "why": "Perubahan skema dirilis tanpa downtime dan tidak pernah menulis ulang riwayat"
+      }
+    },
+    "agent-be-go/deepseek-review": {
+      "use": "Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run",
+      "why": "A second reader on every pull request for a cent or two",
+      "id": {
+        "what": "Meminta DeepSeek meninjau diff pull request dan mempostingnya sebagai satu komentar yang diperbarui di run berikutnya",
+        "use": "Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk menjalankan ulang",
+        "why": "Pembaca kedua di setiap pull request seharga satu atau dua sen"
+      }
+    },
+    "agent-be-go/generated-guard": {
+      "use": "Runs by itself before file writes",
+      "why": "Changes land in the spec or the SQL, not in a file the generator overwrites",
+      "id": {
+        "what": "Menolak edit tangan pada kode hasil generator (server oapi-codegen, kode query sqlc) dan kontrak OpenAPI yang diekspor",
+        "use": "Berjalan sendiri sebelum penulisan file",
+        "why": "Perubahan masuk ke spesifikasi atau SQL, bukan ke file yang akan ditimpa generator"
+      }
+    },
+    "agent-be-go/migration-guard": {
+      "use": "Runs by itself before file writes",
+      "why": "A migration a database may have run never changes; a fix is a new file",
+      "id": {
+        "what": "Menolak edit pada migrasi goose yang sudah ada di branch terlindungi (append-only); file migrasi baru tetap bebas",
+        "use": "Berjalan sendiri sebelum penulisan file",
+        "why": "Migrasi yang mungkin sudah dijalankan database tidak pernah berubah; perbaikan berupa file baru"
+      }
+    },
+    "agent-be-go/quality-gate": {
+      "use": "Answer `ci-gate=yes` (recommended); runs on every pull request",
+      "why": "Every pull request runs the same gates as the pre-commit hook, plus a database built from scratch",
+      "id": {
+        "what": "Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit",
+        "use": "Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request",
+        "why": "Setiap pull request menjalankan gate yang sama dengan hook pre-commit, ditambah database yang dibangun dari nol"
+      }
+    },
+    "agent-be-go/reviewer": {
+      "use": "Via `/agent-core:review`",
+      "why": "What no linter decides, a handler doing a service's work or a query in a loop, is caught in review",
+      "id": {
+        "what": "Meninjau diff layanan HTTP Go terhadap aturan AGENTS.md dan .claude/rules (lapisan, kontrak error, akses database, query, tes) dan melaporkan setiap pelanggaran dengan nomor aturannya. Tidak mengubah file.",
+        "use": "Lewat `/agent-core:review`",
+        "why": "Yang tidak diputuskan linter, seperti handler yang mengerjakan tugas service atau query di dalam loop, tertangkap saat review"
+      }
+    },
+    "agent-be-go/setup": {
+      "use": "`/agent-be-go:setup`, once per repo",
+      "why": "Plugins cannot ship permissions or rules; you see every write first",
+      "id": {
+        "what": "Memasang aturan backend, anti-pattern, kerangka layanan, skrip gate, konfigurasi lint dan tes, serta CI pull request ke layanan HTTP Go di PostgreSQL setelah dry run yang Anda setujui",
+        "use": "`/agent-be-go:setup`, sekali per repo",
+        "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-be-go/sync": {
+      "use": "`/agent-be-go:sync --check`",
+      "why": "Drift and double hook wiring show up with an exit code",
+      "id": {
+        "what": "Memeriksa repo ini terhadap file terpasang agent-be-go dengan --check (hanya membaca, keluar non-nol bila ada drift atau hook terpasang ganda), atau memperbaruinya setelah dry run yang Anda setujui",
+        "use": "`/agent-be-go:sync --check`",
+        "why": "Drift dan hook yang terpasang ganda terlihat lewat exit code"
+      }
+    },
     "agent-be-hono/deepseek-review": {
       "use": "Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run",
       "why": "A second reader on every pull request for a cent or two",
@@ -829,13 +910,29 @@
       "en": "Lint rules for oxlint; the reasons are in .claude/docs/lint-config.md",
       "id": "Aturan lint oxlint; alasannya ada di .claude/docs/lint-config.md"
     },
+    "api/openapi.json": {
+      "en": "The contract exported for clients, generated from api/openapi.yaml",
+      "id": "Kontrak yang diekspor untuk klien, dibangkitkan dari api/openapi.yaml"
+    },
     "bunfig.toml": {
       "en": "Bun's test settings, including the test preload",
       "id": "Pengaturan tes Bun, termasuk preload tes"
     },
+    "db/roles.sql": {
+      "en": "The database roles: the migrator, the service (DML only, its timeouts) and the read-only agent role",
+      "id": "Role database: migrator, layanan (hanya DML, beserta timeout-nya), dan role agen yang hanya membaca"
+    },
     "doctor.config.json": {
       "en": "React Doctor settings (dead code is left to knip)",
       "id": "Pengaturan React Doctor (dead code diserahkan ke knip)"
+    },
+    "go.mod": {
+      "en": "The module, its Go version and the tool lines that pin the generators and checkers",
+      "id": "Modul, versi Go-nya, dan baris tool yang mem-pin generator dan pemeriksa"
+    },
+    "go.sum": {
+      "en": "The checksums of go.mod's modules",
+      "id": "Checksum modul-modul go.mod"
     },
     "knip.json": {
       "en": "Dead-code settings for knip",

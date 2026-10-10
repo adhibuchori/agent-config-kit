@@ -1,0 +1,9 @@
+# oapi-codegen's settings for the server in internal/httpapi. `go generate ./...` runs it from that
+# folder (internal/httpapi/generate.go), so the output path is relative to it.
+package: httpapi
+output: api.gen.go
+generate:
+  std-http-server: true
+  strict-server: true
+  models: true
+  embedded-spec: true

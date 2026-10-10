@@ -14,3 +14,14 @@ useDefault = true
 [[allowlists]]
 description = "Hook-probe JWT fixture"
 regexes = ['''^eyJhbGciOiJIUzI1NiJ9\.eyJzdWIiOiJwcm9iZSJ9\.probeSignatureValue9$''']
+
+# agent-be-go seeds go.sum from go.sum.starter. Each line's h1: value is a module's public SHA-256
+# checksum, and generic-api-key reads it as a key when the module path holds a word like "key" or
+# "token". gitleaks's default list already skips go.sum, so users' repos need nothing; the kit's
+# copy carries the .starter suffix. Both conditions must hold: that one file, and a value shaped
+# like an h1: hash.
+[[allowlists]]
+description = "go.sum checksums in agent-be-go's starter"
+condition = "AND"
+paths = ['''(?:^|/)plugins/agent-be-go/templates/be-go/go\.sum\.starter$''']
+regexes = ['''^[A-Za-z0-9+/]{43}=$''']

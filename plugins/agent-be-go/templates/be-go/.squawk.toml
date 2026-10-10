@@ -1,0 +1,13 @@
+# squawk, the migration linter (version pinned in scripts/check/tools.env). The quality gate lints
+# every new file in db/migrations with it, and scripts/check/migrations.sh does too when squawk is
+# installed; both leave the `-- +goose Down` section out.
+
+# The oldest server a migration must run on; squawk's own default is 15.
+pg_version = "17.0"
+
+excluded_rules = [
+  # goose runs each file in one transaction, so a failed file leaves nothing behind; and IF NOT
+  # EXISTS on a retried CREATE INDEX CONCURRENTLY keeps an INVALID index (anti-pattern
+  # cic-retry-keeps-invalid-index).
+  "prefer-robust-stmts",
+]

@@ -847,6 +847,107 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
+<summary><strong>agent-be-go</strong>: 93 berkas</summary>
+
+| Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
+| --- | --- | --- |
+| `.claude/ANALYTICS.example.md` | jika `analytics=yes`; sync menjaganya tetap terbaru | Analytics — Read API Access |
+| `.claude/SERENA-WORKSPACE.example.md` | jika `serena-workspace=yes`; sync menjaganya tetap terbaru | Serena — Multi-Repo Workspace Scoping |
+| `.claude/agent-config.json` | sekali; lalu milik Anda | Pengaturan hook untuk stack ini, seperti generatedPaths atau migrationsDirs |
+| `.claude/anti-patterns/INDEX.md` | sekali; lalu milik Anda | Anti-Patterns Index |
+| `.claude/anti-patterns/cached-plan-after-schema-change.md` | selalu; sync menjaganya tetap terbaru | `cached plan must not change result type` after a migration |
+| `.claude/anti-patterns/cic-inside-transaction.md` | selalu; sync menjaganya tetap terbaru | `CREATE INDEX CONCURRENTLY` inside a transaction |
+| `.claude/anti-patterns/cic-retry-keeps-invalid-index.md` | selalu; sync menjaganya tetap terbaru | A retried `CREATE INDEX CONCURRENTLY IF NOT EXISTS` keeps an INVALID index |
+| `.claude/anti-patterns/closed-error-codes-are-not-closed.md` | selalu; sync menjaganya tetap terbaru | A "closed" set of error codes that is not closed |
+| `.claude/anti-patterns/ddl-without-lock-timeout.md` | selalu; sync menjaganya tetap terbaru | DDL without `lock_timeout` stalls every query on the table |
+| `.claude/anti-patterns/default-privileges-without-for-role.md` | selalu; sync menjaganya tetap terbaru | `ALTER DEFAULT PRIVILEGES` without `FOR ROLE` |
+| `.claude/anti-patterns/enum-value-used-in-same-transaction.md` | selalu; sync menjaganya tetap terbaru | A new enum value used in the transaction that added it |
+| `.claude/anti-patterns/golangci-lint-file-mode-and-fast-only.md` | selalu; sync menjaganya tetap terbaru | golangci-lint on one file, or with `--fast-only`, checks the wrong thing |
+| `.claude/anti-patterns/goose-never-detects-edited-migrations.md` | selalu; sync menjaganya tetap terbaru | goose never notices an edited migration |
+| `.claude/anti-patterns/json-decoder-accepts-unknown-and-case-insensitive-keys.md` | selalu; sync menjaganya tetap terbaru | `encoding/json` accepts unknown keys and matches names without case |
+| `.claude/anti-patterns/pgbouncer-rejects-startup-parameters.md` | selalu; sync menjaganya tetap terbaru | PgBouncer refuses timeouts sent as startup parameters |
+| `.claude/anti-patterns/pgx-describe-exec-behind-pooler.md` | selalu; sync menjaganya tetap terbaru | pgx `describe_exec` (or a cache with no pooler support) behind PgBouncer |
+| `.claude/anti-patterns/pgxpool-size-follows-cpu-count.md` | selalu; sync menjaganya tetap terbaru | pgxpool's size follows the machine's CPU count |
+| `.claude/anti-patterns/read-only-default-is-not-a-boundary.md` | selalu; sync menjaganya tetap terbaru | A read-only default is not a read-only role |
+| `.claude/anti-patterns/servemux-404-405-skip-problem-json.md` | selalu; sync menjaganya tetap terbaru | ServeMux answers 404 and 405 in plain text |
+| `.claude/anti-patterns/session-state-behind-transaction-pooler.md` | selalu; sync menjaganya tetap terbaru | Session state behind a transaction pooler |
+| `.claude/anti-patterns/unindexed-foreign-keys.md` | selalu; sync menjaganya tetap terbaru | Foreign keys without an index |
+| `.claude/rules/backend/go-service.md` | selalu; sync menjaganya tetap terbaru | Go service |
+| `.claude/rules/backend/postgres.md` | selalu; sync menjaganya tetap terbaru | PostgreSQL |
+| `.claude/rules/backend/testing.md` | selalu; sync menjaganya tetap terbaru | Testing (Go) |
+| `.claude/rules/common/error-codes.md` | selalu; sync menjaganya tetap terbaru | Error codes (Go API) |
+| `.claude/rules/go/coverage.md` | selalu; sync menjaganya tetap terbaru | COVER — Test Coverage (Go) |
+| `.claude/settings.json` | digabung ke milik Anda (hanya menambah; nilai Anda yang menang) | Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash |
+| `.env.ci.example` | sekali; lalu milik Anda | The variables the tests get in CI, and locally through scripts/check/ci-env.sh: dummy values only, never a real secret. |
+| `.githooks/pre-commit` | sekali; lalu milik Anda | The commit gate: the gates scripts/check/gates.list names for what is staged. |
+| `.github/CODEOWNERS` | sekali; lalu milik Anda | Code owners: GitHub asks them to review every pull request that touches a matching path. |
+| `.github/PULL_REQUEST_TEMPLATE/dev.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk pekerjaan yang masuk ke dev |
+| `.github/PULL_REQUEST_TEMPLATE/promotion.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
+| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; sync menjaganya tetap terbaru | An AI review of each pull request by DeepSeek, installed by /agent-be-go:setup when you answer deepseek-review=yes. |
+| `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit: this repo's scripts/check/gates.list again, the coverage floor, a PostgreSQL 18 database migrated from scratch (roles, foreign-key indexes, invalid indexes, timeouts), the migrations against the base branch, squawk, govulncheck, secrets and the build. |
+| `.golangci.yml` | sekali; lalu milik Anda | golangci-lint v2 (the version is pinned in scripts/check/tools.env): the linters and formatters scripts/check/lint.sh and the quality gate run. |
+| `.squawk.toml` | jika `migrations=yes`; sekali; lalu milik Anda | squawk, the migration linter (version pinned in scripts/check/tools.env). |
+| `AGENTS.md` | sekali, jika belum ada; lalu milik Anda | AGENTS.md: &lt;Project Name&gt; |
+| `CLAUDE.md` | starter-nya, jika repo belum punya CLAUDE.md | &lt;Project Name&gt; |
+| `api/oapi-codegen.yaml` | sekali; lalu milik Anda | oapi-codegen's settings for the server in internal/httpapi. |
+| `api/openapi.json` | sekali; lalu milik Anda | Kontrak yang diekspor untuk klien, dibangkitkan dari api/openapi.yaml |
+| `api/openapi.yaml` | sekali; lalu milik Anda | The contract of this service: every route and every error code a client can receive. |
+| `cmd/api/main.go` | sekali; lalu milik Anda | Command api serves the HTTP API: configuration from the environment, the problem-type check, one pool, one server with every timeout set, and a graceful shutdown on SIGINT or SIGTERM. |
+| `cmd/openapi/main.go` | sekali; lalu milik Anda | Command openapi writes the contract clients generate from (api/openapi.json) from the spec the server embeds. |
+| `db/roles.sql` | sekali; lalu milik Anda | Role database: migrator, layanan (hanya DML, beserta timeout-nya), dan role agen yang hanya membaca |
+| `go.mod` | sekali, jika belum ada; lalu milik Anda | Modul, versi Go-nya, dan baris tool yang mem-pin generator dan pemeriksa |
+| `go.sum` | sekali, jika belum ada; lalu milik Anda | Checksum modul-modul go.mod |
+| `internal/apperr/codes.go` | sekali; lalu milik Anda | Package apperr holds the closed set of error codes a client can receive and the one writer that turns an error into an RFC 9457 problem response. |
+| `internal/apperr/contract_test.go` | sekali; lalu milik Anda | Tests that api/openapi.yaml publishes the registry: the code enum and the problem-type base. |
+| `internal/apperr/error.go` | sekali; lalu milik Anda | The domain error: a registered code, a detail a client may see, and what only the logs see. |
+| `internal/apperr/registry_test.go` | sekali; lalu milik Anda | Tests that every registered code is declared once, raised somewhere, and never minted elsewhere. |
+| `internal/apperr/scan_test.go` | sekali; lalu milik Anda | The go/ast helpers the registry test reads the module with. |
+| `internal/apperr/types.go` | sekali; lalu milik Anda | Problem types: the base every problem's type starts with, and the check main runs on it. |
+| `internal/apperr/types_test.go` | sekali; lalu milik Anda | Tests for the problem-type base check and the type a code mints. |
+| `internal/apperr/write.go` | sekali; lalu milik Anda | The one writer of error responses: RFC 9457 bodies with the request ID. |
+| `internal/apperr/write_test.go` | sekali; lalu milik Anda | Tests for the problem writer: codes, statuses, the request ID, and no internal detail. |
+| `internal/config/config.go` | sekali; lalu milik Anda | Package config reads the process configuration from the environment, once, at startup. |
+| `internal/config/config_test.go` | sekali; lalu milik Anda | Tests for the configuration reader: defaults, every variable, and the first bad one. |
+| `internal/httpapi/api.gen.go` | sekali; lalu milik Anda | go:build go1.22 |
+| `internal/httpapi/fallback.go` | sekali; lalu milik Anda | The 404 and 405 answers as problems, instead of ServeMux's plain text. |
+| `internal/httpapi/generate.go` | sekali; lalu milik Anda | The generator lines: the server code and the contract clients generate from both come from api/openapi.yaml. |
+| `internal/httpapi/handler_size_test.go` | sekali; lalu milik Anda | Tests that every handler body stays at 15 code lines or fewer. |
+| `internal/httpapi/handlers.go` | sekali; lalu milik Anda | The handlers: one method per operation in api/openapi.yaml. |
+| `internal/httpapi/middleware.go` | sekali; lalu milik Anda | The middleware around the routes: request ID, access log, panic recovery, body limit. |
+| `internal/httpapi/router.go` | sekali; lalu milik Anda | Package httpapi is the HTTP layer: the server oapi-codegen generates from api/openapi.yaml, the handlers that implement it, and the middleware around them. |
+| `internal/httpapi/router_test.go` | sekali; lalu milik Anda | Tests through the whole router: routes, fallbacks, handler errors and panics. |
+| `internal/httpapi/server.go` | sekali; lalu milik Anda | The HTTP server with every timeout set, and the export of the embedded spec. |
+| `internal/httpapi/server_test.go` | sekali; lalu milik Anda | Tests for the server constructor and the spec export. |
+| `internal/httpapi/spec_test.go` | sekali; lalu milik Anda | Tests that every operation in the spec declares the errors the router can answer. |
+| `internal/httpapi/unreadable_test.go` | sekali; lalu milik Anda | Tests for the answer to a request the generated code cannot bind. |
+| `internal/httpapi/validate.go` | sekali; lalu milik Anda | Request validation against the spec, before any handler reads the request. |
+| `internal/httpapi/validate_test.go` | sekali; lalu milik Anda | Tests for request validation: fields, rules, unreadable and oversized bodies. |
+| `internal/logging/logging.go` | sekali; lalu milik Anda | Package logging builds the process logger and carries the request ID through a context. |
+| `internal/logging/logging_test.go` | sekali; lalu milik Anda | Tests for the logger and the request ID in a context. |
+| `internal/postgres/main_test.go` | sekali; lalu milik Anda | The test database follows the branch's migrations before any test of this package runs. |
+| `internal/postgres/pool.go` | sekali; lalu milik Anda | Package postgres owns the connection pool and the stores that adapt sqlc's queries to the interfaces the modules declare. |
+| `internal/postgres/pool_test.go` | sekali; lalu milik Anda | Tests for the pool: its bounds, its refusals, and the role it runs as. |
+| `internal/postgres/pooler_test.go` | sekali; lalu milik Anda | Tests of the service's pool behind a transaction pooler; only the quality gate builds them. |
+| `scripts/check/ci-env.sh` | selalu; sync menjaganya tetap terbaru | Runs a command with the environment CI's unit tests get, and nothing else: PATH, HOME, TMPDIR, the locale, CI=true and CI's test variables. |
+| `scripts/check/coverage-exempt.txt` | sekali; lalu milik Anda | Files the per-file coverage check leaves out (.claude/rules/go/coverage.md), one glob per line in a closed category: `# composition root: &lt;why&gt;` or `# generated: &lt;why&gt;`. |
+| `scripts/check/coverage-per-file.mjs` | selalu; sync menjaganya tetap terbaru | Coverage per file: every measured file at 100%, in the metrics its toolchain reports. |
+| `scripts/check/coverage-policy.mjs` | selalu; sync menjaganya tetap terbaru | COVER: refuses a coverage gate that was weakened. |
+| `scripts/check/coverage.sh` | selalu; sync menjaganya tetap terbaru | Coverage gate (Rule 25, .claude/rules/go/coverage.md): every package's tests, with the race detector, against a real PostgreSQL, then 100% of statements in every hand-written file. |
+| `scripts/check/endpoints.sh` | selalu; sync menjaganya tetap terbaru | Route-literal gate (Rule 10). |
+| `scripts/check/gates.list` | sekali; lalu milik Anda | This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .githooks/pre-commit. |
+| `scripts/check/generated.sh` | selalu; sync menjaganya tetap terbaru | Generated-code gate. |
+| `scripts/check/lint.sh` | selalu; sync menjaganya tetap terbaru | Lint gate: golangci-lint over the whole module with .golangci.yml, at the version scripts/check/tools.env pins. |
+| `scripts/check/migrations.sh` | selalu; sync menjaganya tetap terbaru | Migration gate for goose SQL files in db/migrations (Rules 11 and 12). |
+| `scripts/check/pooler.sh` | selalu; sync menjaganya tetap terbaru | Pooler check: the service's own pool behind a transaction pooler (PgBouncer). |
+| `scripts/check/tools.env` | sekali; lalu milik Anda | The tool versions outside go.mod that the gates and the quality gate pin. |
+| `sqlc.yaml` | sekali; lalu milik Anda | sqlc: the Go in internal/postgres/db is generated from the SQL in db/queries, type-checked against the schema the goose migrations build (it reads them in name order and ignores their Down parts). |
+| `CLAUDE.md` | satu blok terkelola, ditambahkan di akhir | `## Agent config kit` |
+| `.gitignore` | satu blok terkelola (10 baris) | `.env`, `.env.*`, `!.env.ci.example`, `!.env.*.example`, `.envrc`, `.serena/`, `.skillspector/`, `/bin/`, `/coverage/`, `*.test` |
+| `go.mod` | manual: draft menyebut `_kit/snippets/go.mod.tools` | |
+
+</details>
+
+<details>
 <summary><strong>agent-be-hono</strong>: 94 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
@@ -1299,6 +1400,20 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `agent-ai-fastapi:ai-reviewer` | Agen | Indireksi penyedia, streaming, problem+json, dan tipe dalam layanan FastAPI + LLM | Lewat `/agent-core:review` | Kesalahan layanan LLM yang tidak terlihat oleh gate | [ai-reviewer](docs/agent-ai-fastapi/ai-reviewer.md) |
 | `.github/workflows/deepseek-review.yml` | Workflow (opsional) | Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout | Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang | Pembaca kedua di setiap pull request dengan biaya satu atau dua sen | [deepseek-review](docs/agent-ai-fastapi/deepseek-review.md) |
 | `.github/workflows/quality-gate.yml` | Workflow (opsional) | Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit | Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request | Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih | [quality-gate](docs/agent-ai-fastapi/quality-gate.md) |
+
+### agent-be-go
+
+| Komponen | Jenis | Fungsinya | Cara pakai | Manfaatnya | Dokumen |
+| --- | --- | --- | --- | --- | --- |
+| `migration-guard` | Hook (PreToolUse pada edit berkas) | Menolak edit pada migrasi goose yang sudah ada di branch terlindungi (append-only); file migrasi baru tetap bebas | Berjalan sendiri sebelum penulisan file | Migrasi yang mungkin sudah dijalankan database tidak pernah berubah; perbaikan berupa file baru | [migration-guard](docs/agent-be-go/migration-guard.md) |
+| `generated-guard` | Hook (PreToolUse pada edit berkas) | Menolak edit tangan pada kode hasil generator (server oapi-codegen, kode query sqlc) dan kontrak OpenAPI yang diekspor | Berjalan sendiri sebelum penulisan file | Perubahan masuk ke spesifikasi atau SQL, bukan ke file yang akan ditimpa generator | [generated-guard](docs/agent-be-go/generated-guard.md) |
+| `/agent-be-go:setup` | Perintah (Anda yang memulai) | Memasang aturan backend, anti-pattern, kerangka layanan, skrip gate, konfigurasi lint dan tes, serta CI pull request ke layanan HTTP Go di PostgreSQL setelah dry run yang Anda setujui | `/agent-be-go:setup`, sekali per repo | Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu | [setup](docs/agent-be-go/setup.md) |
+| `/agent-be-go:sync` | Perintah (Anda yang memulai) | Memeriksa repo ini terhadap file terpasang agent-be-go dengan --check (hanya membaca, keluar non-nol bila ada drift atau hook terpasang ganda), atau memperbaruinya setelah dry run yang Anda setujui | `/agent-be-go:sync --check` | Drift dan hook yang terpasang ganda terlihat lewat exit code | [sync](docs/agent-be-go/sync.md) |
+| `agent-be-go:reviewer` | Agen | Meninjau diff layanan HTTP Go terhadap aturan AGENTS.md dan .claude/rules (lapisan, kontrak error, akses database, query, tes) dan melaporkan setiap pelanggaran dengan nomor aturannya. Tidak mengubah file. | Lewat `/agent-core:review` | Yang tidak diputuskan linter, seperti handler yang mengerjakan tugas service atau query di dalam loop, tertangkap saat review | [reviewer](docs/agent-be-go/reviewer.md) |
+| `agent-be-go:api-endpoint` | Skill | Menambah atau mengubah endpoint HTTP secara kontrak-dulu sebagai tracer bullet: spesifikasi, antarmuka hasil generator, satu tes merah di seam handler, lalu kode yang membuatnya hijau | "add an endpoint", atau `/agent-be-go:api-endpoint` | Spesifikasi, server hasil generator, dan satu tes per respons bergerak bersama | [api-endpoint](docs/agent-be-go/api-endpoint.md) |
+| `agent-be-go:db-migration` | Skill | Menulis perubahan skema PostgreSQL sebagai migrasi goose baru tanpa downtime (expand, backfill, contract) dan membangkitkan ulang kode query | "add a column", atau `/agent-be-go:db-migration` | Perubahan skema dirilis tanpa downtime dan tidak pernah menulis ulang riwayat | [db-migration](docs/agent-be-go/db-migration.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (opsional) | Meminta DeepSeek meninjau diff pull request dan mempostingnya sebagai satu komentar yang diperbarui di run berikutnya | Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk menjalankan ulang | Pembaca kedua di setiap pull request seharga satu atau dua sen | [deepseek-review](docs/agent-be-go/deepseek-review.md) |
+| `.github/workflows/quality-gate.yml` | Workflow (opsional) | Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit | Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request | Setiap pull request menjalankan gate yang sama dengan hook pre-commit, ditambah database yang dibangun dari nol | [quality-gate](docs/agent-be-go/quality-gate.md) |
 
 ### agent-be-hono
 

@@ -1,0 +1,74 @@
+# The contract of this service: every route and every error code a client can receive. The server
+# is generated from it (`go generate ./...`), and clients generate from api/openapi.json, which the
+# same command exports. Change this file first; the build then fails until each new operation has
+# its handler. Leave out `servers`: the request validator matches paths only.
+openapi: 3.0.3
+info:
+  title: Service API
+  version: 0.1.0
+paths:
+  /api/health:
+    get:
+      operationId: getHealth
+      summary: Report that the process serves requests
+      responses:
+        "200":
+          description: The process is up.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "500":
+          $ref: "#/components/responses/Problem"
+components:
+  responses:
+    Problem:
+      description: An RFC 9457 problem; its code names it, and its type is the base below plus that code.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [pointer, code]
+      properties:
+        pointer:
+          type: string
+          description: A JSON pointer into the body, or /<in>/<name> for a parameter.
+        code:
+          type: string
+          description: The schema rule the field broke, for example required or minLength.
+    Problem:
+      type: object
+      required: [type, title, status, code, requestId]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-problem-type-base: https://example.invalid/problems/
+          example: https://example.invalid/problems/NOT_FOUND
+        title:
+          type: string
+        status:
+          type: integer
+        code:
+          type: string
+          enum: [INTERNAL, NOT_FOUND, METHOD_NOT_ALLOWED, MALFORMED_BODY, BODY_TOO_LARGE, VALIDATION_FAILED]
+        detail:
+          type: string
+        requestId:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldError"

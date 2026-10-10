@@ -1,0 +1,35 @@
+# The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit: this repo's
+# scripts/check/gates.list again, the coverage floor, a PostgreSQL 18 database migrated from
+# scratch (roles, foreign-key indexes, invalid indexes, timeouts), the migrations against the base
+# branch, squawk, govulncheck, secrets and the build. /agent-be-go:sync offers the new pin when the
+# plugin updates; nothing moves on its own. To change an input, first make the file yours with
+# `/agent-be-go:sync own .github/workflows/quality-gate.yml`, or sync --check reports the edit.
+name: Quality Gate
+
+on:
+  # Every pull request, whatever branch it targets: a branch filter that misses this repo's
+  # branches would leave the gate silent. Diff steps compare against the pull request's base.
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Quality Gate
+    permissions:
+      contents: read
+    # No secrets: the gate reads the checkout and nothing else.
+    uses: adhibuchori/agent-config-kit/.github/workflows/be-go-quality-gate.yml@0000000000000000000000000000000000000000 # v1.3.0
+    with:
+      # PostgreSQL for the tests and the migration checks. false only for a service with no
+      # database at all: the tests of internal/postgres need one even when the schema lives elsewhere.
+      database: true
+      # true runs the service's pool behind PgBouncer 1.26.0 (scripts/check/pooler.sh).
+      pgbouncer-tests: false
+      # The pooler's max_prepared_statements; 0 copies a production pooler that has it off.
+      pgbouncer-max-prepared-statements: 200
