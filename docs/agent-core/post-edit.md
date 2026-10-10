@@ -11,6 +11,18 @@ Claude any finding.
 JSON, CSS and Markdown get `oxfmt`, and JSON is also checked for validity. A tool your project does
 not have is skipped: nothing is downloaded.
 
+| File | Format | Lint |
+| --- | --- | --- |
+| `*.go` | `golangci-lint fmt`, or `gofmt -w` without golangci-lint | `golangci-lint run` on the file's package (capped at 20 s), or `go vet` |
+| `*.rs` | `rustfmt --edition 2024` through stdin, written back only when it differs | `cargo clippy --locked --all-targets` from a root `Cargo.toml` (capped at 10 s), this file's lines only |
+| `*.swift` | `xcrun swift-format format --in-place`, or a `swift-format` on `PATH` | `swiftlint lint --quiet --force-exclude`, this file's lines only |
+| `*.xcstrings` | none | valid JSON; every key in every locale the catalog itself uses, each `translated` |
+| `*.pbxproj` | none | `plutil -lint` |
+
+Go runs with `GOTOOLCHAIN=local GOPROXY=off GOFLAGS=-mod=readonly`, Rust with
+`RUSTUP_AUTO_INSTALL=0 CARGO_NET_OFFLINE=true SQLX_OFFLINE=true`: the toolchain already installed,
+no network, and `go.mod` never rewritten. A package-wide note stops after 40 lines.
+
 ## When to reach for it
 
 It runs by itself after `Write`, `Edit`, `MultiEdit` and Serena's write tools. With `localePairs`
@@ -24,6 +36,8 @@ its partner did not.
 
 - Your project's own formatters and linters, installed as dev dependencies: `oxfmt` and `oxlint`
   for TypeScript and JavaScript (`oxfmt` also formats JSON, CSS and Markdown), `ruff` for Python.
+  For Go, Rust and Swift, the tools on your `PATH`: golangci-lint (or Go's own `gofmt` and
+  `go vet`), the toolchain's `rustfmt` and `cargo clippy`, Xcode's `swift-format` and SwiftLint.
   A tool the project lacks is skipped.
 
 ## What it blocks
@@ -69,6 +83,14 @@ d=$(mktemp -d) && printf '{"a": }\n' >"$d/broken.json" \
 
 **It is slow on big files.**
 Its timeout is 60 s; formatting runs once per write. A repo without oxfmt, oxlint or ruff pays only the hook's start-up time (about 70 ms measured).
+
+**Clippy said nothing after a dependency change.**
+A cold build takes longer than the 10 s cap, and a build lock another `cargo` holds makes clippy
+wait: either way the hook stops it and says nothing. The next edit, or the gate, reports.
+
+**Why does SwiftLint say nothing at all?**
+A SwiftLint other than the version `.swiftlint.yml` pins (`swiftlint_version`) exits without
+linting. Install the pinned version.
 
 ## It's working if
 

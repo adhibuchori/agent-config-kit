@@ -154,5 +154,5 @@ templates you do not use — an unfilled template is worse than none.
 | Known traps — scan the triggers before debugging | `.claude/anti-patterns/INDEX.md` |
 | A hook refused something, or its per-repo settings | `.claude/agent-config.example.json`; each hook's page in https://github.com/adhibuchori/agent-config-kit/tree/main/docs |
 | Unlocking `.env*` files or production writes | `docs/unlock.md` |
-| This repo owns its schema: Alembic, worker, CLI | `.claude/examples/pipeline/README.md` |
+| This repo owns its schema: Alembic, worker, CLI | `.claude/examples/pipeline/README.md` (with `pipeline=yes`) |
 | A rarely used MCP server, loaded with `claude --mcp-config` | `.claude/mcp/<name>.json` (from `*.example.json`) |
