@@ -30,7 +30,7 @@ there is real defence in depth when the hop crosses a network you do not own.
 ## Hops
 
 | Hop                          | Keys                                                            | Where they live                        |
-| ---------------------------- | --------------------------------------------------------------- | -------------------------------------- |
+| --- | --- |
 | Browser ⇄ frontend server    | ECDH P-256 per tab, HKDF-SHA-256 → AES-256-GCM; nothing static  | the server's keypair, server-only env  |
 | Frontend server ⇄ backend    | a pre-shared AES-256 key, `kid:base64` in one variable          | both servers' env, never `NEXT_PUBLIC_`|
 | Service ⇄ service            | one pre-shared key per hop, named after the hop                 | both services' env                     |
@@ -62,6 +62,8 @@ answer several callers holding different keys.
   before the cipher runs. This is not full replay protection; that needs a nonce store.
 - **Status codes stay in clear** on the status line, so `!res.ok` and a sign-out on 401 work
   without decrypting. Error bodies are sealed like any other body.
+- **A sealed response carries `Vary: x-payload-epk, x-payload-kid`**: the key it is sealed under
+  comes from those request headers, so a shared cache never serves one caller's envelope to another.
 
 ## Policies
 
@@ -111,17 +113,18 @@ short-lived signed link minted over a `strict` route. No body (204, 304) means n
 
 ## Refusals and error codes
 
-| Code                    | Meaning                                                        |
-| ----------------------- | -------------------------------------------------------------- |
-| `ENVELOPE_REQUIRED` | a sealed route received plaintext: nearly always a hand-rolled call |
-| `ENVELOPE_MALFORMED`  | an unknown version, a missing field, plaintext that is not JSON |
-| `ENVELOPE_EXPIRED`         | outside the window: a replay, or clocks that drifted           |
-| `ENVELOPE_KEY_UNKNOWN`   | a `kid` this side does not hold: mid-rotation or a bad deploy  |
-| `ENVELOPE_REJECTED`   | the tag did not verify: tampering, the wrong key, another route |
+| Code | Meaning |
+| --- | --- |
+| `ENVELOPE_REQUIRED` | a sealed route received plaintext or a body that is not an envelope of a known version (an unknown `v`, a missing field): nearly always a hand-rolled call |
+| `ENVELOPE_MALFORMED` | opened plaintext that is not JSON, or a browser key that is not a P-256 point; a 500 when a server cannot seal its own body because it is not JSON |
+| `ENVELOPE_EXPIRED` | outside the window: a replay, or clocks that drifted |
+| `ENVELOPE_KEY_UNKNOWN` | a `kid` this side does not hold: mid-rotation or a bad deploy |
+| `ENVELOPE_REJECTED` | the tag did not verify: tampering, the wrong key, another route |
 
 A refusal raised by the payload layer leaves as **plaintext** problem+json (a 400, or a 500 when a
 server cannot seal its own body), with the code and never a payload: the caller may hold no working
-key. A client accepts a plaintext body only with a failure status or an empty body; a plaintext
+key. The body carries no `detail`: the internal message names route patterns and server state, so
+it goes to the log, and the code is what crosses the wire. A client accepts a plaintext body only with a failure status or an empty body; a plaintext
 success on a sealed route is a downgrade and is refused. After `ENVELOPE_REJECTED` a browser
 drops its agreed key and negotiates again: that is what a server restarted with a new keypair
 looks like. Add the codes to the backend's problem-code list and the frontend's error map.

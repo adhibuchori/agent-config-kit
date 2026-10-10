@@ -76,6 +76,14 @@ function app(options: Partial<PayloadMiddlewareOptions> = {}): Hono {
   return hono;
 }
 
+/* The whole refusal body: a member added later, such as an internal message, fails. */
+const refusal = (status: number, code: string) => ({
+  type: 'about:blank',
+  title: 'Payload refused',
+  status,
+  code,
+});
+
 const aadFor = (method: string, pattern: string) => (kid: string, ts: number) =>
   requestAad(method, pattern, kid, ts);
 
@@ -87,6 +95,7 @@ async function sealed(body: unknown, pattern = '/api/notes'): Promise<string> {
 
 async function opened(response: Response, pattern: string): Promise<unknown> {
   expect(response.headers.get('content-type')).toBe(ENCRYPTED_MEDIA_TYPE);
+  expect(response.headers.get('vary')).toBe(`${EPK_HEADER}, ${KID_HEADER}`);
   const envelope = parseEnvelope(await response.text());
   return openJson(envelope, {
     key: ring.resolve(envelope.kid),
@@ -113,7 +122,7 @@ describe('payload middleware, server callers', () => {
     });
     expect(response.status).toBe(400);
     expect(response.headers.get('content-type')).toBe('application/problem+json');
-    expect(await response.json()).toMatchObject({ code: 'ENVELOPE_REQUIRED' });
+    expect(await response.json()).toEqual(refusal(400, 'ENVELOPE_REQUIRED'));
   });
 
   test('seals a bodiless GET under the key its header names, or the primary', async () => {
@@ -126,7 +135,7 @@ describe('payload middleware, server callers', () => {
   test('refuses a key id it does not hold', async () => {
     const response = await app().request('/api/notes/7', { headers: { [KID_HEADER]: 'k9' } });
     expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({ code: 'ENVELOPE_KEY_UNKNOWN' });
+    expect(await response.json()).toEqual(refusal(400, 'ENVELOPE_KEY_UNKNOWN'));
   });
 
   test('lets a bodiless DELETE through and leaves a 204 alone', async () => {
@@ -155,7 +164,7 @@ describe('payload middleware, server callers', () => {
   test('refuses to seal a body that is not JSON, and skips an empty one', async () => {
     const text = await app().request('/api/text');
     expect(text.status).toBe(500);
-    expect(await text.json()).toMatchObject({ code: 'ENVELOPE_MALFORMED' });
+    expect(await text.json()).toEqual(refusal(500, 'ENVELOPE_MALFORMED'));
     const empty = await app().request('/api/empty');
     expect(empty.status).toBe(200);
     expect(await empty.text()).toBe('');
@@ -205,8 +214,8 @@ describe('payload middleware, browser callers', () => {
     const noBrowser = await app({ browserKeyPair: undefined }).request('/api/notes/1', {
       headers: { [EPK_HEADER]: browser.publicKey },
     });
-    expect(await noBrowser.json()).toMatchObject({ code: 'ENVELOPE_KEY_UNKNOWN' });
+    expect(await noBrowser.json()).toEqual(refusal(400, 'ENVELOPE_KEY_UNKNOWN'));
     const noRing = await app({ keyRing: undefined }).request('/api/notes/1');
-    expect(await noRing.json()).toMatchObject({ code: 'ENVELOPE_REQUIRED' });
+    expect(await noRing.json()).toEqual(refusal(400, 'ENVELOPE_REQUIRED'));
   });
 });

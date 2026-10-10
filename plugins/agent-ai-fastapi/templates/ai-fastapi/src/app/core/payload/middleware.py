@@ -39,6 +39,9 @@ Receive = Callable[[], Awaitable[Message]]
 Send = Callable[[Message], Awaitable[None]]
 App = Callable[[Scope, Receive, Send], Awaitable[None]]
 _REPLACED = (b"content-type", b"content-length")
+# A sealed answer depends on the key these request headers chose, so a shared cache keys on them and
+# never serves one caller's envelope to another. The same value in every stack.
+_SEALED_VARY = (b"vary", b"x-payload-epk, x-payload-kid")
 
 
 def _pairs(value: object) -> list[tuple[bytes, bytes]]:
@@ -65,13 +68,10 @@ def _body(message: Message) -> bytes:
 
 
 async def _refuse(send: Send, status: int, error: PayloadError) -> None:
-    detail = {
-        "title": "Payload refused",
-        "status": status,
-        "detail": str(error),
-        "code": error.code,
-    }
-    body = json.dumps(detail).encode()
+    # The code and never the message: the message names route patterns and server state, and is
+    # for logs (errors.py).
+    problem = {"title": "Payload refused", "status": status, "code": error.code}
+    body = json.dumps(problem).encode()
     headers = [
         (b"content-type", b"application/problem+json"),
         (b"content-length", str(len(body)).encode()),
@@ -189,7 +189,8 @@ class PayloadMiddleware:
             body = json.dumps(envelope).encode()
             kept = [(k, v) for k, v in _pairs(start.get("headers")) if k.lower() not in _REPLACED]
             sealed_type = (b"content-type", ENCRYPTED_MEDIA_TYPE.encode())
-            headers = [*kept, sealed_type, (b"content-length", str(len(body)).encode())]
+            length = (b"content-length", str(len(body)).encode())
+            headers = [*kept, sealed_type, length, _SEALED_VARY]
             await send({**start, "headers": headers})
             await send({"type": "http.response.body", "body": body})
 

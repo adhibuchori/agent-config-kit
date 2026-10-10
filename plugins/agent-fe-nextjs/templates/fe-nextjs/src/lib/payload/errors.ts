@@ -8,9 +8,11 @@
 
 /** Every payload failure a transport can report. */
 export type PayloadCode =
-  /** A sealed endpoint received a body that is not an envelope: nearly always a hand-rolled call. */
+  /** A sealed endpoint received a body that is not an envelope of a version this build reads (an
+   *  unknown version or a missing field included): nearly always a hand-rolled call. */
   | 'ENVELOPE_REQUIRED'
-  /** Envelope-shaped but unreadable: an unknown version, a missing field, plaintext that is not JSON. */
+  /** The exchange cannot complete: opened plaintext that is not JSON, a browser key that is not a
+   *  P-256 point, or (as a 500) an answer this side cannot seal because it is not JSON. */
   | 'ENVELOPE_MALFORMED'
   /** Outside the freshness window: a replay, or two clocks that drifted apart. */
   | 'ENVELOPE_EXPIRED'

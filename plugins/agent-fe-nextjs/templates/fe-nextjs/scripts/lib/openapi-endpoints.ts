@@ -92,6 +92,17 @@ function exemptionsOf(value: unknown): Record<string, Exemption> {
   return out;
 }
 
+/* The committed switch, exactly as `resolveEncryptionMode` accepts it at startup: a typo such as
+   "stirct" would otherwise read as strict here and fail only when the service boots. Absent means
+   strict, as it does there. */
+function switchOf(value: unknown): PayloadConfig['encryption'] {
+  if (value === undefined || value === 'strict') return 'strict';
+  if (value === 'off') return 'off';
+  throw new Error(
+    `${CONFIG_FILE}: encryption must be "strict" or "off", not ${JSON.stringify(value)}`,
+  );
+}
+
 /** Lib: readPayloadConfig
  * payload.config.json at `root`, or null where the contract is not adopted.
  */
@@ -103,7 +114,7 @@ export function readPayloadConfig(root: string): PayloadConfig | null {
   const literals = isRecord(raw.routeLiterals) ? raw.routeLiterals : {};
   const peers = Array.isArray(raw.peers) ? raw.peers : [];
   return {
-    encryption: raw.encryption === 'off' ? 'off' : 'strict',
+    encryption: switchOf(raw.encryption),
     spec: typeof raw.spec === 'string' ? raw.spec : 'openapi.json',
     registry: typeof raw.registry === 'string' ? raw.registry : 'src/lib/endpoints',
     exemptions: exemptionsOf(raw.exemptions ?? {}),

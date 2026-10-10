@@ -47,7 +47,8 @@ export interface PayloadMiddlewareOptions {
   keyRing?: () => Promise<KeyRing>;
   /** This service's ECDH keypair, when browsers call it directly with an ephemeral key. */
   browserKeyPair?: () => Promise<EcdhKeyPair>;
-  /** Builds the plaintext refusal; defaults to RFC 9457 problem+json with the code. */
+  /** Builds the plaintext refusal; defaults to RFC 9457 problem+json with the code. The place to
+   *  log `error.message`, which never goes on the wire. */
   refuse?: (c: Context, status: number, error: PayloadError) => Response;
 }
 
@@ -57,14 +58,14 @@ interface ExchangeKey {
   responseKid: string;
 }
 
+/* A sealed answer depends on the key these request headers chose, so a shared cache keys on them
+   and never serves one caller's envelope to another. */
+const SEALED_VARY = `${EPK_HEADER}, ${KID_HEADER}`;
+
+/* The code and never the message: the message names route patterns and server state, and is for
+   logs (errors.ts). */
 function problem(_c: Context, status: number, error: PayloadError): Response {
-  const body = {
-    type: 'about:blank',
-    title: 'Payload refused',
-    status,
-    detail: error.message,
-    code: error.code,
-  };
+  const body = { type: 'about:blank', title: 'Payload refused', status, code: error.code };
   return new Response(JSON.stringify(body), {
     status,
     headers: { 'content-type': 'application/problem+json' },
@@ -138,6 +139,7 @@ async function sealResponse(
   });
   const headers = new Headers(c.res.headers);
   headers.set('content-type', ENCRYPTED_MEDIA_TYPE);
+  headers.append('vary', SEALED_VARY);
   headers.delete('content-length');
   return new Response(JSON.stringify(envelope), { status, headers });
 }

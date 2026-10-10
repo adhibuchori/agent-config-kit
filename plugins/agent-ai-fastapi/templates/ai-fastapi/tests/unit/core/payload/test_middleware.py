@@ -122,16 +122,23 @@ async def test_opens_a_sealed_request_and_seals_the_answer() -> None:
     )
     assert status == 201
     assert out["content-type"] == ENCRYPTED_MEDIA_TYPE
+    assert out["vary"] == "x-payload-epk, x-payload-kid"
     assert opened(status, body, "/api/notes") == {"got": '{"t": 1}', "path": "/api/notes"}
 
 
+def refusal(status: int, code: str) -> dict[str, object]:
+    """The whole refusal body: a member added later, such as an internal message, fails."""
+    return {"title": "Payload refused", "status": status, "code": code}
+
+
 async def test_refuses_plaintext_on_a_sealed_route_and_an_unknown_key() -> None:
-    status, _, body = await call(
+    status, out, body = await call(
         "POST", "/api/notes", b'{"t":1}', [(b"content-type", b"application/json")]
     )
-    assert (status, json.loads(body)["code"]) == (400, "ENVELOPE_REQUIRED")
+    assert out["content-type"] == "application/problem+json"
+    assert (status, json.loads(body)) == (400, refusal(400, "ENVELOPE_REQUIRED"))
     status, _, body = await call("GET", "/api/notes/1", headers=[(KID_HEADER.encode(), b"k9")])
-    assert (status, json.loads(body)["code"]) == (400, "ENVELOPE_KEY_UNKNOWN")
+    assert (status, json.loads(body)) == (400, refusal(400, "ENVELOPE_KEY_UNKNOWN"))
 
 
 async def test_seals_a_bodiless_get_and_leaves_a_204_and_an_empty_post_alone() -> None:
@@ -152,7 +159,7 @@ async def test_half_policies_none_unregistered_and_off_pass_plaintext_through() 
 
 async def test_refuses_to_seal_a_body_that_is_not_json() -> None:
     status, _, body = await call("GET", "/api/text")
-    assert (status, json.loads(body)["code"]) == (500, "ENVELOPE_MALFORMED")
+    assert (status, json.loads(body)) == (500, refusal(500, "ENVELOPE_MALFORMED"))
 
 
 async def test_lifespan_passes_through() -> None:

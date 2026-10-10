@@ -158,6 +158,16 @@ PY
   [[ "$stderr" == *'switch: payload.config.json says "off"'* ]]
 }
 
+@test "endpoints: a misspelled switch fails instead of reading as strict; an absent one is strict" {
+  config_set "$REPO" 'd["encryption"] = "stirct"'
+  endpoints
+  [ "$status" -ne 0 ]
+  [[ "$stderr" == *'payload.config.json: encryption must be "strict" or "off", not "stirct"'* ]]
+  config_set "$REPO" 'del d["encryption"]'
+  endpoints
+  [ "$status" -eq 0 ]
+}
+
 @test "endpoints: a route literal in code fails; the same path in a comment or an API description does not" {
   mkdir -p "$REPO/src/modules/notes"
   cat >"$REPO/src/modules/notes/notes.client.ts" <<'TS'
@@ -202,6 +212,43 @@ TS
   [[ "$output" == *"has not adopted the payload contract; nothing to check"* ]]
   interop
   [ "$status" -eq 0 ]
+}
+
+# ── the middleware's wire answers ──────────────────────────────────────────────────────────────
+
+# middleware_repo: the seeded middleware beside the module, and the one Hono export it calls at
+# runtime. Kit CI has no Hono; its createMiddleware returns the handler it is given, as this one does.
+middleware_repo() {
+  mkdir -p "$REPO/src/middlewares" "$REPO/node_modules/hono"
+  cp "$TPL/src/middlewares/payload.middleware.ts" "$REPO/src/middlewares/"
+  printf '{ "name": "hono", "type": "module", "exports": { "./factory": "./factory.js" } }\n' \
+    >"$REPO/node_modules/hono/package.json"
+  printf 'export const createMiddleware = (middleware) => middleware;\n' >"$REPO/node_modules/hono/factory.js"
+}
+probe() { run --separate-stderr "${TS[@]}" "$KIT_ROOT/tests/fixtures/payload/middleware-probe.ts" "$REPO"; }
+
+@test "middleware: a refusal is exactly the code in problem+json, and a sealed answer varies on its key headers" {
+  middleware_repo
+  probe
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"the refusal is exact, and the sealed answer varies on its key headers"* ]]
+}
+
+@test "middleware: a refusal that sends the internal message as detail fails" {
+  middleware_repo
+  replace_once "$REPO/src/middlewares/payload.middleware.ts" "status, code: error.code }" \
+    "status, detail: error.message, code: error.code }"
+  probe
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *'refusal: body'*'"detail":"POST /api/notes takes a sealed body"'* ]]
+}
+
+@test "middleware: a sealed answer without Vary fails" {
+  middleware_repo
+  replace_once "$REPO/src/middlewares/payload.middleware.ts" "headers.append('vary', SEALED_VARY);" ""
+  probe
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *'sealed answer: Vary null'* ]]
 }
 
 # ── openapi (always installed for be-hono) ─────────────────────────────────────────────────────
