@@ -1,6 +1,6 @@
 {
   "stack": "be-hono",
-  "conflictsWith": ["agent-ai-fastapi", "agent-docs-nextra", "agent-fe-nextjs", "agent-fe-nextjs-static"],
+  "conflictsWith": ["agent-ai-fastapi", "agent-be-axum", "agent-be-go", "agent-docs-nextra", "agent-fe-nextjs", "agent-fe-nextjs-static", "agent-ios-swiftui"],
   "questions": [
     {
       "id": "ci-gate",

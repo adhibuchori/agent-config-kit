@@ -1,6 +1,6 @@
 {
   "stack": "docs-nextra",
-  "conflictsWith": ["agent-ai-fastapi", "agent-be-hono", "agent-fe-nextjs", "agent-fe-nextjs-static"],
+  "conflictsWith": ["agent-ai-fastapi", "agent-be-axum", "agent-be-go", "agent-be-hono", "agent-fe-nextjs", "agent-fe-nextjs-static", "agent-ios-swiftui"],
   "questions": [
     {
       "id": "generated-pages",

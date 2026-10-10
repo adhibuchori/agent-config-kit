@@ -1,14 +1,6 @@
 {
   "stack": "ios-swiftui",
-  "conflictsWith": [
-    "agent-ai-fastapi",
-    "agent-be-axum",
-    "agent-be-go",
-    "agent-be-hono",
-    "agent-docs-nextra",
-    "agent-fe-nextjs",
-    "agent-fe-nextjs-static"
-  ],
+  "conflictsWith": ["agent-ai-fastapi", "agent-be-axum", "agent-be-go", "agent-be-hono", "agent-docs-nextra", "agent-fe-nextjs", "agent-fe-nextjs-static"],
   "questions": [
     {
       "id": "ci-gate",

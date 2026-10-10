@@ -1,6 +1,6 @@
 {
   "stack": "fe-nextjs",
-  "conflictsWith": ["agent-ai-fastapi", "agent-be-hono", "agent-docs-nextra", "agent-fe-nextjs-static"],
+  "conflictsWith": ["agent-ai-fastapi", "agent-be-axum", "agent-be-go", "agent-be-hono", "agent-docs-nextra", "agent-fe-nextjs-static", "agent-ios-swiftui"],
   "questions": [
     {
       "id": "i18n",

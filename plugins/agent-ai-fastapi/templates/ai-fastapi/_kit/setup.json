@@ -1,6 +1,6 @@
 {
   "stack": "ai-fastapi",
-  "conflictsWith": ["agent-be-hono", "agent-docs-nextra", "agent-fe-nextjs", "agent-fe-nextjs-static"],
+  "conflictsWith": ["agent-be-axum", "agent-be-go", "agent-be-hono", "agent-docs-nextra", "agent-fe-nextjs", "agent-fe-nextjs-static", "agent-ios-swiftui"],
   "questions": [
     {
       "id": "pipeline",

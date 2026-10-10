@@ -50,7 +50,7 @@ cfg = json.load(open(os.path.join(root, "_kit/setup.json")))
 assert set(cfg) <= {"stack", "conflictsWith", "questions", "seed", "snippets", "gitignore", "packageScripts"}, cfg.keys()
 assert cfg["stack"] == "docs-nextra"
 assert "unlock" not in cfg["packageScripts"], "unlock is agent-core's alias"
-assert sorted(cfg["conflictsWith"]) == ["agent-ai-fastapi", "agent-be-hono", "agent-fe-nextjs", "agent-fe-nextjs-static"]
+assert cfg["conflictsWith"] and "agent-docs-nextra" not in cfg["conflictsWith"], "tests/setup/conflicts.bats checks the full list"
 assert not any(line.startswith("!") for line in cfg["gitignore"]), "a negation depends on line order"
 dests = []
 for d, _, fs in os.walk(root):

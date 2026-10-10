@@ -122,7 +122,7 @@ stack = sys.argv[1]
 cfg = json.load(open(os.path.join(stack, "_kit/setup.json")))
 assert set(cfg) <= {"stack", "conflictsWith", "questions", "seed", "snippets", "gitignore", "packageScripts"}, set(cfg)
 assert cfg["stack"] == "fe-nextjs-static"
-assert sorted(cfg["conflictsWith"]) == ["agent-ai-fastapi", "agent-be-hono", "agent-docs-nextra", "agent-fe-nextjs"]
+assert cfg["conflictsWith"] and "agent-fe-nextjs-static" not in cfg["conflictsWith"], "tests/setup/conflicts.bats checks the full list"
 dests = []
 for dirpath, _, files in os.walk(stack):
     for n in files:
