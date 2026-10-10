@@ -93,7 +93,7 @@ Every component, generated from the manifests and the docs pages; each links to 
 | --- | --- | --- | --- | --- | --- | --- |
 | [generated-guard](../../docs/agent-ios-swiftui/generated-guard.md) | PreToolUse | `Write`, `Edit`, `MultiEdit` and Serena's write tools | the target path; `generatedPaths` | **blocks** (exit 2) | 10 s | no |
 
-**What setup installs** (`/agent-ios-swiftui:setup`): a 28-rule `AGENTS.md` index and a short
+**What setup installs** (`/agent-ios-swiftui:setup`): a 33-rule `AGENTS.md` index and a short
 `CLAUDE.md`, rules for the app target, the logic package, strings, tests, error codes and coverage,
 12 anti-patterns, `Config/{Base,Debug,Release}.xcconfig`, `.swiftlint.yml` (strict, sizes in code
 lines, custom rules for views, strings and the network), `.swift-format`, `.periphery.yml`, a
@@ -101,15 +101,20 @@ lines, custom rules for views, strings and the network), `.swift-format`, `.peri
 and its tests, the generator settings, a privacy manifest, the check scripts with `gates.list`, the
 named build and client scripts under `scripts/ios/`, `.githooks/pre-commit`, a pull-request-only CI
 caller of `ios-swiftui-quality-gate`, PR templates and a CODEOWNERS starter. Optional: a DeepSeek
-review of each pull request (`deepseek-review`, needs the `DEEPSEEK_API_KEY` secret). Setup never
+review of each pull request (`deepseek-review`, needs the `DEEPSEEK_API_KEY` secret), and the app's
+half of the payload contract (`payload-encryption`, for a backend that seals bodies): `Payload*.swift`
+in the APIClient target with their tests, `payload.config.json`, the shared vectors, the contract and
+its rules. Setup never
 creates or edits the Xcode project, never builds and never signs; the draft lists the steps only you
 take.
 
 ## Configuration
 
-`generatedPaths` in `.claude/agent-config.json` (setup seeds the generated client and the spec copy);
-see [agent-core's table](../agent-core/README.md#configuration). The layers of the logic package are
-in `scripts/check/package-graph.json`, the locales in `scripts/check/i18n-catalog.json`.
+`generatedPaths` in `.claude/agent-config.json` (setup seeds the generated client, the payload
+registry and the spec copy); see [agent-core's table](../agent-core/README.md#configuration). The
+layers of the logic package are in `scripts/check/package-graph.json`, the locales in
+`scripts/check/i18n-catalog.json`, and, with `payload-encryption=yes`, the payload switch and
+exemptions in `payload.config.json`.
 
 ## Enabling and disabling
 

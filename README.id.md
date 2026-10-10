@@ -1487,11 +1487,12 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-ios-swiftui</strong>: 67 berkas</summary>
+<summary><strong>agent-ios-swiftui</strong>: 95 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
 | `.claude/ANALYTICS.example.md` | jika `analytics=yes`; sekali; lalu milik Anda | Analytics: Read API Access |
+| `.claude/PAYLOAD-CONTRACT.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Payload Contract: Sealed Bodies and One Endpoint Registry |
 | `.claude/SERENA-WORKSPACE.example.md` | jika `serena-workspace=yes`; sekali; lalu milik Anda | Serena: Shared Multi-Repo Workspace Scoping |
 | `.claude/agent-config.json` | sekali; lalu milik Anda | Pengaturan hook untuk stack ini, seperti generatedPaths atau migrationsDirs |
 | `.claude/anti-patterns/INDEX.md` | sekali; lalu milik Anda | Anti-Patterns Index |
@@ -1509,7 +1510,9 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.claude/anti-patterns/xcodebuild-never-syncs-string-catalog.md` | selalu; sync menjaganya tetap terbaru | `xcodebuild` never updates the String Catalog |
 | `.claude/mcp/xcode.example.json` | selalu; sync menjaganya tetap terbaru | Jembatan MCP Xcode (xcrun mcpbridge), dimuat untuk satu sesi dengan --mcp-config selagi Xcode terbuka |
 | `.claude/rules/common/error-codes.md` | selalu; sync menjaganya tetap terbaru | Error codes: the app side of the API contract |
+| `.claude/rules/common/payload-contract.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Payload Contract (short form) |
 | `.claude/rules/ios/packages.md` | selalu; sync menjaganya tetap terbaru | The logic package: Domain, APIClient, Features |
+| `.claude/rules/ios/payload.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Sealed bodies: the app's half of the payload contract |
 | `.claude/rules/ios/strings.md` | selalu; sync menjaganya tetap terbaru | Text, String Catalogs and locale |
 | `.claude/rules/ios/swiftui.md` | selalu; sync menjaganya tetap terbaru | The app target: composition root and views |
 | `.claude/rules/ios/testing.md` | selalu; sync menjaganya tetap terbaru | Tests |
@@ -1534,8 +1537,33 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `Config/Release.xcconfig` | sekali; lalu milik Anda | The Release configuration: Base.xcconfig plus what a shipped build needs. |
 | `Packages/AppCore/Package.swift` | sekali, jika belum ada; lalu milik Anda | swift-tools-version: 6.2 The app's logic, tested by `swift test` on the Mac without a simulator (AGENTS.md Rules 1, 2, 21 and 22; .claude/rules/ios/packages.md). |
 | `Packages/AppCore/Sources/APIClient/AppProblem.swift` | sekali; lalu milik Anda | A problem detail (RFC 9457) as this app reads it. |
+| `Packages/AppCore/Sources/APIClient/PayloadBase64URL.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Bytes as an envelope and the x-payload-epk header carry them: unpadded base64url, the encoding every implementation of the payload contract writes (.claude/PAYLOAD-CONTRACT.md § Wire format). |
+| `Packages/AppCore/Sources/APIClient/PayloadCipher.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The one cipher on the wire: AES-256-GCM through CryptoKit, a 12-byte nonce fresh for every seal and the 16-byte tag appended to the ciphertext (.claude/PAYLOAD-CONTRACT.md § Wire format). |
+| `Packages/AppCore/Sources/APIClient/PayloadCodec.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | A JSON body into an envelope and back: the one place that decides the order of operations. |
+| `Packages/AppCore/Sources/APIClient/PayloadEnvelope.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The wire format of the payload contract: what an envelope is, and what its ciphertext is bound to. |
+| `Packages/AppCore/Sources/APIClient/PayloadError.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The closed set of ways a sealed exchange fails, as this app sees it (.claude/PAYLOAD-CONTRACT.md § Refusals and error codes). |
+| `Packages/AppCore/Sources/APIClient/PayloadKeyAgreement.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Key agreement for this app's hop. |
+| `Packages/AppCore/Sources/APIClient/PayloadMiddleware.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The only place this app seals and opens bodies (AGENTS.md Rules 29 and 30): a middleware of the generated client, last in its list so it runs innermost, next to the transport. |
+| `Packages/AppCore/Sources/APIClient/PayloadProblem.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The one error mapper of the APIClient's calls (AGENTS.md Rules 12 and 32): whatever a call of the generated client throws reaches the screens as an AppProblem, and a payload failure as the problem of its ENVELOPE_* code, the same one a refusal from the server names. |
+| `Packages/AppCore/Sources/APIClient/PayloadRegistry.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The registry's types: every operation of the generated client is one entry with its pattern and its policy, keyed by the operation ID the client passes to its middlewares (AGENTS.md Rule 29). |
+| `Packages/AppCore/Sources/APIClient/PayloadSession.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | This app's half of the payload handshake (.claude/PAYLOAD-CONTRACT.md § Hops): one key agreed per session from `GET` on the registry's handshake, held in memory only and never in the Keychain, and never pinned: the server may rotate its key pair, and an installed app follows by agreeing again (AGENTS.md Rule 31). |
 | `Packages/AppCore/Sources/APIClient/openapi-generator-config.yaml` | sekali; lalu milik Anda | swift-openapi-generator's settings for the APIClient target. |
 | `Packages/AppCore/Tests/APIClientTests/AppProblemTests.swift` | sekali; lalu milik Anda | AppProblem through its public surface: decoding, the code it resolves, and what a screen shows. |
+| `Packages/AppCore/Tests/APIClientTests/PayloadBase64URLTests.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | PayloadBase64URL: unpadded base64url out, and the lenient reading the other implementations share. |
+| `Packages/AppCore/Tests/APIClientTests/PayloadCipherTests.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | PayloadCipher: a fresh nonce per seal, the tag appended, and one refusal for every way opening fails. |
+| `Packages/AppCore/Tests/APIClientTests/PayloadCodecTests.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | PayloadCodec: JSON in, an envelope out, and the order in which opening refuses. |
+| `Packages/AppCore/Tests/APIClientTests/PayloadEnvelopeTests.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | PayloadEnvelope: the shape it reads and writes, the AAD it binds, and the freshness window. |
+| `Packages/AppCore/Tests/APIClientTests/PayloadErrorTests.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | PayloadCode and PayloadError: the five wire codes, and the one that drops the agreed key. |
+| `Packages/AppCore/Tests/APIClientTests/PayloadKeyAgreementTests.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | PayloadKeyAgreement beyond the shared vectors: the labels it uses, and keys that are no points. |
+| `Packages/AppCore/Tests/APIClientTests/PayloadMiddlewareResponseTests.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | PayloadMiddleware's answers against the fake server: what it opens, which plaintext it accepts, the refusals it throws, and when the session agrees a new key. |
+| `Packages/AppCore/Tests/APIClientTests/PayloadMiddlewareTests.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | PayloadMiddleware's requests against the fake server: which operations it seals, which it lets pass, and the envelope a server opens. |
+| `Packages/AppCore/Tests/APIClientTests/PayloadProblemTests.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | AppProblem(failure:), the one error mapper: what a screen gets for whatever a call threw. |
+| `Packages/AppCore/Tests/APIClientTests/PayloadRegistryTests.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | PayloadRegistry: what each policy seals, and the generated registry's shape. |
+| `Packages/AppCore/Tests/APIClientTests/PayloadSessionTests.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | PayloadSession against a handshake at the transport boundary: one handshake per session, a failed one forgotten, the answers it refuses, and `off` honoured only where a build allows it. |
+| `Packages/AppCore/Tests/APIClientTests/PayloadTestServer.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The server's half of the payload contract, faked at the transport boundary for the session and middleware tests: its own P-256 key pair, the handshake, and the opening and sealing a backend does. |
+| `Packages/AppCore/Tests/APIClientTests/PayloadVectorFile.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | scripts/check/payload-vectors.json as PayloadVectorsTests reads it: the shapes of its sections, and JSON compared by meaning. |
+| `Packages/AppCore/Tests/APIClientTests/PayloadVectorsTests.swift` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The shared vectors (AGENTS.md Rule 33): scripts/check/payload-vectors.json is the same file in every repo that speaks the payload contract, and this cipher, its AAD and its key agreement must agree with it byte for byte. |
+| `payload.config.json` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Sakelar kontrak payload (strict, di-commit), pengecualian rute beserta alasannya, dan repo peer yang ikut diperiksa |
 | `scripts/check/ci-env.sh` | selalu; sync menjaganya tetap terbaru | Runs a command with the environment CI's unit tests get, and nothing else: PATH, HOME, TMPDIR, the locale, CI=true and CI's test variables. |
 | `scripts/check/coverage-exempt.txt` | sekali; lalu milik Anda | Files the coverage report leaves out (AGENTS.md Rule 22; .claude/rules/swift/coverage.md). |
 | `scripts/check/coverage-per-file.mjs` | selalu; sync menjaganya tetap terbaru | Coverage per file: every measured file at 100%, in the metrics its toolchain reports. |
@@ -1549,7 +1577,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/package-graph.json` | sekali; lalu milik Anda | Lapisan paket logika dan plugin build-tool yang diizinkan, dibaca package-graph.sh |
 | `scripts/check/package-graph.sh` | selalu; sync menjaganya tetap terbaru | The logic packages keep the shape the rules describe (AGENTS.md Rules 1, 2, 21 and 22; .claude/rules/ios/packages.md). |
 | `scripts/check/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
-| `scripts/check/payload-vectors.json` | selalu; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
+| `scripts/check/payload-vectors.json` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
 | `scripts/check/privacy-manifest.sh` | selalu; sync menjaganya tetap terbaru | The privacy manifest names a reason for every required-reason API the app's code uses (AGENTS.md Rule 25). |
 | `scripts/check/xcode-settings.sh` | selalu; sync menjaganya tetap terbaru | The Xcode project's build settings live in Config/*.xcconfig, and say what the rules need (AGENTS.md Rules 19, 20 and 28; .claude/rules/ios/swiftui.md). |
 | `scripts/generate/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | Writes the payload registry from the OpenAPI document and payload.config.json. |

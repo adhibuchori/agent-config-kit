@@ -6,7 +6,8 @@ Skill · agent-ios-swiftui · `agent-ios-swiftui:openapi-client-update` · copie
 
 The `openapi-client-update` skill brings the generated API client up to date with the backend's
 exported spec: it copies the spec, checks the problem-type base, regenerates the client with the
-pinned generator, adds the `package` call for each new operation with its tests, makes `ProblemCode`
+pinned generator (and the payload registry, where the app seals bodies), adds the `package` call for
+each new operation with its tests, makes `ProblemCode`
 equal the spec's code list (every screen's switch then lists the new code), and adds each code's
 message in every locale.
 

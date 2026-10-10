@@ -17,6 +17,7 @@ included:
 excluded:
   - Packages/*/.build
   - Packages/*/Sources/*/GeneratedSources # swift-openapi-generator output, committed
+  - Packages/*/Sources/*/*.generated.swift # the payload registry, from scripts/generate/payload-registry.mjs
 
 opt_in_rules:
   # Never crash on purpose, never erase a type (Rule 18).

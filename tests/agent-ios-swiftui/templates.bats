@@ -19,7 +19,7 @@ assert sorted(cfg["conflictsWith"]) == ["agent-ai-fastapi", "agent-be-axum", "ag
                                         "agent-docs-nextra", "agent-fe-nextjs", "agent-fe-nextjs-static"], cfg["conflictsWith"]
 assert cfg["packageScripts"] == {} and cfg["snippets"] == {}
 ids = [q["id"] for q in cfg["questions"]]
-assert len(ids) == len(set(ids)) and "payload-encryption" not in ids, ids
+assert len(ids) == len(set(ids)) and ids[-1] == "payload-encryption", ids
 files = []
 for d, _, fs in os.walk(tpl):
     for f in fs:
@@ -41,7 +41,7 @@ print("ok")
 PY
 }
 
-@test "every script gates.list runs is installed by this plugin or by agent-core; no payload line yet" {
+@test "every script gates.list runs is installed by this plugin or by agent-core, the payload check among them" {
   local kinds cmd script
   while IFS=$'\t' read -r kinds cmd; do
     case "$kinds" in '' | '#'*) continue ;; esac
@@ -52,7 +52,7 @@ PY
       return 1
     }
   done <"$TPL/scripts/check/gates.list"
-  run ! grep -q 'payload' "$TPL/scripts/check/gates.list"
+  grep -qxF "$(printf 'code\tnode scripts/check/payload-registry.mjs')" "$TPL/scripts/check/gates.list"
 }
 
 @test "the shared check scripts are byte copies of the other stacks'" {
@@ -63,6 +63,69 @@ PY
     [ -f "$KIT_ROOT/plugins/$other/scripts/check/coverage-per-file.mjs" ] || continue
     cmp "$TPL/scripts/check/coverage-per-file.mjs" "$KIT_ROOT/plugins/$other/scripts/check/coverage-per-file.mjs"
   done
+}
+
+@test "the payload files every stack shares are byte copies, and the registry scripts the new stacks' own" {
+  local f other
+  for f in .claude/PAYLOAD-CONTRACT.md .claude/rules/common/payload-contract.md scripts/check/payload-vectors.json; do
+    cmp "$TPL/$f" "$KIT_ROOT/plugins/agent-fe-nextjs/templates/fe-nextjs/$f"
+  done
+  for f in lib generate check; do
+    [ -f "$TPL/scripts/$f/payload-registry.mjs" ]
+    for other in agent-be-go/templates/be-go agent-be-axum/templates/be-axum; do
+      [ -f "$KIT_ROOT/plugins/$other/scripts/$f/payload-registry.mjs" ] || continue
+      cmp "$TPL/scripts/$f/payload-registry.mjs" "$KIT_ROOT/plugins/$other/scripts/$f/payload-registry.mjs"
+    done
+  done
+}
+
+@test "payload-encryption installs the app's half only with yes; the registry scripts come with every answer" {
+  run -0 python3 - "$TPL" <<'PY'
+import json, os, sys
+tpl = sys.argv[1]
+cfg = json.load(open(os.path.join(tpl, "_kit/setup.json")))
+q = next(q for q in cfg["questions"] if q["id"] == "payload-encryption")
+assert q["choices"] == ["yes", "no"] and q["recommended"] == "no", q
+yes = q["install"]["yes"]
+for path in (".claude/PAYLOAD-CONTRACT.md", ".claude/rules/common/payload-contract.md", ".claude/rules/ios/payload.md",
+             "payload.config.json", "scripts/check/payload-vectors.json",
+             "Packages/AppCore/Sources/APIClient/Payload*.swift", "Packages/AppCore/Tests/APIClientTests/Payload*.swift"):
+    assert path in yes, path
+assert not any("payload-registry" in g for g in yes), yes
+for seeded in ("payload.config.json", "Packages/AppCore/Sources/APIClient/Payload*.swift",
+               "Packages/AppCore/Tests/APIClientTests/Payload*.swift"):
+    assert seeded in cfg["seed"], seeded
+config = json.load(open(os.path.join(tpl, "payload.config.json")))
+assert config["encryption"] == "strict" and config["language"] == "swift", config
+assert config["registry"] == "Packages/AppCore/Sources/APIClient/PayloadEndpoints.generated.swift", config
+assert config["spec"] == "Packages/AppCore/Sources/APIClient/openapi.json", config
+assert config["handshake"] == "getPayloadHandshake", config
+assert config["exemptions"]["GET /api/payload/handshake"]["encryption"] == "none", config
+print("ok")
+PY
+}
+
+@test "the generated payload registry is out of SwiftLint, swift-format, the coverage floor and hand edits" {
+  grep -qF -- '- Packages/*/Sources/*/*.generated.swift' "$TPL/.swiftlint.yml"
+  grep -qx '\*.generated.swift' "$TPL/.swift-format-ignore"
+  grep -qE '^Packages/AppCore/Sources/APIClient/\*\.generated\.swift +# generated: ' "$TPL/scripts/check/coverage-exempt.txt"
+  run jq -r '.generatedPaths[]' "$TPL/.claude/agent-config.json"
+  grep -qx 'Packages/AppCore/Sources/APIClient/PayloadEndpoints.generated.swift' <<<"$output"
+}
+
+@test "the payload types stay internal: only the session's initialisers and the error mapper are package" {
+  run -0 python3 - "$TPL/Packages/AppCore/Sources/APIClient" <<'PY'
+import glob, os, re, sys
+found = set()
+for path in glob.glob(os.path.join(sys.argv[1], "Payload*.swift")):
+    for line in open(path, encoding="utf-8"):
+        m = re.match(r"\s*(?:public|package|open)\b\s*(\w+(?: \w+)?)", line)
+        if m:
+            found.add((os.path.basename(path), m.group(0).strip().split("(")[0]))
+assert found == {("PayloadSession.swift", "package actor PayloadSession"), ("PayloadSession.swift", "package init"),
+                 ("PayloadProblem.swift", "package init")}, sorted(found)
+print("ok")
+PY
 }
 
 @test "the JavaScript checks use block comments only" {
@@ -97,13 +160,13 @@ print("ok")
 PY
 }
 
-@test "AGENTS.md indexes Rules 1 to 28 once each, every row with its enforcer and a detail that exists" {
+@test "AGENTS.md indexes Rules 1 to 33 once each, every row with its enforcer and a detail that exists" {
   run -0 python3 - "$TPL" "$CORE_TPL" <<'PY'
 import os, re, sys
 tpl, core = sys.argv[1], sys.argv[2]
 rows = [l for l in open(os.path.join(tpl, "AGENTS.md.starter")) if re.match(r"^\| \d+ \|", l)]
 numbers = [int(r.split("|")[1]) for r in rows]
-assert numbers == list(range(1, 29)), numbers
+assert numbers == list(range(1, 34)), numbers
 missing = []
 for r in rows:
     cells = [c.strip() for c in r.strip().strip("|").split("|")]

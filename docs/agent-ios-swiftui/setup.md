@@ -4,7 +4,7 @@ Command · agent-ios-swiftui · `/agent-ios-swiftui:setup [--answer id=value …
 
 ## What it does
 
-`/agent-ios-swiftui:setup` installs what a plugin cannot ship by itself into your SwiftUI app: a 28-rule `AGENTS.md` index and a short `CLAUDE.md`, rules for the app target, the logic package, strings, tests, error codes and coverage, 12 anti-patterns, `Config/{Base,Debug,Release}.xcconfig`, a strict `.swiftlint.yml` with the kit's custom rules, `.swift-format`, `.periphery.yml`, a `Packages/AppCore` starter with `AppProblem` (the RFC 9457 problem type the generated client decodes into) and its tests, the generator's settings, a privacy manifest, the check scripts with `gates.list`, `scripts/ios/app.sh` and `scripts/ios/api-client.sh`, `scripts/check/ci-env.sh` with a seeded `.env.ci.example`, `.githooks/pre-commit`, a pull-request-only CI caller, an optional DeepSeek review of each pull request, PR templates and a CODEOWNERS starter.
+`/agent-ios-swiftui:setup` installs what a plugin cannot ship by itself into your SwiftUI app: a 33-rule `AGENTS.md` index and a short `CLAUDE.md`, rules for the app target, the logic package, strings, tests, error codes and coverage, 12 anti-patterns, `Config/{Base,Debug,Release}.xcconfig`, a strict `.swiftlint.yml` with the kit's custom rules, `.swift-format`, `.periphery.yml`, a `Packages/AppCore` starter with `AppProblem` (the RFC 9457 problem type the generated client decodes into) and its tests, the generator's settings, a privacy manifest, the check scripts with `gates.list`, `scripts/ios/app.sh` and `scripts/ios/api-client.sh`, `scripts/check/ci-env.sh` with a seeded `.env.ci.example`, `.githooks/pre-commit`, a pull-request-only CI caller, an optional DeepSeek review of each pull request, PR templates, a CODEOWNERS starter, and, for a backend that seals bodies, the app's half of the payload contract.
 
 It explores your repo, asks one question at a time with a recommended answer, shows the exact draft,
 and writes only when you reply **go**. It never overwrites or deletes a file, never creates or edits
@@ -35,9 +35,16 @@ The questions (answer "ok" to take the recommended one):
 | `min-ios` | Which iOS version is the oldest the app supports? | 17.0 / 18.0 / 26.0 | `17.0` |
 | `locales` | Which languages does the app ship (en, or en and id)? | en / en,id | `en` |
 | `analytics` | Does an agent need to read a self-hosted analytics API from this repo? | yes / no | `no` |
+| `payload-encryption` | Does the backend this app calls seal request and response bodies? | yes / no | `no` |
 
 `min-ios` writes no file: the seeds say 17.0, and for another answer the hand-over asks you to set
 it in two places. `locales=en,id` installs `scripts/check/i18n-catalog.json`.
+`payload-encryption=yes` installs `Payload*.swift` in `Packages/AppCore/Sources/APIClient/` with
+their tests, `payload.config.json`, `scripts/check/payload-vectors.json`,
+`.claude/PAYLOAD-CONTRACT.md` and the rules `.claude/rules/common/payload-contract.md` and
+`.claude/rules/ios/payload.md` (AGENTS.md Rules 29 to 33). The registry scripts
+`scripts/{lib,generate,check}/payload-registry.mjs` come with every answer and pass with "not
+adopted" until `payload.config.json` exists.
 
 The draft lists every action: `create`, `same`, `keep`, `seed`, `merge`, `conflict`, `block`,
 `note`, `warn` and `lock`, then a `digest`. `apply` is not pre-approved, so your permission prompt
@@ -47,7 +54,10 @@ After **go**, the hand-over lists what only you do: base the project's configura
 `Config/Debug.xcconfig` and `Config/Release.xcconfig`, link the `Packages/AppCore` products, commit
 both `Package.resolved` files, `git config core.hooksPath .githooks`, install SwiftLint 0.65.1, and
 fill the placeholders (`CLAUDE.md`, the Compliance Status of `AGENTS.md`, `.periphery.yml`,
-`AppProblem.typeBase`, CODEOWNERS).
+`AppProblem.typeBase`, CODEOWNERS). With `payload-encryption=yes` it adds the adoption steps of
+`.claude/rules/ios/payload.md`, among them copying the handshake's operationId from the backend's
+spec into `payload.config.json` (a Go backend exports `GetPayloadHandshake`); the gates stay red
+until they are done, on purpose.
 
 ## Common questions
 

@@ -3,7 +3,7 @@
 | Step | Where | Command |
 | --- | --- | --- |
 | Copy | `Packages/AppCore/Sources/APIClient/openapi.json` (from the backend's export) | `bash scripts/check/error-codes.sh` (E2 compares the bases) |
-| Regenerate | `Packages/AppCore/Sources/APIClient/GeneratedSources/` | `bash scripts/ios/api-client.sh` |
+| Regenerate | `Packages/AppCore/Sources/APIClient/GeneratedSources/`; with `payload.config.json`, also `PayloadEndpoints.generated.swift` beside it | `bash scripts/ios/api-client.sh`, then `node scripts/generate/payload-registry.mjs` and `node scripts/check/payload-registry.mjs` |
 | Calls | `Packages/AppCore/Sources/APIClient/<Area>API.swift`, `Packages/AppCore/Tests/APIClientTests/<Area>APITests.swift` | `swift test --package-path Packages/AppCore --filter APIClientTests` |
 | Codes | `ProblemCode` in `Packages/AppCore/Sources/APIClient/AppProblem.swift`, then each switch the compiler names | `bash scripts/check/error-codes.sh`, `bash scripts/ios/app.sh build` |
 | Messages | `problem.<CODE>` in `App/Localizable.xcstrings` (`"extractionState" : "manual"`) | `node scripts/check/i18n-catalog.mjs` |
@@ -25,3 +25,6 @@ Notes for the steps:
   `.claude/rules/ios/packages.md` shows the shape.
 - A code the backend removed leaves `ProblemCode` too, with its message key; the compiler names the
   switches that still list it.
+- Where the repo seals bodies (`payload.config.json` exists), a new operation is `strict` unless the
+  config exempts it with a reason, and a new call ends in `catch { throw AppProblem(failure: error) }`:
+  `.claude/rules/ios/payload.md`. The registry is generated output like the client; never edit it.

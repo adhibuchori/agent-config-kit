@@ -1,0 +1,14 @@
+{
+  "encryption": "strict",
+  "spec": "Packages/AppCore/Sources/APIClient/openapi.json",
+  "registry": "Packages/AppCore/Sources/APIClient/PayloadEndpoints.generated.swift",
+  "language": "swift",
+  "handshake": "getPayloadHandshake",
+  "exemptions": {
+    "GET /api/payload/handshake": {
+      "encryption": "none",
+      "reason": "The key agreement itself: it serves the server's public key before any key exists."
+    }
+  },
+  "peers": []
+}

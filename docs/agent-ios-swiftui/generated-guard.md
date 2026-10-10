@@ -23,13 +23,15 @@ spec and running the generator write that way; review generated files in the pul
 ## What it blocks
 
 `/agent-ios-swiftui:setup` seeds `generatedPaths` with
-`Packages/AppCore/Sources/APIClient/GeneratedSources` and the spec copy beside it
+`Packages/AppCore/Sources/APIClient/GeneratedSources`, the payload registry beside it
+(`PayloadEndpoints.generated.swift`) and the spec copy
 (`Packages/AppCore/Sources/APIClient/openapi.json`, and `openapi.yaml`). A path your repo does not
 have guards nothing.
 
 | What | Why it is blocked | Do this instead |
 | --- | --- | --- |
 | `Write`, `Edit` or `MultiEdit` in `GeneratedSources/` | The generator overwrites it, and the gate's drift check fails | Change the backend's spec, copy it, regenerate |
+| `Write`, `Edit` or `MultiEdit` on `PayloadEndpoints.generated.swift` | `node scripts/generate/payload-registry.mjs` writes it from the spec and `payload.config.json`, and its check fails a hand edit | Change the exemption in `payload.config.json`, then run the generator |
 | `Write`, `Edit` or `MultiEdit` on the spec copy | The copy would drift from the API it describes | Change it in the backend and copy it again |
 | Serena's write tools there, including a folder-wide `replace_in_files` that would reach one | Same | Same |
 | A payload it cannot read | Fail closed | Fix the cause; `replace_in_files` without python3 is refused |

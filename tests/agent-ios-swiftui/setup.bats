@@ -17,7 +17,7 @@ setup() {
   PROJ="$(cd "$PROJ" && pwd -P)"
 }
 
-@test "questions: agent-core's layer first, then this plugin's seven, each recommending one of its choices" {
+@test "questions: agent-core's layer first, then this plugin's eight, each recommending one of its choices" {
   run -0 --separate-stderr "$SETUP_BIN" questions --templates "$PLUGIN/templates" --stack ios-swiftui --project "$PROJ" --json
   run -0 python3 -c '
 import json, sys
@@ -26,7 +26,8 @@ assert d["plugin"] == "agent-ios-swiftui" and d["stack"] == "ios-swiftui", d
 ids = [(q["plugin"], q["id"]) for q in d["questions"]]
 assert ids[0] == ("agent-core", "language"), ids
 mine = [i for p, i in ids if p == "agent-ios-swiftui"]
-assert mine == ["ci-gate", "deepseek-review", "pr-templates", "serena-workspace", "min-ios", "locales", "analytics"], mine
+assert mine == ["ci-gate", "deepseek-review", "pr-templates", "serena-workspace", "min-ios", "locales", "analytics",
+                "payload-encryption"], mine
 assert all(q["recommended"] in q["choices"] and q["why"] for q in d["questions"])
 print("ok")' "$output"
   [ "$output" = ok ]
@@ -81,7 +82,8 @@ lock = json.load(open(root + "/.claude/agent-config-kit.lock"))
 me = lock["plugins"]["agent-ios-swiftui"]
 assert me["stack"] == "ios-swiftui", me
 assert me["answers"] == {"ci-gate": "yes", "deepseek-review": "no", "pr-templates": "yes", "serena-workspace": "no",
-                         "min-ios": "18.0", "locales": "en,id", "analytics": "no"}, me["answers"]
+                         "min-ios": "18.0", "locales": "en,id", "analytics": "no",
+                         "payload-encryption": "no"}, me["answers"]
 assert "AGENTS.md" in me["seeded"] and "CLAUDE.md" in me["seeded"], me["seeded"]
 print("ok")
 PY
@@ -110,6 +112,34 @@ PY
   [ ! -e "$PROJ/.github/PULL_REQUEST_TEMPLATE" ]
   cmp "$PROJ/.claude/ANALYTICS.example.md" "$TPL/.claude/ANALYTICS.example.md"
   cmp "$PROJ/.claude/SERENA-WORKSPACE.example.md" "$TPL/.claude/SERENA-WORKSPACE.example.md"
+}
+
+@test "payload-encryption=yes installs the app's half of the payload contract; no installs none of it" {
+  local f
+  ios_setup
+  [ -f "$PROJ/scripts/check/payload-registry.mjs" ] && [ -f "$PROJ/scripts/lib/payload-registry.mjs" ]
+  [ ! -e "$PROJ/payload.config.json" ] && [ ! -e "$PROJ/.claude/PAYLOAD-CONTRACT.md" ]
+  [ ! -e "$PROJ/scripts/check/payload-vectors.json" ] && [ ! -e "$PROJ/.claude/rules/ios/payload.md" ]
+  run -0 find "$PROJ/Packages" -name 'Payload*'
+  [ -z "$output" ]
+  # shellcheck disable=SC2016 # $1 expands in the child shell
+  run -0 --separate-stderr bash -c 'cd "$1" && node scripts/check/payload-registry.mjs' _ "$PROJ"
+  [[ "$output" == *"not adopted"* ]] || false
+
+  rm -rf "$PROJ"
+  mkdir -p "$PROJ"
+  git -C "$PROJ" init -q
+  ios_setup --answer payload-encryption=yes
+  for f in .claude/PAYLOAD-CONTRACT.md .claude/rules/common/payload-contract.md .claude/rules/ios/payload.md \
+    payload.config.json scripts/check/payload-vectors.json; do
+    cmp "$PROJ/$f" "$TPL/$f"
+  done
+  for f in "$TPL"/Packages/AppCore/Sources/APIClient/Payload*.swift "$TPL"/Packages/AppCore/Tests/APIClientTests/Payload*.swift; do
+    cmp "$PROJ/${f#"$TPL/"}" "$f"
+  done
+  run -0 python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["plugins"]["agent-ios-swiftui"]["answers"]["payload-encryption"])' \
+    "$PROJ/.claude/agent-config-kit.lock"
+  [ "$output" = yes ]
 }
 
 @test "a repo already set up with another primary stack is refused" {

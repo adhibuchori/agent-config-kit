@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # generated-guard.sh as agent-ios-swiftui ships it, with the generatedPaths setup seeds: the generated
-# client and the spec copy are refused, the hand-written files beside them are not, and nothing is
-# refused until the project opts in.
+# client, the payload registry and the spec copy are refused, the hand-written files beside them are
+# not, and nothing is refused until the project opts in.
 
 load helpers
 
@@ -52,7 +52,18 @@ opt_in() { mkdir -p "$P/.claude" && cp "$TPL/.claude/agent-config.json" "$P/.cla
   [[ "$stderr" == *"replace_in_files reaches generated output"* ]] || false
 }
 
-@test "the seeded generatedPaths name the client folder and the spec copy" {
+@test "opted in: the generated payload registry is blocked, the hand-written payload files beside it are not" {
+  opt_in
+  local api="$P/Packages/AppCore/Sources/APIClient"
+  echo 'enum PayloadEndpoints {}' >"$api/PayloadEndpoints.generated.swift"
+  cp "$TPL/Packages/AppCore/Sources/APIClient/PayloadMiddleware.swift" "$api/"
+  run -2 --separate-stderr guard_plugin "$P" "$(tool_json Edit "{\"file_path\": \"$api/PayloadEndpoints.generated.swift\"}")"
+  [[ "$stderr" == *"PayloadEndpoints.generated.swift is generated output"* ]] || false
+  run -0 --separate-stderr guard_plugin "$P" "$(tool_json Edit "{\"file_path\": \"$api/PayloadMiddleware.swift\"}")"
+  [ -z "$stderr" ]
+}
+
+@test "the seeded generatedPaths name the client folder, the payload registry and the spec copy" {
   run jq -r '.generatedPaths | join(",")' "$TPL/.claude/agent-config.json"
-  [ "$output" = "Packages/AppCore/Sources/APIClient/GeneratedSources,Packages/AppCore/Sources/APIClient/openapi.json,Packages/AppCore/Sources/APIClient/openapi.yaml" ]
+  [ "$output" = "Packages/AppCore/Sources/APIClient/GeneratedSources,Packages/AppCore/Sources/APIClient/PayloadEndpoints.generated.swift,Packages/AppCore/Sources/APIClient/openapi.json,Packages/AppCore/Sources/APIClient/openapi.yaml" ]
 }

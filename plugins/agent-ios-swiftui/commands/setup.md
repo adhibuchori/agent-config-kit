@@ -141,7 +141,13 @@ Then hand the user the steps only they can take, briefly and in this order:
    `AppProblem.typeBase` in
    `Packages/AppCore/Sources/APIClient/AppProblem.swift`, which must equal the backend's
    problem-type base before the first release.
-7. Commit the new files together with `.claude/agent-config-kit.lock`: the lock is what turns the
+7. When `payload-encryption` was `yes`: the gates stay red until the adoption steps at the end of
+   `.claude/rules/ios/payload.md` are done: the backend's spec copy with its handshake and the five
+   `ENVELOPE_*` codes, `handshake` in `payload.config.json` set to the operationId that spec gives
+   `GET /api/payload/handshake` (copied as written: a Go backend exports `GetPayloadHandshake`),
+   `node scripts/generate/payload-registry.mjs`, the five `ProblemCode` cases with their messages,
+   and a `PayloadSession` for each API.
+8. Commit the new files together with `.claude/agent-config-kit.lock`: the lock is what turns the
    hooks on for everyone who clones the repo. Then run `bash scripts/check/gates.sh`.
 
 The pull-request gate (`.github/workflows/quality-gate.yml`, when installed) runs on every pull

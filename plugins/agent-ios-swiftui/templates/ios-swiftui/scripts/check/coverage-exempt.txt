@@ -4,3 +4,4 @@
 # scripts/check/coverage.sh passes these to llvm-cov, and coverage-policy.mjs refuses any other
 # reason.
 Packages/AppCore/Sources/APIClient/GeneratedSources/**  # generated: swift-openapi-generator writes it from the backend's spec
+Packages/AppCore/Sources/APIClient/*.generated.swift  # generated: scripts/generate/payload-registry.mjs writes the payload registry

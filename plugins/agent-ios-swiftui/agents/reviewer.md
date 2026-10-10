@@ -39,7 +39,10 @@ a hand edit to it is itself the finding (Rule 11). If the diff is empty, say so 
    - a new primary screen without its accessibility audit test (Rule 24);
    - `@State` with an initial value that does work, and main-actor work started from a
      nonisolated context;
-   - a build setting added to `project.pbxproj` instead of `Config/` (Rule 20).
+   - a build setting added to `project.pbxproj` instead of `Config/` (Rule 20);
+   - where `payload.config.json` exists: a body sealed or opened outside `PayloadMiddleware`, a
+     middleware placed after it, a payload type widened past `internal`, or a `package` call that
+     does not end in `AppProblem(failure:)` (Rules 30, 32).
 
 Each finding: rule number, `file:line`, the quoted hunk, the fix. A smell no rule names is reported
 as `possible <smell>`. Done when every changed hunk was read against every rule that applies to its

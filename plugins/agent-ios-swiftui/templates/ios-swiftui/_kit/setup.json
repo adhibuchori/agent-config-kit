@@ -63,6 +63,25 @@
       "recommended": "no",
       "detect": "the code names an analytics client, or .claude/ANALYTICS.md exists",
       "install": { "yes": [".claude/ANALYTICS.example.md"] }
+    },
+    {
+      "id": "payload-encryption",
+      "ask": "Does the backend this app calls seal request and response bodies (the payload contract: encrypted envelopes, one operation registry, checked before merge)?",
+      "why": "Yes installs the app's half of the payload contract, with its tests at 100%: Payload*.swift in Packages/AppCore/Sources/APIClient (AES-256-GCM envelopes bound to method, route and status; one key agreed per session over the backend's handshake with CryptoKit, in memory only and never pinned; a client middleware, last in the list, that seals and opens every registered operation; AppProblem(failure:) for the five ENVELOPE_* codes), payload.config.json, the shared test vectors, the contract and a rule. The steps after it are yours: copy the backend's spec once it has the handshake and the ENVELOPE_* codes, run node scripts/generate/payload-registry.mjs, add the codes to ProblemCode with their messages, and give each API a PayloadSession; the gates stay red until then. No new package. Answer no when bodies need no sealing beyond TLS.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "payload.config.json or Packages/AppCore/Sources/APIClient/Payload*.swift already exists, or the backend's spec has a payload handshake or ENVELOPE_* codes",
+      "install": {
+        "yes": [
+          ".claude/PAYLOAD-CONTRACT.md",
+          ".claude/rules/common/payload-contract.md",
+          ".claude/rules/ios/payload.md",
+          "payload.config.json",
+          "scripts/check/payload-vectors.json",
+          "Packages/AppCore/Sources/APIClient/Payload*.swift",
+          "Packages/AppCore/Tests/APIClientTests/Payload*.swift"
+        ]
+      }
     }
   ],
   "seed": [
@@ -81,7 +100,10 @@
     "Config/*.xcconfig",
     "Packages/AppCore/Sources/APIClient/AppProblem.swift",
     "Packages/AppCore/Sources/APIClient/openapi-generator-config.yaml",
+    "Packages/AppCore/Sources/APIClient/Payload*.swift",
     "Packages/AppCore/Tests/APIClientTests/AppProblemTests.swift",
+    "Packages/AppCore/Tests/APIClientTests/Payload*.swift",
+    "payload.config.json",
     "scripts/check/coverage-exempt.txt",
     "scripts/check/gates.list",
     "scripts/check/i18n-catalog.json",

@@ -4,3 +4,4 @@
 # path here instead.
 **/.build/
 **/GeneratedSources/
+*.generated.swift

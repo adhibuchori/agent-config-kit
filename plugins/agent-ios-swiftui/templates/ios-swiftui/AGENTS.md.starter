@@ -24,6 +24,7 @@ the rules that bind), Not met (name the shape to follow until it is).
 | 19–21 | Build and dependencies | `<status>` | `<...>` |
 | 22–24 | Tests and coverage | `<status>` | `<...>` |
 | 25–28 | Platform and release | `<status>` | `<...>` |
+| 29–33 | Payload contract (only with `payload-encryption=yes`; otherwise N/A) | `<status>` | `<...>` |
 
 Follow-up work, in order, each naming the rules it unblocks:
 
@@ -61,3 +62,8 @@ Follow-up work, in order, each naming the rules it unblocks:
 | 26 | Logs go through `os.Logger` | SwiftLint `no_print` | `.claude/rules/ios/packages.md` |
 | 27 | Code nothing uses is deleted | Periphery `--strict` in CI | `.claude/rules/swift/dead-code.md` |
 | 28 | Secrets stay out of the app: none in the bundle, the app's property list or an xcconfig; App Transport Security stays on | gitleaks (`secrets.sh`); `xcode-settings.sh` X4, X5 | `.claude/rules/ios/swiftui.md` |
+| 29 | Every operation the client calls is in the generated payload registry, written only by `node scripts/generate/payload-registry.mjs`; an unregistered one is refused before it is sent. Rules 29 to 33 apply when setup answered `payload-encryption=yes` | `payload-registry.mjs`; `PayloadMiddlewareTests` | `.claude/rules/ios/payload.md` |
+| 30 | Bodies are sealed and opened only in `PayloadMiddleware`, the last of the client's middlewares; the payload types stay `internal` | compiler; reviewer | `.claude/rules/ios/payload.md` |
+| 31 | The app holds no payload secret: one key is agreed per session from the handshake, kept in memory only and never pinned, and a Release build never accepts `off` | `PayloadSessionTests`, `PayloadMiddlewareTests` | `.claude/rules/ios/payload.md` |
+| 32 | An `ENVELOPE_*` failure reaches screens through the one error mapper, `AppProblem(failure:)`, as the problem of its code, which `ProblemCode` lists | compiler; `error-codes.sh` | `.claude/rules/ios/payload.md` |
+| 33 | The cipher, its AAD and the key agreement pass the shared vectors in `scripts/check/payload-vectors.json`, which are never regenerated to pass | `PayloadVectorsTests` | `.claude/rules/common/payload-contract.md` |

@@ -6,7 +6,8 @@ Agent · agent-ios-swiftui · `agent-ios-swiftui:reviewer` subagent · reads and
 
 `agent-ios-swiftui:reviewer` reviews the diff of a SwiftUI app against your `AGENTS.md` and the rules
 under `.claude/rules`: views that only render, screen models with one `Phase`, the logic package and
-its layers, concurrency, the generated client, error codes, tokens, tests and accessibility. It
+its layers, concurrency, the generated client, error codes, tokens, tests and accessibility, and,
+where the app seals bodies, the payload middleware and its error mapper. It
 reports each breach with its rule number, file, line and fix, and changes no file.
 
 It is the standards axis of a review: whether the diff does what its spec asked is a separate

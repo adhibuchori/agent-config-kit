@@ -11,8 +11,10 @@ and commands for each step are in [references/steps.md](references/steps.md).
 1. **Copy.** Copy the backend's exported spec over the app's copy, byte for byte, and compare the
    problem-type base it publishes with the one the app holds.
    Done when the diff of the copy shows only what the backend changed, and the two bases agree.
-2. **Regenerate.** Run the generator through the repo's script.
-   Done when the generated folder changed only where the spec did, and the package builds.
+2. **Regenerate.** Run the generator through the repo's script, then, where the repo seals bodies,
+   the payload registry's generator.
+   Done when the generated folder and the registry changed only where the spec did, and the package
+   builds.
 3. **Calls.** For each new operation a screen needs, add one `package` call that returns Domain
    values or throws an `AppProblem`, with a test through a canned transport for each response the
    spec lists.
