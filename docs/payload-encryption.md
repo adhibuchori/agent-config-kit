@@ -10,7 +10,7 @@ repo as `.claude/PAYLOAD-CONTRACT.md`; this page is the adopter's guide.
 | Piece | Where it lands | What it does |
 | --- | --- | --- |
 | The cipher | `src/lib/payload/` (TypeScript), `src/app/core/payload/` (Python) | AES-256-GCM envelopes bound to method, route pattern, status, key id and time; key rings with rotation; browser key agreement (ECDH P-256 + HKDF); the strict/off switch |
-| The boundary | a Hono middleware; a browser transport and a server bridge; an ASGI middleware | Opens sealed requests before any validator, seals responses, refuses plaintext on sealed routes in plaintext problem+json |
+| The boundary | a Hono middleware; a browser transport and a server bridge; an ASGI middleware | Opens sealed requests before any validator, seals responses (with `Vary: x-payload-epk, x-payload-kid`), refuses plaintext on sealed routes in plaintext problem+json whose `type` is your API's problem-type base plus the code, never with the internal message |
 | The registry | `src/lib/endpoints/` or `src/lib/api/endpoints/`, generated from `openapi.json` | Every route with its policy: `strict`, `response-only`, `request-only`, `none` (with a reason) |
 | The checks | `check:endpoints`, `check:crypto-interop` (TypeScript); the seeded tests (Python) | Drift, reasons, route literals, raw `fetch`, the committed switch, peer parity; the shared test vectors |
 | The contract | `.claude/PAYLOAD-CONTRACT.md`, `.claude/rules/common/payload-contract.md`, `payload.config.json` | The rules (P1–P10), the threat model, the wiring; the switch and the exemptions, committed |
@@ -40,7 +40,11 @@ backend; the kit's own tests prove that, and prove every check both ways.
    rate limit, call `seal` and `read` around each request in the frontend's API transport, answer the
    handshake route, and bridge the proxy route. Register any route that cannot be sealed in
    `payload.config.json` `exemptions` with its reason, and regenerate.
-5. Name the other repos in `peers` (`{ "name": "api", "root": "../api" }`) so the checks compare the
+5. Give the middleware your API's problem-type base, the one its error mapper mints every other
+   problem's `type` from (`problemTypeBase` in TypeScript, `problem_type_base` in Python). It must
+   be an absolute https URI ending in `/`; the middleware refuses to start otherwise. The kit's
+   placeholder, `https://example.invalid/problems/`, is for tests and local runs only.
+6. Name the other repos in `peers` (`{ "name": "api", "root": "../api" }`) so the checks compare the
    spec copy, the exemptions and the cipher itself whenever both are checked out side by side.
 
 ## What it does not protect

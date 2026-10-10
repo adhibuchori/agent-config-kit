@@ -96,10 +96,10 @@ from app.core.errors.errors import DomainError
 
 class WidgetNotFoundError(DomainError):
     status = 404
-    title = "Not Found"
+    title = "Widget not found"  # names the problem type: the same for every widget
 
-    def __init__(self, widget_id: str) -> None:
-        super().__init__("Widget not found.", instance=widget_id, code="WIDGET_NOT_FOUND")
+    def __init__(self) -> None:
+        super().__init__("No widget has that id.", code="WIDGET_NOT_FOUND")
 
 
 # src/app/modules/widgets/schemas.py
@@ -121,7 +121,7 @@ from app.providers.llm.<vendor> import <vendor>_llm_provider
 async def get_widget(widget_id: str, llm: LLMProvider = <vendor>_llm_provider) -> WidgetSchema:
     ...
     if not found:
-        raise WidgetNotFoundError(widget_id)
+        raise WidgetNotFoundError()
     return WidgetSchema(id=widget_id, name="...")
 
 
@@ -172,8 +172,11 @@ tell); vulture for unraised classes.
 **Rule 10 — A single FastAPI exception handler maps every error to a response.**
 `src/app/core/errors/problems.py#domain_error_handler`, registered once in `main.py`. Serializes
 `DomainError`, Pydantic `ValidationError`, and any unhandled exception to
-`application/problem+json`: `{type, title, status, detail, instance, code?}`. Enforcement: wired
-once in `main.py`; a handler with its own try/except around a domain error is a review finding.
+`application/problem+json`: `{type, title, status, code}`, plus a client-safe `detail` where one
+helps. `type` is `PROBLEM_TYPE_BASE` (one absolute https base per service, in `problems.py`) plus
+the code, never `about:blank`, so every error has a registered code; `title` is fixed per code.
+The base is set once and never changed: callers resolve failures by it. Enforcement: wired once
+in `main.py`; a handler with its own try/except around a domain error is a review finding.
 
 **Rule 11 — `DomainError.detail` is client-safe; `cause`/internal context are logs-only.** Never
 put a stack trace, an API key, or an internal upstream error body into `detail`. Enforcement:

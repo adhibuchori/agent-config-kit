@@ -83,6 +83,8 @@ Values derived from props, state or hooks belong in `style`. Do not flag those.
 ### §M, §N and §P Rules 35-46 — sessions, data surfaces, the payload contract
 
 - A component that renders `error.message` or a problem `detail`: map the code to a message (Rule 37).
+- A problem resolved by its `code` while its `type` is ignored, or a problem-type base typed
+  anywhere but `PROBLEM_TYPE_BASE` in `src/lib/errors/problem-key.ts` (Rule 37).
 - A theme token declared in the light block and not the dark one (or the reverse) is BLOCK; a
   literal colour where a token exists is WARN (Rule 39).
 - A data surface with no empty or error state, or a fixture under `src/lib/` (Rules 38, 41).

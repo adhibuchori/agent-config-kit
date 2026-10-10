@@ -1,7 +1,8 @@
 #!/usr/bin/env bats
-# The payload contract's checks and generator (payload-encryption=yes), each proven both ways on a
-# toy repo built from the templates: what it must fail, what it must pass, and the skip it must say
-# out loud. The scripts run on Bun, or on Node with tests/helpers/ts-resolve.mjs where Bun is absent.
+# The payload contract's checks, generator and middleware (payload-encryption=yes), and the Problem
+# contract check:openapi holds, each proven both ways on a toy repo built from the templates: what it
+# must fail, what it must pass, and the skip it must say out loud. The scripts run on Bun, or on Node
+# with tests/helpers/ts-resolve.mjs where Bun is absent.
 
 load helpers
 
@@ -227,20 +228,43 @@ middleware_repo() {
 }
 probe() { run --separate-stderr "${TS[@]}" "$KIT_ROOT/tests/fixtures/payload/middleware-probe.ts" "$REPO"; }
 
-@test "middleware: a refusal is exactly the code in problem+json, and a sealed answer varies on its key headers" {
+@test "middleware: a refusal is minted from its code, and a sealed answer varies on its key headers" {
   middleware_repo
   probe
   [ "$status" -eq 0 ]
-  [[ "$output" == *"the refusal is exact, and the sealed answer varies on its key headers"* ]]
+  [[ "$output" == *"refusals are exact and minted from the code, sealed answers vary on their key headers"* ]]
 }
 
-@test "middleware: a refusal that sends the internal message as detail fails" {
+@test "middleware: a refusal that sends a detail fails" {
   middleware_repo
-  replace_once "$REPO/src/middlewares/payload.middleware.ts" "status, code: error.code }" \
-    "status, detail: error.message, code: error.code }"
+  replace_once "$REPO/src/lib/payload/refusal.ts" "title: PAYLOAD_TITLES[code]," \
+    "title: PAYLOAD_TITLES[code], detail: 'POST /api/notes takes a sealed body',"
   probe
   [ "$status" -eq 1 ]
-  [[ "$stderr" == *'refusal: body'*'"detail":"POST /api/notes takes a sealed body"'* ]]
+  [[ "$stderr" == *'refusal.ts: body'*'"detail":"POST /api/notes takes a sealed body"'* ]]
+  [[ "$stderr" == *'refusal: body'*'"detail":'* ]]
+}
+
+@test "middleware: a refusal typed about:blank, or with one title for every code, fails" {
+  middleware_repo
+  replace_once "$REPO/src/lib/payload/refusal.ts" 'type: `${base}${code}`,' "type: 'about:blank',"
+  probe
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *'refusal: body {"type":"about:blank"'* ]]
+  cp "$TPL/src/lib/payload/refusal.ts" "$REPO/src/lib/payload/"
+  replace_once "$REPO/src/lib/payload/refusal.ts" "title: PAYLOAD_TITLES[code]," "title: 'Payload refused',"
+  probe
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *'"title":"Payload refused"'* ]]
+}
+
+@test "middleware: a middleware that takes any problem-type base fails" {
+  middleware_repo
+  replace_once "$REPO/src/middlewares/payload.middleware.ts" \
+    "const base = checkProblemTypeBase(options.problemTypeBase);" "const base = options.problemTypeBase;"
+  probe
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *'startup: problemTypeBase "about:blank" was accepted'* ]]
 }
 
 @test "middleware: a sealed answer without Vary fails" {
@@ -260,10 +284,22 @@ openapi_repo() {
   cp "$TPL/scripts/lib/openapi-document.ts" "$TPL/scripts/lib/source-scan.ts" "$REPO/scripts/lib/"
   printf '{ "name": "toy", "version": "1.2.3", "private": true, "type": "module" }\n' >"$REPO/package.json"
   cat >"$REPO/src/app.ts" <<'TS'
-/* Stands in for an OpenAPIHono app: only the document builder the check calls. */
+/* Stands in for an OpenAPIHono app: only the document builder the check calls, and the Problem
+   schema src/lib/errors/problem.ts registers. */
 const paths: Record<string, unknown> = { '/api/notes': { get: { responses: {} } } };
+const problem = {
+  type: 'object',
+  required: ['type', 'title', 'status', 'code'],
+  properties: {
+    type: { type: 'string', format: 'uri', 'x-problem-type-base': 'https://example.invalid/problems/' },
+    title: { type: 'string' },
+    status: { type: 'integer' },
+    code: { type: 'string', enum: ['NOT_FOUND', 'ENVELOPE_REQUIRED'] },
+  },
+};
+const components = { schemas: { Problem: problem, ErrorCode: { type: 'string' } } };
 export const app = {
-  getOpenAPI31Document: (config: { openapi: string; info: object }) => ({ ...config, paths }),
+  getOpenAPI31Document: (config: { openapi: string; info: object }) => ({ ...config, paths, components }),
 };
 TS
 }
@@ -278,7 +314,7 @@ openapi_check() { run --separate-stderr bash -c 'cd "$1" && shift && "$@" script
   (cd "$REPO" && "${TS[@]}" scripts/generate/openapi.ts >/dev/null)
   openapi_check
   [ "$status" -eq 0 ]
-  [[ "$output" == *"1 path(s) in the document, and openapi.json is current"* ]]
+  [[ "$output" == *"1 path(s) in the document, the Problem contract holds, openapi.json is current"* ]]
   replace_once "$REPO/src/app.ts" "'/api/notes'" "'/api/tags'"
   openapi_check
   [ "$status" -eq 1 ]
@@ -297,6 +333,43 @@ openapi_check() { run --separate-stderr bash -c 'cd "$1" && shift && "$@" script
   [[ "$output" == *"No src/app.ts"* ]]
 }
 
+# problem_case <old> <new> <expected stderr>: the fake app with one change, which check:openapi must
+# refuse, naming it, before it compares anything with the committed spec.
+problem_case() {
+  openapi_repo
+  replace_once "$REPO/src/app.ts" "$1" "$2"
+  openapi_check
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"the Problem contract has"* ]]
+  [[ "$stderr" == *"$3"* ]]
+}
+
+@test "openapi: a document with no Problem schema fails" {
+  problem_case "schemas: { Problem: problem," "schemas: { Fault: problem," \
+    "components.schemas.Problem is missing"
+}
+
+@test "openapi: a Problem whose code enum is a \$ref, or holds a code that is not upper snake case, fails" {
+  problem_case "code: { type: 'string', enum: ['NOT_FOUND', 'ENVELOPE_REQUIRED'] }" \
+    "code: { \$ref: '#/components/schemas/ErrorCode' }" "Problem.code carries no inline enum"
+  problem_case "'NOT_FOUND'" "'not_found'" 'Problem.code "not_found" does not match ^[A-Z][A-Z0-9_]*$'
+}
+
+@test "openapi: a Problem type with no base, a base with no trailing slash, or no uri format fails" {
+  problem_case "'x-problem-type-base': 'https://example.invalid/problems/'" "'x-base': 1" \
+    "Problem.type has no x-problem-type-base"
+  problem_case "'https://example.invalid/problems/'" "'https://example.invalid/problems'" \
+    'x-problem-type-base "https://example.invalid/problems" does not end in /'
+  problem_case "format: 'uri', " "" "Problem.type is not \`format: uri\`"
+}
+
+@test "openapi: about:blank as the Problem type's default or in its enum fails" {
+  problem_case "format: 'uri'," "format: 'uri', default: 'about:blank'," \
+    "Problem.properties.type.default is about:blank"
+  problem_case "format: 'uri'," "format: 'uri', enum: ['about:blank']," \
+    "Problem.properties.type.enum is about:blank"
+}
+
 # ── the copies agree ───────────────────────────────────────────────────────────────────────────
 
 @test "the frontend and backend carry the same cipher, scripts and vectors; the Python stack the same vectors" {
@@ -311,6 +384,12 @@ openapi_check() { run --separate-stderr bash -c 'cd "$1" && shift && "$@" script
   cmp "$TPL/scripts/check/payload-vectors.json" "$AI_TPL/scripts/check/payload-vectors.json"
   cmp "$TPL/.claude/PAYLOAD-CONTRACT.md" "$FE_TPL/.claude/PAYLOAD-CONTRACT.md"
   cmp "$TPL/.claude/PAYLOAD-CONTRACT.md" "$AI_TPL/.claude/PAYLOAD-CONTRACT.md"
+  cmp "$TPL/.claude/rules/common/payload-contract.md" "$FE_TPL/.claude/rules/common/payload-contract.md"
+  cmp "$TPL/.claude/rules/common/payload-contract.md" "$AI_TPL/.claude/rules/common/payload-contract.md"
+}
+
+@test "the backend and the frontend read one error-code rule" {
+  cmp "$TPL/.claude/rules/common/error-codes.md" "$FE_TPL/.claude/rules/common/error-codes.md"
 }
 
 @test "the committed vectors are exactly what the kit's own implementation produces" {

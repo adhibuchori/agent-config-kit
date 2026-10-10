@@ -481,11 +481,11 @@ menyatakan ini paling awal.
 | Area | Yang dijaga aturan dan pemeriksa | Di mana |
 | --- | --- | --- |
 | Komponen dan data | Komponen hanya me-render tanpa logika; tanpa waterfall request; hook dan layar tinggal bersama fiturnya; tiga keadaan di setiap layar; fixture tetap di tes | aturan fe-nextjs, `AGENTS.md` §B, §D, §N; `check:soc`, `check:hooks` |
-| Sesi dan galat | Frontend tidak pernah memutuskan otorisasi atau menyimpan sesi; setiap kode galat punya pesan; pesan mentah backend tidak sampai ke layar | `AGENTS.md` §M, `common/error-codes.md`; `check:error-codes` |
+| Sesi dan galat | Frontend tidak pernah memutuskan otorisasi atau menyimpan sesi; setiap kode galat punya pesan, dan problem dikenali dari `type`-nya, yang dibentuk dari kode di bawah satu base; pesan mentah backend tidak sampai ke layar | `AGENTS.md` §M, `common/error-codes.md`; `check:error-codes` |
 | Tipe, kode mati, satu rumah | Tanpa `any`, tanpa asersi ganda, tanpa kode tak terpakai, satu rumah per identifier bersama | aturan inti; `double-assertion.sh`, knip atau vulture, `check:constants` |
 | Tes dan cakupan | Batas bawah 100% di lapisan logika, tes di lingkungan CI, mock yang menolak apa yang ditolak klien sungguhan | aturan cakupan; `coverage-policy.mjs`, `ci-env.sh`, `check:mocks` |
 | Database | Migrasi dihasilkan, tidak ditulis tangan; setiap foreign key diindeks; transaksi singkat | aturan be-hono dan pipeline; `migrations.sh`, `index-coverage.sh` |
-| API dan image | Spec terbangun dan di-commit; image membangun apa yang divalidasi gate | `hono.md`; `check:openapi`, `check:dockerfile` |
+| API dan image | Spec terbangun, di-commit, dan memuat kontrak `Problem` (kode inline, satu base problem type, tidak pernah `about:blank`); image membangun apa yang divalidasi gate | `hono.md`, `common/error-codes.md`; `check:openapi`, `check:dockerfile` |
 | UI | Diukur, bukan ditebak; satu komponen per peran; skeleton diukur terhadap layarnya | aturan UI dan skeleton; `check:skeleton-pairs`, `check:responsive` |
 | Operasional | Cara guard gagal, unlock, akses server dan break-glass, IP klien di balik CDN, deploy dibuktikan dengan waktu | `OPERATIONS.example.md`, `DATABASE.example.md`, `CI-RUNNERS.example.md` |
 | Jebakan yang dikenal | Satu berkas per jebakan yang benar-benar memakan waktu: sesi auth, passkey, pipeline CSS, test runner, alat cakupan | `.claude/anti-patterns/` (34 frontend, 12 backend, 12 situs statis, 9 docs, 6 Python) |
@@ -650,7 +650,7 @@ Pemeriksa adalah skrip yang dipasang setup di `scripts/check/`. Gate pre-commit
 | `scripts/env/show.sh`, `set.sh`, `envfile.py` (core) | Daftar `.env` tersamar; menulis satu key saat terbuka; parser yang dipakai keduanya | `bash scripts/env/show.sh .env` | Rahasia tidak pernah masuk ke chat |
 | `scripts/check/hook-probes.sh`, `hook-probes.tsv` (core) | Mengirim setiap probe ke hook seperti Claude Code melakukannya dan memeriksa setiap kode keluar | `HOOKS_DIR=<dir> bash scripts/check/hook-probes.sh` | Membuktikan guard masih memblokir setelah Anda mengubahnya atau pengaturannya |
 | `scripts/sync/workflows.sh` (core) | Mencerminkan perintah buatan Anda dari `_workflow-source/` ke `.claude/commands/` | `bash scripts/sync/workflows.sh --check` | Satu sumber untuk perintah yang Anda tulis sendiri |
-| `audit.ts`, `coverage-policy.mjs`, `error-codes.ts`, `error-catch.ts`, `hooks.ts`, `no-reexport.ts`, `soc.ts`, `tailwind-classes.ts` (fe-nextjs) | Audit dependensi, batas cakupan, pesan kode error, error yang ditelan, tempat hook, re-export, logika di komponen, kelas Tailwind kanonik | script paket, misalnya `bun run check:soc` | Masing-masing mengubah satu aturan `AGENTS.md` menjadi gate |
+| `audit.ts`, `coverage-policy.mjs`, `error-codes.ts`, `error-catch.ts`, `hooks.ts`, `no-reexport.ts`, `soc.ts`, `tailwind-classes.ts` (fe-nextjs) | Audit dependensi, batas cakupan, pesan kode error dan base problem type, error yang ditelan, tempat hook, re-export, logika di komponen, kelas Tailwind kanonik | script paket, misalnya `bun run check:soc` | Masing-masing mengubah satu aturan `AGENTS.md` menjadi gate |
 | `i18n.ts`, `i18n-casing.ts`, `dialog-desc.ts`, `responsive.ts`, `skeleton-switch.sh` (fe-nextjs, opsional) | Kesetaraan dan kapitalisasi terjemahan, deskripsi dialog, layout responsif, sakelar preview skeleton | `bun run check:i18n`, … | Hanya dipasang untuk modul yang Anda pakai |
 | `static-export.mjs` (static) | Menolak yang rusak atau diam-diam berhenti bekerja saat export | `npm run check:static` | Cepat, sebelum build apa pun |
 | `site-audit.mjs` (static) | Menjalankan semua pemeriksaan situs hasil build dalam satu tabel | `npm run check:site` | Gate setelah build |
@@ -664,7 +664,7 @@ Pemeriksa adalah skrip yang dipasang setup di `scripts/check/`. Gate pre-commit
 | `coverage-policy.mjs`, `.pre-commit-config.yaml` (ai-fastapi) | Batas cakupan; ruff, mypy, pytest, vulture, import-linter | `uv run pre-commit run` | Gate Python |
 | `audit.ts`, `.github/scripts/check-comment-*` (docs-nextra, fe-nextjs) | Audit dependensi, gaya komentar | di `gates.list` | Advisory dan komentar berlebih tertangkap |
 | `endpoints.ts`, `crypto-interop.ts`, `payload-vectors.json`, `generate/endpoints.ts` (fe-nextjs, be-hono, opsional) | Pemeriksa registri, drift, dan interop kontrak payload, serta generator registri | `bun run check:endpoints`, `bun run check:crypto-interop` | Yang tersegel tetap tersegel, dan salinan cipher tetap sepakat |
-| `openapi.ts`, `generate/openapi.ts` (be-hono) | Spec terbangun, menjelaskan minimal satu rute, dan sama dengan `openapi.json` yang di-commit; `spec:export` menuliskannya | `bun run check:openapi`, `bun run spec:export` | Frontend membuat klien dari spec yang terkini |
+| `openapi.ts`, `generate/openapi.ts` (be-hono) | Spec terbangun, menjelaskan minimal satu rute, memuat kontrak `Problem` (enum kode inline, `x-problem-type-base`, tanpa `about:blank`), dan sama dengan `openapi.json` yang di-commit; `spec:export` menuliskannya | `bun run check:openapi`, `bun run spec:export` | Frontend membuat klien dari spec yang terkini dan mengenali setiap error dari type-nya |
 | `dockerfile.ts` (fe-nextjs, be-hono) | Image membuat kliennya sebelum build, mem-pin digest berversi, menjalankan Bun yang dipakai gate | `bun run check:dockerfile` | Gate hijau berarti image yang berfungsi |
 | `skeleton-pairs.ts` (fe-nextjs, opsional) | Skeleton yang di-render layar diukur di harness, atau dicatat beserta alasannya | `bun run check:skeleton-pairs` | Skeleton diukur, bukan ditebak |
 | `3d-budget.mjs` (fe-threejs) | Anggaran model, segitiga, dan tekstur untuk glTF/GLB | `node scripts/check/3d-budget.mjs` | Aset 3D yang tetap termuat di ponsel |
@@ -840,7 +840,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-be-hono</strong>: 92 berkas</summary>
+<summary><strong>agent-be-hono</strong>: 94 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -902,7 +902,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/index-coverage.sh` | selalu; sync menjaganya tetap terbaru | Foreign-key index gate (AGENTS.md §H Rule 32). |
 | `scripts/check/migrations.sh` | selalu; sync menjaganya tetap terbaru | Migration drift gate. |
 | `scripts/check/module-mocks.ts` | sekali; lalu milik Anda | MOCK — a module replacement must not reach the files that did not ask for one. |
-| `scripts/check/openapi.ts` | selalu; sync menjaganya tetap terbaru | The OpenAPI document builds, describes at least one route, and equals the committed openapi.json. |
+| `scripts/check/openapi.ts` | selalu; sync menjaganya tetap terbaru | The OpenAPI document builds, describes at least one route, publishes the Problem contract, and equals the committed openapi.json. |
 | `scripts/check/payload-vectors.json` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope; tidak pernah dibuat ulang agar lolos |
 | `scripts/generate/endpoints.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Writes the generated half of the endpoint registry from the OpenAPI spec and the exemptions in payload.config.json (.claude/PAYLOAD-CONTRACT.md § Registry). |
 | `scripts/generate/openapi.ts` | selalu; sync menjaganya tetap terbaru | Writes the OpenAPI document the app declares to openapi.json (`bun run spec:export`). |
@@ -921,6 +921,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `src/lib/payload/__tests__/key-ring.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for pre-shared key rings: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `src/lib/payload/__tests__/mode.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for the strict/off switch: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `src/lib/payload/__tests__/policy.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for policies and the endpoint matcher: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/refusal.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for the payload refusal: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `src/lib/payload/__tests__/vectors.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for this copy against the shared test vectors: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `src/lib/payload/aes-gcm.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The one cipher on the wire: AES-256-GCM through WebCrypto. |
 | `src/lib/payload/base64url.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Bytes on the wire: base64url and UTF-8, the same way in the browser, on Node and on Bun. |
@@ -931,6 +932,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `src/lib/payload/key-ring.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Pre-shared keys for server-to-server hops, which never reach a browser. |
 | `src/lib/payload/mode.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The switch: whether this service enforces the payload contract. |
 | `src/lib/payload/policy.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The endpoint registry's types, and the one place that decides what a policy seals. |
+| `src/lib/payload/refusal.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The plaintext answer to a payload failure: problem+json whose type is minted from the code. |
 | `src/middlewares/__tests__/payload.middleware.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for the Hono payload middleware: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `src/middlewares/payload.middleware.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The payload contract at this service's edge (.claude/PAYLOAD-CONTRACT.md). |
 | `CLAUDE.md` | satu blok terkelola, ditambahkan di akhir | `## Agent config kit` |

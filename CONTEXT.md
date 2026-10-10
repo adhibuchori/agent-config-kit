@@ -153,6 +153,17 @@ hands it back to the kit.
 
 _Avoid:_ ignored file, forked file.
 
+## Problem type
+
+The `type` URI of an RFC 9457 problem+json error body: one absolute https base per API, ending in
+`/`, plus the error code, such as `https://example.invalid/problems/ENVELOPE_REQUIRED` with the
+kit's placeholder base. Clients resolve a failure by it, so an API sets its base once, before its
+first release, and never changes it. The spec publishes the base as `x-problem-type-base` on
+`Problem.type`; be-hono's `check:openapi` and fe-nextjs's `check:error-codes` read it there. The
+kit never sends `about:blank`.
+
+_Avoid:_ error type, error URL (it need not resolve), error code (the code is its last segment).
+
 ## Double wiring
 
 The same hook script wired twice: once by the plugin, and once in your `.claude/settings.json`

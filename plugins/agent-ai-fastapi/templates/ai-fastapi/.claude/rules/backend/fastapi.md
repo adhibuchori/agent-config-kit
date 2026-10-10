@@ -77,10 +77,18 @@ service raises today (typically `ValidationError`, `ServiceUnavailableError`,
 class there when the first service needs it; vulture reports one that nothing raises.
 Module-specific subclasses live in `<module>/errors.py`.
 
-The response shape is RFC 9457 `application/problem+json`:
-`{type, title, status, detail, instance, code?}`. `detail` is client-safe — a provider's raw error
-body, a stack trace, or a key never belongs there (§C Rule 11). Put that context in the structlog
-event instead.
+The response shape is RFC 9457 `application/problem+json`: `{type, title, status, code}`, plus a
+client-safe `detail` where one helps. `code` is required. `type` is `PROBLEM_TYPE_BASE` plus the
+code: one absolute https base per service, ending in `/`, defined in `core/errors/problems.py` and
+passed to the payload middleware as `problem_type_base` where that contract is adopted. The kit's
+placeholder is `https://example.invalid/problems/`; set yours before the first release, refuse to
+start in production while its host ends in `.invalid`, and never change it afterwards, because
+callers resolve failures by it. Never `about:blank`: a 404, a 422 and an unhandled 500 carry a
+registered code too. `title` is fixed per code (`status` and `title` as class attributes on each
+`DomainError` subclass), never per occurrence, and `instance` is left out unless it identifies the
+occurrence itself, never a resource id. `detail` is client-safe — a provider's raw error body, a
+stack trace, or a key never belongs there (§C Rule 11). Put that context in the structlog event
+instead.
 
 ## Auth
 

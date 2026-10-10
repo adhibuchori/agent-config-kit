@@ -474,11 +474,11 @@ cookies and a server-side proxy still carry confidentiality. The contract docume
 | Area | What the rules and checks hold | Where |
 | --- | --- | --- |
 | Components and data | Components render and hold no logic; no request waterfalls; hooks and screens live with their feature; three states on every screen; fixtures stay in tests | fe-nextjs rules, `AGENTS.md` §B, §D, §N; `check:soc`, `check:hooks` |
-| Sessions and errors | The frontend never decides authorization or stores a session; every error code has a message; no raw backend message reaches the screen | `AGENTS.md` §M, `common/error-codes.md`; `check:error-codes` |
+| Sessions and errors | The frontend never decides authorization or stores a session; every error code has a message, and a problem resolves by its `type`, minted from the code under one base; no raw backend message reaches the screen | `AGENTS.md` §M, `common/error-codes.md`; `check:error-codes` |
 | Types, dead code, one home | No `any`, no double assertion, no unused code, one home per shared identifier | core rules; `double-assertion.sh`, knip or vulture, `check:constants` |
 | Tests and coverage | A 100% floor on the logic layer, tests in CI's environment, mocks that refuse what the real client refuses | coverage rules; `coverage-policy.mjs`, `ci-env.sh`, `check:mocks` |
 | Database | Migrations generated, never hand-written; every foreign key indexed; transactions short | be-hono and pipeline rules; `migrations.sh`, `index-coverage.sh` |
-| APIs and images | The spec builds and is committed; the image builds what the gate validated | `hono.md`; `check:openapi`, `check:dockerfile` |
+| APIs and images | The spec builds, is committed and publishes the `Problem` contract (codes inline, one problem-type base, never `about:blank`); the image builds what the gate validated | `hono.md`, `common/error-codes.md`; `check:openapi`, `check:dockerfile` |
 | UI | Measured, not guessed; one component per role; skeletons measured against their screen | UI and skeleton rules; `check:skeleton-pairs`, `check:responsive` |
 | Operations | How the guards fail, the unlock, server access and break-glass, client IP behind a CDN, deploys proven by time | `OPERATIONS.example.md`, `DATABASE.example.md`, `CI-RUNNERS.example.md` |
 | Known traps | One file per trap that cost real time: auth sessions, passkeys, CSS pipelines, test runners, coverage tools | `.claude/anti-patterns/` (34 frontend, 12 backend, 12 static site, 9 docs, 6 Python) |
@@ -641,7 +641,7 @@ Checks are scripts setup installs under `scripts/check/`. The pre-commit gate
 | `scripts/env/show.sh`, `set.sh`, `envfile.py` (core) | Masked `.env` listing; one-key write while unlocked; the parser both share | `bash scripts/env/show.sh .env` | Secrets never enter the chat |
 | `scripts/check/hook-probes.sh`, `hook-probes.tsv` (core) | Feeds every probe to the hooks the way Claude Code does and checks each exit code | `HOOKS_DIR=<dir> bash scripts/check/hook-probes.sh` | Proves a guard still blocks after you change it or its settings |
 | `scripts/sync/workflows.sh` (core) | Mirrors your own commands from `_workflow-source/` into `.claude/commands/` | `bash scripts/sync/workflows.sh --check` | One source for commands you write yourself |
-| `audit.ts`, `coverage-policy.mjs`, `error-codes.ts`, `error-catch.ts`, `hooks.ts`, `no-reexport.ts`, `soc.ts`, `tailwind-classes.ts` (fe-nextjs) | Dependency audit, coverage floor, error-code messages, swallowed errors, hook placement, re-exports, logic in components, canonical Tailwind classes | package scripts, e.g. `bun run check:soc` | Each one turns an `AGENTS.md` rule into a gate |
+| `audit.ts`, `coverage-policy.mjs`, `error-codes.ts`, `error-catch.ts`, `hooks.ts`, `no-reexport.ts`, `soc.ts`, `tailwind-classes.ts` (fe-nextjs) | Dependency audit, coverage floor, error-code messages and the problem-type base, swallowed errors, hook placement, re-exports, logic in components, canonical Tailwind classes | package scripts, e.g. `bun run check:soc` | Each one turns an `AGENTS.md` rule into a gate |
 | `i18n.ts`, `i18n-casing.ts`, `dialog-desc.ts`, `responsive.ts`, `skeleton-switch.sh` (fe-nextjs, optional) | Translation parity and casing, dialog descriptions, responsive layout, the skeleton preview switch | `bun run check:i18n`, … | Only installed for the modules you use |
 | `static-export.mjs` (static) | Refuses what breaks or silently stops working under export | `npm run check:static` | Fast, before any build |
 | `site-audit.mjs` (static) | Runs every built-site check in one table | `npm run check:site` | The post-build gate |
@@ -655,7 +655,7 @@ Checks are scripts setup installs under `scripts/check/`. The pre-commit gate
 | `coverage-policy.mjs`, `.pre-commit-config.yaml` (ai-fastapi) | Coverage floor; ruff, mypy, pytest, vulture, import-linter | `uv run pre-commit run` | The Python gate |
 | `audit.ts`, `.github/scripts/check-comment-*` (docs-nextra, fe-nextjs) | Dependency audit, comment style | in `gates.list` | Advisories and noise are caught |
 | `endpoints.ts`, `crypto-interop.ts`, `payload-vectors.json`, `generate/endpoints.ts` (fe-nextjs, be-hono, optional) | The payload contract's registry, drift and interop checks, and the registry generator | `bun run check:endpoints`, `bun run check:crypto-interop` | Sealed stays sealed, and copies of the cipher agree |
-| `openapi.ts`, `generate/openapi.ts` (be-hono) | The spec builds, describes a route and equals the committed `openapi.json`; `spec:export` writes it | `bun run check:openapi`, `bun run spec:export` | Frontends generate clients from a current spec |
+| `openapi.ts`, `generate/openapi.ts` (be-hono) | The spec builds, describes a route, publishes the `Problem` contract (an inline code enum, `x-problem-type-base`, no `about:blank`) and equals the committed `openapi.json`; `spec:export` writes it | `bun run check:openapi`, `bun run spec:export` | Frontends generate clients from a current spec and resolve every error by its type |
 | `dockerfile.ts` (fe-nextjs, be-hono) | The image generates its client before the build, pins by versioned digest, runs the Bun the gate ran | `bun run check:dockerfile` | A green gate means a working image |
 | `skeleton-pairs.ts` (fe-nextjs, optional) | A skeleton a screen renders is measured in the harness, or listed with a reason | `bun run check:skeleton-pairs` | Skeletons are measured, not guessed |
 | `3d-budget.mjs` (fe-threejs) | Model, triangle and texture budgets for glTF/GLB | `node scripts/check/3d-budget.mjs` | 3D assets that load on a phone |
@@ -830,7 +830,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-be-hono</strong>: 92 files</summary>
+<summary><strong>agent-be-hono</strong>: 94 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
@@ -892,7 +892,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `scripts/check/index-coverage.sh` | always; sync keeps it current | Foreign-key index gate (AGENTS.md §H Rule 32). |
 | `scripts/check/migrations.sh` | always; sync keeps it current | Migration drift gate. |
 | `scripts/check/module-mocks.ts` | once; then yours | MOCK — a module replacement must not reach the files that did not ask for one. |
-| `scripts/check/openapi.ts` | always; sync keeps it current | The OpenAPI document builds, describes at least one route, and equals the committed openapi.json. |
+| `scripts/check/openapi.ts` | always; sync keeps it current | The OpenAPI document builds, describes at least one route, publishes the Problem contract, and equals the committed openapi.json. |
 | `scripts/check/payload-vectors.json` | with `payload-encryption=yes`; sync keeps it current | Shared test vectors every implementation of the envelope must open and refuse; never regenerated to pass |
 | `scripts/generate/endpoints.ts` | with `payload-encryption=yes`; sync keeps it current | Writes the generated half of the endpoint registry from the OpenAPI spec and the exemptions in payload.config.json (.claude/PAYLOAD-CONTRACT.md § Registry). |
 | `scripts/generate/openapi.ts` | always; sync keeps it current | Writes the OpenAPI document the app declares to openapi.json (`bun run spec:export`). |
@@ -911,6 +911,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `src/lib/payload/__tests__/key-ring.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for pre-shared key rings: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `src/lib/payload/__tests__/mode.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the strict/off switch: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `src/lib/payload/__tests__/policy.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for policies and the endpoint matcher: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
+| `src/lib/payload/__tests__/refusal.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the payload refusal: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `src/lib/payload/__tests__/vectors.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for this copy against the shared test vectors: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `src/lib/payload/aes-gcm.ts` | with `payload-encryption=yes`; once; then yours | The one cipher on the wire: AES-256-GCM through WebCrypto. |
 | `src/lib/payload/base64url.ts` | with `payload-encryption=yes`; once; then yours | Bytes on the wire: base64url and UTF-8, the same way in the browser, on Node and on Bun. |
@@ -921,6 +922,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `src/lib/payload/key-ring.ts` | with `payload-encryption=yes`; once; then yours | Pre-shared keys for server-to-server hops, which never reach a browser. |
 | `src/lib/payload/mode.ts` | with `payload-encryption=yes`; once; then yours | The switch: whether this service enforces the payload contract. |
 | `src/lib/payload/policy.ts` | with `payload-encryption=yes`; once; then yours | The endpoint registry's types, and the one place that decides what a policy seals. |
+| `src/lib/payload/refusal.ts` | with `payload-encryption=yes`; once; then yours | The plaintext answer to a payload failure: problem+json whose type is minted from the code. |
 | `src/middlewares/__tests__/payload.middleware.test.ts` | with `payload-encryption=yes`; once; then yours | Unit tests for the Hono payload middleware: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `src/middlewares/payload.middleware.ts` | with `payload-encryption=yes`; once; then yours | The payload contract at this service's edge (.claude/PAYLOAD-CONTRACT.md). |
 | `CLAUDE.md` | one managed block, appended | `## Agent config kit` |

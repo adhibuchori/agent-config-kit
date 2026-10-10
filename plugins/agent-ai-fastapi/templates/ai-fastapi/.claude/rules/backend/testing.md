@@ -63,8 +63,9 @@ This is deliberate: it exercises the real exception handler from `core/errors/pr
 route test that declares its own error mapper proves nothing about production behaviour — the two
 drift and the test keeps passing.
 
-Assert the problem+json **shape**, not just the status: `type`, `title`, `status`, `detail`. A
-regression that swaps the envelope while keeping the status code is exactly what §C guards against.
+Assert the problem+json **shape**, not just the status: `type == PROBLEM_TYPE_BASE + code`, the
+code's `title`, `status` and `code`, and compare the whole body where it is fixed. A regression
+that swaps the envelope while keeping the status code is exactly what §C guards against.
 
 ## Provider adapter tests
 

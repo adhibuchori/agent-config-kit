@@ -74,8 +74,10 @@ DI) → `schemas.py` (Pydantic v2) → `errors.py` (module-specific `DomainError
 
 ## Error contract
 
-RFC 9457 `application/problem+json`: `{type, title, status, detail, instance, code?}`. Single
-mapper: the exception handler registered in `main.py`
+RFC 9457 `application/problem+json`: `{type, title, status, code}`, plus a client-safe `detail`
+where one helps. `type` is `PROBLEM_TYPE_BASE` plus the code, never `about:blank`; `title` is fixed
+per code. Problem type base: `<https://api.example.com/problems/ — set once, before the first
+release, never changed>`. Single mapper: the exception handler registered in `main.py`
 (`core/errors/problems.py#domain_error_handler`).
 Pydantic validation failures on request bodies also map to this shape via a FastAPI
 `RequestValidationError` handler.

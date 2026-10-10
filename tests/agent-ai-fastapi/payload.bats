@@ -59,6 +59,19 @@ PY
   [[ "$output" == *"'detail': 'POST /api/notes takes a sealed body'"* ]]
 }
 
+@test "payload (python): a refusal typed about:blank, or one that takes any base, fails the seeded tests" {
+  replace_once "$REPO/src/app/core/payload/middleware.py" '"type": base + error.code,' '"type": "about:blank",'
+  pytest_run
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"'type': 'about:blank'"* ]]
+  cp "$TPL/src/app/core/payload/middleware.py" "$REPO/src/app/core/payload/"
+  replace_once "$REPO/src/app/core/payload/middleware.py" "self.base = _problem_type_base(problem_type_base)" \
+    "self.base = problem_type_base"
+  pytest_run
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"test_refuses_to_start_with_a_base_that_cannot_prefix_a_type"* ]]
+}
+
 @test "payload (python): a sealed answer without Vary fails the seeded tests" {
   replace_once "$REPO/src/app/core/payload/middleware.py" "length, _SEALED_VARY]" "length]"
   pytest_run

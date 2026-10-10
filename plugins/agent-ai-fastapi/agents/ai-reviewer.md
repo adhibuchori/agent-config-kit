@@ -75,6 +75,11 @@ The fix is always the same shape: move it into `<module>/service.py`.
   `core/errors/problems.py`.
 - A second exception handler registered, or a handler-local mapper
 - A `detail` containing a stack trace, an API key, a file path, or a raw upstream provider body
+- A problem whose `type` is `about:blank` or missing, or built anywhere but
+  `core/errors/problems.py` and the payload refusal instead of `PROBLEM_TYPE_BASE` plus the code; a
+  problem with no `code`; a `title` that changes per occurrence; `instance` set to a resource id
+- A changed `PROBLEM_TYPE_BASE` after the first release, or a base left on `example.invalid` that
+  production would accept: BLOCK, because every caller resolves failures by it
 - A new `DomainError` subclass that nothing raises, or one without `status` and `title` as class
   attributes (Rule 9)
 

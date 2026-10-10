@@ -165,7 +165,11 @@ Enforcement: advisory / `agent-be-hono:reviewer`.
 ## §C. Errors — RFC 9457 `application/problem+json`
 
 Every code a client can receive is listed once in `src/lib/errors/error-codes.ts`; the registry and
-the envelope's fields are in `.claude/rules/common/error-codes.md`.
+the envelope's fields are in `.claude/rules/common/error-codes.md`. Every problem's `type` is
+`PROBLEM_TYPE_BASE` (one absolute https base per API, exported by `src/lib/errors/problem.ts`) plus
+its code, and its `title` is fixed per code: clients resolve a failure by that `type`, so the base
+is set once and never changed, and nothing sends `about:blank`. Enforcement: `check:openapi` (the
+spec's `Problem` contract); the mapper itself is advisory / `agent-be-hono:reviewer`.
 
 **Rule 11 — Every thrown error is a `DomainError` subclass or a Hono `HTTPException`.** Never
 hand-roll a JSON error body (`c.json({ error: "..." }, 400)`) in a handler or service — that's
