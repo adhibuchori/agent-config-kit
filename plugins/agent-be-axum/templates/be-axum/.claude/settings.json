@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(bash scripts/check/gates.sh:*)",
+      "Bash(bash scripts/check/rustfmt.sh:*)",
+      "Bash(bash scripts/check/cargo-policy.sh:*)",
+      "Bash(bash scripts/check/migrations.sh:*)",
+      "Bash(bash scripts/check/ci-env.sh bash scripts/check/coverage.sh:*)",
+      "Bash(node scripts/check/rust-source.mjs:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(cargo clippy --locked:*)",
+      "Bash(cargo check --locked:*)",
+      "Bash(cargo nextest run --locked:*)",
+      "Bash(cargo test --locked:*)",
+      "Bash(cargo llvm-cov nextest --locked:*)",
+      "Bash(cargo deny check:*)",
+      "Bash(cargo tree --locked:*)",
+      "Bash(cargo sqlx prepare:*)",
+      "Bash(sqlx migrate add:*)"
+    ],
+    "ask": [
+      "Bash(cargo run:*)",
+      "Bash(cargo install:*)",
+      "Bash(cargo add:*)",
+      "Bash(cargo update:*)",
+      "Bash(sqlx migrate run:*)",
+      "Bash(sqlx database:*)"
+    ],
+    "deny": [
+      "Edit(AGENTS.md)"
+    ]
+  }
+}

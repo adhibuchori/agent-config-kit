@@ -1,0 +1,28 @@
+# The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit.
+# /agent-be-axum:sync offers the new pin when the plugin updates; nothing moves on its own. To
+# change the inputs below, make the file yours first with `agent-sync own`, or sync --check
+# reports the edit as drift.
+name: Quality Gate
+
+on:
+  # Every pull request, whatever branch it targets: a branch filter that misses this repo's
+  # branches would leave the gate silent. Diff steps compare against the pull request's base.
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Quality Gate
+    permissions:
+      contents: read
+    # No secrets: the gate reads the checkout and nothing else. Every input is optional, e.g.
+    #   with:
+    #     database: false # the schema lives in another repo (setup's migrations=no)
+    #     pgbouncer-tests: true # run tests/pooler through PgBouncer in transaction mode
+    uses: adhibuchori/agent-config-kit/.github/workflows/be-axum-quality-gate.yml@0000000000000000000000000000000000000000 # v1.3.0

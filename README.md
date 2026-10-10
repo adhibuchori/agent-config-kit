@@ -837,6 +837,99 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
+<summary><strong>agent-be-axum</strong>: 85 files</summary>
+
+| File | When setup installs it | What it is |
+| --- | --- | --- |
+| `.cargo/config.toml` | once; then yours | Cargo reads this on every call in the repo, so the hook, the gates, CI and every laptop agree. |
+| `.claude/ANALYTICS.example.md` | with `analytics=yes`; sync keeps it current | Analytics — Read API Access |
+| `.claude/SERENA-WORKSPACE.example.md` | with `serena-workspace=yes`; sync keeps it current | Serena — Multi-Repo Workspace Scoping |
+| `.claude/agent-config.json` | with `migrations=yes`; once; then yours | This stack's hook settings, such as generatedPaths or migrationsDirs |
+| `.claude/anti-patterns/INDEX.md` | once; then yours | Anti-Patterns Index |
+| `.claude/anti-patterns/axum-json-rejection-echoes-input.md` | always; sync keeps it current | axum's `Json` rejection quotes the value the client sent |
+| `.claude/anti-patterns/cached-plan-after-schema-change.md` | always; sync keeps it current | `cached plan must not change result type` after a migration |
+| `.claude/anti-patterns/cic-inside-transaction.md` | always; sync keeps it current | `CREATE INDEX CONCURRENTLY` inside a transaction |
+| `.claude/anti-patterns/cic-retry-keeps-invalid-index.md` | always; sync keeps it current | A retried `CREATE INDEX CONCURRENTLY IF NOT EXISTS` keeps an INVALID index |
+| `.claude/anti-patterns/ddl-without-lock-timeout.md` | always; sync keeps it current | DDL without `lock_timeout` stalls every query on the table |
+| `.claude/anti-patterns/default-privileges-without-for-role.md` | always; sync keeps it current | `ALTER DEFAULT PRIVILEGES` without `FOR ROLE` |
+| `.claude/anti-patterns/enum-value-used-in-same-transaction.md` | always; sync keeps it current | A new enum value used in the transaction that added it |
+| `.claude/anti-patterns/inner-allow-escapes-allow-attributes.md` | always; sync keeps it current | `#![allow(...)]` passes clippy's `allow_attributes` and never goes stale |
+| `.claude/anti-patterns/panic-abort-kills-catchpanic.md` | always; sync keeps it current | `panic = "abort"` turns CatchPanicLayer off in production, and no test notices |
+| `.claude/anti-patterns/pgbouncer-rejects-startup-parameters.md` | always; sync keeps it current | PgBouncer refuses timeouts sent as startup parameters |
+| `.claude/anti-patterns/read-only-default-is-not-a-boundary.md` | always; sync keeps it current | A read-only default is not a read-only role |
+| `.claude/anti-patterns/request-id-trusts-client.md` | always; sync keeps it current | `SetRequestIdLayer` keeps whatever `x-request-id` the client sent |
+| `.claude/anti-patterns/serde-accepts-unknown-fields.md` | always; sync keeps it current | serde accepts fields the type does not have |
+| `.claude/anti-patterns/session-state-behind-transaction-pooler.md` | always; sync keeps it current | Session state behind a transaction pooler |
+| `.claude/anti-patterns/sqlx-applies-older-migration-silently.md` | always; sync keeps it current | sqlx applies a migration older than the newest applied one, out of order |
+| `.claude/anti-patterns/sqlx-macros-read-ancestor-env.md` | always; sync keeps it current | sqlx's macros read `.env` files from every parent folder at compile time |
+| `.claude/anti-patterns/sqlx-persistent-false-behind-pooler.md` | always; sync keeps it current | `.persistent(false)` behind a transaction pooler returns another client's rows |
+| `.claude/anti-patterns/timeoutlayer-new-answers-408.md` | always; sync keeps it current | `TimeoutLayer::new` answers 408, and it is deprecated |
+| `.claude/anti-patterns/unindexed-foreign-keys.md` | always; sync keeps it current | Foreign keys without an index |
+| `.claude/anti-patterns/utoipa-route-bypasses-spec.md` | always; sync keeps it current | A route added with `.route()` is served but missing from `openapi.json` |
+| `.claude/rules/backend/postgres.md` | always; sync keeps it current | PostgreSQL |
+| `.claude/rules/backend/rust-service.md` | always; sync keeps it current | Rust + Axum service |
+| `.claude/rules/backend/testing.md` | always; sync keeps it current | Testing (Rule 25, Rule 26) |
+| `.claude/rules/common/error-codes.md` | always; sync keeps it current | Error codes (Rules 6 to 9) |
+| `.claude/rules/rust/coverage.md` | always; sync keeps it current | COVER: coverage in Rust (Rule 25) |
+| `.claude/settings.json` | merged into yours (additive; your values win) | Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox |
+| `.config/nextest.toml` | once; then yours | cargo-nextest runs each test in its own process. |
+| `.env.ci.example` | once; then yours | The variables the tests get in CI, and locally through scripts/check/ci-env.sh: dummy values only, never a real secret. |
+| `.githooks/pre-commit` | once; then yours | The commit gate: the gates for what is staged, from the list CI runs. |
+| `.github/CODEOWNERS` | once; then yours | Code owners: GitHub asks them to review every pull request that touches a matching path. |
+| `.github/PULL_REQUEST_TEMPLATE/dev.md` | with `pr-templates=yes`; once; then yours | The pull-request template for work going into dev |
+| `.github/PULL_REQUEST_TEMPLATE/promotion.md` | with `pr-templates=yes`; once; then yours | The pull-request template for a dev to prod promotion |
+| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; sync keeps it current | An AI review of each pull request by DeepSeek, installed by /agent-be-axum:setup when you answer deepseek-review=yes. |
+| `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; held until a release pins the reusable workflow to a real commit | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
+| `.squawk.toml` | with `migrations=yes`; once; then yours | squawk, the migration linter the quality gate runs over migrations/ (an exact release: new releases turn rules on). |
+| `AGENTS.md` | once, if missing; then yours | AGENTS.md — &lt;repo-name&gt; |
+| `CLAUDE.md` | the starter, when the repo has no CLAUDE.md | &lt;Project Name&gt; |
+| `Cargo.toml` | once, if missing; then yours | A new Rust + Axum service, from agent-be-axum's starter. |
+| `build.rs` | once; then yours | Rebuilds the crate when migrations/ changes. |
+| `clippy.toml` | once; then yours | Clippy's settings for this repo. |
+| `db/roles.sql` | with `migrations=yes`; once; then yours | The database roles: the migrator, the service (DML only, its timeouts) and the read-only agent role |
+| `deny.toml` | once; then yours | cargo-deny: advisories, bans, licenses and sources over the crates the build really uses. |
+| `openapi.json` | once; then yours | The OpenAPI document cargo run --bin openapi writes from the handlers; generated, never edited |
+| `rust-toolchain.toml` | once; then yours | The toolchain every cargo call in this repo uses: an exact release, the same on every laptop and in CI. |
+| `rustfmt.toml` | once; then yours | rustfmt, stable options only: stable rustfmt ignores an unstable key with a warning and exit 0, so scripts/check/rustfmt.sh fails on that warning. |
+| `scripts/check/cargo-policy.sh` | always; sync keeps it current | The settings every cargo call in this repo depends on, held in place (Rules 27 to 29): - .cargo/config.toml sets [build] warnings = "deny" and [env] SQLX_OFFLINE = "true", and holds no [source], [registries], [registry] or [net] table and no runner: those would swap where crates come from or what runs the binaries, for every cargo call at once; - clippy.toml is at the root (without it clippy reads one from a parent folder); - rust-toolchain.toml pins an exact release, and Cargo.toml's rust-version, when set, names it; - Cargo.lock is tracked, and every cargo build, check, clippy, test, nextest, llvm-cov, run, doc, bench or install in gates.list, .githooks/, .github/workflows/ and a Dockerfile passes --locked (or --frozen); - [profile.release] sets overflow-checks = true, and no profile sets panic = "abort", which would end the process where CatchPanicLayer answers 500, while every test still passes. |
+| `scripts/check/ci-env.sh` | always; sync keeps it current | Runs a command with the environment CI's unit tests get, and nothing else: PATH, HOME, TMPDIR, the locale, CI=true and CI's test variables. |
+| `scripts/check/coverage-exempt.txt` | once; then yours | Files left out of the coverage report: `&lt;glob&gt; # &lt;reason&gt;`, one per line, from the categories .claude/rules/rust/coverage.md lists. |
+| `scripts/check/coverage-per-file.mjs` | always; sync keeps it current | Coverage per file: every measured file at 100%, in the metrics its toolchain reports. |
+| `scripts/check/coverage-policy.mjs` | always; sync keeps it current | COVER: refuses a coverage gate that was weakened. |
+| `scripts/check/coverage.sh` | always; sync keeps it current | COVER: every test, with coverage, then each file at 100% of its lines and functions (.claude/rules/rust/coverage.md). |
+| `scripts/check/gates.list` | once; then yours | This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .githooks/pre-commit. |
+| `scripts/check/migrations.sh` | always; sync keeps it current | The sqlx migrations in migrations/ (Rules 11 and 12). |
+| `scripts/check/pooler.sh` | once; then yours | The pooler tier: tests/pooler runs the service's own pool through PgBouncer in transaction mode, where prepared statements, startup parameters and session settings break without an error. |
+| `scripts/check/rust-source.mjs` | always; sync keeps it current | Rust source checks that the compiler and clippy do not make, over every tracked or new *.rs file (target/ and .sqlx/ aside, and a file that says @generated in its first five lines) |
+| `scripts/check/rustfmt.sh` | always; sync keeps it current | The format gate: `cargo fmt --check` over the whole crate, read-only. |
+| `src/bin/openapi.rs` | once; then yours | Writes the `OpenAPI` document to openapi.json at the crate root: `cargo run --locked --quiet --bin openapi`. |
+| `src/lib.rs` | once; then yours | The service as a library: `main.rs`, `bin/openapi.rs` and the tests build it through [`app`] and [`openapi`]. |
+| `src/main.rs` | once; then yours | Starts the service: configuration, the startup checks, the pool, and a server that drains in bounded time on SIGTERM or Ctrl-C. |
+| `src/platform/config.rs` | once; then yours | The one reader of the process environment (Rule 19). |
+| `src/platform/config_tests.rs` | once; then yours | Unit tests of the configuration reader |
+| `src/platform/db.rs` | once; then yours | The connection pool: every limit set on purpose, none left at its default (Rule 17). |
+| `src/platform/error.rs` | once; then yours | The error contract (Rule 6, Rule 7). |
+| `src/platform/error_tests.rs` | once; then yours | Unit tests of the error codes, the problem body and the problem-type base |
+| `src/platform/extract.rs` | once; then yours | `ValidJson&lt;T&gt;`: the one way a handler reads a JSON body (Rule 7). |
+| `src/platform/extract_tests.rs` | once; then yours | Unit tests of ValidJson: 422 by field without the value, 413 over the limit |
+| `src/platform/middleware.rs` | once; then yours | The layers every request passes, outermost first (Rule 18). |
+| `src/platform/middleware_tests.rs` | once; then yours | Unit tests of the layers: every bare error status becomes a problem with a code |
+| `src/platform/mod.rs` | once; then yours | What every domain stands on: configuration, the pool, the error contract, the JSON extractor and the layers. |
+| `src/platform/state.rs` | once; then yours | What every handler can reach: handles, never request data. |
+| `src/routes/health.rs` | once; then yours | Liveness and readiness. |
+| `src/routes/mod.rs` | once; then yours | Every route the service serves. |
+| `src/routes/paths.rs` | once; then yours | The route registry (Rule 10): every path the service serves is spelled once, here, and named by its handler's `#[utoipa::path(path = paths::...)]`. |
+| `tests/api/main.rs` | once; then yours | Handler tier: the real router and layers through `oneshot`, the way a client meets them, with a pool that never connects (Rule 26). |
+| `tests/api/openapi.rs` | once; then yours | The contract: the committed openapi.json is what the code declares (Rule 10), and every operation declares its errors the way clients read them (Rule 8). |
+| `tests/db/main.rs` | once; then yours | Database tier: each `#[sqlx::test]` gets its own database on the server `DATABASE_URL` names, with migrations/ applied, and reaches it through the same router a client does (Rule 26). |
+| `tests/pooler/main.rs` | once; then yours | Pooler tier: the service's own pool through `PgBouncer` in transaction mode. |
+| `CLAUDE.md` | one managed block, appended | `## Agent config kit` |
+| `.gitignore` | one managed block (11 lines) | `.env`, `.env.*`, `!.env.example`, `!.env.*.example`, `.envrc`, `.serena/`, `.skillspector/`, `/coverage`, `/target`, `junit.xml`, `._*` |
+| `Cargo.toml` | by hand: the draft names `_kit/snippets/cargo.toml` | |
+
+</details>
+
+<details>
 <summary><strong>agent-be-go</strong>: 93 files</summary>
 
 | File | When setup installs it | What it is |
@@ -1390,6 +1483,20 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `agent-ai-fastapi:ai-reviewer` | Agent | Reviews the uncommitted diff of a FastAPI + LLM service against the repo's AGENTS.md rules that no gate checks - layer boundaries, the problem+json error contract, provider indirection, streaming and completion status, tests, security, typing past the Any ban, and one home per identifier. Reports findings; edits nothing. | Via `/agent-core:review` | LLM-service mistakes no gate sees | [ai-reviewer](docs/agent-ai-fastapi/ai-reviewer.md) |
 | `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](docs/agent-ai-fastapi/deepseek-review.md) |
 | `.github/workflows/quality-gate.yml` | Workflow (optional) | `.github/workflows/quality-gate.yml` runs agent-config-kit's `ai-fastapi-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Answer `ci-gate=yes` (recommended); runs on every pull request | Every pull request runs the same gates as the pre-commit hook, and more | [quality-gate](docs/agent-ai-fastapi/quality-gate.md) |
+
+### agent-be-axum
+
+| Component | Kind | What it does | How to use | Why it helps | Docs |
+| --- | --- | --- | --- | --- | --- |
+| `migration-guard` | Hook (PreToolUse on file edits) | migration-guard keeps hand-written sqlx migrations append-only: a file under a folder listed in `appendOnlyMigrationsDirs` is refused once a protected branch already has it. | Runs by itself before file writes | A migration a database may have run never changes | [migration-guard](docs/agent-be-axum/migration-guard.md) |
+| `generated-guard` | Hook (PreToolUse on file edits) | generated-guard refuses hand edits to generated output: any file or folder listed in `generatedPaths` in `.claude/agent-config.json`. | Runs by itself before file writes | The query cache and the spec change only through their generators | [generated-guard](docs/agent-be-axum/generated-guard.md) |
+| `/agent-be-axum:setup` | Command (you start it) | Install agent-be-axum's backend rules, anti-patterns, service skeleton, gate scripts, lint and test config and pull-request CI into this Rust + Axum service, after a dry run you approve | `/agent-be-axum:setup`, once per repo | Plugins cannot ship permissions or rules; you see every write first | [setup](docs/agent-be-axum/setup.md) |
+| `/agent-be-axum:sync` | Command (you start it) | Check this repo against agent-be-axum's installed files with --check (read-only, exits non-zero on drift or double hook wiring), or update them after a dry run you approve | `/agent-be-axum:sync --check` | Drift and double hook wiring show up with an exit code | [sync](docs/agent-be-axum/sync.md) |
+| `agent-be-axum:reviewer` | Agent | Reviews the diff of a Rust + Axum service against this repo's AGENTS.md rules and the rules under .claude/rules (layering by module privacy, the error contract, sqlx queries and migrations, tests) and reports each breach with its rule number, file, line and fix. The standards axis of a review; changes no file. | Via `/agent-core:review` | Query and layering mistakes the compiler cannot see are caught in review | [reviewer](docs/agent-be-axum/reviewer.md) |
+| `agent-be-axum:api-endpoint` | Skill | Adds or changes an HTTP endpoint of this Rust + Axum service code first, as one tracer bullet - path constant, annotated handler, a failing request test, then the code that turns it green and the regenerated spec. Use when the task adds, removes or changes a route, its request or response shape, or the error codes it can return. Not for a schema change alone (db-migration) or a change inside one service function that no route sees. | "add GET /api/orders/{id}", or `/agent-be-axum:api-endpoint` | One endpoint at a time, test first, spec and code from one declaration | [api-endpoint](docs/agent-be-axum/api-endpoint.md) |
+| `agent-be-axum:db-migration` | Skill | Writes a PostgreSQL schema change for this Rust service as a new sqlx migration that deploys without downtime - expand, backfill, contract - and refreshes the offline query data. Use when a task adds, alters or drops a table, column, index, constraint or enum value. Not for a query change that leaves the schema as it is, and never for editing a migration a protected branch already has. | "add a column to orders", or `/agent-be-axum:db-migration` | Schema changes that deploy without downtime and never rewrite history | [db-migration](docs/agent-be-axum/db-migration.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](docs/agent-be-axum/deepseek-review.md) |
+| `.github/workflows/quality-gate.yml` | Workflow (optional) | `.github/workflows/quality-gate.yml` runs agent-config-kit's `be-axum-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Answer `ci-gate=yes` (recommended); runs on every pull request | Every pull request runs the same gates as the pre-commit hook, and more | [quality-gate](docs/agent-be-axum/quality-gate.md) |
 
 ### agent-be-go
 

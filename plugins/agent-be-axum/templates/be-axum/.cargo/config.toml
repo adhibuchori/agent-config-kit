@@ -1,0 +1,8 @@
+# Cargo reads this on every call in the repo, so the hook, the gates, CI and every laptop agree.
+# scripts/check/cargo-policy.sh holds these two keys in place and refuses [source], [registries],
+# [net] and runner overrides here.
+[build]
+warnings = "deny" # a lint warning fails the call, without rebuilding the dependencies
+
+[env]
+SQLX_OFFLINE = "true" # query! reads .sqlx/, never a database; cargo sqlx prepare sets its own value

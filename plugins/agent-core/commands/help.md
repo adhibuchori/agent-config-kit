@@ -73,6 +73,7 @@ context), and say which plugin adds it.
 | `/agent-fe-nextjs-static:launch-checklist` | agent-fe-nextjs-static | Before a site goes live |
 | `/agent-be-hono:setup` · `/agent-be-hono:sync` | agent-be-hono | Setting up or checking a Bun + Hono + Drizzle API |
 | `/agent-be-go:setup` · `/agent-be-go:sync` | agent-be-go | Setting up or checking a Go HTTP service on PostgreSQL (experimental) |
+| `/agent-be-axum:setup` · `/agent-be-axum:sync` | agent-be-axum | Setting up or checking a Rust + Axum service (experimental) |
 | `/agent-ai-fastapi:setup` · `/agent-ai-fastapi:sync` | agent-ai-fastapi | Setting up or checking a FastAPI service |
 | `/agent-docs-nextra:setup` · `/agent-docs-nextra:sync` | agent-docs-nextra | Setting up or checking a Nextra docs site |
 

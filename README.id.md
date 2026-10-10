@@ -847,6 +847,99 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
+<summary><strong>agent-be-axum</strong>: 85 berkas</summary>
+
+| Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
+| --- | --- | --- |
+| `.cargo/config.toml` | sekali; lalu milik Anda | Cargo reads this on every call in the repo, so the hook, the gates, CI and every laptop agree. |
+| `.claude/ANALYTICS.example.md` | jika `analytics=yes`; sync menjaganya tetap terbaru | Analytics — Read API Access |
+| `.claude/SERENA-WORKSPACE.example.md` | jika `serena-workspace=yes`; sync menjaganya tetap terbaru | Serena — Multi-Repo Workspace Scoping |
+| `.claude/agent-config.json` | jika `migrations=yes`; sekali; lalu milik Anda | Pengaturan hook untuk stack ini, seperti generatedPaths atau migrationsDirs |
+| `.claude/anti-patterns/INDEX.md` | sekali; lalu milik Anda | Anti-Patterns Index |
+| `.claude/anti-patterns/axum-json-rejection-echoes-input.md` | selalu; sync menjaganya tetap terbaru | axum's `Json` rejection quotes the value the client sent |
+| `.claude/anti-patterns/cached-plan-after-schema-change.md` | selalu; sync menjaganya tetap terbaru | `cached plan must not change result type` after a migration |
+| `.claude/anti-patterns/cic-inside-transaction.md` | selalu; sync menjaganya tetap terbaru | `CREATE INDEX CONCURRENTLY` inside a transaction |
+| `.claude/anti-patterns/cic-retry-keeps-invalid-index.md` | selalu; sync menjaganya tetap terbaru | A retried `CREATE INDEX CONCURRENTLY IF NOT EXISTS` keeps an INVALID index |
+| `.claude/anti-patterns/ddl-without-lock-timeout.md` | selalu; sync menjaganya tetap terbaru | DDL without `lock_timeout` stalls every query on the table |
+| `.claude/anti-patterns/default-privileges-without-for-role.md` | selalu; sync menjaganya tetap terbaru | `ALTER DEFAULT PRIVILEGES` without `FOR ROLE` |
+| `.claude/anti-patterns/enum-value-used-in-same-transaction.md` | selalu; sync menjaganya tetap terbaru | A new enum value used in the transaction that added it |
+| `.claude/anti-patterns/inner-allow-escapes-allow-attributes.md` | selalu; sync menjaganya tetap terbaru | `#![allow(...)]` passes clippy's `allow_attributes` and never goes stale |
+| `.claude/anti-patterns/panic-abort-kills-catchpanic.md` | selalu; sync menjaganya tetap terbaru | `panic = "abort"` turns CatchPanicLayer off in production, and no test notices |
+| `.claude/anti-patterns/pgbouncer-rejects-startup-parameters.md` | selalu; sync menjaganya tetap terbaru | PgBouncer refuses timeouts sent as startup parameters |
+| `.claude/anti-patterns/read-only-default-is-not-a-boundary.md` | selalu; sync menjaganya tetap terbaru | A read-only default is not a read-only role |
+| `.claude/anti-patterns/request-id-trusts-client.md` | selalu; sync menjaganya tetap terbaru | `SetRequestIdLayer` keeps whatever `x-request-id` the client sent |
+| `.claude/anti-patterns/serde-accepts-unknown-fields.md` | selalu; sync menjaganya tetap terbaru | serde accepts fields the type does not have |
+| `.claude/anti-patterns/session-state-behind-transaction-pooler.md` | selalu; sync menjaganya tetap terbaru | Session state behind a transaction pooler |
+| `.claude/anti-patterns/sqlx-applies-older-migration-silently.md` | selalu; sync menjaganya tetap terbaru | sqlx applies a migration older than the newest applied one, out of order |
+| `.claude/anti-patterns/sqlx-macros-read-ancestor-env.md` | selalu; sync menjaganya tetap terbaru | sqlx's macros read `.env` files from every parent folder at compile time |
+| `.claude/anti-patterns/sqlx-persistent-false-behind-pooler.md` | selalu; sync menjaganya tetap terbaru | `.persistent(false)` behind a transaction pooler returns another client's rows |
+| `.claude/anti-patterns/timeoutlayer-new-answers-408.md` | selalu; sync menjaganya tetap terbaru | `TimeoutLayer::new` answers 408, and it is deprecated |
+| `.claude/anti-patterns/unindexed-foreign-keys.md` | selalu; sync menjaganya tetap terbaru | Foreign keys without an index |
+| `.claude/anti-patterns/utoipa-route-bypasses-spec.md` | selalu; sync menjaganya tetap terbaru | A route added with `.route()` is served but missing from `openapi.json` |
+| `.claude/rules/backend/postgres.md` | selalu; sync menjaganya tetap terbaru | PostgreSQL |
+| `.claude/rules/backend/rust-service.md` | selalu; sync menjaganya tetap terbaru | Rust + Axum service |
+| `.claude/rules/backend/testing.md` | selalu; sync menjaganya tetap terbaru | Testing (Rule 25, Rule 26) |
+| `.claude/rules/common/error-codes.md` | selalu; sync menjaganya tetap terbaru | Error codes (Rules 6 to 9) |
+| `.claude/rules/rust/coverage.md` | selalu; sync menjaganya tetap terbaru | COVER: coverage in Rust (Rule 25) |
+| `.claude/settings.json` | digabung ke milik Anda (hanya menambah; nilai Anda yang menang) | Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash |
+| `.config/nextest.toml` | sekali; lalu milik Anda | cargo-nextest runs each test in its own process. |
+| `.env.ci.example` | sekali; lalu milik Anda | The variables the tests get in CI, and locally through scripts/check/ci-env.sh: dummy values only, never a real secret. |
+| `.githooks/pre-commit` | sekali; lalu milik Anda | The commit gate: the gates for what is staged, from the list CI runs. |
+| `.github/CODEOWNERS` | sekali; lalu milik Anda | Code owners: GitHub asks them to review every pull request that touches a matching path. |
+| `.github/PULL_REQUEST_TEMPLATE/dev.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk pekerjaan yang masuk ke dev |
+| `.github/PULL_REQUEST_TEMPLATE/promotion.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
+| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; sync menjaganya tetap terbaru | An AI review of each pull request by DeepSeek, installed by /agent-be-axum:setup when you answer deepseek-review=yes. |
+| `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
+| `.squawk.toml` | jika `migrations=yes`; sekali; lalu milik Anda | squawk, the migration linter the quality gate runs over migrations/ (an exact release: new releases turn rules on). |
+| `AGENTS.md` | sekali, jika belum ada; lalu milik Anda | AGENTS.md — &lt;repo-name&gt; |
+| `CLAUDE.md` | starter-nya, jika repo belum punya CLAUDE.md | &lt;Project Name&gt; |
+| `Cargo.toml` | sekali, jika belum ada; lalu milik Anda | A new Rust + Axum service, from agent-be-axum's starter. |
+| `build.rs` | sekali; lalu milik Anda | Rebuilds the crate when migrations/ changes. |
+| `clippy.toml` | sekali; lalu milik Anda | Clippy's settings for this repo. |
+| `db/roles.sql` | jika `migrations=yes`; sekali; lalu milik Anda | Role database: migrator, layanan (hanya DML, beserta timeout-nya), dan role agen yang hanya membaca |
+| `deny.toml` | sekali; lalu milik Anda | cargo-deny: advisories, bans, licenses and sources over the crates the build really uses. |
+| `openapi.json` | sekali; lalu milik Anda | Dokumen OpenAPI yang ditulis cargo run --bin openapi dari handler; hasil generator, tidak pernah diedit |
+| `rust-toolchain.toml` | sekali; lalu milik Anda | The toolchain every cargo call in this repo uses: an exact release, the same on every laptop and in CI. |
+| `rustfmt.toml` | sekali; lalu milik Anda | rustfmt, stable options only: stable rustfmt ignores an unstable key with a warning and exit 0, so scripts/check/rustfmt.sh fails on that warning. |
+| `scripts/check/cargo-policy.sh` | selalu; sync menjaganya tetap terbaru | The settings every cargo call in this repo depends on, held in place (Rules 27 to 29): - .cargo/config.toml sets [build] warnings = "deny" and [env] SQLX_OFFLINE = "true", and holds no [source], [registries], [registry] or [net] table and no runner: those would swap where crates come from or what runs the binaries, for every cargo call at once; - clippy.toml is at the root (without it clippy reads one from a parent folder); - rust-toolchain.toml pins an exact release, and Cargo.toml's rust-version, when set, names it; - Cargo.lock is tracked, and every cargo build, check, clippy, test, nextest, llvm-cov, run, doc, bench or install in gates.list, .githooks/, .github/workflows/ and a Dockerfile passes --locked (or --frozen); - [profile.release] sets overflow-checks = true, and no profile sets panic = "abort", which would end the process where CatchPanicLayer answers 500, while every test still passes. |
+| `scripts/check/ci-env.sh` | selalu; sync menjaganya tetap terbaru | Runs a command with the environment CI's unit tests get, and nothing else: PATH, HOME, TMPDIR, the locale, CI=true and CI's test variables. |
+| `scripts/check/coverage-exempt.txt` | sekali; lalu milik Anda | Files left out of the coverage report: `&lt;glob&gt; # &lt;reason&gt;`, one per line, from the categories .claude/rules/rust/coverage.md lists. |
+| `scripts/check/coverage-per-file.mjs` | selalu; sync menjaganya tetap terbaru | Coverage per file: every measured file at 100%, in the metrics its toolchain reports. |
+| `scripts/check/coverage-policy.mjs` | selalu; sync menjaganya tetap terbaru | COVER: refuses a coverage gate that was weakened. |
+| `scripts/check/coverage.sh` | selalu; sync menjaganya tetap terbaru | COVER: every test, with coverage, then each file at 100% of its lines and functions (.claude/rules/rust/coverage.md). |
+| `scripts/check/gates.list` | sekali; lalu milik Anda | This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .githooks/pre-commit. |
+| `scripts/check/migrations.sh` | selalu; sync menjaganya tetap terbaru | The sqlx migrations in migrations/ (Rules 11 and 12). |
+| `scripts/check/pooler.sh` | sekali; lalu milik Anda | The pooler tier: tests/pooler runs the service's own pool through PgBouncer in transaction mode, where prepared statements, startup parameters and session settings break without an error. |
+| `scripts/check/rust-source.mjs` | selalu; sync menjaganya tetap terbaru | Rust source checks that the compiler and clippy do not make, over every tracked or new *.rs file (target/ and .sqlx/ aside, and a file that says @generated in its first five lines) |
+| `scripts/check/rustfmt.sh` | selalu; sync menjaganya tetap terbaru | The format gate: `cargo fmt --check` over the whole crate, read-only. |
+| `src/bin/openapi.rs` | sekali; lalu milik Anda | Writes the `OpenAPI` document to openapi.json at the crate root: `cargo run --locked --quiet --bin openapi`. |
+| `src/lib.rs` | sekali; lalu milik Anda | The service as a library: `main.rs`, `bin/openapi.rs` and the tests build it through [`app`] and [`openapi`]. |
+| `src/main.rs` | sekali; lalu milik Anda | Starts the service: configuration, the startup checks, the pool, and a server that drains in bounded time on SIGTERM or Ctrl-C. |
+| `src/platform/config.rs` | sekali; lalu milik Anda | The one reader of the process environment (Rule 19). |
+| `src/platform/config_tests.rs` | sekali; lalu milik Anda | Unit test pembaca konfigurasi |
+| `src/platform/db.rs` | sekali; lalu milik Anda | The connection pool: every limit set on purpose, none left at its default (Rule 17). |
+| `src/platform/error.rs` | sekali; lalu milik Anda | The error contract (Rule 6, Rule 7). |
+| `src/platform/error_tests.rs` | sekali; lalu milik Anda | Unit test kode error, body problem, dan base problem type |
+| `src/platform/extract.rs` | sekali; lalu milik Anda | `ValidJson&lt;T&gt;`: the one way a handler reads a JSON body (Rule 7). |
+| `src/platform/extract_tests.rs` | sekali; lalu milik Anda | Unit test ValidJson: 422 per field tanpa nilainya, 413 di atas batas |
+| `src/platform/middleware.rs` | sekali; lalu milik Anda | The layers every request passes, outermost first (Rule 18). |
+| `src/platform/middleware_tests.rs` | sekali; lalu milik Anda | Unit test layer: setiap status error polos menjadi problem dengan kode |
+| `src/platform/mod.rs` | sekali; lalu milik Anda | What every domain stands on: configuration, the pool, the error contract, the JSON extractor and the layers. |
+| `src/platform/state.rs` | sekali; lalu milik Anda | What every handler can reach: handles, never request data. |
+| `src/routes/health.rs` | sekali; lalu milik Anda | Liveness and readiness. |
+| `src/routes/mod.rs` | sekali; lalu milik Anda | Every route the service serves. |
+| `src/routes/paths.rs` | sekali; lalu milik Anda | The route registry (Rule 10): every path the service serves is spelled once, here, and named by its handler's `#[utoipa::path(path = paths::...)]`. |
+| `tests/api/main.rs` | sekali; lalu milik Anda | Handler tier: the real router and layers through `oneshot`, the way a client meets them, with a pool that never connects (Rule 26). |
+| `tests/api/openapi.rs` | sekali; lalu milik Anda | The contract: the committed openapi.json is what the code declares (Rule 10), and every operation declares its errors the way clients read them (Rule 8). |
+| `tests/db/main.rs` | sekali; lalu milik Anda | Database tier: each `#[sqlx::test]` gets its own database on the server `DATABASE_URL` names, with migrations/ applied, and reaches it through the same router a client does (Rule 26). |
+| `tests/pooler/main.rs` | sekali; lalu milik Anda | Pooler tier: the service's own pool through `PgBouncer` in transaction mode. |
+| `CLAUDE.md` | satu blok terkelola, ditambahkan di akhir | `## Agent config kit` |
+| `.gitignore` | satu blok terkelola (11 baris) | `.env`, `.env.*`, `!.env.example`, `!.env.*.example`, `.envrc`, `.serena/`, `.skillspector/`, `/coverage`, `/target`, `junit.xml`, `._*` |
+| `Cargo.toml` | manual: draft menyebut `_kit/snippets/cargo.toml` | |
+
+</details>
+
+<details>
 <summary><strong>agent-be-go</strong>: 93 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
@@ -1400,6 +1493,20 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `agent-ai-fastapi:ai-reviewer` | Agen | Indireksi penyedia, streaming, problem+json, dan tipe dalam layanan FastAPI + LLM | Lewat `/agent-core:review` | Kesalahan layanan LLM yang tidak terlihat oleh gate | [ai-reviewer](docs/agent-ai-fastapi/ai-reviewer.md) |
 | `.github/workflows/deepseek-review.yml` | Workflow (opsional) | Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout | Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang | Pembaca kedua di setiap pull request dengan biaya satu atau dua sen | [deepseek-review](docs/agent-ai-fastapi/deepseek-review.md) |
 | `.github/workflows/quality-gate.yml` | Workflow (opsional) | Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit | Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request | Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih | [quality-gate](docs/agent-ai-fastapi/quality-gate.md) |
+
+### agent-be-axum
+
+| Komponen | Jenis | Fungsinya | Cara pakai | Manfaatnya | Dokumen |
+| --- | --- | --- | --- | --- | --- |
+| `migration-guard` | Hook (PreToolUse pada edit berkas) | Menjaga migrasi sqlx tulisan tangan tetap append-only setelah masuk branch terlindungi | Berjalan sendiri sebelum penulisan file | Migrasi yang mungkin sudah dijalankan database tidak pernah berubah | [migration-guard](docs/agent-be-axum/migration-guard.md) |
+| `generated-guard` | Hook (PreToolUse pada edit berkas) | Menolak edit tangan pada output generator: cache query sqlx dan openapi.json | Berjalan sendiri sebelum penulisan file | Cache query dan spec hanya berubah lewat generatornya | [generated-guard](docs/agent-be-axum/generated-guard.md) |
+| `/agent-be-axum:setup` | Perintah (Anda yang memulai) | Memasang aturan backend, anti-pattern, kerangka layanan, skrip gate, konfigurasi lint dan tes, serta CI pull request untuk layanan Rust + Axum setelah dry run yang Anda setujui | `/agent-be-axum:setup`, sekali per repo | Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu | [setup](docs/agent-be-axum/setup.md) |
+| `/agent-be-axum:sync` | Perintah (Anda yang memulai) | Memeriksa repo terhadap file yang dipasang agent-be-axum (`--check`), atau memperbaruinya setelah dry run | `/agent-be-axum:sync --check` | Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar | [sync](docs/agent-be-axum/sync.md) |
+| `agent-be-axum:reviewer` | Agen | Lapisan lewat privasi modul, kontrak error, query dan migrasi sqlx, serta test | Lewat `/agent-core:review` | Kesalahan query dan lapisan yang tidak terlihat compiler tertangkap saat review | [reviewer](docs/agent-be-axum/reviewer.md) |
+| `agent-be-axum:api-endpoint` | Skill | Menambah atau mengubah satu endpoint secara code-first: path, handler beranotasi, satu test merah, lalu hijau, lalu spec diekspor ulang | "add GET /api/orders/{id}", atau `/agent-be-axum:api-endpoint` | Satu endpoint sekali jalan, test lebih dulu, spec dan kode dari satu deklarasi | [api-endpoint](docs/agent-be-axum/api-endpoint.md) |
+| `agent-be-axum:db-migration` | Skill | Menulis perubahan skema PostgreSQL sebagai migrasi sqlx baru tanpa downtime (expand, backfill, contract) dan memperbarui cache query offline | "add a column to orders", atau `/agent-be-axum:db-migration` | Perubahan skema yang di-deploy tanpa downtime dan tidak pernah menulis ulang riwayat | [db-migration](docs/agent-be-axum/db-migration.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (opsional) | Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout | Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang | Pembaca kedua di setiap pull request dengan biaya satu atau dua sen | [deepseek-review](docs/agent-be-axum/deepseek-review.md) |
+| `.github/workflows/quality-gate.yml` | Workflow (opsional) | Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit | Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request | Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih | [quality-gate](docs/agent-be-axum/quality-gate.md) |
 
 ### agent-be-go
 

@@ -1,0 +1,17 @@
+# This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .githooks/pre-commit.
+# <kinds><TAB><command>. Kinds pick the gates a commit needs from what it stages; see gates.sh.
+# No package.json here, so the format check is a line of its own instead of @format. The tests
+# run through scripts/check/ci-env.sh: CI's variables (.env.ci.example), nothing from your shell
+# or a .env file; the database tier needs PostgreSQL at that DATABASE_URL. The hooks and commands
+# come from the agent-config-kit plugins, which prove them in their own CI.
+all	bash scripts/check/rustfmt.sh
+all	bash scripts/check/secrets.sh
+code	cargo clippy --locked --all-targets
+code	bash scripts/check/cargo-policy.sh
+code	node scripts/check/rust-source.mjs
+code	bash scripts/check/migrations.sh
+code	node scripts/check/folder-shape.mjs
+code	node scripts/check/coverage-policy.mjs
+code	bash scripts/check/ci-env.sh bash scripts/check/coverage.sh
+all	bash scripts/check/ai-config.sh
+commands,hooks	bash scripts/check/skills.sh --staged

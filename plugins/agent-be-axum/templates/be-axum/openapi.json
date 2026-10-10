@@ -1,0 +1,155 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "service",
+    "description": "<One sentence: what this service does, and for whom.>",
+    "license": {
+      "name": "LicenseRef-Proprietary",
+      "identifier": "LicenseRef-Proprietary"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "The process is up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Status"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "operationId": "ready",
+        "responses": {
+          "200": {
+            "description": "The database answers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Status"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The database does not answer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "FieldCode": {
+        "type": "string",
+        "description": "Why one field was refused: a code from this closed list, never the value that was sent.",
+        "enum": [
+          "INVALID"
+        ]
+      },
+      "FieldProblem": {
+        "type": "object",
+        "description": "One refused field of a 422: its path in the body (`items[2].name`) and why.",
+        "required": [
+          "field",
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/FieldCode"
+          },
+          "field": {
+            "type": "string"
+          }
+        }
+      },
+      "Problem": {
+        "type": "object",
+        "description": "`application/problem+json` (RFC 9457) with `code`, `requestId` and, on a 422, `fields`.",
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Every code a client can receive. A code missing here does not compile, and a code nothing\nbuilds fails the build (`dead_code`), so this enum never derives `Deserialize` (Rule 6).",
+            "enum": [
+              "BAD_REQUEST",
+              "VALIDATION_FAILED",
+              "ROUTE_NOT_FOUND",
+              "METHOD_NOT_ALLOWED",
+              "PAYLOAD_TOO_LARGE",
+              "REQUEST_TIMEOUT",
+              "DATABASE_UNAVAILABLE",
+              "INTERNAL"
+            ]
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldProblem"
+            }
+          },
+          "requestId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "format": "uri",
+            "description": "The problem's identity: the problem-type base followed by `code` (RFC 9457 §3.1.1).",
+            "x-problem-type-base": "https://example.invalid/problems/"
+          }
+        }
+      },
+      "Status": {
+        "type": "object",
+        "description": "A probe's answer.",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

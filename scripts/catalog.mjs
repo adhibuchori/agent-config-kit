@@ -663,7 +663,8 @@ function describe(file) {
       if (/^(import|export|const|let|use)\b/.test(l)) break;
       continue;
     }
-    const m = l.match(/^(?:#|\/\/|\*|\/\*\*?)\s?(.*?)(?:\s*\*\/)?$/);
+    /* `//!` and `///` are Rust's doc comments: the marker is not part of the sentence. */
+    const m = l.match(/^(?:#|\/\/[!/]?|\*|\/\*\*?)\s?(.*?)(?:\s*\*\/)?$/);
     if (!m) break;
     if (/^\s*shellcheck\b/.test(m[1])) continue;
     if (m[1] === '' && block.length) break;

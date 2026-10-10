@@ -1,0 +1,46 @@
+# cargo-deny: advisories, bans, licenses and sources over the crates the build really uses. The
+# quality gate runs `cargo deny check`. Every exception carries a reason, and one that no longer
+# matches anything fails, so the lists never fill with leftovers.
+[graph]
+targets = ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"] # the deploy targets
+all-features = false
+
+[advisories]
+yanked = "deny"
+unmaintained = "all"
+unsound = "all"
+ignore = [] # { id = "RUSTSEC-YYYY-NNNN", reason = "..." }
+unused-ignored-advisory = "deny"
+
+[licenses]
+allow = ["MIT", "Apache-2.0", "Unicode-3.0", "BSD-3-Clause", "ISC", "Zlib", "CDLA-Permissive-2.0"]
+confidence-threshold = 0.93
+unused-allowed-license = "deny"
+
+[licenses.private]
+ignore = true # this service is publish = false
+
+[bans]
+multiple-versions = "deny"
+wildcards = "deny"
+highlight = "all"
+deny = []
+# One entry per duplicate you accept, with its reason. These eight are the starter's own, from
+# ecosystems halfway through a major move; delete each once `cargo tree -d` shows one version.
+skip = [
+  { crate = "block-buffer", reason = "RustCrypto is moving from digest 0.10 to 0.11; sqlx 0.9 pulls both lines" },
+  { crate = "cpufeatures", reason = "RustCrypto is moving from digest 0.10 to 0.11; sqlx 0.9 pulls both lines" },
+  { crate = "crypto-common", reason = "RustCrypto is moving from digest 0.10 to 0.11; sqlx 0.9 pulls both lines" },
+  { crate = "digest", reason = "RustCrypto is moving from digest 0.10 to 0.11; sqlx 0.9 pulls both lines" },
+  { crate = "sha2", reason = "RustCrypto is moving from digest 0.10 to 0.11; sqlx 0.9 pulls both lines" },
+  { crate = "getrandom", reason = "ring still uses getrandom 0.2 while newer crates use 0.4" },
+  { crate = "hashbrown", reason = "indexmap and sqlx's hashlink sit on different hashbrown releases" },
+  { crate = "syn", reason = "proc-macro crates are moving from syn 2 to syn 3" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
+unused-allowed-source = "deny"

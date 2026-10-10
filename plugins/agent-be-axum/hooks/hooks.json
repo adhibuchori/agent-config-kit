@@ -1,0 +1,22 @@
+{
+  "description": "agent-be-axum guards: migration-guard keeps hand-written sqlx migrations append-only once a protected branch has them (appendOnlyMigrationsDirs in .claude/agent-config.json), and generated-guard refuses hand edits to generated output such as .sqlx and openapi.json (generatedPaths). Silent until the project opts in.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|mcp__serena__(replace_content|replace_symbol_body|insert_after_symbol|insert_before_symbol|replace_in_files|rename_symbol|safe_delete_symbol)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/migration-guard.sh\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/generated-guard.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

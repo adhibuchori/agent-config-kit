@@ -55,6 +55,87 @@
         "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
       }
     },
+    "agent-be-axum/api-endpoint": {
+      "use": "\"add GET /api/orders/{id}\", or `/agent-be-axum:api-endpoint`",
+      "why": "One endpoint at a time, test first, spec and code from one declaration",
+      "id": {
+        "what": "Menambah atau mengubah satu endpoint secara code-first: path, handler beranotasi, satu test merah, lalu hijau, lalu spec diekspor ulang",
+        "use": "\"add GET /api/orders/{id}\", atau `/agent-be-axum:api-endpoint`",
+        "why": "Satu endpoint sekali jalan, test lebih dulu, spec dan kode dari satu deklarasi"
+      }
+    },
+    "agent-be-axum/db-migration": {
+      "use": "\"add a column to orders\", or `/agent-be-axum:db-migration`",
+      "why": "Schema changes that deploy without downtime and never rewrite history",
+      "id": {
+        "what": "Menulis perubahan skema PostgreSQL sebagai migrasi sqlx baru tanpa downtime (expand, backfill, contract) dan memperbarui cache query offline",
+        "use": "\"add a column to orders\", atau `/agent-be-axum:db-migration`",
+        "why": "Perubahan skema yang di-deploy tanpa downtime dan tidak pernah menulis ulang riwayat"
+      }
+    },
+    "agent-be-axum/deepseek-review": {
+      "use": "Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run",
+      "why": "A second reader on every pull request for a cent or two",
+      "id": {
+        "what": "Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout",
+        "use": "Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang",
+        "why": "Pembaca kedua di setiap pull request dengan biaya satu atau dua sen"
+      }
+    },
+    "agent-be-axum/generated-guard": {
+      "use": "Runs by itself before file writes",
+      "why": "The query cache and the spec change only through their generators",
+      "id": {
+        "what": "Menolak edit tangan pada output generator: cache query sqlx dan openapi.json",
+        "use": "Berjalan sendiri sebelum penulisan file",
+        "why": "Cache query dan spec hanya berubah lewat generatornya"
+      }
+    },
+    "agent-be-axum/migration-guard": {
+      "use": "Runs by itself before file writes",
+      "why": "A migration a database may have run never changes",
+      "id": {
+        "what": "Menjaga migrasi sqlx tulisan tangan tetap append-only setelah masuk branch terlindungi",
+        "use": "Berjalan sendiri sebelum penulisan file",
+        "why": "Migrasi yang mungkin sudah dijalankan database tidak pernah berubah"
+      }
+    },
+    "agent-be-axum/quality-gate": {
+      "use": "Answer `ci-gate=yes` (recommended); runs on every pull request",
+      "why": "Every pull request runs the same gates as the pre-commit hook, and more",
+      "id": {
+        "what": "Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit",
+        "use": "Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request",
+        "why": "Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih"
+      }
+    },
+    "agent-be-axum/reviewer": {
+      "use": "Via `/agent-core:review`",
+      "why": "Query and layering mistakes the compiler cannot see are caught in review",
+      "id": {
+        "what": "Lapisan lewat privasi modul, kontrak error, query dan migrasi sqlx, serta test",
+        "use": "Lewat `/agent-core:review`",
+        "why": "Kesalahan query dan lapisan yang tidak terlihat compiler tertangkap saat review"
+      }
+    },
+    "agent-be-axum/setup": {
+      "use": "`/agent-be-axum:setup`, once per repo",
+      "why": "Plugins cannot ship permissions or rules; you see every write first",
+      "id": {
+        "what": "Memasang aturan backend, anti-pattern, kerangka layanan, skrip gate, konfigurasi lint dan tes, serta CI pull request untuk layanan Rust + Axum setelah dry run yang Anda setujui",
+        "use": "`/agent-be-axum:setup`, sekali per repo",
+        "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-be-axum/sync": {
+      "use": "`/agent-be-axum:sync --check`",
+      "why": "Drift and double hook wiring show up with an exit code",
+      "id": {
+        "what": "Memeriksa repo terhadap file yang dipasang agent-be-axum (`--check`), atau memperbaruinya setelah dry run",
+        "use": "`/agent-be-axum:sync --check`",
+        "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
+      }
+    },
     "agent-be-go/api-endpoint": {
       "use": "\"add an endpoint\", or `/agent-be-go:api-endpoint`",
       "why": "The spec, the generated server and one test per response move together",
@@ -946,6 +1027,10 @@
       "en": "Lighthouse CI budgets: LCP, CLS and TBT",
       "id": "Anggaran Lighthouse CI: LCP, CLS, dan TBT"
     },
+    "openapi.json": {
+      "en": "The OpenAPI document cargo run --bin openapi writes from the handlers; generated, never edited",
+      "id": "Dokumen OpenAPI yang ditulis cargo run --bin openapi dari handler; hasil generator, tidak pernah diedit"
+    },
     "oxlint.json": {
       "en": "Lint rules for oxlint; the reasons are in .claude/docs/lint-config.md",
       "id": "Aturan lint oxlint; alasannya ada di .claude/docs/lint-config.md"
@@ -989,6 +1074,22 @@
     "scripts/vulture/whitelist.py": {
       "en": "Names vulture must not report as dead code",
       "id": "Nama yang tidak boleh dilaporkan vulture sebagai dead code"
+    },
+    "src/platform/config_tests.rs": {
+      "en": "Unit tests of the configuration reader",
+      "id": "Unit test pembaca konfigurasi"
+    },
+    "src/platform/error_tests.rs": {
+      "en": "Unit tests of the error codes, the problem body and the problem-type base",
+      "id": "Unit test kode error, body problem, dan base problem type"
+    },
+    "src/platform/extract_tests.rs": {
+      "en": "Unit tests of ValidJson: 422 by field without the value, 413 over the limit",
+      "id": "Unit test ValidJson: 422 per field tanpa nilainya, 413 di atas batas"
+    },
+    "src/platform/middleware_tests.rs": {
+      "en": "Unit tests of the layers: every bare error status becomes a problem with a code",
+      "id": "Unit test layer: setiap status error polos menjadi problem dengan kode"
     }
   }
 }

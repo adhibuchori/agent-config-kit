@@ -98,10 +98,11 @@ jobs:
           persist-credentials: false
 
       # ShellCheck 0.11.0 from the same pinned image workflows-lint.yml runs actionlint from.
+      # :(glob) keeps each * inside one folder, so a template's src/bin/ is not a plugin's bin/.
       - name: ShellCheck
         run: |
           files=()
-          while IFS= read -r -d '' f; do files+=("$f"); done < <(git ls-files -z -- '*.sh' 'plugins/*/bin/*')
+          while IFS= read -r -d '' f; do files+=("$f"); done < <(git ls-files -z -- '*.sh' ':(glob)plugins/*/bin/*')
           echo "shellcheck: ${#files[@]} file(s)"
           # -P SCRIPTDIR: a script sources its lib.sh from its own folder, not from the checkout root.
           docker run --rm -v "$PWD:/repo:ro" -w /repo --entrypoint shellcheck \
@@ -145,7 +146,8 @@ jobs:
           version: 0.12.17
           enable-cache: false
 
-      # On macOS /bin/bash is 3.2, the oldest bash a hook or bin/ script may meet.
+      # On macOS /bin/bash is 3.2, the oldest bash a hook or bin/ script may meet (the same files
+      # as ShellCheck).
       - name: Shell syntax (/bin/bash -n)
         run: |
           /bin/bash --version | head -1
@@ -153,7 +155,7 @@ jobs:
           while IFS= read -r -d '' f; do
             /bin/bash -n "$f"
             count=$((count + 1))
-          done < <(git ls-files -z -- '*.sh' '*.bash' 'plugins/*/bin/*')
+          done < <(git ls-files -z -- '*.sh' '*.bash' ':(glob)plugins/*/bin/*')
           echo "bash -n: ${count} file(s) parse"
 
       - name: bats
