@@ -90,7 +90,7 @@
     {
       "id": "payload-encryption",
       "ask": "Seal request and response bodies between the browser, this app's server and the backend (the payload contract: encrypted envelopes, one endpoint registry, checked before merge)?",
-      "why": "Yes installs the payload contract: a reference implementation in src/lib/payload/ (AES-256-GCM envelopes bound to method, route and status; pre-shared key rings; browser key agreement; the browser transport and the proxy bridge; the strict/off switch) with its tests at 100%, the endpoint registry and its generator, check:endpoints (registry drift, route literals, reasons, the committed switch) and check:crypto-interop (the shared test vectors, and peers checked out beside this repo), the contract document and a rule that loads when you touch the transport. Wiring it into the app stays yours: the contract document shows where. No new dependency (WebCrypto). Answer no when bodies need no sealing beyond TLS.",
+      "why": "Yes installs the payload contract: a reference implementation in src/lib/payload/ (AES-256-GCM envelopes bound to method, route and status; pre-shared key rings; browser key agreement; the browser transport and the proxy bridge; the strict/off switch) with its tests at 100%, the endpoint registry and its generator, check:endpoints (registry drift, route literals, reasons, the committed switch) and check:crypto-interop (the shared test vectors with their key agreement, and peers checked out beside this repo), the contract document and a rule that loads when you touch the transport. Wiring it into the app stays yours: the contract document shows where. No new dependency (WebCrypto). Answer no when bodies need no sealing beyond TLS.",
       "choices": ["yes", "no"],
       "recommended": "no",
       "detect": "payload.config.json or src/lib/payload/ already exists, or the backend this app calls expects sealed bodies",
@@ -104,6 +104,7 @@
           "scripts/check/payload-vectors.json",
           "scripts/generate/endpoints.ts",
           "scripts/lib/openapi-endpoints.ts",
+          "scripts/lib/payload-agreement.ts",
           "scripts/lib/source-scan.ts",
           "src/lib/payload/**",
           "src/lib/api/endpoints/**",

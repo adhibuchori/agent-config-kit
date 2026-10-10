@@ -1162,8 +1162,8 @@
       "id": "Lapisan paket logika dan plugin build-tool yang diizinkan, dibaca package-graph.sh"
     },
     "scripts/check/payload-vectors.json": {
-      "en": "Shared test vectors every implementation of the envelope must open and refuse; never regenerated to pass",
-      "id": "Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope; tidak pernah dibuat ulang agar lolos"
+      "en": "Shared test vectors every implementation of the envelope must open and refuse, its key agreement included; never regenerated to pass",
+      "id": "Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos"
     },
     "scripts/check/site.config.json": {
       "en": "Site URL, mode and budgets the site checks read",

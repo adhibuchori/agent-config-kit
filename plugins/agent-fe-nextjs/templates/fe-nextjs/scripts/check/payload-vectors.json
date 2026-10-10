@@ -86,5 +86,51 @@
       "aad": "1.DELETE./api/notes/:id.ecdh.1767225600001",
       "why": "the AAD names the timestamp"
     }
+  ],
+  "agreements": [
+    {
+      "name": "browser-or-app key agreement",
+      "info": "payload-envelope/v1/browser",
+      "serverJwk": "eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2IiwiZCI6IlVqYzg5VnpnYmp3NTgtTjdrSmM5Vm1HcDhHR0hjaHZRU0VaM3hBdEZ4OVUiLCJ4IjoiWTFYY0tfYWlTdkN6czUydEVsM3ZjTHljQWNYRzFSX2lMaHhwaUszRmw0OCIsInkiOiJnWTNtaG90bThTcE9MX1pSQmFmaWV0dVA4V056QmFZd3FidndtYURrTXFvIn0",
+      "serverPublic": "BGNV3Cv2okrws7OdrRJd73C8nAHFxtUf4i4caYitxZePgY3mhotm8SpOL_ZRBafietuP8WNzBaYwqbvwmaDkMqo",
+      "clientPrivate": "iJbuGNp7RDydimNQDIkDtJPYGMvjKVNPH_hdYNB-r14",
+      "clientPublic": "BHmacR4JXGjhG5IS4w-9JzMF5DxAzADDDxPVFCI61KflAvn1zlm7VoBzAbou0SMMkDAg405922C3DvAQ-8mpZBw",
+      "sharedBytes": "G9JHuRMlVppCLBh2eoH8UNp-SUglBMvBSo1Tqj6DIlE",
+      "sessionBytes": "I0sBT0D9MwB4rSyJpnryvEVu_LKtho1s_KKaMKcYYDI",
+      "vector": {
+        "kind": "request",
+        "method": "POST",
+        "pattern": "/api/notes",
+        "kid": "ecdh",
+        "plaintext": {
+          "title": "Groceries",
+          "done": false,
+          "tags": [
+            "home"
+          ]
+        },
+        "ts": 1767225600000,
+        "aad": "1.POST./api/notes.ecdh.1767225600000",
+        "iv": "hlEmkKsvlLFlYnqW",
+        "ct": "R1XQW7HY_Jqxte_cVXRKXYZP2379KOcKQTv68w2KzL51vknamtSzLDt29qK2gBKR-Lkxp3mLTv9hBCfeGzmMDE4Q"
+      }
+    }
+  ],
+  "pointRejects": [
+    {
+      "name": "not on the curve",
+      "point": "BHmacR4JXGjhG5IS4w-9JzMF5DxAzADDDxPVFCI61KflAvn1zlm7VoBzAbou0SMMkDAg405922C3DvAQ-8mpZB0",
+      "code": "ENVELOPE_MALFORMED"
+    },
+    {
+      "name": "64 bytes, no prefix",
+      "point": "eZpxHglcaOEbkhLjD70nMwXkPEDMAMMPE9UUIjrUp-UC-fXOWbtWgHMBui7RIwyQMCDjTn3bYLcO8BD7yalkHA",
+      "code": "ENVELOPE_MALFORMED"
+    },
+    {
+      "name": "compressed point",
+      "point": "AnmacR4JXGjhG5IS4w-9JzMF5DxAzADDDxPVFCI61Kfl",
+      "code": "ENVELOPE_MALFORMED"
+    }
   ]
 }

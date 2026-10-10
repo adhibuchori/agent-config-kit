@@ -8,6 +8,9 @@ load helpers
 
 FE_TPL="$KIT_ROOT/plugins/agent-fe-nextjs/templates/fe-nextjs"
 AI_TPL="$KIT_ROOT/plugins/agent-ai-fastapi/templates/ai-fastapi"
+GO_TPL="$KIT_ROOT/plugins/agent-be-go/templates/be-go"
+AXUM_TPL="$KIT_ROOT/plugins/agent-be-axum/templates/be-axum"
+IOS_TPL="$KIT_ROOT/plugins/agent-ios-swiftui/templates/ios-swiftui"
 
 setup() {
   be_setup_env
@@ -79,13 +82,68 @@ interop() { run --separate-stderr bash -c 'cd "$1" && shift && "$@" scripts/chec
   interop
   [ "$status" -eq 0 ]
   [[ "$output" == *"3 vector(s) opened, 5 replay(s) refused, round trip ok"* ]]
+  [[ "$output" == *"1 key agreement(s) derived from both sides, 3 bad point(s) refused"* ]]
 }
 
-@test "crypto-interop: an AAD builder that drifted fails, naming the vector" {
+@test "crypto-interop: an AAD builder that drifted fails, naming the vector and the agreement" {
   replace_once "$REPO/src/lib/payload/envelope.ts" 'method.toUpperCase()' 'method.toLowerCase()'
   interop
   [ "$status" -eq 1 ]
   [[ "$stderr" == *'vector request: AAD "1.post./api/notes'* ]]
+  [[ "$stderr" == *'agreement browser-or-app key agreement: AAD "1.post./api/notes.ecdh'* ]]
+}
+
+@test "crypto-interop: a copy that derives the agreed key under another HKDF label fails, from both sides" {
+  replace_once "$REPO/src/lib/payload/ecdh.ts" "'payload-envelope/v1/browser'" "'payload-envelope/v2/browser'"
+  interop
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"agreement browser-or-app key agreement: the server side's key does not open the envelope"* ]]
+  [[ "$stderr" == *"agreement browser-or-app key agreement: the client side's key does not open the envelope"* ]]
+}
+
+@test "crypto-interop: a copy that takes a compressed point fails; one that refuses a point with another code fails" {
+  replace_once "$REPO/src/lib/payload/ecdh.ts" \
+    "if (point.length !== POINT_BYTES || point[0] !== UNCOMPRESSED) {" "if (point.length < 33) {"
+  interop
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"point reject compressed point: accepted, but it must be refused with ENVELOPE_MALFORMED"* ]]
+  [[ "$stderr" != *"point reject not on the curve"* ]]
+  cp "$TPL/src/lib/payload/ecdh.ts" "$REPO/src/lib/payload/"
+  replace_once "$REPO/src/lib/payload/ecdh.ts" "new PayloadError('ENVELOPE_MALFORMED', 'The peer public key" \
+    "new PayloadError('ENVELOPE_REJECTED', 'The peer public key"
+  interop
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"point reject 64 bytes, no prefix: refused with ENVELOPE_REJECTED, not ENVELOPE_MALFORMED"* ]]
+}
+
+# vectors_edit <python statement over d>: the repo's copy of the vectors, edited.
+vectors_edit() {
+  python3 - "$REPO/scripts/check/payload-vectors.json" "$1" <<'PY'
+import json, sys
+path, expr = sys.argv[1], sys.argv[2]
+d = json.load(open(path))
+exec(expr)
+json.dump(d, open(path, "w"), indent=2)
+PY
+}
+
+@test "crypto-interop: an agreement whose published HKDF info or AAD was edited fails" {
+  vectors_edit 'd["agreements"][0]["info"] = "payload-envelope/v1/app"'
+  interop
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *'agreement browser-or-app key agreement: HKDF with info "payload-envelope/v1/app" derives another key'* ]]
+  cp "$TPL/scripts/check/payload-vectors.json" "$REPO/scripts/check/"
+  vectors_edit 'd["agreements"][0]["vector"]["aad"] = "1.POST./api/notes/:id.ecdh.1767225600000"'
+  interop
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *'AAD "1.POST./api/notes.ecdh.1767225600000" is not "1.POST./api/notes/:id.ecdh.1767225600000"'* ]]
+}
+
+@test "crypto-interop: vectors without the key agreement fail instead of skipping it" {
+  vectors_edit 'del d["agreements"], d["pointRejects"]'
+  interop
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *'the vectors carry no `agreements` or no `pointRejects`'* ]]
 }
 
 @test "crypto-interop: an implementation that stops binding the AAD cannot open the vectors, and fails" {
@@ -372,16 +430,18 @@ problem_case() {
 
 # ── the copies agree ───────────────────────────────────────────────────────────────────────────
 
-@test "the frontend and backend carry the same cipher, scripts and vectors; the Python stack the same vectors" {
-  local f
+@test "the frontend and backend carry the same cipher, scripts and vectors; every other stack the same vectors" {
+  local f tpl
   for f in base64url errors envelope aes-gcm codec key-ring ecdh mode policy; do
     cmp "$TPL/src/lib/payload/$f.ts" "$FE_TPL/src/lib/payload/$f.ts"
   done
-  for f in lib/openapi-endpoints.ts lib/source-scan.ts generate/endpoints.ts check/endpoints.ts \
-    check/crypto-interop.ts check/payload-vectors.json; do
+  for f in lib/openapi-endpoints.ts lib/payload-agreement.ts lib/source-scan.ts generate/endpoints.ts \
+    check/endpoints.ts check/crypto-interop.ts check/payload-vectors.json; do
     cmp "$TPL/scripts/$f" "$FE_TPL/scripts/$f"
   done
-  cmp "$TPL/scripts/check/payload-vectors.json" "$AI_TPL/scripts/check/payload-vectors.json"
+  for tpl in "$AI_TPL" "$GO_TPL" "$AXUM_TPL" "$IOS_TPL"; do
+    cmp "$TPL/scripts/check/payload-vectors.json" "$tpl/scripts/check/payload-vectors.json"
+  done
   cmp "$TPL/.claude/PAYLOAD-CONTRACT.md" "$FE_TPL/.claude/PAYLOAD-CONTRACT.md"
   cmp "$TPL/.claude/PAYLOAD-CONTRACT.md" "$AI_TPL/.claude/PAYLOAD-CONTRACT.md"
   cmp "$TPL/.claude/rules/common/payload-contract.md" "$FE_TPL/.claude/rules/common/payload-contract.md"

@@ -34,6 +34,19 @@ describe('key agreement', () => {
       code: 'ENVELOPE_MALFORMED',
     });
   });
+
+  test('refuses a valid point sent compressed, as every other implementation does', async () => {
+    const browser = await generateEphemeralKeyPair();
+    const point = fromBase64Url(browser.publicKey);
+    const compressed = new Uint8Array(33);
+    compressed[0] = 0x02 | ((point[64] ?? 0) & 1);
+    compressed.set(point.subarray(1, 33), 1);
+    await expect(
+      deriveSessionKey(browser.privateKey, toBase64Url(compressed)),
+    ).rejects.toMatchObject({
+      code: 'ENVELOPE_MALFORMED',
+    });
+  });
 });
 
 describe('importServerKeyPair', () => {

@@ -822,7 +822,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `pyproject.toml` | sekali, jika belum ada; lalu milik Anda | Pengaturan proyek Python dan tool-nya: ruff, mypy, pytest, coverage, vulture |
 | `scripts/check/coverage-policy.mjs` | selalu; sync menjaganya tetap terbaru | COVER: refuses a coverage gate that was weakened. |
 | `scripts/check/gates.list` | sekali; lalu milik Anda | This repo's gates. |
-| `scripts/check/payload-vectors.json` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope; tidak pernah dibuat ulang agar lolos |
+| `scripts/check/payload-vectors.json` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
 | `scripts/vulture/whitelist.py` | sekali; lalu milik Anda | Nama yang tidak boleh dilaporkan vulture sebagai dead code |
 | `src/app/core/payload/__init__.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The payload contract package. |
 | `src/app/core/payload/codec.py` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Sealing and opening JSON envelopes with AES-256-GCM. |
@@ -847,7 +847,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-be-axum</strong>: 85 berkas</summary>
+<summary><strong>agent-be-axum</strong>: 86 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -909,6 +909,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/coverage.sh` | selalu; sync menjaganya tetap terbaru | COVER: every test, with coverage, then each file at 100% of its lines and functions (.claude/rules/rust/coverage.md). |
 | `scripts/check/gates.list` | sekali; lalu milik Anda | This repo's gates: `bash scripts/check/gates.sh` runs them, and so does .githooks/pre-commit. |
 | `scripts/check/migrations.sh` | selalu; sync menjaganya tetap terbaru | The sqlx migrations in migrations/ (Rules 11 and 12). |
+| `scripts/check/payload-vectors.json` | selalu; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
 | `scripts/check/pooler.sh` | sekali; lalu milik Anda | The pooler tier: tests/pooler runs the service's own pool through PgBouncer in transaction mode, where prepared statements, startup parameters and session settings break without an error. |
 | `scripts/check/rust-source.mjs` | selalu; sync menjaganya tetap terbaru | Rust source checks that the compiler and clippy do not make, over every tracked or new *.rs file (target/ and .sqlx/ aside, and a file that says @generated in its first five lines) |
 | `scripts/check/rustfmt.sh` | selalu; sync menjaganya tetap terbaru | The format gate: `cargo fmt --check` over the whole crate, read-only. |
@@ -940,7 +941,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-be-go</strong>: 93 berkas</summary>
+<summary><strong>agent-be-go</strong>: 94 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -1031,6 +1032,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/generated.sh` | selalu; sync menjaganya tetap terbaru | Generated-code gate. |
 | `scripts/check/lint.sh` | selalu; sync menjaganya tetap terbaru | Lint gate: golangci-lint over the whole module with .golangci.yml, at the version scripts/check/tools.env pins. |
 | `scripts/check/migrations.sh` | selalu; sync menjaganya tetap terbaru | Migration gate for goose SQL files in db/migrations (Rules 11 and 12). |
+| `scripts/check/payload-vectors.json` | selalu; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
 | `scripts/check/pooler.sh` | selalu; sync menjaganya tetap terbaru | Pooler check: the service's own pool behind a transaction pooler (PgBouncer). |
 | `scripts/check/tools.env` | sekali; lalu milik Anda | The tool versions outside go.mod that the gates and the quality gate pin. |
 | `sqlc.yaml` | sekali; lalu milik Anda | sqlc: the Go in internal/postgres/db is generated from the SQL in db/queries, type-checked against the schema the goose migrations build (it reads them in name order and ignores their Down parts). |
@@ -1041,7 +1043,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-be-hono</strong>: 94 berkas</summary>
+<summary><strong>agent-be-hono</strong>: 95 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -1104,11 +1106,12 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/migrations.sh` | selalu; sync menjaganya tetap terbaru | Migration drift gate. |
 | `scripts/check/module-mocks.ts` | sekali; lalu milik Anda | MOCK — a module replacement must not reach the files that did not ask for one. |
 | `scripts/check/openapi.ts` | selalu; sync menjaganya tetap terbaru | The OpenAPI document builds, describes at least one route, publishes the Problem contract, and equals the committed openapi.json. |
-| `scripts/check/payload-vectors.json` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope; tidak pernah dibuat ulang agar lolos |
+| `scripts/check/payload-vectors.json` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
 | `scripts/generate/endpoints.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Writes the generated half of the endpoint registry from the OpenAPI spec and the exemptions in payload.config.json (.claude/PAYLOAD-CONTRACT.md § Registry). |
 | `scripts/generate/openapi.ts` | selalu; sync menjaganya tetap terbaru | Writes the OpenAPI document the app declares to openapi.json (`bun run spec:export`). |
 | `scripts/lib/openapi-document.ts` | selalu; sync menjaganya tetap terbaru | The OpenAPI document the app declares, built from `src/app.ts` without starting a server. |
 | `scripts/lib/openapi-endpoints.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | The payload contract's configuration, and the endpoint registry an OpenAPI document implies. |
+| `scripts/lib/payload-agreement.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | The key-agreement half of the shared payload vectors, which scripts/check/crypto-interop.ts runs beside the AES vectors (.claude/PAYLOAD-CONTRACT.md § Tests and interop). |
 | `scripts/lib/source-scan.ts` | selalu; sync menjaganya tetap terbaru | Reading a source tree the way the payload checks need it: every TypeScript file, with comments and API prose blanked so a sentence that names a route is never read as code, and JSON compared by meaning rather than by formatting. |
 | `src/lib/endpoints/__tests__/endpoints.test.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Unit tests for the endpoint registry: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). |
 | `src/lib/endpoints/endpoints.generated.ts` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Generated from `openapi.json` by `scripts/generate/endpoints.ts`. |
@@ -1207,7 +1210,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-fe-nextjs</strong>: 141 berkas</summary>
+<summary><strong>agent-fe-nextjs</strong>: 142 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -1308,7 +1311,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/i18n-casing.ts` | jika `i18n=yes`; sync menjaganya tetap terbaru | Title Case check for the words a button shows, in every locale (.claude/rules/web/ui-conventions.md § Copy). |
 | `scripts/check/i18n.ts` | jika `i18n=yes`; sync menjaganya tetap terbaru | Checks for: 1. |
 | `scripts/check/no-reexport.ts` | selalu; sync menjaganya tetap terbaru | Refuses re-exports: a module may export only what it declares (AGENTS.md Rule 34). |
-| `scripts/check/payload-vectors.json` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope; tidak pernah dibuat ulang agar lolos |
+| `scripts/check/payload-vectors.json` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
 | `scripts/check/responsive.ts` | jika `responsive=yes`; sync menjaganya tetap terbaru | RESP — responsive layout. |
 | `scripts/check/skeleton-pairs.ts` | jika `skeletons=yes`; sync menjaganya tetap terbaru | Every loading skeleton a screen renders is measured against that screen, or named as not yet. |
 | `scripts/check/skeleton-switch.sh` | jika `skeletons=yes`; sync menjaganya tetap terbaru | IS_SKELETON_SHOWN and its twin IS_LOADER_SHOWN hold wired screens on their loading state, for comparing a placeholder with the real layout; IS_ERROR_SHOWN holds wired lists on their error state. |
@@ -1317,6 +1320,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/tailwind-classes.ts` | selalu; sync menjaganya tetap terbaru | Refuses a Tailwind class that is not in its canonical form (AGENTS.md Rule 33). |
 | `scripts/generate/endpoints.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Writes the generated half of the endpoint registry from the OpenAPI spec and the exemptions in payload.config.json (.claude/PAYLOAD-CONTRACT.md § Registry). |
 | `scripts/lib/openapi-endpoints.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | The payload contract's configuration, and the endpoint registry an OpenAPI document implies. |
+| `scripts/lib/payload-agreement.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | The key-agreement half of the shared payload vectors, which scripts/check/crypto-interop.ts runs beside the AES vectors (.claude/PAYLOAD-CONTRACT.md § Tests and interop). |
 | `scripts/lib/source-scan.ts` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Reading a source tree the way the payload checks need it: every TypeScript file, with comments and API prose blanked so a sentence that names a route is never read as code, and JSON compared by meaning rather than by formatting. |
 | `scripts/lib/stylesheets.ts` | jika `responsive=yes`; sync menjaganya tetap terbaru | Loading the stylesheets `scripts/check/responsive.ts` validates. |
 | `scripts/measure/waterfall.ts` | selalu; sync menjaganya tetap terbaru | `bun run measure:waterfall --path '/en/projects/42'`: one fresh load of a URL, with every API request and image it made, when each started and when it ended. |
@@ -1442,7 +1446,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-ios-swiftui</strong>: 63 berkas</summary>
+<summary><strong>agent-ios-swiftui</strong>: 64 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -1503,6 +1507,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/lint-suppressions.sh` | selalu; sync menjaganya tetap terbaru | Every suppression says why, and the ones nothing can prove stale are not allowed at all (AGENTS.md Rule 17). |
 | `scripts/check/package-graph.json` | sekali; lalu milik Anda | Lapisan paket logika dan plugin build-tool yang diizinkan, dibaca package-graph.sh |
 | `scripts/check/package-graph.sh` | selalu; sync menjaganya tetap terbaru | The logic packages keep the shape the rules describe (AGENTS.md Rules 1, 2, 21 and 22; .claude/rules/ios/packages.md). |
+| `scripts/check/payload-vectors.json` | selalu; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
 | `scripts/check/privacy-manifest.sh` | selalu; sync menjaganya tetap terbaru | The privacy manifest names a reason for every required-reason API the app's code uses (AGENTS.md Rule 25). |
 | `scripts/check/xcode-settings.sh` | selalu; sync menjaganya tetap terbaru | The Xcode project's build settings live in Config/*.xcconfig, and say what the rules need (AGENTS.md Rules 19, 20 and 28; .claude/rules/ios/swiftui.md). |
 | `scripts/ios/api-client.sh` | selalu; sync menjaganya tetap terbaru | Regenerates the API client from the backend's spec copy (AGENTS.md Rule 11). |

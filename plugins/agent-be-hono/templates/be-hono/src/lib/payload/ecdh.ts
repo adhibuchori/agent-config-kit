@@ -17,6 +17,12 @@ import { PayloadError } from './errors';
 
 const CURVE: EcKeyImportParams = { name: 'ECDH', namedCurve: 'P-256' };
 
+/* A peer key is the uncompressed point 0x04 || X || Y, the form every implementation sends. Node
+   and Bun also import a compressed point, which Go's crypto/ecdh refuses, so every copy refuses it
+   (the shared vectors' `pointRejects`). */
+const POINT_BYTES = 65;
+const UNCOMPRESSED = 0x04;
+
 /* Domain separation: a second protocol deriving keys from the same secret with another label can
    never produce this key. The version is in the label so a v2 schedule cannot collide with it. */
 const HKDF_INFO = 'payload-envelope/v1/browser';
@@ -62,7 +68,11 @@ export async function deriveSessionKey(
 ): Promise<CryptoKey> {
   let peer: CryptoKey;
   try {
-    peer = await crypto.subtle.importKey('raw', fromBase64Url(peerPublicKey), CURVE, false, []);
+    const point = fromBase64Url(peerPublicKey);
+    if (point.length !== POINT_BYTES || point[0] !== UNCOMPRESSED) {
+      throw new Error('The peer public key is not an uncompressed point');
+    }
+    peer = await crypto.subtle.importKey('raw', point, CURVE, false, []);
   } catch {
     /* WebCrypto validates the point, which is what makes an invalid-curve attack fail here. */
     throw new PayloadError('ENVELOPE_MALFORMED', 'The peer public key is not a P-256 point');
