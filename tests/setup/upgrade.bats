@@ -113,6 +113,25 @@ PY
   [ -f "$P/docs/unlock.md" ]
 }
 
+@test "a lock written before language offered go, rust and swift stays in sync with the checkout" {
+  # The copy is agent-core as it was: three choices, and no go/, rust/ or swift/ rules.
+  rm -r "$K/templates/common/.claude/rules/go" "$K/templates/common/.claude/rules/rust" "$K/templates/common/.claude/rules/swift"
+  python3 - "$K/templates/common/_kit/setup.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+q = next(q for q in d["questions"] if q["id"] == "language")
+q["choices"] = ["typescript", "python", "both"]
+q["install"] = {k: v for k, v in q["install"].items() if k in q["choices"]}
+open(sys.argv[1], "w").write(json.dumps(d, indent=2) + "\n")
+PY
+  setup_now --answer language=both
+  unset ENGINE_CORE
+  core_args "$P"
+  run -0 --separate-stderr sync_cli check "${ARGS[@]}"
+  [[ "$output" == *"result: in sync (0 findings; exit 0)"* ]]
+  [ ! -e "$P/.claude/rules/go" ] && [ -f "$P/.claude/rules/python/types.md" ] && [ -f "$P/.claude/rules/typescript/types.md" ]
+}
+
 @test "a stack plugin's setup plans agent-core's layer first, in the same draft" {
   X="$BATS_TEST_TMPDIR/agent-x"
   fake_stack "$X" agent-x 2.0.0 x

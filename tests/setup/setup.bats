@@ -137,11 +137,28 @@ PY
   run -0 --separate-stderr sync_cli check "${ARGS[@]}"
 }
 
+@test "go, rust and swift each install that language's type and dead-code rules, and nothing of the others" {
+  for lang in go rust swift; do
+    Q="$BATS_TEST_TMPDIR/proj-$lang"
+    new_repo "$Q"
+    core_args "$Q"
+    setup_now --answer "language=$lang"
+    for f in types dead-code; do
+      cmp "$COMMON/.claude/rules/$lang/$f.md" "$Q/.claude/rules/$lang/$f.md"
+    done
+    [ "$(find "$Q/.claude/rules" -mindepth 1 -maxdepth 1 -type d | sed 's|.*/||' | sort | tr '\n' ' ')" = "common $lang " ]
+    [ ! -e "$Q/scripts/check/double-assertion.sh" ]
+    [ "$(json_q "$Q/.claude/agent-config-kit.lock" 'd["plugins"]["agent-core"]["answers"]["language"]')" = "$lang" ]
+    run -0 --separate-stderr sync_cli check "${ARGS[@]}"
+    [[ "$output" == *"result: in sync (0 findings; exit 0)"* ]]
+  done
+}
+
 @test "an unknown question, a value outside the choices, or a malformed answer is a usage error" {
   run -2 --separate-stderr setup_cli plan "${ARGS[@]}" --answer nope=yes
   [[ "$stderr" == *"no question 'nope'"* ]]
-  run -2 --separate-stderr setup_cli plan "${ARGS[@]}" --answer language=rust
-  [[ "$stderr" == *"choose one of typescript, python, both"* ]]
+  run -2 --separate-stderr setup_cli plan "${ARGS[@]}" --answer language=cobol
+  [[ "$stderr" == *"choose one of typescript, python, both, go, rust, swift"* ]]
   run -2 --separate-stderr setup_cli plan "${ARGS[@]}" --answer language
   [[ "$stderr" == *"ID=VALUE"* ]]
 }

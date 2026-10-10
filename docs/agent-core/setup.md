@@ -4,7 +4,7 @@ Command · agent-core · `/agent-core:setup [--answer id=value …]` · only you
 
 ## What it does
 
-`/agent-core:setup` installs what a plugin cannot ship by itself into your repo: permissions and the Bash sandbox in `.claude/settings.json`, the TypeScript or Python type and dead-code rules, the working agreements, the check scripts (`gates.sh`, `ai-config.sh`, `skills.sh`, `pr-ready.sh`), the unlock script and the `.env` helpers, `docs/unlock.md`, the example ops docs and, if you want it, the kit's `.mcp.json`.
+`/agent-core:setup` installs what a plugin cannot ship by itself into your repo: permissions and the Bash sandbox in `.claude/settings.json`, the type and dead-code rules for TypeScript, Python, Go, Rust or Swift, the working agreements, the check scripts (`gates.sh`, `ai-config.sh`, `skills.sh`, `pr-ready.sh`), the unlock script and the `.env` helpers, `docs/unlock.md`, the example ops docs and, if you want it, the kit's `.mcp.json`.
 
 It explores your repo, asks one question at a time with a recommended answer, shows the exact draft,
 and writes only when you reply **go**. It never overwrites or deletes a file. It adds 1 package script(s) to an existing `package.json` (never creates one) and keeps any script you already have. The lock
@@ -23,7 +23,7 @@ The questions (answer "ok" to take the recommended one):
 
 | Question id | What it asks | Choices | Recommended |
 | --- | --- | --- | --- |
-| `language` | Which languages does this repo's code use? | typescript / python / both | `typescript` |
+| `language` | Which languages does this repo's code use? | typescript / python / both / go / rust / swift | `typescript` |
 | `sandbox` | Turn on Claude Code's Bash sandbox for this repo? | yes / no | `yes` |
 | `mcp` | Add the kit's .mcp.json (Serena, GitHub, Context7, and read-only dev and production database servers)? | yes / no | `yes` |
 | `team-plugins` | Offer these plugins to teammates who open the repo? | yes / no | `yes` |
