@@ -6,13 +6,14 @@ description: Use when building, fixing or checking a loading skeleton or placeho
 # Skeleton
 
 Optional module: this skill works from the files `/agent-fe-nextjs:setup` installs when the
-`skeletons` question is answered yes. If `.claude/rules/web/skeletons.md` is missing from the repo,
-say so, point at `/agent-fe-nextjs:setup` or `/agent-fe-nextjs:sync`, and stop.
+`skeletons` question is answered yes, at the paths [references/files.md](references/files.md)
+lists. If the repo has no skeleton rules file, say so, point at `/agent-fe-nextjs:setup` or
+`/agent-fe-nextjs:sync`, and stop.
 
-The binding rules are S1–S16 in `.claude/rules/web/skeletons.md`, which load once a skeleton file is
-open. The derivations and worked examples are in `.claude/docs/standards/skeletons.md`, and the ways
-a height drifts in practice are in `.claude/anti-patterns/skeleton-height-drifts-from-real-row.md`.
-This is the order of work, so the measuring happens before the claim, not after the complaint.
+The binding rules are S1–S16 in the skeleton rules file, which load once a skeleton file is open.
+The derivations and worked examples are in the skeleton standard, and the ways a height drifts in
+practice are in the skeleton-height anti-pattern; the same reference gives each path. This is the
+order of work, so the measuring happens before the claim, not after the complaint.
 
 1. **Read the real component as the screen configures it** (S7): the props the screen passes, the
    branch the seeded data takes once every request has answered (S4), every box's padding, gap,

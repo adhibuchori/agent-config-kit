@@ -1,5 +1,5 @@
 ---
-description: Shows which agent-config-kit command to run next (plan → review → commit → create-pr → merge-pr), lists every command of every kit plugin, and explains how the user unlocks .env files and database writes. Reads only.
+description: Shows which agent-config-kit command to run next (plan → review → commit → create-pr → merge-pr), lists every command of every kit plugin, and explains how the user unlocks `.env` files and database writes. Reads only.
 argument-hint: "[what you want to do]"
 ---
 

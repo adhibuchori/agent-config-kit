@@ -31,7 +31,7 @@ What each finding means here:
 - `stale`, `new`, `removed-upstream`, `version`: the installed plugin differs from the one the lock
   records; a plan brings the files up to date.
 - `settings-missing`: one of the `ask` rules for the deploy scripts is gone from
-  `.claude/settings.json`, so Claude could run a network script without asking.
+  `.claude/settings.json`, so Claude could run a network script with no permission prompt.
 - `block-*`, `alias-missing`: the `.gitignore` or `CLAUDE.md` block, or agent-core's `unlock` script,
   changed.
 - `double-wired`: the project settings wire a hook script agent-core also runs, so it would run

@@ -1,5 +1,5 @@
 ---
-description: Install agent-core's permissions, rules, check scripts and the unlock and .env helpers into this repo, after a dry run you approve
+description: Install agent-core's permissions, rules, check scripts and the unlock and `.env` helpers into this repo, after a dry run you approve
 argument-hint: "[--answer id=value ...]"
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Bash(git status:*), Bash(agent-setup questions:*), Bash(agent-setup plan:*), Bash(agent-sync check:*)

@@ -1,6 +1,6 @@
 ---
 name: security-guard
-description: Reviews a diff for security regressions in any stack - secrets and env exposure, injection and unsafe sinks, missing authorisation, request trust, dependency advisories, and edits to the agent's own guardrails (settings, hook config, unlock and .env helpers, workflows). Use before committing a change to config, handlers, queries, rendering of user content or CI. Reports findings; changes nothing.
+description: Reviews a diff for security regressions in any stack - secrets and env exposure, injection and unsafe sinks, missing authorisation, request trust, dependency advisories, and edits to the agent's own guardrails (settings, hook config, unlock and `.env` helpers, workflows). Use before committing a change to config, handlers, queries, rendering of user content or CI. Reports findings; changes nothing.
 ---
 
 # Security Guard
@@ -40,8 +40,8 @@ with `bash scripts/env/show.sh <file>`, which masks secrets. If the diff is empt
 
 ### 3. Authorisation and request trust
 
-- A route, handler, server action or job that reads or writes data without checking who is calling.
-  A UI gate hides; it does not protect.
+- A route, handler, server action or job that reads or writes data but does not check who is
+  calling. A UI gate hides; it does not protect.
 - Input not validated at the boundary (a schema parse) before it reaches a query or a file path.
 - A client-supplied header (`x-forwarded-for`, `x-real-ip`, `x-forwarded-host`) trusted instead of
   the one the edge overwrites; an absolute URL or redirect built from the request's `Host`; an open
@@ -54,8 +54,12 @@ with `bash scripts/env/show.sh <file>`, which masks secrets. If the diff is empt
 - A new or bumped dependency: run the package manager's audit and report any advisory.
 - A workflow that adds a `push`, `schedule`, `pull_request_target` or `workflow_run` trigger, an
   unpinned `uses:` (anything but a full commit SHA with a version comment), `secrets: inherit`,
-  missing `persist-credentials: false`, broader `permissions:` than the job needs, or `${{ }}` of
-  event data inside `run:`.
+  missing `persist-credentials: false`, broader `permissions:` than the job needs, or an expression
+  of event data inside `run:`, such as:
+
+  ```yaml
+  run: echo "${{ github.event.pull_request.title }}"
+  ```
 
 ### 5. The agent's own guardrails
 
