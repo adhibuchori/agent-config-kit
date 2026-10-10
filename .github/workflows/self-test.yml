@@ -13,6 +13,8 @@
 #   | fe-nextjs-static Fixtures | the static-site checks against the toy site; a skipped test fails   |
 #   | Workflows Lint            | actionlint, zizmor, pinact and the trigger policy (a called file)   |
 #   | Secret Scan               | gitleaks over the full history and the tree (pinned image)          |
+#   | SkillSpector (plugins)    | every plugin's commands, agents, skills and hook scripts through    |
+#   |                           | the users' skills.sh gate and baseline; no new baseline line        |
 #
 # Every tool is pinned: the actions by commit SHA, the images by digest, and the npm tools by the
 # lockfiles under .github/tools/, installed with npm ci. Nothing here needs a secret or a write
@@ -234,10 +236,45 @@ jobs:
           docker run --rm -v "$PWD:/repo:ro" -w /repo "$image" dir . --no-banner --redact --config .github/gitleaks.toml || status=1
           exit "$status"
 
+  skills:
+    name: SkillSpector (plugins)
+    runs-on: ubuntu-24.04
+    # A full scan of every plugin takes a few minutes; the install adds about one.
+    timeout-minutes: 20
+
+    steps:
+      # Full history: the scan compares the baseline with the pull request's base.
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: 0.12.17
+          enable-cache: false
+
+      # The build users' repos run: the commit scripts/check/skills.sh pins, on Python 3.12.
+      - name: Install SkillSpector
+        run: |
+          ref=$(sed -n 's/^PINNED_REF="\([0-9a-f]\{40\}\)"$/\1/p' plugins/agent-core/templates/common/scripts/check/skills.sh)
+          [ -n "$ref" ] || { echo "::error::no PINNED_REF in skills.sh"; exit 1; }
+          uv tool install --python 3.12 "git+https://github.com/NVIDIA/skillspector.git@${ref}"
+          uv tool dir --bin >> "$GITHUB_PATH"
+
+      # Every command, agent, skill and hook script, laid out as a repo would hold it, through the
+      # gate and baseline users get; a new baseline line fails the pull request.
+      - name: Scan every plugin component
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: bash scripts/skills-plugins.sh --base "$BASE_SHA"
+
   self-test:
     name: Self Test
     if: ${{ always() }}
-    needs: [manifests, shell, bats, fixtures, workflows, secrets]
+    needs: [manifests, shell, bats, fixtures, workflows, secrets, skills]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
 
