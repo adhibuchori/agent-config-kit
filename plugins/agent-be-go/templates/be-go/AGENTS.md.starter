@@ -17,6 +17,7 @@ yet wastes a session. For each Partial or Not met row, name the shape to follow 
 | 11–17 Database | `<status>` | `<...>` |
 | 25–26 Tests | `<status>` | `<...>` |
 | 27 Secrets | `<status>` | `<...>` |
+| 28–32 Payload contract (only with `payload-encryption=yes`) | `<status>` | `<...>` |
 
 ## Rules
 
@@ -49,3 +50,8 @@ yet wastes a session. For each Partial or Not met row, name the shape to follow 
 | 25 | Every hand-written file is at 100% statement coverage; exemptions are a closed list with reasons | `scripts/check/coverage.sh`, `coverage-policy.mjs`, the coverage floor | `.claude/rules/go/coverage.md` |
 | 26 | Tests go through the seam callers use, fake only system boundaries, and take expected values from the spec | reviewer, depguard (no mocking library) | `.claude/rules/backend/testing.md` |
 | 27 | No secret and no `.env` file is ever committed | gitleaks, the gate's committed-env check | `scripts/check/secrets.sh` |
+| 28 | Every body that crosses a service boundary is sealed, unless `payload.config.json` exempts its route with a reason (rules 28–32 apply where setup answered `payload-encryption=yes`) | `scripts/check/payload-registry.mjs`, the `internal/httpapi` payload tests | `.claude/rules/backend/go-payload.md` |
+| 29 | The payload middleware wraps the routes outside the validator; only `internal/httpapi` and `cmd/` import `internal/payload` | `internal/payload/boundary_test.go`, reviewer | `.claude/rules/backend/go-payload.md` |
+| 30 | Payload keys are added, never repurposed (`kid:base64key`, `PAYLOAD_KEY_NEXT`, `PAYLOAD_SERVER_JWK`); only `internal/config` reads them, and nothing logs them | forbidigo, gitleaks, reviewer | `.claude/rules/backend/go-payload.md` |
+| 31 | The committed switch says `strict`; production refuses `off` | `scripts/check/payload-registry.mjs`, `internal/payload/mode_test.go` | `.claude/rules/backend/go-payload.md` |
+| 32 | A payload refusal is an `apperr` code the spec lists; the cipher passes the shared vectors | `registry_test.go`, `contract_test.go`, `internal/payload/vectors_test.go` | `.claude/rules/backend/go-payload.md` |

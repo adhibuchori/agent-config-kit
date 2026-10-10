@@ -14,6 +14,9 @@ code	go mod tidy -diff
 code	bash scripts/check/generated.sh
 code	bash scripts/check/migrations.sh
 code	bash scripts/check/endpoints.sh
+# Optional module, one setup question (payload-encryption). A repo without payload.config.json has
+# not adopted the contract, and setup installed no payload-registry.mjs: this line then passes.
+code	[ ! -f payload.config.json ] || node scripts/check/payload-registry.mjs
 code	node scripts/check/folder-shape.mjs
 code	node scripts/check/coverage-policy.mjs
 code	bash scripts/check/ci-env.sh bash scripts/check/coverage.sh

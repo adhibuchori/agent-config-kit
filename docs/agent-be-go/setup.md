@@ -10,7 +10,8 @@ rules, the anti-patterns, a service skeleton with its tests at 100% (the closed 
 and RFC 9457 writer, the router with spec validation and the 404/405 fallback, the pool, the
 configuration and logging packages, `cmd/api`), `api/openapi.yaml` and its export, the database
 roles, `.golangci.yml`, `sqlc.yaml`, the gate scripts with `gates.list`, the pre-commit hook, a
-pull-request-only CI caller, an optional DeepSeek review, PR templates and a CODEOWNERS starter.
+pull-request-only CI caller, an optional DeepSeek review, PR templates, a CODEOWNERS starter and,
+when you ask for it, the payload contract that seals request and response bodies.
 
 It explores your repo, asks one question at a time with a recommended answer, shows the exact draft,
 and writes only when you reply **go**. It never overwrites or deletes a file, and never edits
@@ -44,6 +45,7 @@ The questions (answer "ok" to take the recommended one):
 | `pr-templates` | Add pull-request templates for work pull requests and dev → prod promotions (.github/PULL_REQUEST_TEMPLATE/)? | yes / no | `yes` |
 | `analytics` | Does an agent need to read a self-hosted analytics API from this repo? | yes / no | `no` |
 | `serena-workspace` | Do you open several repositories as one Serena workspace? | yes / no | `no` |
+| `payload-encryption` | Seal request and response bodies between this service and its callers (the payload contract: encrypted envelopes, a registry generated from the spec, checked before merge)? | yes / no | `no` |
 
 The draft lists every action: `create`, `same`, `keep`, `seed`, `merge`, `conflict`, `block`,
 `alias`, `by-hand`, `warn` and `lock`, then a `digest`. `apply` is not pre-approved, so your
@@ -68,6 +70,27 @@ and the seeded `.go` files; setup's last step says so.
 **What must I set before the first release?**
 The problem-type base: `apperr.TypeBase` and `x-problem-type-base` in `api/openapi.yaml`, one https
 URI under a domain you own. Production refuses to start while it is the placeholder.
+
+**I answered `payload-encryption=yes`, and the gates are red.**
+On purpose: a half-adopted contract never passes. Setup installs the Go code (`internal/payload`,
+the middleware in `internal/httpapi`, the five `ENVELOPE_*` codes, the payload variables in
+`internal/config`), `payload.config.json`, the shared vectors, the registry generator and check, and
+the key script. Four steps stay yours, and `.claude/rules/backend/go-payload.md` shows each one:
+
+1. Add the five codes to `Registered()` in `internal/apperr/codes.go` and to `Problem.code` in
+   `api/openapi.yaml`.
+2. When browsers or apps call the service, add `GET /api/payload/handshake`, and exempt it and the
+   health probe as `none` in `payload.config.json`; otherwise drop `handshake` there. The check
+   compares `handshake` with the operation ID as `api/openapi.json` spells it, and oapi-codegen's
+   export capitalizes it (`GetPayloadHandshake`).
+3. Wire `sealBodies` into `NewRouter` between the validator and the body limit, and build the edge
+   in `main` from `config.LoadPayload`.
+4. Regenerate: `bash scripts/check/generated.sh --write`, then
+   `node scripts/generate/payload-registry.mjs`.
+
+Keys never go through a chat: `node scripts/generate/payload-server-key.mjs` prints a new key pair
+for `PAYLOAD_SERVER_JWK`, which you pipe into the env file yourself (`docs/unlock.md`); the
+settings this setup merges refuse it to an agent.
 
 **It says `command -v agent-setup` found nothing.**
 agent-core is not enabled in this session, or you are on claude.ai or Cowork, which do not install

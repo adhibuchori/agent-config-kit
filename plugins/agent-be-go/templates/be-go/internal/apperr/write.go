@@ -31,16 +31,17 @@ func Write(w http.ResponseWriter, r *http.Request, logger *slog.Logger, err erro
 	if e == nil || e.Code.name == "" {
 		e = Wrap(Internal, "", err)
 	}
+	status := e.Status()
 	attrs := []slog.Attr{
 		slog.String("requestId", requestID),
 		slog.String("code", e.Code.name),
-		slog.Int("status", e.Code.status),
+		slog.Int("status", status),
 	}
 	if e.internal != "" {
 		attrs = append(attrs, slog.String("internal", e.internal))
 	}
 	level := slog.LevelInfo
-	if e.Code.status >= http.StatusInternalServerError {
+	if status >= http.StatusInternalServerError {
 		level = slog.LevelError
 		attrs = append(attrs, slog.Any("error", err))
 	}
@@ -49,14 +50,14 @@ func Write(w http.ResponseWriter, r *http.Request, logger *slog.Logger, err erro
 	body := Problem{
 		Type:      e.Code.Type(),
 		Title:     e.Code.title,
-		Status:    e.Code.status,
+		Status:    status,
 		Code:      e.Code.name,
 		Detail:    e.Detail,
 		RequestID: requestID,
 		Fields:    e.fields,
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(e.Code.status)
+	w.WriteHeader(status)
 	if encErr := json.NewEncoder(w).Encode(body); encErr != nil {
 		logger.LogAttrs(ctx, slog.LevelError, "problem body not written",
 			slog.String("requestId", requestID), slog.Any("error", encErr))

@@ -338,7 +338,7 @@ flowchart LR
 | --- | --- | --- |
 | Rencana | `/agent-core:plan add password reset` (atau perencana stack seperti `/agent-fe-nextjs:plan-fullstack`) | aturan stack dimuat saat rencana membaca file yang cocok |
 | Kode | tidak ada: cukup minta | [post-edit](docs/agent-core/post-edit.md) memformat dan me-lint setiap file yang ditulis; [safety-check](docs/agent-core/safety-check.md) dan guard lain menolak yang tidak boleh berjalan |
-| Review | `/agent-core:review` | reviewer stack dan [security-guard](docs/agent-core/security-guard.md) melapor berdasarkan tingkat keparahan; [spec-reviewer](docs/agent-core/spec-reviewer.md) memeriksa spesifikasi, di bagiannya sendiri |
+| Review | `/agent-core:review` | reviewer stack dan [security-guard](docs/agent-core/security-guard.md) melapor berdasarkan tingkat keparahan |
 | Commit | `/agent-core:commit`, lalu `git commit -- <paths>` | gate pre-commit menjalankan `scripts/check/gates.sh --hook`; [post-commit](docs/agent-core/post-commit.md) menunjukkan apa yang masuk |
 | PR | `/agent-core:create-pr` | quality gate reusable berjalan di pull request |
 | Merge | `/agent-core:merge-pr 42` | `scripts/ops/pr-ready.sh` memeriksa kesiapan lebih dulu |
@@ -524,7 +524,7 @@ berjalan saat Anda mengetiknya: Claude tidak bisa memulainya sendiri (`disable-m
 | [/&lt;plugin&gt;:sync](docs/agent-core/sync.md) | Melaporkan pergeseran (`--check`) atau memperbarui file yang tidak Anda ubah | `/agent-fe-nextjs:sync --check` | Setiap repo tetap memakai versi aturan yang sama |
 | [/agent-core:help](docs/agent-core/help.md) | Memberi tahu perintah berikutnya | `/agent-core:help` | Tidak perlu menghafal perintah |
 | [/agent-core:plan](docs/agent-core/plan.md) | Menulis rencana sebelum kode dan menunggu persetujuan Anda | `/agent-core:plan add password reset` | Cakupan dan risiko disepakati sebelum kerja dimulai |
-| [/agent-core:review](docs/agent-core/review.md) | Me-review perubahan staged atau branch pada dua sumbu: standar menurut tingkat keparahan, dan spesifikasi | `/agent-core:review` | Aturan stack dan spesifikasi masing-masing diperiksa baris demi baris |
+| [/agent-core:review](docs/agent-core/review.md) | Me-review perubahan staged atau branch, menurut tingkat keparahan | `/agent-core:review` | Aturan stack diperiksa baris demi baris |
 | [/agent-core:commit](docs/agent-core/commit.md) | Menjalankan gate dan menyusun pesan commit | `/agent-core:commit` | Gate yang merah tidak pernah jadi commit |
 | [/agent-core:create-pr](docs/agent-core/create-pr.md) | Menyusun PR dari template Anda, lalu membukanya | `/agent-core:create-pr` | PR konsisten, tidak pernah push ke `main` |
 | [/agent-core:merge-pr](docs/agent-core/merge-pr.md) | Memeriksa kesiapan, lalu merge dengan merge commit | `/agent-core:merge-pr 42` | Pemeriksaan yang dilewati dan thread terbuka ketahuan |
@@ -556,7 +556,6 @@ Anda juga bisa meminta langsung: "Use the `agent-core:security-guard` subagent o
 | --- | --- | --- | --- |
 | [agent-core:reviewer](docs/agent-core/reviewer.md) | Memeriksa diff terhadap `AGENTS.md` dan `.claude/rules/` | Lewat `/agent-core:review` jika tidak ada reviewer stack | Temuan yang mengutip aturan, di stack apa pun |
 | [agent-core:security-guard](docs/agent-core/security-guard.md) | Rahasia, injeksi, otorisasi, perubahan pada pagar pengaman | Lewat `/agent-core:review`, atau minta langsung | Kemunduran keamanan ditandai sebelum commit |
-| [agent-core:spec-reviewer](docs/agent-core/spec-reviewer.md) | Memeriksa diff terhadap issue, rencana, atau file spesifikasi yang diimplementasikannya | Lewat `/agent-core:review`, sebagai sumbu spesifikasi | Perubahan yang meleset dari yang diminta tertangkap sebelum merge |
 | [agent-fe-nextjs:reviewer](docs/agent-fe-nextjs/reviewer.md) | Lapisan Next.js, komponen, lapisan data, struktur | Lewat `/agent-core:review` | Aturan `AGENTS.md` Anda diperiksa |
 | [agent-fe-nextjs:i18n-guard](docs/agent-fe-nextjs/i18n-guard.md) | Kesetaraan key next-intl dan string yang ditulis langsung | Minta setelah menyentuh katalog | Tidak ada layar yang setengah diterjemahkan |
 | [agent-fe-nextjs:seo-validator](docs/agent-fe-nextjs/seo-validator.md) | Metadata, canonical, sitemap, OG, JSON-LD | Minta setelah perubahan metadata | Halaman tetap mudah ditemukan dan dibagikan |
@@ -681,7 +680,7 @@ tidak menyimpan token.
 
 | Nama | Fungsinya | Cara memakai | Mengapa berguna |
 | --- | --- | --- | --- |
-| `<stack>-quality-gate.yml` (delapan reusable workflow di repo ini) | Pasang dari lockfile, jalankan `gates.list`, batas cakupan, `.env` yang ter-commit, pemindaian HTML tak aman/`eval`/skema URL pada baris yang ditambahkan, gitleaks, audit, SkillSpector, build, source map, tambahan per stack | Setup memasang pemanggilnya; lihat [CI](#ci-workflow-yang-dapat-dipakai-ulang) | Satu gate, banyak repo, satu pin |
+| `<stack>-quality-gate.yml` (lima reusable workflow di repo ini) | Pasang dari lockfile, jalankan `gates.list`, batas cakupan, `.env` yang ter-commit, pemindaian HTML tak aman/`eval`/skema URL pada baris yang ditambahkan, gitleaks, audit, SkillSpector, build, source map, tambahan per stack | Setup memasang pemanggilnya; lihat [CI](#ci-workflow-yang-dapat-dipakai-ulang) | Satu gate, banyak repo, satu pin |
 | `deepseek-review.yml`, `deploy-webhook.yml`, `strip-ai.yml` (reusable, repo ini) | Review AI, deploy saat merge, dan pembersihan konfigurasi agen di balik pemanggil di bawah | Setup memasang pemanggilnya; lihat [CI](#ci-workflow-yang-dapat-dipakai-ulang) | Satu implementasi teruji, di-pin oleh setiap pemanggil |
 | `.github/workflows/quality-gate.y*ml` (di repo Anda) | Pemanggil kecil untuk gate stack Anda, pada pull request | Dipasang oleh setup (lewat pertanyaan `ci-gate` bila ada) | Tidak perlu menyalin apa pun dengan tangan |
 | `codeql.yml`, `dependency-review.yml`, `workflows-lint.yml` (core, di repo Anda) | CodeQL di PR; dependensi baru yang rentan atau berlisensi buruk; actionlint, zizmor, dan pinact saat workflow berubah | Dipasang oleh setup agent-core | Pemeriksaan rantai pasok tanpa penjadwal |
@@ -690,7 +689,7 @@ tidak menyimpan token.
 | `strip-ai.yml` (deploy; opsional) | Setelah merge ke `prod`, menghapus konfigurasi agen di sana, merge balik ke `dev`, lalu memeriksa keduanya | `strip-ai=yes` | Produksi tidak membawa instruksi agen |
 | `react-doctor.yml` (fe-nextjs, fe-nextjs-static, docs-nextra; opsional) | Komentar React Doctor yang bersifat saran di PR; action milik vendor melapor ke layanan skornya | Pertanyaan setup (disarankan **no**) | Tidak pernah menggagalkan pemeriksaan |
 | `changelog.yaml`, `ci-cd.yaml` (docs-nextra; opsional) | Membuat ulang halaman dokumentasi dan deploy saat merge ke `prod` | Pertanyaan setup | Dokumentasi mengikuti kode |
-| `actions/quality-gate` (repo ini) | Composite action yang dijalankan kedelapan gate reusable: rencana, instalasi, gate, batas cakupan, pemindaian diff, gitleaks | Dipanggil oleh reusable workflow; lihat [README-nya](actions/quality-gate/README.md) | Satu implementasi teruji di balik gate setiap stack |
+| `actions/quality-gate` (repo ini) | Composite action yang dijalankan kelima gate reusable: rencana, instalasi, gate, batas cakupan, pemindaian diff, gitleaks | Dipanggil oleh reusable workflow; lihat [README-nya](actions/quality-gate/README.md) | Satu implementasi teruji di balik gate setiap stack |
 | `actions/deepseek-review`, `actions/deploy-webhook`, `actions/strip-ai` (repo ini) | Langkah di balik review, deploy, dan pembersihan | Dipanggil oleh reusable workflow; lihat README-nya: [review](actions/deepseek-review/README.md), [deploy](actions/deploy-webhook/README.md), [strip](actions/strip-ai/README.md) | Diuji dengan bats terhadap tiruan HTTPS lokal |
 | `self-test.yml` (repo ini) | validate `--strict`, katalog dan versi, ShellCheck, bats di macOS dan Ubuntu, lint workflow, gitleaks, pasangan README | Berjalan di setiap PR di sini | Kit menguji dirinya dengan cara yang sama |
 
@@ -944,11 +943,12 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-be-go</strong>: 97 berkas</summary>
+<summary><strong>agent-be-go</strong>: 133 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
 | `.claude/ANALYTICS.example.md` | jika `analytics=yes`; sync menjaganya tetap terbaru | Analytics — Read API Access |
+| `.claude/PAYLOAD-CONTRACT.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Payload Contract: Sealed Bodies and One Endpoint Registry |
 | `.claude/SERENA-WORKSPACE.example.md` | jika `serena-workspace=yes`; sync menjaganya tetap terbaru | Serena — Multi-Repo Workspace Scoping |
 | `.claude/agent-config.json` | sekali; lalu milik Anda | Pengaturan hook untuk stack ini, seperti generatedPaths atau migrationsDirs |
 | `.claude/anti-patterns/INDEX.md` | sekali; lalu milik Anda | Anti-Patterns Index |
@@ -969,10 +969,12 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.claude/anti-patterns/servemux-404-405-skip-problem-json.md` | selalu; sync menjaganya tetap terbaru | ServeMux answers 404 and 405 in plain text |
 | `.claude/anti-patterns/session-state-behind-transaction-pooler.md` | selalu; sync menjaganya tetap terbaru | Session state behind a transaction pooler |
 | `.claude/anti-patterns/unindexed-foreign-keys.md` | selalu; sync menjaganya tetap terbaru | Foreign keys without an index |
+| `.claude/rules/backend/go-payload.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Payload contract (Go) |
 | `.claude/rules/backend/go-service.md` | selalu; sync menjaganya tetap terbaru | Go service |
 | `.claude/rules/backend/postgres.md` | selalu; sync menjaganya tetap terbaru | PostgreSQL |
 | `.claude/rules/backend/testing.md` | selalu; sync menjaganya tetap terbaru | Testing (Go) |
 | `.claude/rules/common/error-codes.md` | selalu; sync menjaganya tetap terbaru | Error codes (Go API) |
+| `.claude/rules/common/payload-contract.md` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Payload Contract (short form) |
 | `.claude/rules/go/coverage.md` | selalu; sync menjaganya tetap terbaru | COVER — Test Coverage (Go) |
 | `.claude/settings.json` | digabung ke milik Anda (hanya menambah; nilai Anda yang menang) | Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash |
 | `.env.ci.example` | sekali; lalu milik Anda | The variables the tests get in CI, and locally through scripts/check/ci-env.sh: dummy values only, never a real secret. |
@@ -997,6 +999,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `internal/apperr/codes.go` | sekali; lalu milik Anda | Package apperr holds the closed set of error codes a client can receive and the one writer that turns an error into an RFC 9457 problem response. |
 | `internal/apperr/contract_test.go` | sekali; lalu milik Anda | Tests that api/openapi.yaml publishes the registry: the code enum and the problem-type base. |
 | `internal/apperr/error.go` | sekali; lalu milik Anda | The domain error: a registered code, a detail a client may see, and what only the logs see. |
+| `internal/apperr/payload_codes.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The payload contract's refusals (.claude/PAYLOAD-CONTRACT.md § Refusals and error codes): the codes internal/httpapi answers a failed envelope with. |
 | `internal/apperr/registry_test.go` | sekali; lalu milik Anda | Tests that every registered code is declared once, raised somewhere, and never minted elsewhere. |
 | `internal/apperr/scan_test.go` | sekali; lalu milik Anda | The go/ast helpers the registry test reads the module with. |
 | `internal/apperr/types.go` | sekali; lalu milik Anda | Problem types: the base every problem's type starts with, and the check main runs on it. |
@@ -1005,12 +1008,19 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `internal/apperr/write_test.go` | sekali; lalu milik Anda | Tests for the problem writer: codes, statuses, the request ID, and no internal detail. |
 | `internal/config/config.go` | sekali; lalu milik Anda | Package config reads the process configuration from the environment, once, at startup. |
 | `internal/config/config_test.go` | sekali; lalu milik Anda | Tests for the configuration reader: defaults, every variable, and the first bad one. |
+| `internal/config/payload.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The payload contract's variables (.claude/PAYLOAD-CONTRACT.md § Keys): read here, the only reader of the environment, and parsed by internal/payload's NewEdge. |
+| `internal/config/payload_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests for the payload contract's variables: read as they are, and never logged. |
 | `internal/httpapi/api.gen.go` | sekali; lalu milik Anda | Package httpapi provides primitives to interact with the openapi HTTP API. |
 | `internal/httpapi/fallback.go` | sekali; lalu milik Anda | The 404 and 405 answers as problems, instead of ServeMux's plain text. |
 | `internal/httpapi/generate.go` | sekali; lalu milik Anda | The generator lines: the server code and the contract clients generate from both come from api/openapi.yaml. |
 | `internal/httpapi/handler_size_test.go` | sekali; lalu milik Anda | Tests that every handler body stays at 15 code lines or fewer. |
 | `internal/httpapi/handlers.go` | sekali; lalu milik Anda | The handlers: one method per operation in api/openapi.yaml. |
 | `internal/httpapi/middleware.go` | sekali; lalu milik Anda | The middleware around the routes: request ID, access log, panic recovery, body limit. |
+| `internal/httpapi/payload.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The payload contract around the routes (.claude/PAYLOAD-CONTRACT.md): a sealed request body is opened before the validator reads it, and the answer is sealed after the handler wrote it, so no handler, service or schema ever sees an envelope. |
+| `internal/httpapi/payload_helpers_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Test helpers for the payload middleware: a service edge, a client that seals as a browser or an app would, and the chain the middleware sits in. |
+| `internal/httpapi/payload_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests for the payload middleware in the chain it sits in: sealed both ways for a client and for a server caller, what passes through, and every refusal as a plaintext problem. |
+| `internal/httpapi/payload_writer.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The writer that holds an answer on a sealed route until it is whole, then seals or refuses it. |
+| `internal/httpapi/payload_writer_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests for the answer on a sealed route: what is sealed, what goes out as it is, and what is refused. |
 | `internal/httpapi/router.go` | sekali; lalu milik Anda | Package httpapi is the HTTP layer: the server oapi-codegen generates from api/openapi.yaml, the handlers that implement it, and the middleware around them. |
 | `internal/httpapi/router_test.go` | sekali; lalu milik Anda | Tests through the whole router: routes, fallbacks, handler errors and panics. |
 | `internal/httpapi/server.go` | sekali; lalu milik Anda | The HTTP server with every timeout set, and the export of the embedded spec. |
@@ -1021,10 +1031,34 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `internal/httpapi/validate_test.go` | sekali; lalu milik Anda | Tests for request validation: fields, rules, unreadable and oversized bodies. |
 | `internal/logging/logging.go` | sekali; lalu milik Anda | Package logging builds the process logger and carries the request ID through a context. |
 | `internal/logging/logging_test.go` | sekali; lalu milik Anda | Tests for the logger and the request ID in a context. |
+| `internal/payload/base64.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Bytes on the wire: unpadded base64url out; base64url or standard base64 in, as every copy reads it. |
+| `internal/payload/base64_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests that the codec writes unpadded base64url and reads what every other copy reads. |
+| `internal/payload/boundary_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests that the payload core stays behind the transport (AGENTS.md Rule 29): only internal/httpapi and cmd/ import internal/payload, so no handler, service or store ever sees an envelope, and the core itself imports no net/http. |
+| `internal/payload/cipher.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The one cipher on the wire: AES-256-GCM with a fresh 96-bit nonce per seal and the 128-bit tag after the ciphertext. |
+| `internal/payload/cipher_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests for the cipher: AES-256 only, a fresh nonce per seal, and one refusal for every failure. |
+| `internal/payload/codec.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | A JSON body into an envelope and back: the one place that decides the order of the checks. |
+| `internal/payload/codec_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests for sealing and opening: the round trip, and each refusal in the order the checks run. |
+| `internal/payload/ecdh.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Key agreement for clients that can hold no shared secret: a browser, an installed app. |
+| `internal/payload/ecdh_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests for key agreement: the server key's import, the client point's checks, and both sides deriving one key. |
+| `internal/payload/edge.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The contract at this service's edge: the key one exchange uses, opening what a caller sealed and sealing what this service answers. |
+| `internal/payload/edge_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests for the edge as internal/httpapi uses it: the settings it refuses, the handshake, and an exchange with a client key and with the key ring. |
+| `internal/payload/envelope.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Package payload is the payload contract's core (.claude/PAYLOAD-CONTRACT.md): the envelope and its cipher, key agreement with browsers and apps, key rings for server callers, the strict/off switch and the endpoint registry generated from the spec. |
+| `internal/payload/envelope_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests for the wire format: the AAD strings, the exact envelope shape, and the freshness window. |
+| `internal/payload/errors.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The closed set of ways an envelope fails to become a body: a code for the wire, a message for the log. |
+| `internal/payload/helpers_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Test material: keys from fixed labels (placeholder bytes, never a real key) and a fixed clock. |
+| `internal/payload/keyring.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Pre-shared keys for server callers, which never reach a browser or an app. |
+| `internal/payload/keyring_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests for the key ring: blank slots, rotation, and refusals that name the variable, never the key. |
+| `internal/payload/mode.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The switch: whether this service enforces the contract. |
+| `internal/payload/mode_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests for the switch: the environment wins, then the committed file, then strict; off never in production; a typo is refused instead of read as strict. |
+| `internal/payload/policy.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | The registry's types. |
+| `internal/payload/policy_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests for the policies, the codes, and the registry accessor. |
+| `internal/payload/registry.gen.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Code generated by scripts/generate/payload-registry.mjs. |
+| `internal/payload/vectors_test.go` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Tests this copy against the shared known answers, scripts/check/payload-vectors.json: the AAD strings byte for byte, every ciphertext opened, every replay refused, and the key agreement derived from both sides. |
 | `internal/postgres/main_test.go` | sekali; lalu milik Anda | The test database follows the branch's migrations before any test of this package runs. |
 | `internal/postgres/pool.go` | sekali; lalu milik Anda | Package postgres owns the connection pool and the stores that adapt sqlc's queries to the interfaces the modules declare. |
 | `internal/postgres/pool_test.go` | sekali; lalu milik Anda | Tests for the pool: its bounds, its refusals, and the role it runs as. |
 | `internal/postgres/pooler_test.go` | sekali; lalu milik Anda | Tests of the service's pool behind a transaction pooler; only the quality gate builds them. |
+| `payload.config.json` | jika `payload-encryption=yes`; sekali; lalu milik Anda | Sakelar kontrak payload (strict, di-commit), pengecualian rute beserta alasannya, dan repo peer yang ikut diperiksa |
 | `scripts/check/ci-env.sh` | selalu; sync menjaganya tetap terbaru | Runs a command with the environment CI's unit tests get, and nothing else: PATH, HOME, TMPDIR, the locale, CI=true and CI's test variables. |
 | `scripts/check/coverage-exempt.txt` | sekali; lalu milik Anda | Files the per-file coverage check leaves out (.claude/rules/go/coverage.md), one glob per line in a closed category: `# composition root: &lt;why&gt;` or `# generated: &lt;why&gt;`. |
 | `scripts/check/coverage-per-file.mjs` | selalu; sync menjaganya tetap terbaru | Coverage per file: every measured file at 100%, in the metrics its toolchain reports. |
@@ -1035,12 +1069,13 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/generated.sh` | selalu; sync menjaganya tetap terbaru | Generated-code gate. |
 | `scripts/check/lint.sh` | selalu; sync menjaganya tetap terbaru | Lint gate: golangci-lint over the whole module with .golangci.yml, at the version scripts/check/tools.env pins. |
 | `scripts/check/migrations.sh` | selalu; sync menjaganya tetap terbaru | Migration gate for goose SQL files in db/migrations (Rules 11 and 12). |
-| `scripts/check/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
-| `scripts/check/payload-vectors.json` | selalu; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
+| `scripts/check/payload-registry.mjs` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
+| `scripts/check/payload-vectors.json` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
 | `scripts/check/pooler.sh` | selalu; sync menjaganya tetap terbaru | Pooler check: the service's own pool behind a transaction pooler (PgBouncer). |
 | `scripts/check/tools.env` | sekali; lalu milik Anda | The tool versions outside go.mod that the gates and the quality gate pin. |
-| `scripts/generate/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | Writes the payload registry from the OpenAPI document and payload.config.json. |
-| `scripts/lib/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | The payload registry's shared half for the Go, Rust and Swift stacks. |
+| `scripts/generate/payload-registry.mjs` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Writes the payload registry from the OpenAPI document and payload.config.json. |
+| `scripts/generate/payload-server-key.mjs` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Makes a new P-256 key pair for the payload contract's key agreement, in the form PAYLOAD_SERVER_JWK holds: base64url of the UTF-8 JWK text {kty, crv, d, x, y}. |
+| `scripts/lib/payload-registry.mjs` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | The payload registry's shared half for the Go, Rust and Swift stacks. |
 | `sqlc.yaml` | sekali; lalu milik Anda | sqlc: the Go in internal/postgres/db is generated from the SQL in db/queries, type-checked against the schema the goose migrations build (it reads them in name order and ignores their Down parts). |
 | `CLAUDE.md` | satu blok terkelola, ditambahkan di akhir | `## Agent config kit` |
 | `.gitignore` | satu blok terkelola (10 baris) | `.env`, `.env.*`, `!.env.ci.example`, `!.env.*.example`, `.envrc`, `.serena/`, `.skillspector/`, `/bin/`, `/coverage/`, `*.test` |
@@ -1731,8 +1766,7 @@ branch (dev/prod/main/master/release) is not allowed.`
 ```
 
 **Matikan satu guard.** `"generatedPaths": []` atau `"migrationsDirs": []` mematikan guard itu di
-repo ini; generated-guard tetap menolak file Go atau Rust yang header-nya sendiri menandainya hasil
-generator. Hook lain tidak punya sakelar per hook; lihat
+repo ini. Hook lain tidak punya sakelar per hook; lihat
 [Apa yang diblokir](#apa-yang-diblokir-dan-cara-mematikannya).
 
 **Lindungi path lain dari `rm -r`:**

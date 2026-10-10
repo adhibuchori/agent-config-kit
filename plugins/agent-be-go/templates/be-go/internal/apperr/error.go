@@ -19,6 +19,7 @@ type Error struct {
 	Code     Code
 	Detail   string
 	internal string
+	status   int
 	fields   []FieldError
 	cause    error
 }
@@ -42,6 +43,24 @@ func Invalid(fields ...FieldError) *Error {
 func (e *Error) WithInternal(format string, args ...any) *Error {
 	e.internal = fmt.Sprintf(format, args...)
 	return e
+}
+
+// WithStatus answers the error with status instead of its code's own, for the one code the contract
+// gives two statuses: ENVELOPE_MALFORMED is a 400 for a caller's envelope and a 500 for an answer this
+// service could not seal. A status outside 400..599 is ignored.
+func (e *Error) WithStatus(status int) *Error {
+	if status >= 400 && status <= 599 {
+		e.status = status
+	}
+	return e
+}
+
+// Status is the HTTP status the error is answered with: WithStatus's, or else its code's.
+func (e *Error) Status() int {
+	if e.status != 0 {
+		return e.status
+	}
+	return e.Code.status
 }
 
 func (e *Error) Error() string {

@@ -5,8 +5,8 @@ Agent · agent-be-go · `agent-be-go:reviewer` subagent · reads and reports onl
 ## What it does
 
 `agent-be-go:reviewer` reviews the diff of a Go HTTP service against your `AGENTS.md` and the rules
-under `.claude/rules`: layering, the error contract, database access, query shape and indexes, and
-tests. It reports each breach with its rule number, file, line and fix, and changes no file. It
+under `.claude/rules`: layering, the error contract, database access, query shape and indexes,
+tests, and the payload contract where the repo adopted it. It reports each breach with its rule number, file, line and fix, and changes no file. It
 skips what golangci-lint, the compiler and the gates already fail.
 
 ## When to reach for it

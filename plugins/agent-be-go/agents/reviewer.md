@@ -31,7 +31,10 @@ reviewed; a hand edit to one is itself the finding.
    - an error returned to a client without a registered code, an upstream refusal that loses its
      code, an internal message in `detail`;
    - a test that replaces a package of this repo, asserts what its own fake returned, or recomputes
-     its expected value with the code under test.
+     its expected value with the code under test;
+   - where the payload contract is adopted: an exemption whose reason judges how sensitive a body
+     looks instead of what the body is, a stream on a route that seals its answer, a sealed body's
+     plaintext or a payload key in a log line.
 
 Each finding: rule number, file:line, the quoted hunk, the fix. A smell no rule names is reported as
 "possible" followed by the smell's name, never as a breach. Done when every changed hunk was read against every rule

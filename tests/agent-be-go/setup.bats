@@ -12,7 +12,7 @@ setup() {
   go_args
 }
 
-@test "questions: agent-core's layer first, then this plugin's six, each recommending one of its choices" {
+@test "questions: agent-core's layer first, then this plugin's seven, each recommending one of its choices" {
   run -0 --separate-stderr "$SETUP_BIN" questions "${ARGS[@]}" --json
   run -0 python3 -c '
 import json, sys
@@ -21,7 +21,7 @@ assert d["plugin"] == "agent-be-go" and d["stack"] == "be-go", d
 ids = [(q["plugin"], q["id"]) for q in d["questions"]]
 assert ids[0] == ("agent-core", "language"), ids
 assert [i for p, i in ids if p == "agent-be-go"] == ["migrations", "ci-gate", "deepseek-review", "pr-templates",
-                                                     "analytics", "serena-workspace"], ids
+                                                     "analytics", "serena-workspace", "payload-encryption"], ids
 assert all(q["recommended"] in q["choices"] and q["why"] for q in d["questions"])
 print("ok")' "$output"
   [ "$output" = ok ]
@@ -75,6 +75,8 @@ print("ok")' "$output"
   [ -f "$PROJ/.github/PULL_REQUEST_TEMPLATE/dev.md" ]
   [ ! -e "$PROJ/.claude/ANALYTICS.example.md" ]
   [ ! -e "$PROJ/.github/workflows/deepseek-review.yml" ]
+  [ ! -e "$PROJ/payload.config.json" ] && [ ! -e "$PROJ/internal/payload" ] && [ ! -e "$PROJ/internal/httpapi/payload.go" ]
+  [ ! -e "$PROJ/scripts/check/payload-registry.mjs" ] && [ ! -e "$PROJ/scripts/check/payload-vectors.json" ]
   if grep -Eq '@0{40}' "$TPL/.github/workflows/quality-gate.yml"; then
     [ ! -e "$PROJ/.github/workflows/quality-gate.yml" ]
   fi
@@ -101,7 +103,8 @@ me = lock["plugins"]["agent-be-go"]
 assert me["stack"] == "be-go", me
 assert me["kept"] == ["go.mod"], me["kept"]
 assert me["answers"] == {"migrations": "yes", "ci-gate": "yes", "deepseek-review": "no", "pr-templates": "yes",
-                         "analytics": "no", "serena-workspace": "no"}, me["answers"]
+                         "analytics": "no", "serena-workspace": "no", "payload-encryption": "no"}, me["answers"]
+assert not any("payload-server-key" in r for r in s["permissions"]["deny"]), s["permissions"]["deny"]
 assert "internal/httpapi/router.go" in me["seeded"] and "AGENTS.md" in me["seeded"], me["seeded"]
 print("ok")
 PY
@@ -171,4 +174,23 @@ PY
     run -3 --separate-stderr "$SETUP_BIN" plan "${ARGS[@]}"
     [[ "$stderr" == *"agent-be-go conflicts with $other"* ]] || false
   done
+}
+
+@test "payload-encryption=yes installs the contract, the Go code and the shared files; the key script is denied" {
+  go_setup --answer payload-encryption=yes
+  local f
+  for f in payload.config.json internal/payload/edge.go internal/payload/registry.gen.go internal/payload/vectors_test.go \
+    internal/httpapi/payload.go internal/httpapi/payload_writer.go internal/apperr/payload_codes.go internal/config/payload.go \
+    scripts/generate/payload-server-key.mjs scripts/check/payload-vectors.json scripts/check/payload-registry.mjs \
+    scripts/generate/payload-registry.mjs scripts/lib/payload-registry.mjs .claude/PAYLOAD-CONTRACT.md \
+    .claude/rules/common/payload-contract.md .claude/rules/backend/go-payload.md; do
+    cmp "$PROJ/$f" "$TPL/$f"
+  done
+  grep -qE '^  seed +internal/payload/edge\.go ' <<<"$PLAN"
+  grep -qE '^  create +scripts/check/payload-vectors\.json$' <<<"$PLAN"
+  run -0 jq -r '.permissions.deny[]' "$PROJ/.claude/settings.json"
+  grep -qxF 'Bash(node scripts/generate/payload-server-key.mjs:*)' <<<"$output"
+  run --separate-stderr "$SYNC_BIN" check "${ARGS[@]}"
+  [ "$status" -eq 0 ]
+  [[ "${lines[${#lines[@]} - 1]}" == "result: in sync (0 findings; exit 0)" ]] || false
 }

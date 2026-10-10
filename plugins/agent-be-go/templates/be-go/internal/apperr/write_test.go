@@ -58,6 +58,24 @@ func TestWriteAnswersEveryErrorAsAProblem(t *testing.T) {
 	}
 }
 
+func TestWithStatusAnswersAnotherErrorStatusOnly(t *testing.T) {
+	t.Parallel()
+	var logs bytes.Buffer
+	rec := httptest.NewRecorder()
+	err := apperr.New(apperr.MalformedBody, "").WithStatus(http.StatusInternalServerError).WithStatus(http.StatusOK)
+	apperr.Write(rec, request(t), slog.New(slog.NewJSONHandler(&logs, nil)), err)
+	p := decodeProblem(t, rec)
+	if rec.Code != http.StatusInternalServerError || p.Status != http.StatusInternalServerError || p.Code != "MALFORMED_BODY" {
+		t.Fatalf("got %d %+v", rec.Code, p)
+	}
+	if !strings.Contains(logs.String(), `"level":"ERROR"`) || !strings.Contains(logs.String(), `"status":500`) {
+		t.Fatalf("log line: %s", logs.String())
+	}
+	if got := apperr.New(apperr.NotFound, "").Status(); got != http.StatusNotFound {
+		t.Fatalf("without WithStatus the code's status: got %d", got)
+	}
+}
+
 func TestWriteLogsABodyItCouldNotSend(t *testing.T) {
 	t.Parallel()
 	var logs bytes.Buffer

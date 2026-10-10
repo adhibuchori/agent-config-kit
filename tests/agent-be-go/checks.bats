@@ -295,3 +295,29 @@ per_file_repo() {
   [ "$status" -eq 0 ]
   [ "$output" = "test -race -count=1 -tags pooler -run ^TestPooler ./internal/postgres/" ]
 }
+
+# ── the payload registry gate line ──────────────────────────────────────────────────────────────
+
+# payload_gate: the gates.list line of the payload registry check, run as gates.sh runs it.
+payload_gate() {
+  local cmd
+  cmd="$(grep -E $'^code\t.*payload-registry\\.mjs' "$TPL/scripts/check/gates.list" | cut -f2-)"
+  [ -n "$cmd" ]
+  run --separate-stderr bash -c "cd \"$REPO\" && $cmd"
+}
+
+@test "payload gate: a repo that never adopted the contract passes without the script" {
+  payload_gate
+  [ "$status" -eq 0 ]
+}
+
+@test "payload gate: an adopted repo runs the check, and fails when the check is missing or fails" {
+  command -v node >/dev/null || skip "node is not installed"
+  jq '.encryption = "off"' "$TPL/payload.config.json" >"$REPO/payload.config.json"
+  payload_gate
+  [ "$status" -ne 0 ]
+  install_scripts scripts/check/payload-registry.mjs scripts/lib/payload-registry.mjs
+  payload_gate
+  [ "$status" -eq 1 ]
+  [[ "$output$stderr" == *'payload.config.json says "off"'* ]] || false
+}

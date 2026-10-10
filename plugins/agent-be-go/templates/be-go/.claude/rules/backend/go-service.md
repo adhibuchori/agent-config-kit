@@ -22,6 +22,7 @@ holds the how. golangci-lint (`.golangci.yml`) and the compiler enforce most of 
 | `internal/logging` | the slog setup and the request ID in a context | the standard library |
 | `internal/httpapi` | the generated server, the handlers, the middleware | `apperr`, `logging`, `config`, modules |
 | `internal/<module>` | one domain: its service, its types, the `Store` interface it consumes | `apperr`, `logging` |
+| `internal/payload` | with `payload-encryption`: the payload contract's core, no HTTP (`go-payload.md`) | the standard library |
 | `internal/postgres` | the pool, sqlc's queries (`db/`), one store per module | `apperr`, modules' types, pgx |
 
 - A request flows handler → service → store. A module never sees HTTP and never imports pgx; it

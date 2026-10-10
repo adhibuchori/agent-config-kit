@@ -37,6 +37,9 @@ list from `api/openapi.json`.
   clients key on it. `main` refuses to start in production (`APP_ENV=production`) while it is the
   `example.invalid` placeholder. No problem is `about:blank`: a 404, a 405 and a panic carry codes
   too.
+- A code has one status, with one exception: `ENVELOPE_MALFORMED` (the payload contract) is a 400
+  for a caller's envelope and a 500 when this service cannot seal its own answer, written with
+  `.WithStatus(http.StatusInternalServerError)`.
 - `title` belongs to the code, the same every time. `detail` is optional and safe to show a
   client; what only the logs may see goes in `.WithInternal(...)` or the wrapped cause. A 5xx
   never carries a detail.

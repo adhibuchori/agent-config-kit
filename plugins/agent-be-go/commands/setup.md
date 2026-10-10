@@ -128,3 +128,7 @@ Report its exit code and findings (0 means in sync). Then tell the user, briefly
   edit; it needs gopls on `PATH`.
 - The pull-request gate (`.github/workflows/quality-gate.yml`) runs once a plugin release pins it; the
   draft says so when it held the caller back.
+- With `payload-encryption=yes`: the gates stay red, on purpose, until the four steps under
+  "Wiring it in" in `.claude/rules/backend/go-payload.md` are done: the five `ENVELOPE_*` codes in
+  `Registered()` and in `api/openapi.yaml`, the handshake operation with its exemption, the
+  middleware in `NewRouter` and the edge in `main`, then the server and the registry regenerated.

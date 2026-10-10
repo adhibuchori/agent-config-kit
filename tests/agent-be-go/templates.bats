@@ -29,11 +29,11 @@ setup() {
   done < <(find "$TPL" -name '*.json' -print0)
 }
 
-@test "AGENTS.md.starter defines rules 1 to 27, each with an enforcer and a detail file" {
+@test "AGENTS.md.starter defines rules 1 to 32, each with an enforcer and a detail file" {
   run grep -cE '^\| [0-9]+ \| .+ \| .+ \| `[^`]+` \|$' "$TPL/AGENTS.md.starter"
-  [ "$output" = 27 ]
+  [ "$output" = 32 ]
   local n
-  for n in $(seq 1 27); do
+  for n in $(seq 1 32); do
     grep -qE "^\| $n \| " "$TPL/AGENTS.md.starter"
   done
 }
@@ -131,8 +131,8 @@ setup() {
   done < <(find "$TPL" -name '*.go' -print0)
 }
 
-@test "every seeded handler file other than the generated server stays thin: no route literal" {
-  run grep -rnE '["`]/api(/|["`])' "$TPL/internal" "$TPL/cmd" --include='*.go' --exclude='*_test.go' --exclude='api.gen.go'
+@test "every seeded Go file other than generated code stays thin: no route literal" {
+  run grep -rnE '["`]/api(/|["`])' "$TPL/internal" "$TPL/cmd" --include='*.go' --exclude='*_test.go' --exclude='*.gen.go'
   [ "$status" -eq 1 ]
 }
 
@@ -212,4 +212,55 @@ PY
   grep -qx $'\tgithub.com/jackc/pgx/v5 v5.11.0' "$mod"
   run python3 -c 'import re, sys; v = re.search(r"golang.org/x/text v0\.(\d+)\.", open(sys.argv[1]).read()); print(int(v.group(1)))' "$mod"
   [ "$output" -ge 41 ]
+}
+
+# ── the payload contract (payload-encryption) ─────────────────────────────────────────────────
+
+@test "payload: the contract, its short rule and the vectors are byte copies of agent-be-hono's" {
+  local hono="$KIT_ROOT/plugins/agent-be-hono/templates/be-hono" f
+  for f in .claude/PAYLOAD-CONTRACT.md .claude/rules/common/payload-contract.md scripts/check/payload-vectors.json; do
+    cmp "$TPL/$f" "$hono/$f"
+  done
+}
+
+@test "payload: payload.config.json is the Go shape the shared registry check reads" {
+  run jq -c . "$TPL/payload.config.json"
+  [ "$output" = '{"encryption":"strict","spec":"api/openapi.json","registry":"internal/payload/registry.gen.go","language":"go","handshake":"getPayloadHandshake","exemptions":{},"peers":[]}' ]
+}
+
+@test "payload: the seeded registry is what the generator writes for the seeded spec" {
+  command -v node >/dev/null || skip "node is not installed"
+  local dir="$BATS_TEST_TMPDIR/gen" f
+  for f in api/openapi.json payload.config.json scripts/lib/payload-registry.mjs scripts/generate/payload-registry.mjs; do
+    mkdir -p "$dir/$(dirname "$f")"
+    cp "$TPL/$f" "$dir/$f"
+  done
+  run node "$dir/scripts/generate/payload-registry.mjs"
+  [ "$status" -eq 0 ]
+  cmp "$dir/internal/payload/registry.gen.go" "$TPL/internal/payload/registry.gen.go"
+}
+
+@test "payload: every file the question installs exists, only yes installs them, and the why names the steps" {
+  run python3 - "$TPL" <<'PY'
+import glob, json, os, sys
+tpl = sys.argv[1]
+q = [q for q in json.load(open(tpl + "/_kit/setup.json"))["questions"] if q["id"] == "payload-encryption"][0]
+assert q["choices"] == ["yes", "no"] and q["recommended"] == "no" and set(q["install"]) == {"yes"}, q
+for g in q["install"]["yes"]:
+    assert glob.glob(os.path.join(tpl, g), recursive=True), g
+assert q["settings"] == {"yes": {"/permissions/deny": ["Bash(node scripts/generate/payload-server-key.mjs:*)"]}}, q
+for step in ("Registered()", "Problem.code", "GET /api/payload/handshake", "NewRouter", "stay red"):
+    assert step in q["why"], step
+print("ok")
+PY
+  [ "$output" = ok ]
+}
+
+@test "payload: the Go rule covers rules 28 to 32 and the wiring the gates wait for" {
+  local f="$TPL/.claude/rules/backend/go-payload.md" n
+  for n in 28 29 30 31 32; do
+    grep -q "(Rule $n)" "$f"
+  done
+  grep -qF 'chain = sealBodies(chain, edge, payload.Registry(), logger)' "$f"
+  grep -qF 'enum: [strict, "off"]' "$f"
 }

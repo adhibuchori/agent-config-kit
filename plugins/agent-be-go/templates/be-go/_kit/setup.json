@@ -55,6 +55,32 @@
       "recommended": "no",
       "detect": ".mcp.json runs Serena and a .serena/project.yml above this repo lists several folders, or AGENT_WORKSPACE_ROOT is set",
       "install": { "yes": [".claude/SERENA-WORKSPACE.example.md"] }
+    },
+    {
+      "id": "payload-encryption",
+      "ask": "Seal request and response bodies between this service and its callers (the payload contract: encrypted envelopes, a registry generated from the spec, checked before merge)?",
+      "why": "Yes installs the payload contract in Go, standard library only: internal/payload (AES-256-GCM envelopes bound to method, route and status; P-256 key agreement with browsers and apps; key rings for server callers; the strict/off switch; the registry generated from api/openapi.json) with tests at 100% that read the shared vectors, the net/http middleware in internal/httpapi, the five ENVELOPE_* codes in internal/apperr, the payload variables in internal/config, payload.config.json, the key script, the contract document and its rules. Four steps stay yours: add the five codes to Registered() and to Problem.code in api/openapi.yaml; add GET /api/payload/handshake when browsers or apps call the service, and exempt it and the health probe as none in payload.config.json; wire the middleware into NewRouter and main; regenerate the server and the registry. The gates stay red until the spec lists the codes, on purpose: a half-adopted contract never passes. Answer no when bodies need no sealing beyond TLS.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "payload.config.json or internal/payload/ already exists, or the browsers, apps or services that call this one seal their bodies",
+      "install": {
+        "yes": [
+          ".claude/PAYLOAD-CONTRACT.md",
+          ".claude/rules/backend/go-payload.md",
+          ".claude/rules/common/payload-contract.md",
+          "internal/apperr/payload_codes.go",
+          "internal/config/payload*.go",
+          "internal/httpapi/payload*.go",
+          "internal/payload/**",
+          "payload.config.json",
+          "scripts/check/payload-registry.mjs",
+          "scripts/check/payload-vectors.json",
+          "scripts/generate/payload-registry.mjs",
+          "scripts/generate/payload-server-key.mjs",
+          "scripts/lib/payload-registry.mjs"
+        ]
+      },
+      "settings": { "yes": { "/permissions/deny": ["Bash(node scripts/generate/payload-server-key.mjs:*)"] } }
     }
   ],
   "seed": [
@@ -70,6 +96,7 @@
     "cmd/**",
     "db/roles.sql",
     "internal/**",
+    "payload.config.json",
     "scripts/check/coverage-exempt.txt",
     "scripts/check/gates.list",
     "scripts/check/tools.env",

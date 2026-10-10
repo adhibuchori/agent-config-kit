@@ -334,7 +334,7 @@ flowchart LR
 | --- | --- | --- |
 | Plan | `/agent-core:plan add password reset` (or a stack planner such as `/agent-fe-nextjs:plan-fullstack`) | the stack's rules load when the plan reads matching files |
 | Code | nothing: just ask | [post-edit](docs/agent-core/post-edit.md) formats and lints each written file; [safety-check](docs/agent-core/safety-check.md) and the other guards refuse what should not run |
-| Review | `/agent-core:review` | the stack reviewer and [security-guard](docs/agent-core/security-guard.md) report by severity; [spec-reviewer](docs/agent-core/spec-reviewer.md) checks the spec, in its own section |
+| Review | `/agent-core:review` | the stack reviewer and [security-guard](docs/agent-core/security-guard.md) report by severity |
 | Commit | `/agent-core:commit`, then `git commit -- <paths>` | the pre-commit gate runs `scripts/check/gates.sh --hook`; [post-commit](docs/agent-core/post-commit.md) shows what landed |
 | PR | `/agent-core:create-pr` | the reusable quality gate runs on the pull request |
 | Merge | `/agent-core:merge-pr 42` | `scripts/ops/pr-ready.sh` checks readiness first |
@@ -474,11 +474,11 @@ cookies and a server-side proxy still carry confidentiality. The contract docume
 | Area | What the rules and checks hold | Where |
 | --- | --- | --- |
 | Components and data | Components render and hold no logic; no request waterfalls; hooks and screens live with their feature; three states on every screen; fixtures stay in tests | fe-nextjs rules, `AGENTS.md` §B, §D, §N; `check:soc`, `check:hooks` |
-| Sessions and errors | The frontend never decides authorization or stores a session; every error code has a message; no raw backend message reaches the screen | `AGENTS.md` §M, `common/error-codes.md`; `check:error-codes` |
+| Sessions and errors | The frontend never decides authorization or stores a session; every error code has a message, and a problem resolves by its `type`, minted from the code under one base; no raw backend message reaches the screen | `AGENTS.md` §M, `common/error-codes.md`; `check:error-codes` |
 | Types, dead code, one home | No `any`, no double assertion, no unused code, one home per shared identifier | core rules; `double-assertion.sh`, knip or vulture, `check:constants` |
 | Tests and coverage | A 100% floor on the logic layer, tests in CI's environment, mocks that refuse what the real client refuses | coverage rules; `coverage-policy.mjs`, `ci-env.sh`, `check:mocks` |
 | Database | Migrations generated, never hand-written; every foreign key indexed; transactions short | be-hono and pipeline rules; `migrations.sh`, `index-coverage.sh` |
-| APIs and images | The spec builds and is committed; the image builds what the gate validated | `hono.md`; `check:openapi`, `check:dockerfile` |
+| APIs and images | The spec builds, is committed and publishes the `Problem` contract (codes inline, one problem-type base, never `about:blank`); the image builds what the gate validated | `hono.md`, `common/error-codes.md`; `check:openapi`, `check:dockerfile` |
 | UI | Measured, not guessed; one component per role; skeletons measured against their screen | UI and skeleton rules; `check:skeleton-pairs`, `check:responsive` |
 | Operations | How the guards fail, the unlock, server access and break-glass, client IP behind a CDN, deploys proven by time | `OPERATIONS.example.md`, `DATABASE.example.md`, `CI-RUNNERS.example.md` |
 | Known traps | One file per trap that cost real time: auth sessions, passkeys, CSS pipelines, test runners, coverage tools | `.claude/anti-patterns/` (34 frontend, 12 backend, 12 static site, 9 docs, 6 Python) |
@@ -516,7 +516,7 @@ Claude cannot start them on its own (`disable-model-invocation`).
 | [/&lt;plugin&gt;:sync](docs/agent-core/sync.md) | Reports drift (`--check`) or brings unchanged files up to date | `/agent-fe-nextjs:sync --check` | Every repo stays on the same version of the rules |
 | [/agent-core:help](docs/agent-core/help.md) | Says which command comes next | `/agent-core:help` | No need to memorise commands |
 | [/agent-core:plan](docs/agent-core/plan.md) | Writes a plan before code and waits for your yes | `/agent-core:plan add password reset` | Scope and risks are agreed before work starts |
-| [/agent-core:review](docs/agent-core/review.md) | Reviews staged work or the branch on two axes: the standards by severity, and the spec | `/agent-core:review` | The stack's rules and the spec are each checked line by line |
+| [/agent-core:review](docs/agent-core/review.md) | Reviews staged work or the branch, by severity | `/agent-core:review` | The stack's rules are checked line by line |
 | [/agent-core:commit](docs/agent-core/commit.md) | Runs the gates and drafts the message | `/agent-core:commit` | A red gate never becomes a commit |
 | [/agent-core:create-pr](docs/agent-core/create-pr.md) | Drafts the PR from your template, then opens it | `/agent-core:create-pr` | Consistent PRs, never a push to `main` |
 | [/agent-core:merge-pr](docs/agent-core/merge-pr.md) | Checks readiness, then merges with a merge commit | `/agent-core:merge-pr 42` | Skipped checks and open threads are caught |
@@ -548,7 +548,6 @@ you can also ask: "Use the `agent-core:security-guard` subagent on this branch."
 | --- | --- | --- | --- |
 | [agent-core:reviewer](docs/agent-core/reviewer.md) | Checks a diff against `AGENTS.md` and `.claude/rules/` | Via `/agent-core:review` when no stack reviewer exists | Rule-cited findings in any stack |
 | [agent-core:security-guard](docs/agent-core/security-guard.md) | Secrets, injection, authorisation, guardrail edits | Via `/agent-core:review`, or ask for it | Security regressions are flagged before commit |
-| [agent-core:spec-reviewer](docs/agent-core/spec-reviewer.md) | Checks a diff against the issue, plan or spec file it implements | Via `/agent-core:review`, as its spec axis | A change that misses what was asked is caught before merge |
 | [agent-fe-nextjs:reviewer](docs/agent-fe-nextjs/reviewer.md) | Next.js layering, components, data layer, structure | Via `/agent-core:review` | Your `AGENTS.md` rules, checked |
 | [agent-fe-nextjs:i18n-guard](docs/agent-fe-nextjs/i18n-guard.md) | next-intl key parity and hardcoded strings | Ask after touching catalogues | No half-translated screens |
 | [agent-fe-nextjs:seo-validator](docs/agent-fe-nextjs/seo-validator.md) | Metadata, canonical, sitemap, OG, JSON-LD | Ask after metadata changes | Pages stay findable and shareable |
@@ -642,7 +641,7 @@ Checks are scripts setup installs under `scripts/check/`. The pre-commit gate
 | `scripts/env/show.sh`, `set.sh`, `envfile.py` (core) | Masked `.env` listing; one-key write while unlocked; the parser both share | `bash scripts/env/show.sh .env` | Secrets never enter the chat |
 | `scripts/check/hook-probes.sh`, `hook-probes.tsv` (core) | Feeds every probe to the hooks the way Claude Code does and checks each exit code | `HOOKS_DIR=<dir> bash scripts/check/hook-probes.sh` | Proves a guard still blocks after you change it or its settings |
 | `scripts/sync/workflows.sh` (core) | Mirrors your own commands from `_workflow-source/` into `.claude/commands/` | `bash scripts/sync/workflows.sh --check` | One source for commands you write yourself |
-| `audit.ts`, `coverage-policy.mjs`, `error-codes.ts`, `error-catch.ts`, `hooks.ts`, `no-reexport.ts`, `soc.ts`, `tailwind-classes.ts` (fe-nextjs) | Dependency audit, coverage floor, error-code messages, swallowed errors, hook placement, re-exports, logic in components, canonical Tailwind classes | package scripts, e.g. `bun run check:soc` | Each one turns an `AGENTS.md` rule into a gate |
+| `audit.ts`, `coverage-policy.mjs`, `error-codes.ts`, `error-catch.ts`, `hooks.ts`, `no-reexport.ts`, `soc.ts`, `tailwind-classes.ts` (fe-nextjs) | Dependency audit, coverage floor, error-code messages and the problem-type base, swallowed errors, hook placement, re-exports, logic in components, canonical Tailwind classes | package scripts, e.g. `bun run check:soc` | Each one turns an `AGENTS.md` rule into a gate |
 | `i18n.ts`, `i18n-casing.ts`, `dialog-desc.ts`, `responsive.ts`, `skeleton-switch.sh` (fe-nextjs, optional) | Translation parity and casing, dialog descriptions, responsive layout, the skeleton preview switch | `bun run check:i18n`, … | Only installed for the modules you use |
 | `static-export.mjs` (static) | Refuses what breaks or silently stops working under export | `npm run check:static` | Fast, before any build |
 | `site-audit.mjs` (static) | Runs every built-site check in one table | `npm run check:site` | The post-build gate |
@@ -656,7 +655,7 @@ Checks are scripts setup installs under `scripts/check/`. The pre-commit gate
 | `coverage-policy.mjs`, `.pre-commit-config.yaml` (ai-fastapi) | Coverage floor; ruff, mypy, pytest, vulture, import-linter | `uv run pre-commit run` | The Python gate |
 | `audit.ts`, `.github/scripts/check-comment-*` (docs-nextra, fe-nextjs) | Dependency audit, comment style | in `gates.list` | Advisories and noise are caught |
 | `endpoints.ts`, `crypto-interop.ts`, `payload-vectors.json`, `generate/endpoints.ts` (fe-nextjs, be-hono, optional) | The payload contract's registry, drift and interop checks, and the registry generator | `bun run check:endpoints`, `bun run check:crypto-interop` | Sealed stays sealed, and copies of the cipher agree |
-| `openapi.ts`, `generate/openapi.ts` (be-hono) | The spec builds, describes a route and equals the committed `openapi.json`; `spec:export` writes it | `bun run check:openapi`, `bun run spec:export` | Frontends generate clients from a current spec |
+| `openapi.ts`, `generate/openapi.ts` (be-hono) | The spec builds, describes a route, publishes the `Problem` contract (an inline code enum, `x-problem-type-base`, no `about:blank`) and equals the committed `openapi.json`; `spec:export` writes it | `bun run check:openapi`, `bun run spec:export` | Frontends generate clients from a current spec and resolve every error by its type |
 | `dockerfile.ts` (fe-nextjs, be-hono) | The image generates its client before the build, pins by versioned digest, runs the Bun the gate ran | `bun run check:dockerfile` | A green gate means a working image |
 | `skeleton-pairs.ts` (fe-nextjs, optional) | A skeleton a screen renders is measured in the harness, or listed with a reason | `bun run check:skeleton-pairs` | Skeletons are measured, not guessed |
 | `3d-budget.mjs` (fe-threejs) | Model, triangle and texture budgets for glTF/GLB | `node scripts/check/3d-budget.mjs` | 3D assets that load on a phone |
@@ -672,7 +671,7 @@ no token.
 
 | Name | What it does | How to use | Why it helps |
 | --- | --- | --- | --- |
-| `<stack>-quality-gate.yml` (eight reusable workflows in this repo) | Install from the lockfile, run `gates.list`, coverage floor, committed `.env`, unsafe-HTML/`eval`/URL-scheme scans on added lines, gitleaks, audit, SkillSpector, build, source maps, stack extras | Setup installs a caller; see [CI](#ci-reusable-workflows) | One gate, many repos, one pin |
+| `<stack>-quality-gate.yml` (five reusable workflows in this repo) | Install from the lockfile, run `gates.list`, coverage floor, committed `.env`, unsafe-HTML/`eval`/URL-scheme scans on added lines, gitleaks, audit, SkillSpector, build, source maps, stack extras | Setup installs a caller; see [CI](#ci-reusable-workflows) | One gate, many repos, one pin |
 | `deepseek-review.yml`, `deploy-webhook.yml`, `strip-ai.yml` (reusable, this repo) | The AI review, the deploy on merge and the agent-config strip behind the callers below | Setup installs the callers; see [CI](#ci-reusable-workflows) | One tested implementation, pinned by every caller |
 | `.github/workflows/quality-gate.y*ml` (in your repo) | The small caller of your stack's gate, on pull requests | Installed by setup (the `ci-gate` question where there is one) | Nothing to copy by hand |
 | `codeql.yml`, `dependency-review.yml`, `workflows-lint.yml` (core, in your repo) | CodeQL on PRs; new vulnerable or badly licensed dependencies; actionlint, zizmor and pinact on workflow changes | Installed by agent-core's setup | Supply-chain checks without schedulers |
@@ -681,7 +680,7 @@ no token.
 | `strip-ai.yml` (deploy; optional) | After a merge into `prod`, removes the agent config there, merges back into `dev`, verifies both | `strip-ai=yes` | Production carries no agent instructions |
 | `react-doctor.yml` (fe-nextjs, fe-nextjs-static, docs-nextra; optional) | Advisory React Doctor comments on PRs; the vendor's action reports to its score service | Setup question (recommended **no**) | Never fails the check |
 | `changelog.yaml`, `ci-cd.yaml` (docs-nextra; optional) | Regenerate docs pages and deploy on a merge into `prod` | Setup question | Docs follow the code |
-| `actions/quality-gate` (this repo) | The composite action the eight reusable gates run: plan, install, gates, coverage floor, diff scans, gitleaks | Called by the reusable workflows; see its [README](actions/quality-gate/README.md) | One tested implementation behind every stack's gate |
+| `actions/quality-gate` (this repo) | The composite action the five reusable gates run: plan, install, gates, coverage floor, diff scans, gitleaks | Called by the reusable workflows; see its [README](actions/quality-gate/README.md) | One tested implementation behind every stack's gate |
 | `actions/deepseek-review`, `actions/deploy-webhook`, `actions/strip-ai` (this repo) | The steps behind the review, the deploy and the strip | Called by the reusable workflows; see their READMEs: [review](actions/deepseek-review/README.md), [deploy](actions/deploy-webhook/README.md), [strip](actions/strip-ai/README.md) | Tested with bats against a local HTTPS stand-in |
 | `self-test.yml` (this repo) | validate `--strict`, catalog and versions, ShellCheck, bats on macOS and Ubuntu, workflow lint, gitleaks, README pair | Runs on every PR here | The kit tests itself the same way |
 
@@ -934,11 +933,12 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-be-go</strong>: 97 files</summary>
+<summary><strong>agent-be-go</strong>: 133 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
 | `.claude/ANALYTICS.example.md` | with `analytics=yes`; sync keeps it current | Analytics — Read API Access |
+| `.claude/PAYLOAD-CONTRACT.md` | with `payload-encryption=yes`; sync keeps it current | Payload Contract: Sealed Bodies and One Endpoint Registry |
 | `.claude/SERENA-WORKSPACE.example.md` | with `serena-workspace=yes`; sync keeps it current | Serena — Multi-Repo Workspace Scoping |
 | `.claude/agent-config.json` | once; then yours | This stack's hook settings, such as generatedPaths or migrationsDirs |
 | `.claude/anti-patterns/INDEX.md` | once; then yours | Anti-Patterns Index |
@@ -959,10 +959,12 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.claude/anti-patterns/servemux-404-405-skip-problem-json.md` | always; sync keeps it current | ServeMux answers 404 and 405 in plain text |
 | `.claude/anti-patterns/session-state-behind-transaction-pooler.md` | always; sync keeps it current | Session state behind a transaction pooler |
 | `.claude/anti-patterns/unindexed-foreign-keys.md` | always; sync keeps it current | Foreign keys without an index |
+| `.claude/rules/backend/go-payload.md` | with `payload-encryption=yes`; sync keeps it current | Payload contract (Go) |
 | `.claude/rules/backend/go-service.md` | always; sync keeps it current | Go service |
 | `.claude/rules/backend/postgres.md` | always; sync keeps it current | PostgreSQL |
 | `.claude/rules/backend/testing.md` | always; sync keeps it current | Testing (Go) |
 | `.claude/rules/common/error-codes.md` | always; sync keeps it current | Error codes (Go API) |
+| `.claude/rules/common/payload-contract.md` | with `payload-encryption=yes`; sync keeps it current | Payload Contract (short form) |
 | `.claude/rules/go/coverage.md` | always; sync keeps it current | COVER — Test Coverage (Go) |
 | `.claude/settings.json` | merged into yours (additive; your values win) | Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox |
 | `.env.ci.example` | once; then yours | The variables the tests get in CI, and locally through scripts/check/ci-env.sh: dummy values only, never a real secret. |
@@ -987,6 +989,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `internal/apperr/codes.go` | once; then yours | Package apperr holds the closed set of error codes a client can receive and the one writer that turns an error into an RFC 9457 problem response. |
 | `internal/apperr/contract_test.go` | once; then yours | Tests that api/openapi.yaml publishes the registry: the code enum and the problem-type base. |
 | `internal/apperr/error.go` | once; then yours | The domain error: a registered code, a detail a client may see, and what only the logs see. |
+| `internal/apperr/payload_codes.go` | with `payload-encryption=yes`; once; then yours | The payload contract's refusals (.claude/PAYLOAD-CONTRACT.md § Refusals and error codes): the codes internal/httpapi answers a failed envelope with. |
 | `internal/apperr/registry_test.go` | once; then yours | Tests that every registered code is declared once, raised somewhere, and never minted elsewhere. |
 | `internal/apperr/scan_test.go` | once; then yours | The go/ast helpers the registry test reads the module with. |
 | `internal/apperr/types.go` | once; then yours | Problem types: the base every problem's type starts with, and the check main runs on it. |
@@ -995,12 +998,19 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `internal/apperr/write_test.go` | once; then yours | Tests for the problem writer: codes, statuses, the request ID, and no internal detail. |
 | `internal/config/config.go` | once; then yours | Package config reads the process configuration from the environment, once, at startup. |
 | `internal/config/config_test.go` | once; then yours | Tests for the configuration reader: defaults, every variable, and the first bad one. |
+| `internal/config/payload.go` | with `payload-encryption=yes`; once; then yours | The payload contract's variables (.claude/PAYLOAD-CONTRACT.md § Keys): read here, the only reader of the environment, and parsed by internal/payload's NewEdge. |
+| `internal/config/payload_test.go` | with `payload-encryption=yes`; once; then yours | Tests for the payload contract's variables: read as they are, and never logged. |
 | `internal/httpapi/api.gen.go` | once; then yours | Package httpapi provides primitives to interact with the openapi HTTP API. |
 | `internal/httpapi/fallback.go` | once; then yours | The 404 and 405 answers as problems, instead of ServeMux's plain text. |
 | `internal/httpapi/generate.go` | once; then yours | The generator lines: the server code and the contract clients generate from both come from api/openapi.yaml. |
 | `internal/httpapi/handler_size_test.go` | once; then yours | Tests that every handler body stays at 15 code lines or fewer. |
 | `internal/httpapi/handlers.go` | once; then yours | The handlers: one method per operation in api/openapi.yaml. |
 | `internal/httpapi/middleware.go` | once; then yours | The middleware around the routes: request ID, access log, panic recovery, body limit. |
+| `internal/httpapi/payload.go` | with `payload-encryption=yes`; once; then yours | The payload contract around the routes (.claude/PAYLOAD-CONTRACT.md): a sealed request body is opened before the validator reads it, and the answer is sealed after the handler wrote it, so no handler, service or schema ever sees an envelope. |
+| `internal/httpapi/payload_helpers_test.go` | with `payload-encryption=yes`; once; then yours | Test helpers for the payload middleware: a service edge, a client that seals as a browser or an app would, and the chain the middleware sits in. |
+| `internal/httpapi/payload_test.go` | with `payload-encryption=yes`; once; then yours | Tests for the payload middleware in the chain it sits in: sealed both ways for a client and for a server caller, what passes through, and every refusal as a plaintext problem. |
+| `internal/httpapi/payload_writer.go` | with `payload-encryption=yes`; once; then yours | The writer that holds an answer on a sealed route until it is whole, then seals or refuses it. |
+| `internal/httpapi/payload_writer_test.go` | with `payload-encryption=yes`; once; then yours | Tests for the answer on a sealed route: what is sealed, what goes out as it is, and what is refused. |
 | `internal/httpapi/router.go` | once; then yours | Package httpapi is the HTTP layer: the server oapi-codegen generates from api/openapi.yaml, the handlers that implement it, and the middleware around them. |
 | `internal/httpapi/router_test.go` | once; then yours | Tests through the whole router: routes, fallbacks, handler errors and panics. |
 | `internal/httpapi/server.go` | once; then yours | The HTTP server with every timeout set, and the export of the embedded spec. |
@@ -1011,10 +1021,34 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `internal/httpapi/validate_test.go` | once; then yours | Tests for request validation: fields, rules, unreadable and oversized bodies. |
 | `internal/logging/logging.go` | once; then yours | Package logging builds the process logger and carries the request ID through a context. |
 | `internal/logging/logging_test.go` | once; then yours | Tests for the logger and the request ID in a context. |
+| `internal/payload/base64.go` | with `payload-encryption=yes`; once; then yours | Bytes on the wire: unpadded base64url out; base64url or standard base64 in, as every copy reads it. |
+| `internal/payload/base64_test.go` | with `payload-encryption=yes`; once; then yours | Tests that the codec writes unpadded base64url and reads what every other copy reads. |
+| `internal/payload/boundary_test.go` | with `payload-encryption=yes`; once; then yours | Tests that the payload core stays behind the transport (AGENTS.md Rule 29): only internal/httpapi and cmd/ import internal/payload, so no handler, service or store ever sees an envelope, and the core itself imports no net/http. |
+| `internal/payload/cipher.go` | with `payload-encryption=yes`; once; then yours | The one cipher on the wire: AES-256-GCM with a fresh 96-bit nonce per seal and the 128-bit tag after the ciphertext. |
+| `internal/payload/cipher_test.go` | with `payload-encryption=yes`; once; then yours | Tests for the cipher: AES-256 only, a fresh nonce per seal, and one refusal for every failure. |
+| `internal/payload/codec.go` | with `payload-encryption=yes`; once; then yours | A JSON body into an envelope and back: the one place that decides the order of the checks. |
+| `internal/payload/codec_test.go` | with `payload-encryption=yes`; once; then yours | Tests for sealing and opening: the round trip, and each refusal in the order the checks run. |
+| `internal/payload/ecdh.go` | with `payload-encryption=yes`; once; then yours | Key agreement for clients that can hold no shared secret: a browser, an installed app. |
+| `internal/payload/ecdh_test.go` | with `payload-encryption=yes`; once; then yours | Tests for key agreement: the server key's import, the client point's checks, and both sides deriving one key. |
+| `internal/payload/edge.go` | with `payload-encryption=yes`; once; then yours | The contract at this service's edge: the key one exchange uses, opening what a caller sealed and sealing what this service answers. |
+| `internal/payload/edge_test.go` | with `payload-encryption=yes`; once; then yours | Tests for the edge as internal/httpapi uses it: the settings it refuses, the handshake, and an exchange with a client key and with the key ring. |
+| `internal/payload/envelope.go` | with `payload-encryption=yes`; once; then yours | Package payload is the payload contract's core (.claude/PAYLOAD-CONTRACT.md): the envelope and its cipher, key agreement with browsers and apps, key rings for server callers, the strict/off switch and the endpoint registry generated from the spec. |
+| `internal/payload/envelope_test.go` | with `payload-encryption=yes`; once; then yours | Tests for the wire format: the AAD strings, the exact envelope shape, and the freshness window. |
+| `internal/payload/errors.go` | with `payload-encryption=yes`; once; then yours | The closed set of ways an envelope fails to become a body: a code for the wire, a message for the log. |
+| `internal/payload/helpers_test.go` | with `payload-encryption=yes`; once; then yours | Test material: keys from fixed labels (placeholder bytes, never a real key) and a fixed clock. |
+| `internal/payload/keyring.go` | with `payload-encryption=yes`; once; then yours | Pre-shared keys for server callers, which never reach a browser or an app. |
+| `internal/payload/keyring_test.go` | with `payload-encryption=yes`; once; then yours | Tests for the key ring: blank slots, rotation, and refusals that name the variable, never the key. |
+| `internal/payload/mode.go` | with `payload-encryption=yes`; once; then yours | The switch: whether this service enforces the contract. |
+| `internal/payload/mode_test.go` | with `payload-encryption=yes`; once; then yours | Tests for the switch: the environment wins, then the committed file, then strict; off never in production; a typo is refused instead of read as strict. |
+| `internal/payload/policy.go` | with `payload-encryption=yes`; once; then yours | The registry's types. |
+| `internal/payload/policy_test.go` | with `payload-encryption=yes`; once; then yours | Tests for the policies, the codes, and the registry accessor. |
+| `internal/payload/registry.gen.go` | with `payload-encryption=yes`; once; then yours | Code generated by scripts/generate/payload-registry.mjs. |
+| `internal/payload/vectors_test.go` | with `payload-encryption=yes`; once; then yours | Tests this copy against the shared known answers, scripts/check/payload-vectors.json: the AAD strings byte for byte, every ciphertext opened, every replay refused, and the key agreement derived from both sides. |
 | `internal/postgres/main_test.go` | once; then yours | The test database follows the branch's migrations before any test of this package runs. |
 | `internal/postgres/pool.go` | once; then yours | Package postgres owns the connection pool and the stores that adapt sqlc's queries to the interfaces the modules declare. |
 | `internal/postgres/pool_test.go` | once; then yours | Tests for the pool: its bounds, its refusals, and the role it runs as. |
 | `internal/postgres/pooler_test.go` | once; then yours | Tests of the service's pool behind a transaction pooler; only the quality gate builds them. |
+| `payload.config.json` | with `payload-encryption=yes`; once; then yours | The payload contract switch (strict, committed), the route exemptions with their reasons, and the peers to check |
 | `scripts/check/ci-env.sh` | always; sync keeps it current | Runs a command with the environment CI's unit tests get, and nothing else: PATH, HOME, TMPDIR, the locale, CI=true and CI's test variables. |
 | `scripts/check/coverage-exempt.txt` | once; then yours | Files the per-file coverage check leaves out (.claude/rules/go/coverage.md), one glob per line in a closed category: `# composition root: &lt;why&gt;` or `# generated: &lt;why&gt;`. |
 | `scripts/check/coverage-per-file.mjs` | always; sync keeps it current | Coverage per file: every measured file at 100%, in the metrics its toolchain reports. |
@@ -1025,12 +1059,13 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `scripts/check/generated.sh` | always; sync keeps it current | Generated-code gate. |
 | `scripts/check/lint.sh` | always; sync keeps it current | Lint gate: golangci-lint over the whole module with .golangci.yml, at the version scripts/check/tools.env pins. |
 | `scripts/check/migrations.sh` | always; sync keeps it current | Migration gate for goose SQL files in db/migrations (Rules 11 and 12). |
-| `scripts/check/payload-registry.mjs` | always; sync keeps it current | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
-| `scripts/check/payload-vectors.json` | always; sync keeps it current | Shared test vectors every implementation of the envelope must open and refuse, its key agreement included; never regenerated to pass |
+| `scripts/check/payload-registry.mjs` | with `payload-encryption=yes`; sync keeps it current | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
+| `scripts/check/payload-vectors.json` | with `payload-encryption=yes`; sync keeps it current | Shared test vectors every implementation of the envelope must open and refuse, its key agreement included; never regenerated to pass |
 | `scripts/check/pooler.sh` | always; sync keeps it current | Pooler check: the service's own pool behind a transaction pooler (PgBouncer). |
 | `scripts/check/tools.env` | once; then yours | The tool versions outside go.mod that the gates and the quality gate pin. |
-| `scripts/generate/payload-registry.mjs` | always; sync keeps it current | Writes the payload registry from the OpenAPI document and payload.config.json. |
-| `scripts/lib/payload-registry.mjs` | always; sync keeps it current | The payload registry's shared half for the Go, Rust and Swift stacks. |
+| `scripts/generate/payload-registry.mjs` | with `payload-encryption=yes`; sync keeps it current | Writes the payload registry from the OpenAPI document and payload.config.json. |
+| `scripts/generate/payload-server-key.mjs` | with `payload-encryption=yes`; sync keeps it current | Makes a new P-256 key pair for the payload contract's key agreement, in the form PAYLOAD_SERVER_JWK holds: base64url of the UTF-8 JWK text {kty, crv, d, x, y}. |
+| `scripts/lib/payload-registry.mjs` | with `payload-encryption=yes`; sync keeps it current | The payload registry's shared half for the Go, Rust and Swift stacks. |
 | `sqlc.yaml` | once; then yours | sqlc: the Go in internal/postgres/db is generated from the SQL in db/queries, type-checked against the schema the goose migrations build (it reads them in name order and ignores their Down parts). |
 | `CLAUDE.md` | one managed block, appended | `## Agent config kit` |
 | `.gitignore` | one managed block (10 lines) | `.env`, `.env.*`, `!.env.ci.example`, `!.env.*.example`, `.envrc`, `.serena/`, `.skillspector/`, `/bin/`, `/coverage/`, `*.test` |
@@ -1721,8 +1756,7 @@ branch (dev/prod/main/master/release) is not allowed.`
 ```
 
 **Turn one guard off.** `"generatedPaths": []` or `"migrationsDirs": []` switches that guard off in
-this repo; generated-guard still refuses a Go or Rust file whose own header marks it generated.
-Other hooks have no per-hook switch; see
+this repo. Other hooks have no per-hook switch; see
 [What gets blocked](#what-gets-blocked-and-how-to-turn-it-off).
 
 **Protect another path from `rm -r`:**
