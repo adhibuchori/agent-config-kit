@@ -1440,6 +1440,77 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/gates.list` | manual: draft menyebut `_kit/snippets/gates.list` | |
 
 </details>
+
+<details>
+<summary><strong>agent-ios-swiftui</strong>: 63 berkas</summary>
+
+| Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
+| --- | --- | --- |
+| `.claude/ANALYTICS.example.md` | jika `analytics=yes`; sekali; lalu milik Anda | Analytics: Read API Access |
+| `.claude/SERENA-WORKSPACE.example.md` | jika `serena-workspace=yes`; sekali; lalu milik Anda | Serena: Shared Multi-Repo Workspace Scoping |
+| `.claude/agent-config.json` | sekali; lalu milik Anda | Pengaturan hook untuk stack ini, seperti generatedPaths atau migrationsDirs |
+| `.claude/anti-patterns/INDEX.md` | sekali; lalu milik Anda | Anti-Patterns Index |
+| `.claude/anti-patterns/closed-openapi-enum-throws-on-new-code.md` | selalu; sync menjaganya tetap terbaru | A closed OpenAPI enum turns a new error code into a decoding failure |
+| `.claude/anti-patterns/file-length-counts-comments-by-default.md` | selalu; sync menjaganya tetap terbaru | `file_length` counts blank and comment lines unless told not to |
+| `.claude/anti-patterns/formatted-ignores-environment-locale.md` | selalu; sync menjaganya tetap terbaru | `value.formatted()` and `String(format:)` ignore the screen's locale |
+| `.claude/anti-patterns/macos-latest-is-a-different-xcode.md` | selalu; sync menjaganya tetap terbaru | `macos-latest` builds with a different Xcode than yours |
+| `.claude/anti-patterns/nested-swiftlint-config-replaces-root.md` | selalu; sync menjaganya tetap terbaru | A nested `.swiftlint.yml` silently replaces the root rules for its folder |
+| `.claude/anti-patterns/package-text-reads-main-bundle.md` | selalu; sync menjaganya tetap terbaru | Text inside a Swift package reads the app's catalog |
+| `.claude/anti-patterns/preconcurrency-warnings-escape-werror.md` | selalu; sync menjaganya tetap terbaru | Some concurrency warnings stay warnings with warnings as errors |
+| `.claude/anti-patterns/state-macro-changes-init-semantics.md` | selalu; sync menjaganya tetap terbaru | `@State` builds its initial value once with Xcode 27, on every view init before |
+| `.claude/anti-patterns/swiftlint-analyze-sees-zero-files.md` | selalu; sync menjaganya tetap terbaru | `swiftlint analyze` passes because it analyzed nothing |
+| `.claude/anti-patterns/text-string-is-never-localized.md` | selalu; sync menjaganya tetap terbaru | `Text(someString)` is never localized |
+| `.claude/anti-patterns/xccov-omits-package-files.md` | selalu; sync menjaganya tetap terbaru | Xcode's coverage report leaves Swift package files out |
+| `.claude/anti-patterns/xcodebuild-never-syncs-string-catalog.md` | selalu; sync menjaganya tetap terbaru | `xcodebuild` never updates the String Catalog |
+| `.claude/mcp/xcode.example.json` | selalu; sync menjaganya tetap terbaru | Jembatan MCP Xcode (xcrun mcpbridge), dimuat untuk satu sesi dengan --mcp-config selagi Xcode terbuka |
+| `.claude/rules/common/error-codes.md` | selalu; sync menjaganya tetap terbaru | Error codes: the app side of the API contract |
+| `.claude/rules/ios/packages.md` | selalu; sync menjaganya tetap terbaru | The logic package: Domain, APIClient, Features |
+| `.claude/rules/ios/strings.md` | selalu; sync menjaganya tetap terbaru | Text, String Catalogs and locale |
+| `.claude/rules/ios/swiftui.md` | selalu; sync menjaganya tetap terbaru | The app target: composition root and views |
+| `.claude/rules/ios/testing.md` | selalu; sync menjaganya tetap terbaru | Tests |
+| `.claude/rules/swift/coverage.md` | selalu; sync menjaganya tetap terbaru | Coverage of the Swift logic package |
+| `.claude/settings.json` | digabung ke milik Anda (hanya menambah; nilai Anda yang menang) | Izin (allow, ask, deny) dan, dari agent-core, sandbox Bash |
+| `.env.ci.example` | sekali; lalu milik Anda | The dummy variables the unit tests need in CI, as KEY=VALUE lines; never a real secret. |
+| `.githooks/pre-commit` | sekali; lalu milik Anda | The pre-commit gate: the lines of scripts/check/gates.list the staged files need. |
+| `.github/CODEOWNERS` | sekali; lalu milik Anda | Code owners: GitHub asks them to review every pull request that touches a matching path. |
+| `.github/PULL_REQUEST_TEMPLATE/dev.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk pekerjaan yang masuk ke dev |
+| `.github/PULL_REQUEST_TEMPLATE/promotion.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
+| `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; sync menjaganya tetap terbaru | An AI review of each pull request by DeepSeek, installed by /agent-ios-swiftui:setup when you answer deepseek-review=yes. |
+| `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | The pull-request quality gate for this iOS app, installed by /agent-ios-swiftui:setup. |
+| `.periphery.yml` | sekali; lalu milik Anda | Periphery's settings for the dead-code check (AGENTS.md Rule 27). |
+| `.swift-format` | sekali; lalu milik Anda | Pengaturan swift-format: indentasi 4 spasi, baris 120 karakter |
+| `.swift-format-ignore` | sekali; lalu milik Anda | Paths swift-format leaves alone, in .gitignore syntax (Xcode's swift-format reads this file). |
+| `.swiftlint.yml` | sekali; lalu milik Anda | SwiftLint for this app (agent-ios-swiftui; AGENTS.md cites each rule by number). |
+| `AGENTS.md` | sekali, jika belum ada; lalu milik Anda | AGENTS.md: &lt;Project Name&gt; iOS app |
+| `App/PrivacyInfo.xcprivacy` | sekali; lalu milik Anda | Privacy manifest app: data yang dikumpulkan dan alasan untuk setiap required-reason API |
+| `CLAUDE.md` | starter-nya, jika repo belum punya CLAUDE.md | &lt;Project Name&gt; |
+| `Config/Base.xcconfig` | sekali; lalu milik Anda | Build settings every target of the app project shares (AGENTS.md Rules 19, 20 and 28). |
+| `Config/Debug.xcconfig` | sekali; lalu milik Anda | The Debug configuration: Base.xcconfig plus what a debug build needs. |
+| `Config/Release.xcconfig` | sekali; lalu milik Anda | The Release configuration: Base.xcconfig plus what a shipped build needs. |
+| `Packages/AppCore/Package.swift` | sekali, jika belum ada; lalu milik Anda | swift-tools-version: 6.2 The app's logic, tested by `swift test` on the Mac without a simulator (AGENTS.md Rules 1, 2, 21 and 22; .claude/rules/ios/packages.md). |
+| `Packages/AppCore/Sources/APIClient/AppProblem.swift` | sekali; lalu milik Anda | A problem detail (RFC 9457) as this app reads it. |
+| `Packages/AppCore/Sources/APIClient/openapi-generator-config.yaml` | sekali; lalu milik Anda | swift-openapi-generator's settings for the APIClient target. |
+| `Packages/AppCore/Tests/APIClientTests/AppProblemTests.swift` | sekali; lalu milik Anda | AppProblem through its public surface: decoding, the code it resolves, and what a screen shows. |
+| `scripts/check/ci-env.sh` | selalu; sync menjaganya tetap terbaru | Runs a command with the environment CI's unit tests get, and nothing else: PATH, HOME, TMPDIR, the locale, CI=true and CI's test variables. |
+| `scripts/check/coverage-exempt.txt` | sekali; lalu milik Anda | Files the coverage report leaves out (AGENTS.md Rule 22; .claude/rules/swift/coverage.md). |
+| `scripts/check/coverage-per-file.mjs` | selalu; sync menjaganya tetap terbaru | Coverage per file: every measured file at 100%, in the metrics its toolchain reports. |
+| `scripts/check/coverage-policy.mjs` | selalu; sync menjaganya tetap terbaru | COVER: refuses a coverage gate that was weakened. |
+| `scripts/check/coverage.sh` | selalu; sync menjaganya tetap terbaru | Coverage of the logic packages, file by file (AGENTS.md Rule 22; .claude/rules/swift/coverage.md). |
+| `scripts/check/error-codes.sh` | selalu; sync menjaganya tetap terbaru | The app's error codes agree with the backend's spec (AGENTS.md Rule 12; .claude/rules/common/error-codes.md). |
+| `scripts/check/gates.list` | sekali; lalu milik Anda | This repo's gates. |
+| `scripts/check/i18n-catalog.json` | jika `locales=en,id`; sekali; lalu milik Anda | Locale yang wajib dimiliki setiap key String Catalog, dibaca i18n-catalog.mjs |
+| `scripts/check/i18n-catalog.mjs` | selalu; sync menjaganya tetap terbaru | The String Catalog gate, the iOS side of the kit's check:i18n (AGENTS.md Rules 6 and 7; .claude/rules/ios/strings.md). |
+| `scripts/check/lint-suppressions.sh` | selalu; sync menjaganya tetap terbaru | Every suppression says why, and the ones nothing can prove stale are not allowed at all (AGENTS.md Rule 17). |
+| `scripts/check/package-graph.json` | sekali; lalu milik Anda | Lapisan paket logika dan plugin build-tool yang diizinkan, dibaca package-graph.sh |
+| `scripts/check/package-graph.sh` | selalu; sync menjaganya tetap terbaru | The logic packages keep the shape the rules describe (AGENTS.md Rules 1, 2, 21 and 22; .claude/rules/ios/packages.md). |
+| `scripts/check/privacy-manifest.sh` | selalu; sync menjaganya tetap terbaru | The privacy manifest names a reason for every required-reason API the app's code uses (AGENTS.md Rule 25). |
+| `scripts/check/xcode-settings.sh` | selalu; sync menjaganya tetap terbaru | The Xcode project's build settings live in Config/*.xcconfig, and say what the rules need (AGENTS.md Rules 19, 20 and 28; .claude/rules/ios/swiftui.md). |
+| `scripts/ios/api-client.sh` | selalu; sync menjaganya tetap terbaru | Regenerates the API client from the backend's spec copy (AGENTS.md Rule 11). |
+| `scripts/ios/app.sh` | selalu; sync menjaganya tetap terbaru | Builds and tests the app target for the simulator, and never signs (CODE_SIGNING_ALLOWED=NO). |
+| `CLAUDE.md` | satu blok terkelola, ditambahkan di akhir | `## Agent config kit` |
+| `.gitignore` | satu blok terkelola (12 baris) | `.serena/`, `.skillspector/`, `.env`, `.env.*`, `!.env.example`, `!.env.*.example`, `.build/`, `.swiftpm/`, `/coverage`, `DerivedData/`, `xcuserdata/`, `*.xcresult` |
+
+</details>
 <!-- files:end -->
 
 <details>
@@ -1601,6 +1672,21 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | --- | --- | --- | --- | --- | --- |
 | `/agent-fe-threejs:setup` | Perintah (Anda yang memulai) | Memasang aturan scene 3D, pemeriksa anggaran aset, dan panduan menambah skill 3D lewat referensi setelah dry run yang Anda setujui | `/agent-fe-threejs:setup`, sekali per repo | Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu | [setup](docs/agent-fe-threejs/setup.md) |
 | `/agent-fe-threejs:sync` | Perintah (Anda yang memulai) | Memeriksa repo terhadap file yang dipasang agent-fe-threejs (`--check`), atau memperbaruinya setelah dry run | `/agent-fe-threejs:sync --check` | Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar | [sync](docs/agent-fe-threejs/sync.md) |
+
+### agent-ios-swiftui
+
+| Komponen | Jenis | Fungsinya | Cara pakai | Manfaatnya | Dokumen |
+| --- | --- | --- | --- | --- | --- |
+| `generated-guard` | Hook (PreToolUse pada edit berkas) | Menolak edit tangan pada klien API hasil generator dan salinan spesifikasi OpenAPI dari backend | Berjalan sendiri sebelum penulisan file | Klien hanya berubah lewat generatornya, jadi selalu cocok dengan spesifikasinya | [generated-guard](docs/agent-ios-swiftui/generated-guard.md) |
+| `/agent-ios-swiftui:a11y-audit` | Perintah | Menjalankan audit aksesibilitas UI test di simulator, lalu membaca view untuk label dan trait; hanya melapor | `/agent-ios-swiftui:a11y-audit` | Kontras, Dynamic Type, dan label yang hilang ketahuan di simulator sebelum rilis | [a11y-audit](docs/agent-ios-swiftui/a11y-audit.md) |
+| `/agent-ios-swiftui:setup` | Perintah (Anda yang memulai) | Memasang aturan iOS, anti-pattern, skrip gate, konfigurasi SwiftLint, swift-format dan xcconfig, tipe problem beserta tesnya, hook pre-commit, serta CI pull request ke app SwiftUI setelah dry run yang Anda setujui | `/agent-ios-swiftui:setup`, sekali per repo | Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu | [setup](docs/agent-ios-swiftui/setup.md) |
+| `/agent-ios-swiftui:sync` | Perintah (Anda yang memulai) | Memeriksa repo terhadap file yang dipasang agent-ios-swiftui (`--check`), atau memperbaruinya setelah dry run | `/agent-ios-swiftui:sync --check` | Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar | [sync](docs/agent-ios-swiftui/sync.md) |
+| `agent-ios-swiftui:i18n-guard` | Agen | Teks yang melewati String Catalog, locale yang hilang, pesan kode error, dan format angka dan tanggal | Minta setelah mengubah teks view atau String Catalog | Tidak ada layar yang menampilkan key atau teks yang belum diterjemahkan | [i18n-guard](docs/agent-ios-swiftui/i18n-guard.md) |
+| `agent-ios-swiftui:reviewer` | Agen | View yang hanya merender, model layar, paket logika, konkurensi, kode error, token, tes, dan aksesibilitas | Lewat `/agent-core:review` | Logika di view dan error yang dipilih dari status tertangkap saat review | [reviewer](docs/agent-ios-swiftui/reviewer.md) |
+| `agent-ios-swiftui:openapi-client-update` | Skill | Menyalin spesifikasi backend, meregenerasi klien, menambah panggilan package, dan memetakan setiap kode error baru beserta pesannya di setiap locale | "the backend added an error code", atau `/agent-ios-swiftui:openapi-client-update` | Kode error baru menggagalkan build sampai setiap layar memetakannya | [openapi-client-update](docs/agent-ios-swiftui/openapi-client-update.md) |
+| `agent-ios-swiftui:swiftui-screen` | Skill | Membangun satu layar sebagai tracer bullet: seam yang disepakati, tes model layar merah lalu hijau, view, string katalog, dan audit aksesibilitas | "add an order detail screen", atau `/agent-ios-swiftui:swiftui-screen` | Setiap layar datang lengkap dengan tes, terjemahan, dan audit | [swiftui-screen](docs/agent-ios-swiftui/swiftui-screen.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (opsional) | Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout | Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang | Pembaca kedua di setiap pull request dengan biaya satu atau dua sen | [deepseek-review](docs/agent-ios-swiftui/deepseek-review.md) |
+| `.github/workflows/quality-gate.yml` | Workflow (opsional) | Pemanggil quality gate reusable milik kit untuk app iOS, di-pin ke satu commit: job Linux lalu job macOS | Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request | Job Linux menangkap yang tidak butuh Mac sebelum menit macOS terpakai | [quality-gate](docs/agent-ios-swiftui/quality-gate.md) |
 <!-- catalog:end -->
 
 </details>

@@ -1,0 +1,48 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "brand.name" : {
+      "shouldTranslate" : false
+    },
+    "orders.count" : {
+      "localizations" : {
+        "en" : { "variations" : { "plural" : {
+          "one" : { "stringUnit" : { "state" : "translated", "value" : "%lld order" } },
+          "other" : { "stringUnit" : { "state" : "translated", "value" : "%lld orders" } } } } },
+        "id" : { "variations" : { "plural" : {
+          "other" : { "stringUnit" : { "state" : "new", "value" : "%lld pesanan" } } } } }
+      }
+    },
+    "orders.empty" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No orders yet" } }
+      }
+    },
+    "orders.old" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "id" : { "stringUnit" : { "state" : "translated", "value" : "Lama" } }
+      }
+    },
+    "orders.review" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Review" } },
+        "id" : { "stringUnit" : { "state" : "needs_review", "value" : "Tinjau" } }
+      }
+    },
+    "orders.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Orders" } },
+        "id" : { "stringUnit" : { "state" : "new", "value" : "Pesanan" } }
+      }
+    },
+    "problem.unknown" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Something went wrong." } },
+        "id" : { "stringUnit" : { "state" : "translated", "value" : "Terjadi kesalahan." } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

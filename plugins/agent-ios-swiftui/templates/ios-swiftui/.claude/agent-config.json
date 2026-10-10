@@ -1,0 +1,10 @@
+{
+  "//": "This repo's settings for the agent-config-kit hooks. A key left out keeps its default; .claude/agent-config.example.json lists every key with its default. While this file exists the plugins' hooks run in this repo.",
+
+  "//generatedPaths": "What generated-guard refuses to let an agent edit by hand: the client swift-openapi-generator writes, and the copy of the backend's spec it reads. Change the spec in the backend, copy it again, and run bash scripts/ios/api-client.sh. This list replaces the default whole.",
+  "generatedPaths": [
+    "Packages/AppCore/Sources/APIClient/GeneratedSources",
+    "Packages/AppCore/Sources/APIClient/openapi.json",
+    "Packages/AppCore/Sources/APIClient/openapi.yaml"
+  ]
+}

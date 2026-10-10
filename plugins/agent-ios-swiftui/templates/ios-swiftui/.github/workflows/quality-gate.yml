@@ -1,0 +1,32 @@
+# The pull-request quality gate for this iOS app, installed by /agent-ios-swiftui:setup. The checks
+# live in agent-config-kit's reusable ios-swiftui-quality-gate workflow, pinned below to one commit:
+# a Linux job runs the checks that need no Mac (SwiftLint, the String Catalog, error-code,
+# suppression and privacy checks, secrets, the skill scan), and only when it passes does a macOS
+# job with Xcode 27 run the whole of scripts/check/gates.list, the simulator build (no signing, no
+# warning), the tests and the accessibility audit, the catalog against the build, dead code, client
+# drift and the coverage floor. A third job, "Quality Gate (ios-swiftui)", reports both: make that
+# one the required status check.
+#
+# /agent-ios-swiftui:sync brings a new pin when a plugin release moves it; nothing moves on its own.
+# The macOS job runs on the repository variable CI_RUNNER_MACOS, else GitHub's xcode-27 runner.
+name: Quality Gate
+
+on:
+  # Every pull request, whatever branch it targets: a branch filter that misses this repo's
+  # branches would leave the gate silent. Diff steps compare against the pull request's base.
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Quality Gate
+    permissions:
+      contents: read
+    # No secrets: the gate reads the checkout and nothing else, and never signs a build.
+    uses: adhibuchori/agent-config-kit/.github/workflows/ios-swiftui-quality-gate.yml@0000000000000000000000000000000000000000 # v1.3.0

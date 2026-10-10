@@ -1,0 +1,64 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "orders.empty" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No orders yet" } },
+        "id" : { "stringUnit" : { "state" : "translated", "value" : "Belum ada pesanan" } }
+      }
+    },
+    "orders.loading" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Loading orders" } },
+        "id" : { "stringUnit" : { "state" : "translated", "value" : "Memuat pesanan" } }
+      }
+    },
+    "orders.settled" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Paid" } },
+        "id" : { "stringUnit" : { "state" : "translated", "value" : "Lunas" } }
+      }
+    },
+    "orders.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Orders" } },
+        "id" : { "stringUnit" : { "state" : "translated", "value" : "Pesanan" } }
+      }
+    },
+    "problem.INTERNAL_ERROR" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Something went wrong on our side. Try again." } },
+        "id" : { "stringUnit" : { "state" : "translated", "value" : "Terjadi kesalahan di sisi kami. Coba lagi." } }
+      }
+    },
+    "problem.NOT_FOUND" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This order no longer exists." } },
+        "id" : { "stringUnit" : { "state" : "translated", "value" : "Pesanan ini sudah tidak ada." } }
+      }
+    },
+    "problem.retry" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Try Again" } },
+        "id" : { "stringUnit" : { "state" : "translated", "value" : "Coba Lagi" } }
+      }
+    },
+    "problem.unknown" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Something went wrong. Quote this reference to support:" } },
+        "id" : { "stringUnit" : { "state" : "translated", "value" : "Terjadi kesalahan. Sebutkan referensi ini ke tim dukungan:" } }
+      }
+    },
+    "problem.VALIDATION_FAILED" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Some details are not valid. Check them and send again." } },
+        "id" : { "stringUnit" : { "state" : "translated", "value" : "Ada data yang tidak valid. Periksa lalu kirim lagi." } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

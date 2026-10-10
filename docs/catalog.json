@@ -936,6 +936,96 @@
         "use": "`/agent-fe-threejs:sync --check`",
         "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
       }
+    },
+    "agent-ios-swiftui/a11y-audit": {
+      "use": "`/agent-ios-swiftui:a11y-audit`",
+      "why": "Contrast, Dynamic Type and missing labels are found on a simulator before release",
+      "id": {
+        "what": "Menjalankan audit aksesibilitas UI test di simulator, lalu membaca view untuk label dan trait; hanya melapor",
+        "use": "`/agent-ios-swiftui:a11y-audit`",
+        "why": "Kontras, Dynamic Type, dan label yang hilang ketahuan di simulator sebelum rilis"
+      }
+    },
+    "agent-ios-swiftui/deepseek-review": {
+      "use": "Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run",
+      "why": "A second reader on every pull request for a cent or two",
+      "id": {
+        "what": "Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout",
+        "use": "Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang",
+        "why": "Pembaca kedua di setiap pull request dengan biaya satu atau dua sen"
+      }
+    },
+    "agent-ios-swiftui/generated-guard": {
+      "use": "Runs by itself before file writes",
+      "why": "The client changes only through its generator, so it always matches the spec",
+      "id": {
+        "what": "Menolak edit tangan pada klien API hasil generator dan salinan spesifikasi OpenAPI dari backend",
+        "use": "Berjalan sendiri sebelum penulisan file",
+        "why": "Klien hanya berubah lewat generatornya, jadi selalu cocok dengan spesifikasinya"
+      }
+    },
+    "agent-ios-swiftui/i18n-guard": {
+      "use": "Ask after changing a view's text or a String Catalog",
+      "why": "No screen shows a key or untranslated text",
+      "id": {
+        "what": "Teks yang melewati String Catalog, locale yang hilang, pesan kode error, dan format angka dan tanggal",
+        "use": "Minta setelah mengubah teks view atau String Catalog",
+        "why": "Tidak ada layar yang menampilkan key atau teks yang belum diterjemahkan"
+      }
+    },
+    "agent-ios-swiftui/openapi-client-update": {
+      "use": "\"the backend added an error code\", or `/agent-ios-swiftui:openapi-client-update`",
+      "why": "A new error code fails the build until every screen maps it",
+      "id": {
+        "what": "Menyalin spesifikasi backend, meregenerasi klien, menambah panggilan package, dan memetakan setiap kode error baru beserta pesannya di setiap locale",
+        "use": "\"the backend added an error code\", atau `/agent-ios-swiftui:openapi-client-update`",
+        "why": "Kode error baru menggagalkan build sampai setiap layar memetakannya"
+      }
+    },
+    "agent-ios-swiftui/quality-gate": {
+      "use": "Answer `ci-gate=yes` (recommended); runs on every pull request",
+      "why": "A Linux job catches what needs no Mac before macOS minutes are spent",
+      "id": {
+        "what": "Pemanggil quality gate reusable milik kit untuk app iOS, di-pin ke satu commit: job Linux lalu job macOS",
+        "use": "Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request",
+        "why": "Job Linux menangkap yang tidak butuh Mac sebelum menit macOS terpakai"
+      }
+    },
+    "agent-ios-swiftui/reviewer": {
+      "use": "Via `/agent-core:review`",
+      "why": "Logic in views and errors chosen by status are caught in review",
+      "id": {
+        "what": "View yang hanya merender, model layar, paket logika, konkurensi, kode error, token, tes, dan aksesibilitas",
+        "use": "Lewat `/agent-core:review`",
+        "why": "Logika di view dan error yang dipilih dari status tertangkap saat review"
+      }
+    },
+    "agent-ios-swiftui/setup": {
+      "use": "`/agent-ios-swiftui:setup`, once per repo",
+      "why": "Plugins cannot ship permissions or rules; you see every write first",
+      "id": {
+        "what": "Memasang aturan iOS, anti-pattern, skrip gate, konfigurasi SwiftLint, swift-format dan xcconfig, tipe problem beserta tesnya, hook pre-commit, serta CI pull request ke app SwiftUI setelah dry run yang Anda setujui",
+        "use": "`/agent-ios-swiftui:setup`, sekali per repo",
+        "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-ios-swiftui/swiftui-screen": {
+      "use": "\"add an order detail screen\", or `/agent-ios-swiftui:swiftui-screen`",
+      "why": "Every screen arrives tested, translated and audited",
+      "id": {
+        "what": "Membangun satu layar sebagai tracer bullet: seam yang disepakati, tes model layar merah lalu hijau, view, string katalog, dan audit aksesibilitas",
+        "use": "\"add an order detail screen\", atau `/agent-ios-swiftui:swiftui-screen`",
+        "why": "Setiap layar datang lengkap dengan tes, terjemahan, dan audit"
+      }
+    },
+    "agent-ios-swiftui/sync": {
+      "use": "`/agent-ios-swiftui:sync --check`",
+      "why": "Drift and double hook wiring show up with an exit code",
+      "id": {
+        "what": "Memeriksa repo terhadap file yang dipasang agent-ios-swiftui (`--check`), atau memperbaruinya setelah dry run",
+        "use": "`/agent-ios-swiftui:sync --check`",
+        "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
+      }
     }
   },
   "files": {
@@ -958,6 +1048,10 @@
     ".claude/mcp/vps-provider.example.json": {
       "en": "An on-demand VPS-provider MCP server to fill in and pin",
       "id": "Server MCP penyedia VPS sesuai kebutuhan, untuk diisi dan di-pin"
+    },
+    ".claude/mcp/xcode.example.json": {
+      "en": "Xcode's MCP bridge (xcrun mcpbridge), loaded for one session with --mcp-config while Xcode is open",
+      "id": "Jembatan MCP Xcode (xcrun mcpbridge), dimuat untuk satu sesi dengan --mcp-config selagi Xcode terbuka"
     },
     ".claude/settings.json": {
       "en": "Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox",
@@ -990,6 +1084,14 @@
     ".oxlintrc.json": {
       "en": "Lint rules for oxlint; the reasons are in .claude/docs/lint-config.md",
       "id": "Aturan lint oxlint; alasannya ada di .claude/docs/lint-config.md"
+    },
+    ".swift-format": {
+      "en": "swift-format settings: 4-space indentation, 120-character lines",
+      "id": "Pengaturan swift-format: indentasi 4 spasi, baris 120 karakter"
+    },
+    "App/PrivacyInfo.xcprivacy": {
+      "en": "The app's privacy manifest: collected data and the reasons for each required-reason API",
+      "id": "Privacy manifest app: data yang dikumpulkan dan alasan untuk setiap required-reason API"
     },
     "api/openapi.json": {
       "en": "The contract exported for clients, generated from api/openapi.yaml",
@@ -1050,6 +1152,14 @@
     "scripts/check/constants.config.json": {
       "en": "Where each kind of identifier lives, for the constants check",
       "id": "Tempat tiap jenis identifier berada, untuk pemeriksa konstanta"
+    },
+    "scripts/check/i18n-catalog.json": {
+      "en": "The locales every String Catalog key needs, read by i18n-catalog.mjs",
+      "id": "Locale yang wajib dimiliki setiap key String Catalog, dibaca i18n-catalog.mjs"
+    },
+    "scripts/check/package-graph.json": {
+      "en": "The logic package's layers and the build-tool plugins allowed, read by package-graph.sh",
+      "id": "Lapisan paket logika dan plugin build-tool yang diizinkan, dibaca package-graph.sh"
     },
     "scripts/check/payload-vectors.json": {
       "en": "Shared test vectors every implementation of the envelope must open and refuse; never regenerated to pass",

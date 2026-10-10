@@ -1430,6 +1430,77 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `scripts/check/gates.list` | by hand: the draft names `_kit/snippets/gates.list` | |
 
 </details>
+
+<details>
+<summary><strong>agent-ios-swiftui</strong>: 63 files</summary>
+
+| File | When setup installs it | What it is |
+| --- | --- | --- |
+| `.claude/ANALYTICS.example.md` | with `analytics=yes`; once; then yours | Analytics: Read API Access |
+| `.claude/SERENA-WORKSPACE.example.md` | with `serena-workspace=yes`; once; then yours | Serena: Shared Multi-Repo Workspace Scoping |
+| `.claude/agent-config.json` | once; then yours | This stack's hook settings, such as generatedPaths or migrationsDirs |
+| `.claude/anti-patterns/INDEX.md` | once; then yours | Anti-Patterns Index |
+| `.claude/anti-patterns/closed-openapi-enum-throws-on-new-code.md` | always; sync keeps it current | A closed OpenAPI enum turns a new error code into a decoding failure |
+| `.claude/anti-patterns/file-length-counts-comments-by-default.md` | always; sync keeps it current | `file_length` counts blank and comment lines unless told not to |
+| `.claude/anti-patterns/formatted-ignores-environment-locale.md` | always; sync keeps it current | `value.formatted()` and `String(format:)` ignore the screen's locale |
+| `.claude/anti-patterns/macos-latest-is-a-different-xcode.md` | always; sync keeps it current | `macos-latest` builds with a different Xcode than yours |
+| `.claude/anti-patterns/nested-swiftlint-config-replaces-root.md` | always; sync keeps it current | A nested `.swiftlint.yml` silently replaces the root rules for its folder |
+| `.claude/anti-patterns/package-text-reads-main-bundle.md` | always; sync keeps it current | Text inside a Swift package reads the app's catalog |
+| `.claude/anti-patterns/preconcurrency-warnings-escape-werror.md` | always; sync keeps it current | Some concurrency warnings stay warnings with warnings as errors |
+| `.claude/anti-patterns/state-macro-changes-init-semantics.md` | always; sync keeps it current | `@State` builds its initial value once with Xcode 27, on every view init before |
+| `.claude/anti-patterns/swiftlint-analyze-sees-zero-files.md` | always; sync keeps it current | `swiftlint analyze` passes because it analyzed nothing |
+| `.claude/anti-patterns/text-string-is-never-localized.md` | always; sync keeps it current | `Text(someString)` is never localized |
+| `.claude/anti-patterns/xccov-omits-package-files.md` | always; sync keeps it current | Xcode's coverage report leaves Swift package files out |
+| `.claude/anti-patterns/xcodebuild-never-syncs-string-catalog.md` | always; sync keeps it current | `xcodebuild` never updates the String Catalog |
+| `.claude/mcp/xcode.example.json` | always; sync keeps it current | Xcode's MCP bridge (xcrun mcpbridge), loaded for one session with --mcp-config while Xcode is open |
+| `.claude/rules/common/error-codes.md` | always; sync keeps it current | Error codes: the app side of the API contract |
+| `.claude/rules/ios/packages.md` | always; sync keeps it current | The logic package: Domain, APIClient, Features |
+| `.claude/rules/ios/strings.md` | always; sync keeps it current | Text, String Catalogs and locale |
+| `.claude/rules/ios/swiftui.md` | always; sync keeps it current | The app target: composition root and views |
+| `.claude/rules/ios/testing.md` | always; sync keeps it current | Tests |
+| `.claude/rules/swift/coverage.md` | always; sync keeps it current | Coverage of the Swift logic package |
+| `.claude/settings.json` | merged into yours (additive; your values win) | Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox |
+| `.env.ci.example` | once; then yours | The dummy variables the unit tests need in CI, as KEY=VALUE lines; never a real secret. |
+| `.githooks/pre-commit` | once; then yours | The pre-commit gate: the lines of scripts/check/gates.list the staged files need. |
+| `.github/CODEOWNERS` | once; then yours | Code owners: GitHub asks them to review every pull request that touches a matching path. |
+| `.github/PULL_REQUEST_TEMPLATE/dev.md` | with `pr-templates=yes`; once; then yours | The pull-request template for work going into dev |
+| `.github/PULL_REQUEST_TEMPLATE/promotion.md` | with `pr-templates=yes`; once; then yours | The pull-request template for a dev to prod promotion |
+| `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; sync keeps it current | An AI review of each pull request by DeepSeek, installed by /agent-ios-swiftui:setup when you answer deepseek-review=yes. |
+| `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; held until a release pins the reusable workflow to a real commit | The pull-request quality gate for this iOS app, installed by /agent-ios-swiftui:setup. |
+| `.periphery.yml` | once; then yours | Periphery's settings for the dead-code check (AGENTS.md Rule 27). |
+| `.swift-format` | once; then yours | swift-format settings: 4-space indentation, 120-character lines |
+| `.swift-format-ignore` | once; then yours | Paths swift-format leaves alone, in .gitignore syntax (Xcode's swift-format reads this file). |
+| `.swiftlint.yml` | once; then yours | SwiftLint for this app (agent-ios-swiftui; AGENTS.md cites each rule by number). |
+| `AGENTS.md` | once, if missing; then yours | AGENTS.md: &lt;Project Name&gt; iOS app |
+| `App/PrivacyInfo.xcprivacy` | once; then yours | The app's privacy manifest: collected data and the reasons for each required-reason API |
+| `CLAUDE.md` | the starter, when the repo has no CLAUDE.md | &lt;Project Name&gt; |
+| `Config/Base.xcconfig` | once; then yours | Build settings every target of the app project shares (AGENTS.md Rules 19, 20 and 28). |
+| `Config/Debug.xcconfig` | once; then yours | The Debug configuration: Base.xcconfig plus what a debug build needs. |
+| `Config/Release.xcconfig` | once; then yours | The Release configuration: Base.xcconfig plus what a shipped build needs. |
+| `Packages/AppCore/Package.swift` | once, if missing; then yours | swift-tools-version: 6.2 The app's logic, tested by `swift test` on the Mac without a simulator (AGENTS.md Rules 1, 2, 21 and 22; .claude/rules/ios/packages.md). |
+| `Packages/AppCore/Sources/APIClient/AppProblem.swift` | once; then yours | A problem detail (RFC 9457) as this app reads it. |
+| `Packages/AppCore/Sources/APIClient/openapi-generator-config.yaml` | once; then yours | swift-openapi-generator's settings for the APIClient target. |
+| `Packages/AppCore/Tests/APIClientTests/AppProblemTests.swift` | once; then yours | AppProblem through its public surface: decoding, the code it resolves, and what a screen shows. |
+| `scripts/check/ci-env.sh` | always; sync keeps it current | Runs a command with the environment CI's unit tests get, and nothing else: PATH, HOME, TMPDIR, the locale, CI=true and CI's test variables. |
+| `scripts/check/coverage-exempt.txt` | once; then yours | Files the coverage report leaves out (AGENTS.md Rule 22; .claude/rules/swift/coverage.md). |
+| `scripts/check/coverage-per-file.mjs` | always; sync keeps it current | Coverage per file: every measured file at 100%, in the metrics its toolchain reports. |
+| `scripts/check/coverage-policy.mjs` | always; sync keeps it current | COVER: refuses a coverage gate that was weakened. |
+| `scripts/check/coverage.sh` | always; sync keeps it current | Coverage of the logic packages, file by file (AGENTS.md Rule 22; .claude/rules/swift/coverage.md). |
+| `scripts/check/error-codes.sh` | always; sync keeps it current | The app's error codes agree with the backend's spec (AGENTS.md Rule 12; .claude/rules/common/error-codes.md). |
+| `scripts/check/gates.list` | once; then yours | This repo's gates. |
+| `scripts/check/i18n-catalog.json` | with `locales=en,id`; once; then yours | The locales every String Catalog key needs, read by i18n-catalog.mjs |
+| `scripts/check/i18n-catalog.mjs` | always; sync keeps it current | The String Catalog gate, the iOS side of the kit's check:i18n (AGENTS.md Rules 6 and 7; .claude/rules/ios/strings.md). |
+| `scripts/check/lint-suppressions.sh` | always; sync keeps it current | Every suppression says why, and the ones nothing can prove stale are not allowed at all (AGENTS.md Rule 17). |
+| `scripts/check/package-graph.json` | once; then yours | The logic package's layers and the build-tool plugins allowed, read by package-graph.sh |
+| `scripts/check/package-graph.sh` | always; sync keeps it current | The logic packages keep the shape the rules describe (AGENTS.md Rules 1, 2, 21 and 22; .claude/rules/ios/packages.md). |
+| `scripts/check/privacy-manifest.sh` | always; sync keeps it current | The privacy manifest names a reason for every required-reason API the app's code uses (AGENTS.md Rule 25). |
+| `scripts/check/xcode-settings.sh` | always; sync keeps it current | The Xcode project's build settings live in Config/*.xcconfig, and say what the rules need (AGENTS.md Rules 19, 20 and 28; .claude/rules/ios/swiftui.md). |
+| `scripts/ios/api-client.sh` | always; sync keeps it current | Regenerates the API client from the backend's spec copy (AGENTS.md Rule 11). |
+| `scripts/ios/app.sh` | always; sync keeps it current | Builds and tests the app target for the simulator, and never signs (CODE_SIGNING_ALLOWED=NO). |
+| `CLAUDE.md` | one managed block, appended | `## Agent config kit` |
+| `.gitignore` | one managed block (12 lines) | `.serena/`, `.skillspector/`, `.env`, `.env.*`, `!.env.example`, `!.env.*.example`, `.build/`, `.swiftpm/`, `/coverage`, `DerivedData/`, `xcuserdata/`, `*.xcresult` |
+
+</details>
 <!-- files:end -->
 
 <details>
@@ -1591,6 +1662,21 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | --- | --- | --- | --- | --- | --- |
 | `/agent-fe-threejs:setup` | Command (you start it) | Install agent-fe-threejs's 3D scene rules, asset-budget check and skills-by-reference guide into this Next.js repo, after a dry run you approve | `/agent-fe-threejs:setup`, once per repo | Plugins cannot ship permissions or rules; you see every write first | [setup](docs/agent-fe-threejs/setup.md) |
 | `/agent-fe-threejs:sync` | Command (you start it) | Compare this repo with what agent-fe-threejs's setup installed; --check reports drift and double hook wiring (read-only, non-zero exit), otherwise shows a sync draft and writes it on go | `/agent-fe-threejs:sync --check` | Drift and double hook wiring show up with an exit code | [sync](docs/agent-fe-threejs/sync.md) |
+
+### agent-ios-swiftui
+
+| Component | Kind | What it does | How to use | Why it helps | Docs |
+| --- | --- | --- | --- | --- | --- |
+| `generated-guard` | Hook (PreToolUse on file edits) | generated-guard refuses hand edits to the generated API client and the copied OpenAPI spec of an iOS app: any file or folder listed in `generatedPaths` in `.claude/agent-config.json`. | Runs by itself before file writes | The client changes only through its generator, so it always matches the spec | [generated-guard](docs/agent-ios-swiftui/generated-guard.md) |
+| `/agent-ios-swiftui:a11y-audit` | Command | Runs this iOS app's accessibility audit (the UI tests that call performAccessibilityAudit on each primary screen) on a simulator, then reads the views for labels and traits, and reports each issue with its screen and fix. Reads and reports; changes no file. | `/agent-ios-swiftui:a11y-audit` | Contrast, Dynamic Type and missing labels are found on a simulator before release | [a11y-audit](docs/agent-ios-swiftui/a11y-audit.md) |
+| `/agent-ios-swiftui:setup` | Command (you start it) | Install agent-ios-swiftui's iOS rules, anti-patterns, gate scripts, SwiftLint, swift-format and xcconfig settings, the seeded problem type and its tests, a pre-commit hook and pull-request CI into this SwiftUI app, after a dry run you approve | `/agent-ios-swiftui:setup`, once per repo | Plugins cannot ship permissions or rules; you see every write first | [setup](docs/agent-ios-swiftui/setup.md) |
+| `/agent-ios-swiftui:sync` | Command (you start it) | Check this repo against agent-ios-swiftui's installed files with --check (read-only, exits non-zero on drift or double hook wiring), or update them after a dry run you approve | `/agent-ios-swiftui:sync --check` | Drift and double hook wiring show up with an exit code | [sync](docs/agent-ios-swiftui/sync.md) |
+| `agent-ios-swiftui:i18n-guard` | Agent | Reviews a diff of this iOS app for user-facing text that skips the String Catalog, catalog entries missing a locale or still marked new or needs review, error codes without a translated message, package text that reads the app's bundle, and dates or numbers formatted outside the screen's locale. Use after changing a view, a screen model's text or a Localizable.xcstrings file. Changes no file. | Ask after changing a view's text or a String Catalog | No screen shows a key or untranslated text | [i18n-guard](docs/agent-ios-swiftui/i18n-guard.md) |
+| `agent-ios-swiftui:reviewer` | Agent | Reviews the diff of this SwiftUI app against its AGENTS.md rules and the rules under .claude/rules (views that only render, screen models, the logic package, concurrency, the generated API client, error codes, tests and accessibility) and reports each breach with its rule number, file, line and fix. The standards axis of a review; changes no file. | Via `/agent-core:review` | Logic in views and errors chosen by status are caught in review | [reviewer](docs/agent-ios-swiftui/reviewer.md) |
+| `agent-ios-swiftui:openapi-client-update` | Skill | Brings this iOS app's generated API client up to date with the backend's exported OpenAPI spec - copy the spec, regenerate with the pinned generator, add the package call for each new operation, map every new error code with every screen's switch listing it, and add its message in every locale. Use when the backend's spec changed, a new endpoint or error code is needed, or the gate reports client drift or an error-code mismatch. Not for a change inside the app alone. | "the backend added an error code", or `/agent-ios-swiftui:openapi-client-update` | A new error code fails the build until every screen maps it | [openapi-client-update](docs/agent-ios-swiftui/openapi-client-update.md) |
+| `agent-ios-swiftui:swiftui-screen` | Skill | Builds or changes one screen of this SwiftUI app as a tracer bullet, model first - the agreed seam, a failing test of the screen model, the model that turns it green, then the view, its catalog strings and its accessibility audit. Use when the task adds a screen, adds a state or an action to a screen, or moves logic out of a view. Not for a change to the API contract alone (use openapi-client-update) or to styling that changes no behaviour. | "add an order detail screen", or `/agent-ios-swiftui:swiftui-screen` | Every screen arrives tested, translated and audited | [swiftui-screen](docs/agent-ios-swiftui/swiftui-screen.md) |
+| `.github/workflows/deepseek-review.yml` | Workflow (optional) | `.github/workflows/deepseek-review.yml` asks DeepSeek for a review of a pull request's diff and posts it as one comment, which later runs update in place. | Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run | A second reader on every pull request for a cent or two | [deepseek-review](docs/agent-ios-swiftui/deepseek-review.md) |
+| `.github/workflows/quality-gate.yml` | Workflow (optional) | `.github/workflows/quality-gate.yml` runs agent-config-kit's `ios-swiftui-quality-gate.yml` reusable workflow on every pull request, pinned to one commit of the kit. | Answer `ci-gate=yes` (recommended); runs on every pull request | A Linux job catches what needs no Mac before macOS minutes are spent | [quality-gate](docs/agent-ios-swiftui/quality-gate.md) |
 <!-- catalog:end -->
 
 </details>

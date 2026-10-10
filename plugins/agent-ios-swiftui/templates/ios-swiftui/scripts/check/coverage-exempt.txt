@@ -1,0 +1,6 @@
+# Files the coverage report leaves out (AGENTS.md Rule 22; .claude/rules/swift/coverage.md). One
+# `<path or glob>  # <category>: <why>` per line, relative to the repo root; `*` stays in one
+# folder, `**` crosses folders. The categories are closed: `generated` or `composition root`.
+# scripts/check/coverage.sh passes these to llvm-cov, and coverage-policy.mjs refuses any other
+# reason.
+Packages/AppCore/Sources/APIClient/GeneratedSources/**  # generated: swift-openapi-generator writes it from the backend's spec

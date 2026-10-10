@@ -1,0 +1,15 @@
+# <Project Name>
+
+<One sentence: what this iOS app does, and for whom.>
+
+Done means `bash scripts/check/gates.sh` passes: the list pre-commit and CI run. Build and test the
+app through `bash scripts/ios/app.sh`, which picks the simulator and never signs.
+
+## On-demand references
+
+| Read when | File |
+| --- | --- |
+| Citing or checking a numbered rule | `AGENTS.md` |
+| A failure that looks familiar | `.claude/anti-patterns/INDEX.md` |
+| Xcode's own tools (previews, build log) for one session | `.claude/mcp/xcode.example.json` |
+| Hooks, CI, reviews, MCP pins | `.claude/OPERATIONS.md` |

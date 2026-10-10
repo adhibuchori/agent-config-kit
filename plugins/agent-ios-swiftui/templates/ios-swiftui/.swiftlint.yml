@@ -1,0 +1,215 @@
+# SwiftLint for this app (agent-ios-swiftui; AGENTS.md cites each rule by number). Every finding is
+# an error: `strict: true` turns warnings into errors, so there is no warning tier to ignore.
+# Formatting belongs to swift-format (.swift-format); the two SwiftLint rules that fight its output
+# are adjusted below. A `swiftlint:disable` carries a reason after " - "
+# (scripts/check/lint-suppressions.sh), and one that suppresses nothing fails
+# superfluous_disable_command. Sizes count code lines only, like the kit's max-lines. This is the
+# one SwiftLint config of the repo: a nested .swiftlint.yml would replace these rules for its folder.
+swiftlint_version: 0.65.1 # another version exits 2; move this pin together with CI's
+strict: true
+check_for_updates: false
+allow_zero_lintable_files: false
+
+included:
+  - App
+  - Packages
+  - UITests
+excluded:
+  - Packages/*/.build
+  - Packages/*/Sources/*/GeneratedSources # swift-openapi-generator output, committed
+
+opt_in_rules:
+  # Never crash on purpose, never erase a type (Rule 18).
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - fatal_error_message
+  - legacy_objc_type
+  - discouraged_optional_boolean
+  # Concurrency and SwiftUI ownership.
+  - private_swiftui_state
+  - unhandled_throwing_task
+  - async_without_await
+  - unowned_variable_capture
+  - weak_delegate
+  # Accessibility the compiler cannot see (Rule 24).
+  - accessibility_label_for_image
+  - accessibility_trait_for_button
+  # Size and documentation (Rule 16).
+  - closure_body_length
+  - missing_docs
+  # Dead weight and correctness.
+  - unused_parameter
+  - identical_operands
+  - overridden_super_call
+  - prohibited_super_call
+  - discouraged_assert
+  - empty_xctest_method
+  # Cheap performance wins.
+  - contains_over_filter_count
+  - contains_over_filter_is_empty
+  - contains_over_first_not_nil
+  - contains_over_range_nil_comparison
+  - empty_count
+  - first_where
+  - last_where
+  - sorted_first_last
+  - flatmap_over_map_reduce
+
+disabled_rules:
+  - trailing_comma # swift-format adds trailing commas to multi-line collections
+
+opening_brace:
+  ignore_multiline_function_signatures: true # swift-format puts `{` on its own line after a wrapped signature
+
+# Sizes, counted in code lines: blank and comment-only lines never count (Rules 15 and 16).
+file_length:
+  warning: 150
+  error: 150
+  ignore_comment_only_lines: true
+type_body_length:
+  warning: 120
+  error: 120
+  excluded_types: [] # the default skips extensions and protocols
+function_body_length:
+  warning: 40
+  error: 40
+closure_body_length:
+  warning: 30
+  error: 30
+cyclomatic_complexity:
+  warning: 10
+  error: 10
+  ignores_case_statements: true
+nesting:
+  type_level: 2
+  function_level: 2
+line_length:
+  warning: 120
+  error: 120
+  ignores_urls: true
+large_tuple:
+  warning: 2
+  error: 2
+function_parameter_count:
+  warning: 5
+  error: 5
+missing_docs:
+  error: [open, public, package] # every declaration another module can call says what it does
+  excludes_inherited_types: false # the default skips every member of a type that conforms to anything
+
+# Suppressions: narrow, needed, and visible (Rule 17).
+superfluous_disable_command: error
+invalid_swiftlint_command: error
+blanket_disable_command:
+  severity: error
+  allowed_rules: [] # the default list lets `disable file_length` switch the limit off for a file
+
+custom_rules:
+  default_execution_mode: swiftsyntax # also on Linux, where SwiftLint has no SourceKit
+  # Rule 2: logic targets build on the Mac without a simulator, so they never draw.
+  no_ui_import_in_logic:
+    name: No UI framework in a logic target
+    included: ['Packages/[^/]+/Sources/']
+    regex: '^\s*(@testable\s+)?import\s+(SwiftUI|UIKit)\b'
+    message: "Logic targets import Foundation and Observation only; a view belongs in App/Screens (Rule 2)."
+    severity: error
+  # Rule 3: a view lays out, binds and calls its model.
+  no_io_in_view:
+    name: No I/O in a view
+    included: ['App/Screens/']
+    regex: '\b(URLSession|UserDefaults|FileManager)\b|@AppStorage\b'
+    message: "A view reads its screen model; networking and storage live in Packages/AppCore (Rule 3)."
+    severity: error
+  no_clock_in_view:
+    name: No clock in a view
+    included: ['App/Screens/']
+    regex: '\bDate\(\s*\)|\bDate\.now\b'
+    message: "The screen model decides what time it is, so a test can fix it (Rule 3)."
+    severity: error
+  no_data_shaping_in_view:
+    name: No data shaping in a view
+    included: ['App/Screens/']
+    regex: '\.(filter|sorted|reduce)\s*[({]'
+    message: "Filter and sort in the screen model, where a test reaches it (Rule 3)."
+    severity: error
+  # Rule 5: every word a person reads comes from the String Catalog.
+  no_text_verbatim:
+    name: No Text(verbatim:)
+    regex: 'Text\(\s*verbatim:'
+    message: "User-facing text comes from the String Catalog; Text(verbatim:) is never extracted (Rule 5)."
+    severity: error
+  no_uikit_literal_text:
+    name: No literal UIKit text
+    regex: '(\.(text|title|placeholder|accessibilityLabel)\s*=\s*"|setTitle\(\s*")'
+    message: "Assign String(localized:) or a generated symbol; a literal here is never translated (Rule 5)."
+    severity: error
+  # Rule 8: a package's strings live in its own catalog.
+  package_text_names_bundle:
+    name: Package text names its bundle
+    included: ['Packages/[^/]+/Sources/']
+    regex: '\b(?:(?:Text|LocalizedStringResource)\(|String\(\s*localized:)\s*"(?:[^"\\]|\\.)*"(?:(?!bundle:)[^)])*\)'
+    message: "Pass bundle: #bundle; without it the lookup reads the app's catalog, not this package's (Rule 8)."
+    severity: error
+  # Rule 9: numbers and dates follow the locale of the screen.
+  no_unlocalized_format:
+    name: No String(format:) without a locale
+    regex: 'String\(\s*format:(?![^\n]*locale:)'
+    message: "Format with a FormatStyle (Text(value, format:)); String(format:) ignores the locale (Rule 9)."
+    severity: error
+  # Rule 10: the generated client is the only way to the network.
+  no_route_literal:
+    name: No route literal
+    regex: '"/(api|v[0-9]+)/'
+    match_kinds: [string]
+    message: "Call the generated client (client.<operation>); never write a route path (Rule 10)."
+    severity: error
+  no_urlsession_outside_transport:
+    name: URLSession only in the transport
+    excluded: ['Packages/[^/]+/Sources/APIClient/']
+    regex: '\bURLSession\b'
+    message: "Requests go through the generated client and its URLSessionTransport (Rule 10)."
+    severity: error
+  # Rule 12: the code decides, never the status, and every known code is handled.
+  no_default_on_problem_code:
+    name: No default on a problem code
+    regex: 'switch[^{]*\bknownCode\b[^{]*\{[^}]*\bdefault\s*:'
+    message: "List every ProblemCode case; a default hides the code the spec adds next (Rule 12)."
+    severity: error
+  no_status_branch:
+    name: No branch on an HTTP status
+    excluded: ['Packages/[^/]+/Tests/']
+    regex: '\bstatus(Code)?\s*(==|!=|>=|<=|>|<)\s*[0-9]'
+    message: "Branch on AppProblem.knownCode; a status says nothing a code does not (Rule 12)."
+    severity: error
+  # Rule 13: a token lives in the Keychain.
+  no_token_in_user_defaults:
+    name: No token in UserDefaults
+    regex: '(UserDefaults[^\n]*|@AppStorage\(\s*)"[^"\n]*(?i:token|secret|password)'
+    message: "Keep a refresh token in the Keychain and a bearer token in memory (Rule 13)."
+    severity: error
+  # Rule 18: the compiler checks what a concrete type says.
+  no_any_type:
+    name: No Any
+    regex: '\b(Any|AnyObject)\b'
+    match_kinds: [typeidentifier, keyword, identifier]
+    message: "Use a concrete type, a generic or a protocol existential; Any erases what the compiler checks (Rule 18)."
+    severity: error
+  # Rule 26: logs go through os.Logger.
+  no_print:
+    name: No print
+    regex: '\b(print|debugPrint|dump|NSLog)\('
+    match_kinds: [identifier]
+    message: "Log through os.Logger; print reaches no one and ships in release builds (Rule 26)."
+    severity: error
+  # The error-catch check: an empty catch says why the error does not matter.
+  empty_catch_reason:
+    name: An empty catch says why
+    regex: 'catch\s*\{(?:\s|//(?! error ignored: )[^\n]*)*\}'
+    message: "Handle the error, or open the block with `// error ignored: <why>`."
+    severity: error
+  # One home per symbol: no re-exports.
+  no_reexport:
+    name: No re-export
+    regex: '@_exported\s+import'
+    message: "Import a module where it is used; @_exported hides where a symbol comes from."
+    severity: error

@@ -1,0 +1,63 @@
+# AGENTS.md: <Project Name> iOS app
+
+The numbered rules of this repo. Each row states the rule once and names what enforces it: a
+SwiftLint rule, a check script, the compiler, a CI step, or `reviewer` (the
+`agent-ios-swiftui:reviewer` subagent and code review; no machine checks it). How to follow a rule,
+with examples, is in the file of the Detail column, which loads while you edit the files it covers.
+
+Numbers are append-only: a new rule takes the next free number, and a retired one keeps its number
+with the word "Retired". A citation such as "Rule 12" must mean one thing to every reader, and
+`scripts/check/ai-config.sh` fails a citation this table does not define.
+
+## Compliance status: fill this in first
+
+Rules adopted after the code was written describe a target, not the code. Say which, per group, so
+an agent never cites a rule for code that does not exist yet. Three states: Enforced, Partial (name
+the rules that bind), Not met (name the shape to follow until it is).
+
+| Rules | Group | Status | What that means here |
+| --- | --- | --- | --- |
+| 1–4 | Architecture | `<Enforced / Partial / Not met>` | `<what applies as written>` |
+| 5–9 | Text and locale | `<status>` | `<...>` |
+| 10–14 | Network, errors and auth | `<status>` | `<...>` |
+| 15–18 | Code shape | `<status>` | `<...>` |
+| 19–21 | Build and dependencies | `<status>` | `<...>` |
+| 22–24 | Tests and coverage | `<status>` | `<...>` |
+| 25–28 | Platform and release | `<status>` | `<...>` |
+
+Follow-up work, in order, each naming the rules it unblocks:
+
+1. `<work item>`: unblocks Rules `<n>`
+
+## Rules
+
+| # | Rule | Enforced by | Detail |
+| --- | --- | --- | --- |
+| 1 | The app target holds the composition root and the views; logic lives in the `Packages/AppCore` targets | `package-graph.sh` P1; reviewer | `.claude/rules/ios/packages.md` |
+| 2 | Logic targets import Foundation and Observation, never SwiftUI or UIKit; a target imports only the layers `package-graph.json` lists, and features never import each other | SwiftLint `no_ui_import_in_logic`; `package-graph.sh` P2 | `.claude/rules/ios/packages.md` |
+| 3 | A view lays out, binds and calls its screen model; I/O, the clock, filtering, sorting and the logic of a `Task {}` live in the model | SwiftLint `no_io_in_view`, `no_clock_in_view`, `no_data_shaping_in_view`; reviewer | `.claude/rules/ios/swiftui.md` |
+| 4 | One `@Observable` screen model per screen, exposing one `Phase` enum: `loading`, `empty`, `loaded`, `failed` | reviewer | `.claude/rules/ios/swiftui.md` |
+| 5 | Display text a model exposes is a `LocalizedStringResource`; views use catalog keys, and UIKit text comes from `String(localized:)` | SwiftLint `no_text_verbatim`, `no_uikit_literal_text`; reviewer (`Text(String)`) | `.claude/rules/ios/strings.md` |
+| 6 | Every String Catalog key has every locale the app ships, in state translated | `i18n-catalog.mjs` I1, I2 | `.claude/rules/ios/strings.md` |
+| 7 | Every key the code uses is in its catalog, and the catalog holds only keys the code uses | `i18n-catalog.mjs` I3; I4 against the build in CI | `.claude/rules/ios/strings.md` |
+| 8 | Package code names its bundle: `bundle: #bundle` | SwiftLint `package_text_names_bundle` | `.claude/rules/ios/strings.md` |
+| 9 | Numbers and dates are formatted with a `FormatStyle` in the view, so they follow the screen's locale | SwiftLint `no_unlocalized_format`; reviewer | `.claude/rules/ios/strings.md` |
+| 10 | Requests go through the generated client and its `URLSessionTransport`; route paths exist only in the generated code | SwiftLint `no_route_literal`, `no_urlsession_outside_transport` | `.claude/rules/ios/packages.md` |
+| 11 | The generated client and the spec copy change only through `bash scripts/ios/api-client.sh`, and are committed | `generated-guard` hook; client drift check in CI | `.claude/rules/ios/packages.md` |
+| 12 | A problem is identified by its `type` (the API's base plus its code): screens switch over `AppProblem.knownCode` with every case listed, show `problem.unknown` with the reference `CODE · requestId` for anything else, and never show `detail` or branch on a status | compiler; SwiftLint `no_default_on_problem_code`, `no_status_branch`; `error-codes.sh` | `.claude/rules/common/error-codes.md` |
+| 13 | The refresh token lives in the Keychain (`AfterFirstUnlockThisDeviceOnly`), the bearer token in memory; neither ever reaches `UserDefaults` | SwiftLint `no_token_in_user_defaults`; reviewer | `.claude/rules/ios/packages.md` |
+| 14 | The server decides authorization; the app shows what the API returns | reviewer; `agent-core:security-guard` | `.claude/rules/ios/swiftui.md` |
+| 15 | A file holds at most 150 code lines (blank and comment lines do not count) | SwiftLint `file_length` | `.claude/anti-patterns/file-length-counts-comments-by-default.md` |
+| 16 | A type holds at most 120 lines, a function 40, a closure 30; cyclomatic complexity at most 10 | SwiftLint `type_body_length`, `function_body_length`, `closure_body_length`, `cyclomatic_complexity` | `.swiftlint.yml` |
+| 17 | A suppression covers one rule on one line and says why: `// swiftlint:disable:next <rule> - <reason>`; the root `.swiftlint.yml` is the only one, paths go in `.swift-format-ignore`, and `@diagnose` only raises a diagnostic | `superfluous_disable_command`, `blanket_disable_command`; `lint-suppressions.sh` | `.claude/anti-patterns/nested-swiftlint-config-replaces-root.md` |
+| 18 | Types are concrete: no `Any` or `AnyObject`, no `as!`, `try!`, force unwrap or implicitly unwrapped optional | SwiftLint `no_any_type`, `force_cast`, `force_try`, `force_unwrapping`, `implicitly_unwrapped_optional` | `.swiftlint.yml` |
+| 19 | Swift 6 language mode, approachable concurrency, MainActor default isolation for the app; a build ends with zero warnings | `xcode-settings.sh` X3; warning count of the build (`scripts/ios/app.sh`, CI) | `.claude/anti-patterns/preconcurrency-warnings-escape-werror.md` |
+| 20 | Build settings live in `Config/*.xcconfig`; `project.pbxproj` holds no `SWIFT_*` key | `xcode-settings.sh` X1, X2 | `.claude/rules/ios/swiftui.md` |
+| 21 | Remote packages are pinned with `exact:` and `Package.resolved` is committed; a build-tool plugin or a macro needs a written decision | `package-graph.sh` P4, P5; CI resolves only from `Package.resolved` | `.claude/rules/ios/packages.md` |
+| 22 | Every file of the logic targets is covered to 100% of its lines and functions, and every library target has its test target | `coverage.sh` + `coverage-per-file.mjs`; `package-graph.sh` P3; the coverage floor in CI | `.claude/rules/swift/coverage.md` |
+| 23 | Tests use Swift Testing, share no mutable state, give `.serialized` a reason, and never retry | reviewer; the gate never passes `-retry-tests-on-failure` | `.claude/rules/ios/testing.md` |
+| 24 | Every primary screen has a UI test that runs `performAccessibilityAudit` | `/agent-ios-swiftui:a11y-audit`; reviewer; the UI tests in CI | `.claude/rules/ios/testing.md` |
+| 25 | The privacy manifest declares every required-reason API category the code uses, with its reason | `privacy-manifest.sh` | `.claude/rules/ios/swiftui.md` |
+| 26 | Logs go through `os.Logger` | SwiftLint `no_print` | `.claude/rules/ios/packages.md` |
+| 27 | Code nothing uses is deleted | Periphery `--strict` in CI | `.claude/rules/swift/dead-code.md` |
+| 28 | Secrets stay out of the app: none in the bundle, the app's property list or an xcconfig; App Transport Security stays on | gitleaks (`secrets.sh`); `xcode-settings.sh` X4, X5 | `.claude/rules/ios/swiftui.md` |

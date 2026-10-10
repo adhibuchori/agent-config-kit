@@ -1,0 +1,33 @@
+# Code owners: GitHub asks them to review every pull request that touches a matching path. Without
+# a branch ruleset that requires code-owner review this is a request, not a gate. The last matching
+# line wins, so the paths below override the catch-all. Replace @your-github-handle with a user or
+# an @org/team; setup created this file once, and it is yours now.
+
+*                                @your-github-handle
+
+# CI, and what decides what ships.
+/.github/                        @your-github-handle
+/.gitleaks.toml                  @your-github-handle
+/*.xcodeproj/                    @your-github-handle
+/Config/                         @your-github-handle
+/App/PrivacyInfo.xcprivacy       @your-github-handle
+
+# The agent's guardrails: what it may run and reach, the lock that turns the hooks on, and the
+# checks and scripts that judge and unlock its work. A one-line edit here can switch a guard off.
+/.claude/settings.json           @your-github-handle
+/.claude/agent-config-kit.lock   @your-github-handle
+/.claude/agent-config.json       @your-github-handle
+/.mcp.json                       @your-github-handle
+/scripts/check/                  @your-github-handle
+/scripts/ios/                    @your-github-handle
+/scripts/ops/                    @your-github-handle
+/scripts/env/                    @your-github-handle
+/.skillspector-baseline.yaml     @your-github-handle
+/.githooks/                      @your-github-handle
+/.swiftlint.yml                  @your-github-handle
+/.swift-format                   @your-github-handle
+
+# The contract with the backend and every error the app can show.
+/Packages/AppCore/Sources/APIClient/openapi*   @your-github-handle
+/Packages/AppCore/Package.swift  @your-github-handle
+/Packages/AppCore/Sources/APIClient/AppProblem.swift   @your-github-handle

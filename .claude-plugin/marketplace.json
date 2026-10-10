@@ -65,6 +65,12 @@
       "source": "./plugins/agent-fe-threejs",
       "description": "Optional 3D add-on for Next.js sites that use three.js or React Three Fiber; install it next to agent-fe-nextjs or agent-fe-nextjs-static. No hooks. Commands: setup and sync install and verify rules for gating the scene, a still fallback, reduced motion, disposing GPU resources and asset budgets, plus a guide to adding third-party 3D skills by reference (nothing is vendored).",
       "category": "development"
+    },
+    {
+      "name": "agent-ios-swiftui",
+      "source": "./plugins/agent-ios-swiftui",
+      "description": "Experimental (0.x: names and rules may still change). Rules, reviewers and checks for SwiftUI iOS apps in Claude Code, on top of agent-core: an app target of views over one Swift package of tested logic, a generated API client, String Catalogs. Hook: generated-guard refuses hand edits to the generated API client and the copied OpenAPI spec (paths in .claude/agent-config.json). Commands: setup and sync install and verify the iOS rules, anti-patterns, gate scripts (SwiftLint suppressions, Xcode settings, package graph, String Catalogs, error codes, privacy manifest, per-file coverage), SwiftLint, swift-format and xcconfig settings, a seeded RFC 9457 problem type with its tests, a pre-commit hook and a pull-request-only CI caller; a11y-audit runs the accessibility audit UI tests on a simulator. Agents: reviewer and i18n-guard. Skills: swiftui-screen and openapi-client-update. Nothing signs a build or touches a provisioning profile. The hook runs on your machine, opens no network connection and stays silent until the project opts in.",
+      "category": "development"
     }
   ]
 }

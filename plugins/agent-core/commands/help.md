@@ -76,6 +76,8 @@ context), and say which plugin adds it.
 | `/agent-be-axum:setup` · `/agent-be-axum:sync` | agent-be-axum | Setting up or checking a Rust + Axum service (experimental) |
 | `/agent-ai-fastapi:setup` · `/agent-ai-fastapi:sync` | agent-ai-fastapi | Setting up or checking a FastAPI service |
 | `/agent-docs-nextra:setup` · `/agent-docs-nextra:sync` | agent-docs-nextra | Setting up or checking a Nextra docs site |
+| `/agent-ios-swiftui:setup` · `/agent-ios-swiftui:sync` | agent-ios-swiftui | Setting up or checking a SwiftUI iOS app (experimental) |
+| `/agent-ios-swiftui:a11y-audit` | agent-ios-swiftui | Running an iOS app's accessibility audit on a simulator |
 
 ### Optional add-ons
 

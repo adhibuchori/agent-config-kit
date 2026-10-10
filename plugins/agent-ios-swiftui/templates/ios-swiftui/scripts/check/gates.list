@@ -1,0 +1,20 @@
+# This repo's gates. `bash scripts/check/gates.sh` runs every line; .githooks/pre-commit runs the
+# lines the staged files need, and the quality gate that .github/workflows/quality-gate.yml calls
+# runs the list again in CI: the Linux-safe lines first, then all of it on macOS with the build,
+# the tests, the accessibility audit and the client drift check. Each line is <kinds><TAB><command>;
+# gates.sh's header explains the kinds. There is no package.json here, so the format check is its
+# own line. List only gates whose tool or script this repo ships: a missing one is a failing gate.
+all	xcrun swift-format lint --strict --recursive App Packages UITests
+all	bash scripts/check/secrets.sh
+code	swiftlint lint --quiet
+code	bash scripts/check/lint-suppressions.sh
+code	bash scripts/check/xcode-settings.sh
+code	bash scripts/check/package-graph.sh
+code	node scripts/check/i18n-catalog.mjs
+code	bash scripts/check/error-codes.sh
+code	bash scripts/check/privacy-manifest.sh
+code	node scripts/check/folder-shape.mjs
+code	node scripts/check/coverage-policy.mjs
+code	bash scripts/check/ci-env.sh bash scripts/check/coverage.sh
+all	bash scripts/check/ai-config.sh
+commands,hooks	bash scripts/check/skills.sh --staged

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# The pre-commit gate: the lines of scripts/check/gates.list the staged files need. Turn it on once
+# per clone with `git config core.hooksPath .githooks` (setup prints that step).
+bash scripts/check/gates.sh --hook --fail-fast
