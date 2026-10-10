@@ -291,11 +291,11 @@
     },
     "agent-core/review": {
       "use": "`/agent-core:review`",
-      "why": "The stack's rules are checked line by line",
+      "why": "The stack's rules and the spec are each checked line by line, and neither report drowns the other",
       "id": {
-        "what": "Me-review perubahan staged atau branch lewat reviewer stack, menurut tingkat keparahan",
+        "what": "Me-review perubahan staged atau branch pada dua sumbu di subagent terpisah: standar repo (reviewer stack) dan spesifikasi yang diimplementasikan, dilaporkan terpisah",
         "use": "`/agent-core:review`",
-        "why": "Aturan stack diperiksa baris demi baris"
+        "why": "Aturan stack dan spesifikasi masing-masing diperiksa baris demi baris, tanpa laporan yang satu menenggelamkan yang lain"
       }
     },
     "agent-core/reviewer": {
@@ -305,6 +305,15 @@
         "what": "Memeriksa diff terhadap `AGENTS.md` dan `.claude/rules/`",
         "use": "Lewat `/agent-core:review` jika tidak ada reviewer stack",
         "why": "Temuan yang mengutip aturan, di stack apa pun"
+      }
+    },
+    "agent-core/spec-reviewer": {
+      "use": "Via `/agent-core:review`, as its spec axis",
+      "why": "A change that passes every rule but misses what was asked is caught before merge",
+      "id": {
+        "what": "Memeriksa diff terhadap spesifikasi yang diimplementasikannya (issue, rencana yang disetujui, atau file spesifikasi), setiap temuan mengutip baris spesifikasinya",
+        "use": "Lewat `/agent-core:review`, sebagai sumbu spesifikasi",
+        "why": "Perubahan yang lolos semua aturan tetapi meleset dari yang diminta tertangkap sebelum merge"
       }
     },
     "agent-core/safety-check": {
