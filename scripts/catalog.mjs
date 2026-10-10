@@ -659,7 +659,8 @@ function describe(file) {
   const block = [];
   for (const raw of lines.slice(0, 40)) {
     const l = raw.trim();
-    if (!block.length && (l === '' || l.startsWith('#!') || /^#\s*shellcheck\b/.test(l) || /^\/\/\s*@ts-/.test(l) || /^(import|export|const|let|from|use)\b/.test(l) || l === '/**')) {
+    /* Go's build constraints and generate lines (//go:build, // +build, //go:generate) are directives, not prose. */
+    if (!block.length && (l === '' || l.startsWith('#!') || /^#\s*shellcheck\b/.test(l) || /^\/\/\s*@ts-/.test(l) || /^\/\/(go:|\s*\+build\b)/.test(l) || /^(import|export|const|let|from|use)\b/.test(l) || l === '/**')) {
       if (/^(import|export|const|let|use)\b/.test(l)) break;
       continue;
     }

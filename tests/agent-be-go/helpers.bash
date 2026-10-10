@@ -72,9 +72,10 @@ go_engine() {
 # answer: go once agent-core offers it, else the engine's recommended value.
 go_args() {
   ARGS=(--templates "$PLUGIN/templates" --stack be-go --project "$PROJ")
+  ANSWERS=()
   if python3 -c 'import json, sys; q = [q for q in json.load(open(sys.argv[1]))["questions"] if q["id"] == "language"]; sys.exit(0 if q and "go" in q[0]["choices"] else 1)' \
     "$CORE_TPL/_kit/setup.json"; then
-    ARGS+=(--answer language=go)
+    ANSWERS=(--answer language=go)
   fi
 }
 
@@ -82,11 +83,11 @@ go_args() {
 # setup command does on "go". Leaves the plan in $PLAN.
 go_setup() {
   go_args
-  run -0 --separate-stderr "$SETUP_BIN" plan "${ARGS[@]}" "$@"
+  run -0 --separate-stderr "$SETUP_BIN" plan "${ARGS[@]}" ${ANSWERS[@]+"${ANSWERS[@]}"} "$@"
   PLAN="$output"
   DIGEST="$(printf '%s\n' "$output" | sed -n 's/^digest \(sha256:[0-9a-f]\{64\}\)$/\1/p')"
   [ -n "$DIGEST" ]
-  run -0 --separate-stderr "$SETUP_BIN" apply "${ARGS[@]}" "$@" --digest "$DIGEST"
+  run -0 --separate-stderr "$SETUP_BIN" apply "${ARGS[@]}" ${ANSWERS[@]+"${ANSWERS[@]}"} "$@" --digest "$DIGEST"
 }
 
 # stub_bin <name> <body>: an executable named <name> in $STUBS (first on PATH) that runs <body>.

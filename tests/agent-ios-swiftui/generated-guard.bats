@@ -36,7 +36,7 @@ opt_in() { mkdir -p "$P/.claude" && cp "$TPL/.claude/agent-config.json" "$P/.cla
 @test "opted in: a write to the spec copy is blocked as the API contract" {
   opt_in
   run -2 --separate-stderr guard_plugin "$P" "$SPEC"
-  [[ "$stderr" == *"is the API contract, copied from the service that owns it"* ]] || false
+  [[ "$stderr" == *"is the API contract, exported by this service or copied from the one that owns it"* ]] || false
 }
 
 @test "opted in: the hand-written AppProblem beside the client is allowed" {

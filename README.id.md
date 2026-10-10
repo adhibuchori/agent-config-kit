@@ -681,7 +681,7 @@ tidak menyimpan token.
 
 | Nama | Fungsinya | Cara memakai | Mengapa berguna |
 | --- | --- | --- | --- |
-| `<stack>-quality-gate.yml` (lima reusable workflow di repo ini) | Pasang dari lockfile, jalankan `gates.list`, batas cakupan, `.env` yang ter-commit, pemindaian HTML tak aman/`eval`/skema URL pada baris yang ditambahkan, gitleaks, audit, SkillSpector, build, source map, tambahan per stack | Setup memasang pemanggilnya; lihat [CI](#ci-workflow-yang-dapat-dipakai-ulang) | Satu gate, banyak repo, satu pin |
+| `<stack>-quality-gate.yml` (delapan reusable workflow di repo ini) | Pasang dari lockfile, jalankan `gates.list`, batas cakupan, `.env` yang ter-commit, pemindaian HTML tak aman/`eval`/skema URL pada baris yang ditambahkan, gitleaks, audit, SkillSpector, build, source map, tambahan per stack | Setup memasang pemanggilnya; lihat [CI](#ci-workflow-yang-dapat-dipakai-ulang) | Satu gate, banyak repo, satu pin |
 | `deepseek-review.yml`, `deploy-webhook.yml`, `strip-ai.yml` (reusable, repo ini) | Review AI, deploy saat merge, dan pembersihan konfigurasi agen di balik pemanggil di bawah | Setup memasang pemanggilnya; lihat [CI](#ci-workflow-yang-dapat-dipakai-ulang) | Satu implementasi teruji, di-pin oleh setiap pemanggil |
 | `.github/workflows/quality-gate.y*ml` (di repo Anda) | Pemanggil kecil untuk gate stack Anda, pada pull request | Dipasang oleh setup (lewat pertanyaan `ci-gate` bila ada) | Tidak perlu menyalin apa pun dengan tangan |
 | `codeql.yml`, `dependency-review.yml`, `workflows-lint.yml` (core, di repo Anda) | CodeQL di PR; dependensi baru yang rentan atau berlisensi buruk; actionlint, zizmor, dan pinact saat workflow berubah | Dipasang oleh setup agent-core | Pemeriksaan rantai pasok tanpa penjadwal |
@@ -690,7 +690,7 @@ tidak menyimpan token.
 | `strip-ai.yml` (deploy; opsional) | Setelah merge ke `prod`, menghapus konfigurasi agen di sana, merge balik ke `dev`, lalu memeriksa keduanya | `strip-ai=yes` | Produksi tidak membawa instruksi agen |
 | `react-doctor.yml` (fe-nextjs, fe-nextjs-static, docs-nextra; opsional) | Komentar React Doctor yang bersifat saran di PR; action milik vendor melapor ke layanan skornya | Pertanyaan setup (disarankan **no**) | Tidak pernah menggagalkan pemeriksaan |
 | `changelog.yaml`, `ci-cd.yaml` (docs-nextra; opsional) | Membuat ulang halaman dokumentasi dan deploy saat merge ke `prod` | Pertanyaan setup | Dokumentasi mengikuti kode |
-| `actions/quality-gate` (repo ini) | Composite action yang dijalankan kelima gate reusable: rencana, instalasi, gate, batas cakupan, pemindaian diff, gitleaks | Dipanggil oleh reusable workflow; lihat [README-nya](actions/quality-gate/README.md) | Satu implementasi teruji di balik gate setiap stack |
+| `actions/quality-gate` (repo ini) | Composite action yang dijalankan kedelapan gate reusable: rencana, instalasi, gate, batas cakupan, pemindaian diff, gitleaks | Dipanggil oleh reusable workflow; lihat [README-nya](actions/quality-gate/README.md) | Satu implementasi teruji di balik gate setiap stack |
 | `actions/deepseek-review`, `actions/deploy-webhook`, `actions/strip-ai` (repo ini) | Langkah di balik review, deploy, dan pembersihan | Dipanggil oleh reusable workflow; lihat README-nya: [review](actions/deepseek-review/README.md), [deploy](actions/deploy-webhook/README.md), [strip](actions/strip-ai/README.md) | Diuji dengan bats terhadap tiruan HTTPS lokal |
 | `self-test.yml` (repo ini) | validate `--strict`, katalog dan versi, ShellCheck, bats di macOS dan Ubuntu, lint workflow, gitleaks, pasangan README | Berjalan di setiap PR di sini | Kit menguji dirinya dengan cara yang sama |
 
@@ -1001,7 +1001,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `internal/apperr/write_test.go` | sekali; lalu milik Anda | Tests for the problem writer: codes, statuses, the request ID, and no internal detail. |
 | `internal/config/config.go` | sekali; lalu milik Anda | Package config reads the process configuration from the environment, once, at startup. |
 | `internal/config/config_test.go` | sekali; lalu milik Anda | Tests for the configuration reader: defaults, every variable, and the first bad one. |
-| `internal/httpapi/api.gen.go` | sekali; lalu milik Anda | go:build go1.22 |
+| `internal/httpapi/api.gen.go` | sekali; lalu milik Anda | Package httpapi provides primitives to interact with the openapi HTTP API. |
 | `internal/httpapi/fallback.go` | sekali; lalu milik Anda | The 404 and 405 answers as problems, instead of ServeMux's plain text. |
 | `internal/httpapi/generate.go` | sekali; lalu milik Anda | The generator lines: the server code and the contract clients generate from both come from api/openapi.yaml. |
 | `internal/httpapi/handler_size_test.go` | sekali; lalu milik Anda | Tests that every handler body stays at 15 code lines or fewer. |

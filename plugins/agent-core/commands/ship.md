@@ -100,6 +100,10 @@ here, and do not skip its steps because the diff "looks small".
 Carry `/agent-core:review`'s report into Phase 3 as a worklist. Keep its CRITICAL / HIGH / MEDIUM / LOW
 labels — they decide what § 3.2 is allowed to defer.
 
+Its spec axis reports findings without a severity. A requirement the change misses, or implements
+wrongly, goes on the worklist as HIGH. Behaviour the spec never asked for is a § 3.2 decision: name it
+and let the user choose whether it stays.
+
 ### Then `/security-review`
 
 After `/agent-core:review`, run the built-in **`/security-review`** over the same change, through the Skill

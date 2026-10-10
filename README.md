@@ -672,7 +672,7 @@ no token.
 
 | Name | What it does | How to use | Why it helps |
 | --- | --- | --- | --- |
-| `<stack>-quality-gate.yml` (five reusable workflows in this repo) | Install from the lockfile, run `gates.list`, coverage floor, committed `.env`, unsafe-HTML/`eval`/URL-scheme scans on added lines, gitleaks, audit, SkillSpector, build, source maps, stack extras | Setup installs a caller; see [CI](#ci-reusable-workflows) | One gate, many repos, one pin |
+| `<stack>-quality-gate.yml` (eight reusable workflows in this repo) | Install from the lockfile, run `gates.list`, coverage floor, committed `.env`, unsafe-HTML/`eval`/URL-scheme scans on added lines, gitleaks, audit, SkillSpector, build, source maps, stack extras | Setup installs a caller; see [CI](#ci-reusable-workflows) | One gate, many repos, one pin |
 | `deepseek-review.yml`, `deploy-webhook.yml`, `strip-ai.yml` (reusable, this repo) | The AI review, the deploy on merge and the agent-config strip behind the callers below | Setup installs the callers; see [CI](#ci-reusable-workflows) | One tested implementation, pinned by every caller |
 | `.github/workflows/quality-gate.y*ml` (in your repo) | The small caller of your stack's gate, on pull requests | Installed by setup (the `ci-gate` question where there is one) | Nothing to copy by hand |
 | `codeql.yml`, `dependency-review.yml`, `workflows-lint.yml` (core, in your repo) | CodeQL on PRs; new vulnerable or badly licensed dependencies; actionlint, zizmor and pinact on workflow changes | Installed by agent-core's setup | Supply-chain checks without schedulers |
@@ -681,7 +681,7 @@ no token.
 | `strip-ai.yml` (deploy; optional) | After a merge into `prod`, removes the agent config there, merges back into `dev`, verifies both | `strip-ai=yes` | Production carries no agent instructions |
 | `react-doctor.yml` (fe-nextjs, fe-nextjs-static, docs-nextra; optional) | Advisory React Doctor comments on PRs; the vendor's action reports to its score service | Setup question (recommended **no**) | Never fails the check |
 | `changelog.yaml`, `ci-cd.yaml` (docs-nextra; optional) | Regenerate docs pages and deploy on a merge into `prod` | Setup question | Docs follow the code |
-| `actions/quality-gate` (this repo) | The composite action the five reusable gates run: plan, install, gates, coverage floor, diff scans, gitleaks | Called by the reusable workflows; see its [README](actions/quality-gate/README.md) | One tested implementation behind every stack's gate |
+| `actions/quality-gate` (this repo) | The composite action the eight reusable gates run: plan, install, gates, coverage floor, diff scans, gitleaks | Called by the reusable workflows; see its [README](actions/quality-gate/README.md) | One tested implementation behind every stack's gate |
 | `actions/deepseek-review`, `actions/deploy-webhook`, `actions/strip-ai` (this repo) | The steps behind the review, the deploy and the strip | Called by the reusable workflows; see their READMEs: [review](actions/deepseek-review/README.md), [deploy](actions/deploy-webhook/README.md), [strip](actions/strip-ai/README.md) | Tested with bats against a local HTTPS stand-in |
 | `self-test.yml` (this repo) | validate `--strict`, catalog and versions, ShellCheck, bats on macOS and Ubuntu, workflow lint, gitleaks, README pair | Runs on every PR here | The kit tests itself the same way |
 
@@ -991,7 +991,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `internal/apperr/write_test.go` | once; then yours | Tests for the problem writer: codes, statuses, the request ID, and no internal detail. |
 | `internal/config/config.go` | once; then yours | Package config reads the process configuration from the environment, once, at startup. |
 | `internal/config/config_test.go` | once; then yours | Tests for the configuration reader: defaults, every variable, and the first bad one. |
-| `internal/httpapi/api.gen.go` | once; then yours | go:build go1.22 |
+| `internal/httpapi/api.gen.go` | once; then yours | Package httpapi provides primitives to interact with the openapi HTTP API. |
 | `internal/httpapi/fallback.go` | once; then yours | The 404 and 405 answers as problems, instead of ServeMux's plain text. |
 | `internal/httpapi/generate.go` | once; then yours | The generator lines: the server code and the contract clients generate from both come from api/openapi.yaml. |
 | `internal/httpapi/handler_size_test.go` | once; then yours | Tests that every handler body stays at 15 code lines or fewer. |

@@ -86,8 +86,8 @@ judge() {
     [[ "$rel" == "$p" || "$rel" == "$p"/* ]] || continue
     case "$p" in
     openapi.* | */openapi.*)
-      block "[generated-guard] BLOCKED: $rel is the API contract, copied from the service that owns it." \
-        "Change it there and copy it again; never edit the copy."
+      block "[generated-guard] BLOCKED: $rel is the API contract, exported by this service or copied from the one that owns it." \
+        "Change its source (the spec, the handlers, or the owning service), then export or copy it again; never edit it by hand."
       ;;
     *)
       block "[generated-guard] BLOCKED: $rel is generated output ($p in generatedPaths)." \
