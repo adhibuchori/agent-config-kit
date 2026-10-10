@@ -89,7 +89,7 @@ Every component, generated from the manifests and the docs pages; each links to 
 
 | Hook | Event | Matcher | Data it reads | Block or warn | Timeout | Network |
 | --- | --- | --- | --- | --- | --- | --- |
-| [generated-guard](../../docs/agent-fe-nextjs/generated-guard.md) | PreToolUse | `Write`, `Edit`, `MultiEdit` and Serena's write tools | the target path; `generatedPaths` | **blocks** (exit 2) | 10 s | no |
+| [generated-guard](../../docs/agent-fe-nextjs/generated-guard.md) | PreToolUse | `Write`, `Edit`, `MultiEdit` and Serena's write tools | the target path; `generatedPaths`; the header of a `*.go` or `*.rs` file | **blocks** (exit 2) | 10 s | no |
 
 **What setup installs** (`/agent-fe-nextjs:setup`): TypeScript and web rules that load per file type,
 anti-patterns, standards, `scripts/check/gates.list` and the check scripts it names, `oxlint.json`,

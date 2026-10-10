@@ -1397,7 +1397,8 @@ branch (dev/prod/main/master/release) is not allowed.`
 ```
 
 **Turn one guard off.** `"generatedPaths": []` or `"migrationsDirs": []` switches that guard off in
-this repo. Other hooks have no per-hook switch; see
+this repo; generated-guard still refuses a Go or Rust file whose own header marks it generated.
+Other hooks have no per-hook switch; see
 [What gets blocked](#what-gets-blocked-and-how-to-turn-it-off).
 
 **Protect another path from `rm -r`:**

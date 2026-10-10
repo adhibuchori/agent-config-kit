@@ -144,7 +144,7 @@ want). A malformed key falls back to its default and Claude is warned. The templ
 | `commandWrappers` | safety-check | `[]` (plus built-in `sudo`, `env`, `timeout`, `npx`, `rtk`, …) | Extra wrappers to peel before judging, e.g. `"dotenvx run -f= --env-file="` |
 | `dbWriteGuard.toolPattern` | db-guard | `"mcp__db-prod__execute_sql"` | Regex naming your production SQL tool |
 | `localePairs` | post-edit | `[]` (off) | Files that change together, e.g. `[["messages/en.json", "messages/id.json"]]` |
-| `generatedPaths` | generated-guard (stack plugins) | `src/lib/api/generated`, `src/generated`, `openapi.json`, `openapi.yaml`, `openapi.yml` | Generated output Claude may not hand-edit |
+| `generatedPaths` | generated-guard (stack plugins) | `src/lib/api/generated`, `src/generated`, `openapi.json`, `openapi.yaml`, `openapi.yml` | Generated output Claude may not hand-edit (a Go or Rust file whose header marks it generated is refused besides) |
 | `migrationsDirs` | migration-guard (stack plugins) | `src/db/migrations`, `drizzle`, `src/app/db/migrations/versions`, `alembic/versions`, `migrations/versions` | Generated migrations Claude may not hand-edit |
 | `appendOnlyMigrationsDirs` | migration-guard (stack plugins) | `[]` (a stack's setup seeds it) | Hand-written migrations Claude may add and edit until a protected branch has them, then never change ([ADR 0007](../../docs/adr/0007-hand-written-migrations-are-append-only.md)) |
 

@@ -1407,7 +1407,8 @@ branch (dev/prod/main/master/release) is not allowed.`
 ```
 
 **Matikan satu guard.** `"generatedPaths": []` atau `"migrationsDirs": []` mematikan guard itu di
-repo ini. Hook lain tidak punya sakelar per hook; lihat
+repo ini; generated-guard tetap menolak file Go atau Rust yang header-nya sendiri menandainya hasil
+generator. Hook lain tidak punya sakelar per hook; lihat
 [Apa yang diblokir](#apa-yang-diblokir-dan-cara-mematikannya).
 
 **Lindungi path lain dari `rm -r`:**
