@@ -76,7 +76,7 @@ print("ok")' "$output"
   [ ! -e "$PROJ/.claude/ANALYTICS.example.md" ]
   [ ! -e "$PROJ/.github/workflows/deepseek-review.yml" ]
   [ ! -e "$PROJ/payload.config.json" ] && [ ! -e "$PROJ/internal/payload" ] && [ ! -e "$PROJ/internal/httpapi/payload.go" ]
-  [ ! -e "$PROJ/scripts/check/payload-registry.mjs" ] && [ ! -e "$PROJ/scripts/check/payload-vectors.json" ]
+  [ -e "$PROJ/scripts/check/payload-registry.mjs" ] && [ ! -e "$PROJ/scripts/check/payload-vectors.json" ]
   if grep -Eq '@0{40}' "$TPL/.github/workflows/quality-gate.yml"; then
     [ ! -e "$PROJ/.github/workflows/quality-gate.yml" ]
   fi

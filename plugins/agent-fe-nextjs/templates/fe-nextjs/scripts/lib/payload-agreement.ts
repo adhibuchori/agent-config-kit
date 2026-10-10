@@ -166,15 +166,18 @@ async function checkPoint(r: PointReject, impl: AgreementImpl, mine: CryptoKey):
 
 /** Lib: checkAgreements
  * Runs the vectors' `agreements` and `pointRejects` through WebCrypto and through this copy, and
- * returns every problem found; a file without them is a problem of its own.
+ * returns every problem found; a file without them is a problem of its own. `pointRejects` bind a
+ * server only: it imports the peer point a client sends, while a public client imports the key the
+ * server's own handshake returned.
  */
 export async function checkAgreements(
   file: { agreements?: Agreement[]; pointRejects?: PointReject[] },
   impl: AgreementImpl,
+  side: 'server' | 'client' = 'server',
 ): Promise<AgreementReport> {
   const agreements = file.agreements ?? [];
-  const points = file.pointRejects ?? [];
-  if (agreements.length === 0 || points.length === 0) {
+  const points = side === 'server' ? (file.pointRejects ?? []) : [];
+  if (agreements.length === 0 || (side === 'server' && points.length === 0)) {
     const missing = 'the vectors carry no `agreements` or no `pointRejects`; sync them';
     return { problems: [missing], agreements: 0, points: 0 };
   }

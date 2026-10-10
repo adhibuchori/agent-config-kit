@@ -1069,13 +1069,13 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `scripts/check/generated.sh` | selalu; sync menjaganya tetap terbaru | Generated-code gate. |
 | `scripts/check/lint.sh` | selalu; sync menjaganya tetap terbaru | Lint gate: golangci-lint over the whole module with .golangci.yml, at the version scripts/check/tools.env pins. |
 | `scripts/check/migrations.sh` | selalu; sync menjaganya tetap terbaru | Migration gate for goose SQL files in db/migrations (Rules 11 and 12). |
-| `scripts/check/payload-registry.mjs` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
+| `scripts/check/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
 | `scripts/check/payload-vectors.json` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos |
 | `scripts/check/pooler.sh` | selalu; sync menjaganya tetap terbaru | Pooler check: the service's own pool behind a transaction pooler (PgBouncer). |
 | `scripts/check/tools.env` | sekali; lalu milik Anda | The tool versions outside go.mod that the gates and the quality gate pin. |
-| `scripts/generate/payload-registry.mjs` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Writes the payload registry from the OpenAPI document and payload.config.json. |
+| `scripts/generate/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | Writes the payload registry from the OpenAPI document and payload.config.json. |
 | `scripts/generate/payload-server-key.mjs` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | Makes a new P-256 key pair for the payload contract's key agreement, in the form PAYLOAD_SERVER_JWK holds: base64url of the UTF-8 JWK text {kty, crv, d, x, y}. |
-| `scripts/lib/payload-registry.mjs` | jika `payload-encryption=yes`; sync menjaganya tetap terbaru | The payload registry's shared half for the Go, Rust and Swift stacks. |
+| `scripts/lib/payload-registry.mjs` | selalu; sync menjaganya tetap terbaru | The payload registry's shared half for the Go, Rust and Swift stacks. |
 | `sqlc.yaml` | sekali; lalu milik Anda | sqlc: the Go in internal/postgres/db is generated from the SQL in db/queries, type-checked against the schema the goose migrations build (it reads them in name order and ignores their Down parts). |
 | `CLAUDE.md` | satu blok terkelola, ditambahkan di akhir | `## Agent config kit` |
 | `.gitignore` | satu blok terkelola (10 baris) | `.env`, `.env.*`, `!.env.ci.example`, `!.env.*.example`, `.envrc`, `.serena/`, `.skillspector/`, `/bin/`, `/coverage/`, `*.test` |

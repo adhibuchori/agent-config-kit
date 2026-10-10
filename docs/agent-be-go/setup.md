@@ -81,8 +81,8 @@ the key script. Four steps stay yours, and `.claude/rules/backend/go-payload.md`
    `api/openapi.yaml`.
 2. When browsers or apps call the service, add `GET /api/payload/handshake`, and exempt it and the
    health probe as `none` in `payload.config.json`; otherwise drop `handshake` there. The check
-   compares `handshake` with the operation ID as `api/openapi.json` spells it, and oapi-codegen's
-   export capitalizes it (`GetPayloadHandshake`).
+   compares `handshake` with the operation ID as `api/openapi.json` spells it; oapi-codegen's
+   export capitalizes it, so the seeded config names `GetPayloadHandshake`.
 3. Wire `sealBodies` into `NewRouter` between the validator and the body limit, and build the edge
    in `main` from `config.LoadPayload`.
 4. Regenerate: `bash scripts/check/generated.sh --write`, then

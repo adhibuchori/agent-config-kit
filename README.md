@@ -1059,13 +1059,13 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `scripts/check/generated.sh` | always; sync keeps it current | Generated-code gate. |
 | `scripts/check/lint.sh` | always; sync keeps it current | Lint gate: golangci-lint over the whole module with .golangci.yml, at the version scripts/check/tools.env pins. |
 | `scripts/check/migrations.sh` | always; sync keeps it current | Migration gate for goose SQL files in db/migrations (Rules 11 and 12). |
-| `scripts/check/payload-registry.mjs` | with `payload-encryption=yes`; sync keeps it current | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
+| `scripts/check/payload-registry.mjs` | always; sync keeps it current | The static half of the payload contract for the Go, Rust and Swift stacks (.claude/PAYLOAD-CONTRACT.md). |
 | `scripts/check/payload-vectors.json` | with `payload-encryption=yes`; sync keeps it current | Shared test vectors every implementation of the envelope must open and refuse, its key agreement included; never regenerated to pass |
 | `scripts/check/pooler.sh` | always; sync keeps it current | Pooler check: the service's own pool behind a transaction pooler (PgBouncer). |
 | `scripts/check/tools.env` | once; then yours | The tool versions outside go.mod that the gates and the quality gate pin. |
-| `scripts/generate/payload-registry.mjs` | with `payload-encryption=yes`; sync keeps it current | Writes the payload registry from the OpenAPI document and payload.config.json. |
+| `scripts/generate/payload-registry.mjs` | always; sync keeps it current | Writes the payload registry from the OpenAPI document and payload.config.json. |
 | `scripts/generate/payload-server-key.mjs` | with `payload-encryption=yes`; sync keeps it current | Makes a new P-256 key pair for the payload contract's key agreement, in the form PAYLOAD_SERVER_JWK holds: base64url of the UTF-8 JWK text {kty, crv, d, x, y}. |
-| `scripts/lib/payload-registry.mjs` | with `payload-encryption=yes`; sync keeps it current | The payload registry's shared half for the Go, Rust and Swift stacks. |
+| `scripts/lib/payload-registry.mjs` | always; sync keeps it current | The payload registry's shared half for the Go, Rust and Swift stacks. |
 | `sqlc.yaml` | once; then yours | sqlc: the Go in internal/postgres/db is generated from the SQL in db/queries, type-checked against the schema the goose migrations build (it reads them in name order and ignores their Down parts). |
 | `CLAUDE.md` | one managed block, appended | `## Agent config kit` |
 | `.gitignore` | one managed block (10 lines) | `.env`, `.env.*`, `!.env.ci.example`, `!.env.*.example`, `.envrc`, `.serena/`, `.skillspector/`, `/bin/`, `/coverage/`, `*.test` |

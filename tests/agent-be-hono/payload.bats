@@ -108,6 +108,12 @@ interop() { run --separate-stderr bash -c 'cd "$1" && shift && "$@" scripts/chec
   [ "$status" -eq 1 ]
   [[ "$stderr" == *"point reject compressed point: accepted, but it must be refused with ENVELOPE_MALFORMED"* ]]
   [[ "$stderr" != *"point reject not on the curve"* ]]
+  # A repo with the browser client is the client side: the server refuses bad peer points, not it.
+  printf 'export {};\n' >"$REPO/src/lib/payload/client.ts"
+  interop
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"1 key agreement(s) derived from both sides, 0 bad point(s) refused"* ]]
+  rm "$REPO/src/lib/payload/client.ts"
   cp "$TPL/src/lib/payload/ecdh.ts" "$REPO/src/lib/payload/"
   replace_once "$REPO/src/lib/payload/ecdh.ts" "new PayloadError('ENVELOPE_MALFORMED', 'The peer public key" \
     "new PayloadError('ENVELOPE_REJECTED', 'The peer public key"

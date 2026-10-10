@@ -73,11 +73,8 @@
           "internal/httpapi/payload*.go",
           "internal/payload/**",
           "payload.config.json",
-          "scripts/check/payload-registry.mjs",
           "scripts/check/payload-vectors.json",
-          "scripts/generate/payload-registry.mjs",
-          "scripts/generate/payload-server-key.mjs",
-          "scripts/lib/payload-registry.mjs"
+          "scripts/generate/payload-server-key.mjs"
         ]
       },
       "settings": { "yes": { "/permissions/deny": ["Bash(node scripts/generate/payload-server-key.mjs:*)"] } }

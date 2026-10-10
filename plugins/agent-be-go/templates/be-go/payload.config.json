@@ -3,7 +3,7 @@
   "spec": "api/openapi.json",
   "registry": "internal/payload/registry.gen.go",
   "language": "go",
-  "handshake": "getPayloadHandshake",
+  "handshake": "GetPayloadHandshake",
   "exemptions": {},
   "peers": []
 }

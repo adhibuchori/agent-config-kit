@@ -215,7 +215,8 @@ const [results, agreement] = await Promise.all([
     checkRoundTrip(),
     ...config.peers.map(checkPeer),
   ]),
-  checkAgreements(file, impl),
+  /* A repo with the browser client is the client side: bad peer points are the server's to refuse. */
+  checkAgreements(file, impl, existsSync(join(ROOT, 'src/lib/payload/client.ts')) ? 'client' : 'server'),
 ]);
 problems.push(...results.flat(), ...agreement.problems);
 

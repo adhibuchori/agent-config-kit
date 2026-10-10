@@ -225,7 +225,7 @@ PY
 
 @test "payload: payload.config.json is the Go shape the shared registry check reads" {
   run jq -c . "$TPL/payload.config.json"
-  [ "$output" = '{"encryption":"strict","spec":"api/openapi.json","registry":"internal/payload/registry.gen.go","language":"go","handshake":"getPayloadHandshake","exemptions":{},"peers":[]}' ]
+  [ "$output" = '{"encryption":"strict","spec":"api/openapi.json","registry":"internal/payload/registry.gen.go","language":"go","handshake":"GetPayloadHandshake","exemptions":{},"peers":[]}' ]
 }
 
 @test "payload: the seeded registry is what the generator writes for the seeded spec" {

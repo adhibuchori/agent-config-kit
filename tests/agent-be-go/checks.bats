@@ -306,7 +306,9 @@ payload_gate() {
   run --separate-stderr bash -c "cd \"$REPO\" && $cmd"
 }
 
-@test "payload gate: a repo that never adopted the contract passes without the script" {
+@test "payload gate: a repo that never adopted the contract passes, and says so" {
+  command -v node >/dev/null || skip "node is not installed"
+  install_scripts scripts/check/payload-registry.mjs scripts/lib/payload-registry.mjs
   payload_gate
   [ "$status" -eq 0 ]
 }
