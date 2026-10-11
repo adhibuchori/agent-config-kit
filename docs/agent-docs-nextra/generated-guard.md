@@ -9,6 +9,11 @@ generated-guard refuses hand edits to generated output: any file or folder liste
 
 In a docs site that is the API reference and changelog pages your generators write, and the OpenAPI contract copied from the service. A hand edit there is lost at the next generation, or quietly disagrees with its source.
 
+A file can also say it is generated in its own header, wherever it lives: a Go file whose
+`// Code generated ... DO NOT EDIT.` line comes before the package clause (the convention
+`go help generate` documents), or a Rust file with `@generated` in a comment among its first five
+lines (where rustfmt looks for it). The guard refuses those too.
+
 ## When to reach for it
 
 It runs by itself before `Write`, `Edit`, `MultiEdit` and Serena's write tools. You never call it.
@@ -26,11 +31,15 @@ path your repo does not have guards nothing.
 | --- | --- | --- |
 | `Write`, `Edit` or `MultiEdit` on a path under `generatedPaths` | The generator would overwrite the edit, or the copy would drift from its source | Change the source and run the generator |
 | Serena's write tools on such a path, including a folder-wide `replace_in_files` that would reach one | Same | Same |
+| A write to an existing `*.go` file whose header has a whole `// Code generated ... DO NOT EDIT.` line before the package clause, or a `*.rs` file with `@generated` in a comment in its first five lines | Its generator writes it again | Change the source and run the generator |
 | A payload it cannot read | Fail closed | Fix the cause; `replace_in_files` without python3 is refused |
+
+A folder-wide `replace_in_files` is judged by `generatedPaths` only: it does not open every file to
+read its header.
 
 ### How to disable
 
-- **This guard only:** set `"generatedPaths": []` in `.claude/agent-config.json`. An empty list guards nothing.
+- **This guard only:** set `"generatedPaths": []` in `.claude/agent-config.json`. An empty list guards only the files whose header marks them generated.
 - **This repo, for you only:** `claude plugin disable agent-docs-nextra@agent-config-kit --scope local`.
   agent-core keeps running.
 - **This repo, for everyone:** the same command with `--scope project` in place of `--scope local`,

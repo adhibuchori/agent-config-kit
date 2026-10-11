@@ -1,0 +1,10 @@
+// The Debug configuration: Base.xcconfig plus what a debug build needs. Link it as the project's
+// Debug base configuration (setup's by-hand step); xcode-settings.sh checks the link.
+#include "Base.xcconfig"
+
+DEBUG_INFORMATION_FORMAT = dwarf
+ENABLE_TESTABILITY = YES
+ONLY_ACTIVE_ARCH = YES
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG $(inherited)
+SWIFT_OPTIMIZATION_LEVEL = -Onone
+GCC_OPTIMIZATION_LEVEL = 0

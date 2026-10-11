@@ -17,6 +17,10 @@
 #      .claude/mcp/*.json is pinned to one release: a full x.y.z version, a full commit SHA or a
 #      digest. *.example.json files are templates to copy and fill in, so their placeholders are
 #      not checked; the filled-in copy is. scripts/check/ai-config-probes.sh proves the pin rule.
+#   5. Every path in the "On-demand references" table of CLAUDE.md (and .claude/CLAUDE.md), a cell
+#      that is one backticked path, points somewhere: the file or folder exists, a glob matches, or
+#      its *.example.* sibling does (agent-core ships the shared docs as .claude/*.example.md for the
+#      project to copy). A pointer to nothing sends every session that follows it to a dead end.
 #
 # Checks 3 and 4 parse JSON with python3. Without python3 they fail; they never pass unread.
 set -uo pipefail
@@ -219,6 +223,54 @@ PY
     fi
   fi
 fi
+
+# ── 5. On-demand pointers ───────────────────────────────────────────────────────────────────────
+# The paths of $1's "On-demand references" table: every cell that is one backticked path (a slash
+# or a dot, no space, no URL), from that heading to the next one.
+pointers() {
+  # shellcheck disable=SC2016 # the backticks are the Markdown code marks the pattern matches
+  local line insec="" cell heading='^#{1,6}[[:space:]]' row='^[[:space:]]*[|]' path='^`[A-Za-z0-9_.*/-]+`$'
+  while IFS= read -r line || [ -n "$line" ]; do
+    if [[ "$line" =~ $heading ]]; then
+      insec=""
+      case "$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')" in *on-demand\ reference*) insec=1 ;; esac
+      continue
+    fi
+    [[ -n "$insec" && "$line" =~ $row ]] || continue
+    while IFS= read -r cell; do
+      cell="${cell#"${cell%%[![:space:]]*}"}"
+      cell="${cell%"${cell##*[![:space:]]}"}"
+      [[ "$cell" =~ $path && "$cell" == *[./]* ]] || continue
+      cell="${cell#\`}"
+      printf '%s\n' "${cell%\`}"
+    done < <(printf '%s\n' "$line" | tr '|' '\n')
+  done <"$1"
+}
+# $1 with .example before its last extension (.claude/DATABASE.md -> .claude/DATABASE.example.md);
+# empty when its last segment has no extension.
+example_of() {
+  local dir="" base="$1"
+  if [[ "$1" == */* ]]; then
+    dir="${1%/*}/"
+    base="${1##*/}"
+  fi
+  case "$base" in
+  ?*.*) printf '%s%s.example.%s' "$dir" "${base%.*}" "${base##*.}" ;;
+  esac
+}
+for memory in CLAUDE.md .claude/CLAUDE.md; do
+  [ -f "$memory" ] || continue
+  dead=0
+  while IFS= read -r target; do
+    [ -n "$target" ] || continue
+    compgen -G "$target" >/dev/null && continue
+    example="$(example_of "$target")"
+    [ -n "$example" ] && compgen -G "$example" >/dev/null && continue
+    echo "::error file=$memory::On-demand references points at $target, which does not exist${example:+ (nor $example)} - add the file or delete its row"
+    dead=1
+  done < <(pointers "$memory")
+  [ "$dead" -eq 0 ] || failed=1
+done
 
 [ "$failed" -eq 0 ] && echo "AI config within budget"
 exit "$failed"

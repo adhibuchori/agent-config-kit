@@ -10,6 +10,562 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-11
+
+Three experimental stack plugins join the marketplace at 0.1.0: agent-be-go (a Go HTTP service on
+PostgreSQL), agent-be-axum (Rust and Axum on PostgreSQL) and agent-ios-swiftui (a SwiftUI app that
+calls such an API). Each keeps the kit's four contracts: a line budget per file, one closed
+error-code registry with an RFC 9457 body, no missing translation, and 100% coverage in its own
+tool's metrics. Three reusable quality gates come with them. Their callers hold the release
+placeholder, so setup keeps them back until the release that pins them.
+
+In the same release, every stack mints its problem `type` from the error code under one https base
+per API, payload refusals stop sending internal messages, the payload contract is ported to the Go
+and Rust servers and the iOS client with a shared key-agreement vector, migration-guard learns an
+append-only mode for hand-written migrations, and every plugin component now passes a SkillSpector
+scan in CI. agent-be-hono is a major release: its `check:openapi` now requires the `Problem`
+contract.
+
+### Reusable workflows and actions
+
+#### Added
+
+- `be-go-quality-gate.yml`, `be-axum-quality-gate.yml` and `ios-swiftui-quality-gate.yml`
+  (`workflow_call`, `contents: read`). The two backends start `postgres:18.6`, pinned by its
+  multi-arch index digest, as a service on `127.0.0.1:5432` with trust auth; `database: false`
+  starts none, for a repo that owns no schema. The iOS gate runs three jobs: the Linux-safe checks
+  on Linux, the build and tests on macOS (`runs-on`, else `CI_RUNNER_MACOS`, else `xcode-27`, with
+  the Xcode that `xcode-version` names through `DEVELOPER_DIR`) only after those passed, and a final
+  job, **Quality Gate (ios-swiftui)**, that is the one check to require.
+- `actions/quality-gate` knows the stacks `be-go`, `be-axum` and `ios-swiftui`
+  (`scripts/stacks/*.sh`) and the inputs `phase`, `database`, `pgbouncer-tests`,
+  `pgbouncer-max-prepared-statements`, `xcode-version` and `scheme`. For the backends:
+  `db/roles.sql` before the tests, every migration from zero on an empty database (goose or sqlx),
+  the `.sqlx` query cache against that schema (Rust), a foreign key without a leading index or an
+  INVALID index fails, the migrations against the base branch and squawk over the new ones, the
+  pool and server settings, govulncheck or `cargo deny`, the release build and the Docker build.
+- `scripts/install-release.sh` and the pin table `scripts/tools.lock`: golangci-lint 2.14.0,
+  squawk 2.68.0, cargo-llvm-cov 0.9.1, cargo-nextest 0.9.148, cargo-deny 0.20.2, SwiftLint 0.65.1
+  (`swiftlint-static` on Linux) and Periphery 3.8.0, each refused unless its SHA-256 and the
+  version it reports match; sqlx-cli 0.9.0, which ships no binary, is built with
+  `cargo install --locked`.
+- An optional PgBouncer check for be-go and be-axum (`pgbouncer-tests: true`):
+  `scripts/pgbouncer.sh` starts `ghcr.io/cloudnative-pg/pgbouncer:1.26.0`, pinned by digest and
+  version-checked, on `127.0.0.1:6432` in transaction mode and runs the repo's
+  `scripts/check/pooler.sh` behind it.
+- The coverage floor reads Go's cover profile (`coverage/coverage.out`, statements).
+
+#### Changed
+
+- The gate refuses more names in the env file, the ones that steer a Go, Rust, sqlx or Xcode
+  toolchain: `GOFLAGS` and Go's other `GO…` names, `CGO_*`, `CARGO_*`, `RUSTUP_*`, `RUSTC*`,
+  `RUSTFLAGS`, `RUSTDOCFLAGS`, `SQLX_*` and `DEVELOPER_DIR`. `GOOGLE_CLIENT_ID` and similar stay
+  allowed.
+
+### Repository checks
+
+#### Added
+
+- Self Test runs a **SkillSpector (plugins)** job: `scripts/skills-plugins.sh` lays every plugin
+  out as a user's repo would hold it (commands and agents under `.claude/`, skills under
+  `.claude/skills/`, hook scripts under `.claude/hooks/`) and runs the template's `skills.sh` with
+  the template's baseline, unchanged. A scan that fails or reads a file only in part fails the job,
+  as does a pull request that adds a line to the baseline. All eleven plugins pass with nothing at
+  MEDIUM or above.
+- `scripts/check-comment-style.mjs`, run by Self Test: the kit's JavaScript and TypeScript use
+  `/** */` for a file or a declaration and `/* */` for other notes, and keep `//` for tool
+  directives. `--fix` rewrites the rest; every existing comment was converted, with no change in
+  behaviour.
+- `tests/setup/conflicts.bats` derives the primary stacks from the plugins on disk and checks that
+  every `conflictsWith` pair is mutual.
+
+#### Changed
+
+- `scripts/workflow-policy.py` fails a job that runs steps without `timeout-minutes`.
+- `scripts/catalog.mjs` refuses `go run|generate|get|install`, `cargo run|install|add`,
+  `swift run|package` and bare `xcodebuild` or `xcrun` in a template's `allow` list, and
+  `cargo install`, `rustup`, `brew install` and `mint install` in hook and runtime scripts. A Go
+  build constraint is never read as a file's description.
+- `.github/gitleaks.toml` allows the `h1:` checksums in agent-be-go's `go.sum.starter`, that file
+  only; gitleaks already skips `go.sum` in users' repos.
+
+#### Fixed
+
+- `scripts/catalog.mjs` matches `**` across folders. It matched within one folder, so the README
+  called agent-be-hono's payload tests always installed when setup treats them as payload-only.
+- `scripts/catalog.mjs` escapes a backslash before a pipe in a README table cell, so a backslash in
+  a description can no longer undo the pipe's escape, and `scripts/version-sync.mjs` escapes every
+  regular-expression metacharacter in a plugin name and version (CodeQL
+  `js/incomplete-sanitization`). The generated READMEs do not change.
+
+### agent-core 1.2.0
+
+#### Added
+
+- The `language` question also takes `go`, `rust` and `swift` (one choice), and setup reads
+  `go.mod`, `Cargo.toml`, `Package.swift` and `*.xcodeproj` to suggest it. Each answer installs
+  `.claude/rules/<language>/types.md` and `dead-code.md`, which load only while Claude edits that
+  language. A lock written with `typescript`, `python` or `both` stays in sync.
+- The agent `agent-core:spec-reviewer` checks a diff against the spec it implements (the linked
+  issue, the approved plan, or a named spec file) and reports missing or partial requirements,
+  unrequested behaviour and wrong implementations, each quoting its spec line.
+- The hook setting `appendOnlyMigrationsDirs` (default empty) in `lib.sh`, documented in
+  `.claude/agent-config.example.json`, `.claude/OPERATIONS.example.md` and the README's table.
+  `hook-probes.sh` proves migration-guard's append-only mode, and generated-guard's Go and Rust
+  markers, where the repo has the guard.
+- post-edit gives feedback for `*.go` (golangci-lint fmt, then golangci-lint run on the package,
+  capped at 20 s; `gofmt -w` and `go vet` without golangci-lint; `GOTOOLCHAIN=local GOPROXY=off
+  GOFLAGS=-mod=readonly`), `*.rs` (rustfmt on stdin, written back only when it differs; `cargo
+  clippy --locked --all-targets` from a root `Cargo.toml`, this file's lines, capped at 10 s;
+  `RUSTUP_AUTO_INSTALL=0 CARGO_NET_OFFLINE=true SQLX_OFFLINE=true`), `*.swift` (`xcrun
+  swift-format`, then swiftlint; a version mismatch says nothing), `*.xcstrings` (valid JSON, every
+  key in every locale the catalog uses, state translated) and `*.pbxproj` (`plutil -lint`). A
+  package-wide note stops after 40 lines.
+- folder-shape.mjs knows Rust (`src/main.rs` and `src/lib.rs` are entrypoints, `mod.rs` does not
+  count, `target/` is skipped) and Swift packages (`Packages/*/Sources` and `Tests`, or a root
+  `Package.swift`: `XTests.swift` mirrors `X.swift`; `GeneratedSources/` is skipped). Go stays
+  outside its roots, and `.claude/rules/common/folder-shape.md` says so.
+- ai-config.sh check 5: every path in CLAUDE.md's "On-demand references" table (a cell that is one
+  backticked path) exists, or its `*.example.*` sibling or a glob match does. A repo whose CLAUDE.md
+  keeps rows for docs it never installed fails the gate until the row goes or the file is added.
+
+#### Changed
+
+- `/agent-core:review` runs two axes in separate subagents, started together: standards (the
+  stack reviewer, else `agent-core:reviewer`, with security-guard and the specialists) and spec.
+  The report keeps them in two sections, never merged or reranked, each with its worst finding;
+  every finding cites a rule or a spec line; what a linter or gate enforces is skipped; neither
+  subagent may run `/agent-core:review` again or start more subagents. The verdict is per axis.
+- `/agent-core:ship` puts a spec-axis finding on the worklist as HIGH when the change misses or
+  misimplements a requirement, and leaves behaviour the spec never asked for to the user.
+- post-edit also passes on `path:line:` findings without a column (revive's file length).
+- `CI-RUNNERS.example.md` adds `CI_RUNNER_MACOS` and explains the iOS gate's split.
+- `help.md` lists the commands of the three new plugins.
+
+#### Fixed
+
+- SkillSpector reads `help`, `setup`, `review`, `security-guard` and the setup-check hook in full
+  with no finding: they name `.env` in backticks, say "does not check who is calling" instead of
+  "without checking", and show the workflow expression in a fenced block.
+
+### agent-be-hono 2.0.0
+
+#### Changed
+
+- **Breaking:** `check:openapi` also checks the spec's `Problem` contract: `components.schemas.Problem`
+  exists, `code` carries the `ERROR_CODES` enum inline (a `$ref` is not followed) and every code
+  matches `^[A-Z][A-Z0-9_]*$`, `type` is `format: uri` with a valid `x-problem-type-base` (an
+  absolute https URI ending in `/`, with no query or fragment), and `about:blank` is no default,
+  const or enum value. A repo set up earlier fails its gate after sync until
+  `src/lib/errors/problem.ts` publishes that contract (by hand, below). To defer, run
+  `agent-sync own scripts/check/openapi.ts`: sync stops replacing the file, and
+  `agent-sync own --undo scripts/check/openapi.ts` hands it back once `problem.ts` is ready.
+- `createPayloadMiddleware` takes a required `problemTypeBase`, refuses to start with a base that
+  cannot prefix a type, and puts the request id from `requestId()` in the refusal.
+- `error-codes.md`, `hono.md`, `patterns.md`, the payload contract and its short rule, and
+  `reviewer` describe the problem type: `PROBLEM_TYPE_BASE` plus the code, a fixed title per code, a
+  registered code for 404, 405, `HTTPException` and 500, upstream problems minted again under this
+  API's base, and the placeholder `https://example.invalid/problems/` refused in production.
+- `scripts/check/ci-env.sh` recognises a caller of any `<stack>-quality-gate.yml` and refuses the
+  same toolchain names as the gate (one regex, the same bytes as the gate's `QG_REFUSED_ENV`).
+- `scripts/check/coverage-policy.mjs` (the same bytes in every stack) also checks a repo whose
+  coverage runs from `scripts/check/coverage.sh`: the script hands its report to
+  `coverage-per-file.mjs`, `gates.list` runs it through `ci-env.sh`, and every line of
+  `scripts/check/coverage-exempt.txt` reads `<path or glob>  # composition root: <why>` or
+  `# generated: <why>`. A repo with a bun, vitest or pyproject coverage config is checked as before.
+- `CLAUDE.md.starter` marks the On-demand rows for files only one setup answer installs with
+  "(with `<answer>=yes`)", so a fresh default setup passes agent-core's pointer check. Rule 26 in
+  `AGENTS.md.starter` says blank lines and comments do not count, as `.oxlintrc.json` sets.
+  Seeded files: existing repos are not changed.
+- `conflictsWith` names agent-be-go, agent-be-axum and agent-ios-swiftui.
+- Comments in the shipped scripts are block comments; no behaviour changes.
+
+#### Added
+
+- migration-guard's append-only mode for hand-written migrations (`appendOnlyMigrationsDirs`): a
+  new migration, or one only the work branch has, stays editable; a write to a file any
+  `protectedBranches` branch already holds (locally or as `origin/<branch>`) is refused, and so is
+  one where git cannot answer. ADR 0007. Drizzle folders behave as before.
+- `src/lib/payload/refusal.ts` (seeded with `payload-encryption=yes`) builds the refusal:
+  `{ type: <base><CODE>, title, status, code, requestId? }`, one title per code, and
+  `checkProblemTypeBase`; it imports nothing from Hono. Its test is `__tests__/refusal.test.ts`.
+- The shared payload vectors carry a key-agreement answer: `agreements` (a fixed server JWK and
+  client scalar, the ECDH shared bytes, the HKDF-SHA-256 session key and an envelope sealed under
+  it) and `pointRejects` (a point off the curve, 64 bytes without the prefix, a compressed point).
+  The existing keys are unchanged. `check:crypto-interop` runs them through the synced helper
+  `scripts/lib/payload-agreement.ts`: WebCrypto derives the shared bytes from both sides and the key
+  with HKDF, and `src/lib/payload/ecdh.ts` must open the envelope from either side and refuse every
+  bad point with `ENVELOPE_MALFORMED`.
+
+#### Fixed
+
+- The payload middleware's default refusal sent the internal error message as `detail`, which
+  names route patterns and server state; it now sends the code and no `detail`.
+- A sealed response carries `Vary: x-payload-epk, x-payload-kid`, so a shared cache never serves
+  one caller's envelope to another.
+- The payload contract's error table says what both implementations do: an unknown version or a
+  missing field is `ENVELOPE_REQUIRED`, not `ENVELOPE_MALFORMED`. Each code documents its title and
+  status.
+- `check:endpoints` and `generate:endpoints` refuse a `payload.config.json` `encryption` that is
+  neither `strict` nor `off`; a typo such as `stirct` used to read as strict. An absent value still
+  means strict.
+- `deriveSessionKey` refuses a peer key that is not the 65-byte uncompressed point. Node and Bun
+  imported a compressed point, which the Go, Rust and Swift ports refuse.
+- A Serena `replace_in_files` that reaches a migrations folder says "reaches migrations
+  (migrationsDirs or appendOnlyMigrationsDirs)".
+
+#### By hand
+
+Seeded files never sync. Where `payload-encryption=yes`:
+
+1. Copy `src/lib/payload/refusal.ts` and `src/lib/payload/__tests__/refusal.test.ts` from the
+   template.
+2. In `src/middlewares/payload.middleware.ts`, take the template's version, or drop `detail` from
+   the default refusal, build it with `payloadRefusal(base, status, error.code, requestIdOf(c))`,
+   add `problemTypeBase` to the options (checked with `checkProblemTypeBase`), and
+   `headers.append('vary', 'x-payload-epk, x-payload-kid')` where the response is sealed. Update its
+   test the same way.
+3. In `src/app.ts`, pass `problemTypeBase: PROBLEM_TYPE_BASE` to `createPayloadMiddleware`.
+4. Copy the length and prefix check from the template's `src/lib/payload/ecdh.ts` (and its test),
+   or `check:crypto-interop` reports `point reject compressed point: accepted`.
+5. `SSOT.md` "Error Contract" and `AGENTS.md` §C: the new shape and the base (the starters show the
+   wording).
+
+In every repo, the project-owned `src/lib/errors/problem.ts`:
+
+1. `export const PROBLEM_TYPE_BASE = 'https://api.example.com/problems/';` with your own domain,
+   set once and never changed. Refuse to start in production while its host ends in `.invalid`.
+2. Mint every body's `type` as `${PROBLEM_TYPE_BASE}${code}`, give each code a fixed `title`, and
+   map 404, 405, every `HTTPException` and unknown 500s to registered codes; a relayed upstream
+   problem keeps its code and status under this base.
+3. Make the registered `Problem` schema carry `type` as `format: uri` with
+   `x-problem-type-base: PROBLEM_TYPE_BASE`, `code` with the `ERROR_CODES` enum inline, both
+   `required`, and no `about:blank` default; then `bun run spec:export`, run `check:openapi`, and
+   copy `openapi.json` to every frontend.
+
+### agent-fe-nextjs 1.3.0
+
+#### Added
+
+- `check:error-codes` compares the spec's `x-problem-type-base` with a `PROBLEM_TYPE_BASE` export
+  in `src/lib/errors/problem-key.ts`. It fails when the spec's base is malformed, when the spec
+  publishes a base and the export is missing or differs, and when the export exists but the spec
+  publishes none; a spec with neither passes and says that problems resolve by code. Action is
+  needed only once your API publishes a base.
+- The shared payload vectors carry the key-agreement answer, and `check:crypto-interop` derives it
+  from both sides through `scripts/lib/payload-agreement.ts`. A repo that holds the browser client
+  (`src/lib/payload/client.ts`) is the client side, so the bad-point vectors are the server's to
+  refuse and a repo that adopted the contract earlier keeps passing. The template's `ecdh.ts`
+  refuses a compressed point, as every server does.
+- generated-guard also refuses a write to an existing Go file whose header has a whole
+  `// Code generated ... DO NOT EDIT.` line before the package clause, and to a Rust file with
+  `@generated` in a comment among its first five lines, wherever the file lives. Such a file that a
+  hand edit used to reach is now refused; `"generatedPaths": []` no longer switches this part off
+  (disable the plugin for that). A folder-wide `replace_in_files` is still judged by
+  `generatedPaths` only.
+
+#### Changed
+
+- `error-codes.md` (identical to agent-be-hono's) gives the order a frontend resolves a problem in:
+  the base plus a known code gets its message; an absent or `about:blank` type falls back to the
+  code; anything else is unknown. `reviewer` flags a mapping that ignores `type`, and the payload
+  contract asks the proxy route to send `Vary` on what it seals for the browser.
+- generated-guard's refusal says the API contract is exported by the service that owns it or
+  copied from it.
+- `scripts/check/coverage-policy.mjs`: the shared copy, as in agent-be-hono.
+- `CLAUDE.md.starter` marks the On-demand rows for files only one setup answer installs, as in
+  agent-be-hono.
+- `conflictsWith` names the three new stacks. `scripts/lib.sh` copy updated.
+- Comments in the shipped scripts are block comments; no behaviour changes.
+
+#### Fixed
+
+- The payload contract's error table (`ENVELOPE_REQUIRED` for an unknown version or a missing
+  field), and `check:endpoints` refuses a misspelled `encryption` switch, as in agent-be-hono.
+- SkillSpector reads the `react-doctor` and `skeleton` skills in full: their paths and the
+  CLI-choosing line moved to `references/cli.md` and `references/files.md`, and the rule-explain
+  command sits in a fenced block. What the skills tell Claude is unchanged.
+
+#### By hand
+
+- Seeded files: `AGENTS.md` Rule 37 (resolve a problem by its type; the starter shows the
+  wording); the comment on `ENVELOPE_REQUIRED` and `ENVELOPE_MALFORMED` in
+  `src/lib/payload/errors.ts` (wording only).
+- Project-owned `src/lib/errors/problem-key.ts`: export `PROBLEM_TYPE_BASE`, equal to the spec's
+  `x-problem-type-base`, and resolve a body by its type before the code:
+
+  ```ts
+  export const PROBLEM_TYPE_BASE = 'https://api.example.com/problems/';
+  export function problemCodeOf(body: unknown): string | undefined {
+    if (typeof body !== 'object' || body === null) return undefined;
+    const code: unknown = Reflect.get(body, 'code');
+    const raw: unknown = Reflect.get(body, 'type');
+    const type = typeof raw === 'string' ? raw : 'about:blank';
+    if (typeof code !== 'string') return undefined;
+    return type === `${PROBLEM_TYPE_BASE}${code}` || type === 'about:blank' ? code : undefined;
+  }
+  ```
+
+  A proxy route that seals for the browser also sets `Vary: x-payload-epk, x-payload-kid`, and a
+  refusal it raises itself sends the contract's body.
+
+### agent-ai-fastapi 1.3.0
+
+#### Added
+
+- migration-guard's append-only mode, as in agent-be-hono; Alembic folders behave as before.
+
+#### Changed
+
+- `PayloadMiddleware` takes a required `problem_type_base` keyword and refuses to start with a base
+  that cannot prefix a type. The seeded tests assert whole refusal bodies and stay at 100% branch
+  coverage.
+- `fastapi.md` and `testing.md` describe the shape `{type, title, status, code}` with `code`
+  required and `type == PROBLEM_TYPE_BASE + code`; `ai-reviewer` flags `about:blank`, a hand-built
+  type, a per-occurrence title, `instance` set to a resource id, and a changed base.
+- `scripts/check/payload-vectors.json` gains the `agreements` and `pointRejects` sections every
+  stack shares. The Python service is a server caller with no key agreement, so its seeded tests
+  read only the AES vectors and pass unchanged.
+- `scripts/check/coverage-policy.mjs`: the shared copy, as in agent-be-hono.
+- `CLAUDE.md.starter` marks the On-demand rows for files only one setup answer installs.
+- `conflictsWith` names the three new stacks. `scripts/lib.sh` copy updated.
+
+#### Fixed
+
+- The payload middleware's refusal sent the internal error message as `detail` and no `type`
+  (which reads as `about:blank`); it now sends `{ type: <base><CODE>, title, status, code }` with
+  one title per code.
+- A sealed response carries `Vary: x-payload-epk, x-payload-kid`.
+- The payload contract's error table, as in agent-be-hono.
+
+#### By hand
+
+- Seeded files, where `payload-encryption=yes`: take the template's
+  `src/app/core/payload/middleware.py` and `tests/unit/core/payload/test_middleware.py`, or drop
+  `"detail": str(error)` from `_refuse`, add `type` and the per-code titles, add the
+  `problem_type_base` keyword, and add the `vary` pair to the sealed response's headers. Pass
+  `problem_type_base=PROBLEM_TYPE_BASE` where `main.py` adds the middleware.
+- Seeded starters: `AGENTS.md` Rule 10 (the shape is `{type, title, status, code}` plus an
+  optional client-safe `detail`) and the widget recipe (a per-type `title`, no
+  `instance=widget_id`: `instance` names an occurrence, RFC 9457 section 3.1.5); `SSOT.md` "Error
+  contract".
+- Project-owned `src/app/core/errors/problems.py`: define `PROBLEM_TYPE_BASE` (your own https base,
+  set once, refused in production while its host ends in `.invalid`), mint
+  `type = PROBLEM_TYPE_BASE + code` for every body, make `code` required (404, 422 and unhandled
+  500s get registered codes), keep `title` fixed per code, and leave `instance` out unless it names
+  the occurrence.
+
+### agent-docs-nextra 1.2.0
+
+#### Added
+
+- generated-guard recognises the Go and Rust generated-code markers, as in agent-fe-nextjs, and its
+  refusal names where the API contract comes from.
+
+#### Changed
+
+- `CLAUDE.md.starter` marks the On-demand rows for files only one setup answer installs.
+- `conflictsWith` names the three new stacks. `scripts/lib.sh` copy updated.
+
+### agent-fe-nextjs-static 1.1.3
+
+#### Changed
+
+- `conflictsWith` names the three new stacks.
+- Comments in the shipped check scripts are block comments; no behaviour changes.
+
+### agent-fe-threejs 1.0.3
+
+#### Fixed
+
+- `setup` says the budget check runs "without a permission prompt", a wording SkillSpector no
+  longer reads as an agent acting unasked. Comments in the shipped check script are block comments.
+
+### agent-deploy 1.1.3
+
+#### Fixed
+
+- `sync` says a missing `ask` rule lets a network script run "with no permission prompt", a wording
+  SkillSpector no longer reads as an agent acting unasked.
+
+### agent-be-go 0.1.0
+
+#### Added
+
+- A new, experimental stack plugin for Go HTTP services on PostgreSQL: `net/http` with a server
+  oapi-codegen v2.8.0 generates from `api/openapi.yaml` (spec first), pgx v5 and sqlc for queries,
+  goose for migrations, golangci-lint v2.14.0. Rule numbers, layout and setup questions may still
+  change before 1.0.0.
+- Hooks: `migration-guard` (the shared script; setup seeds `appendOnlyMigrationsDirs:
+  ["db/migrations"]`) and `generated-guard` (setup seeds `generatedPaths` for `api/openapi.json`,
+  `internal/httpapi/api.gen.go` and `internal/postgres/db`).
+- Commands `/agent-be-go:setup` and `/agent-be-go:sync`; the `agent-be-go:reviewer` subagent (the
+  standards axis of `/agent-core:review`); the skills `api-endpoint` (contract first, one tracer
+  bullet per behaviour) and `db-migration` (expand, backfill, contract).
+- What setup installs: a 32-rule `AGENTS.md` index (Rules 28 to 32 apply with
+  `payload-encryption=yes`) and a 0.5 KB `CLAUDE.md` starter; path-scoped rules for the Go service,
+  PostgreSQL (byte-identical with agent-be-axum's), testing, error codes and coverage; 17
+  anti-patterns (7 for Go, 10 PostgreSQL ones shared with agent-be-axum); a service skeleton with
+  every hand-written file at 100% statement coverage: the closed error-code registry (`apperr.Code`
+  with unexported fields, a go/ast registry test, `reassign`), the one RFC 9457 writer with `type` =
+  `apperr.TypeBase` + code and a production refusal of the `example.invalid` placeholder, the router
+  with spec validation (kin-openapi) and problem answers for 404 and 405, the handler-size test (15
+  lines), the server with all four timeouts, an explicit pool that refuses timeouts in the
+  connection string and `describe_exec`, and tests that migrate the test database themselves and
+  run as the service's role; `db/roles.sql` (migrator, service and read-only agent roles, timeouts
+  on the role); the gate scripts (`lint.sh`, `generated.sh`, `migrations.sh`, `endpoints.sh`,
+  `coverage.sh`, `pooler.sh`, the payload registry check) with `gates.list`, `.githooks/pre-commit`,
+  `.golangci.yml`, `sqlc.yaml`, `.squawk.toml`, `go.mod` and `go.sum` starters (or a by-hand snippet
+  with the `tool` lines), PR templates, CODEOWNERS, an optional DeepSeek review caller, and the
+  caller of `be-go-quality-gate.yml`, held back until the release that pins it.
+- Setup questions: `migrations`, `ci-gate`, `deepseek-review`, `pr-templates`, `analytics`,
+  `serena-workspace` and `payload-encryption` (recommended no). Yes installs the payload contract in
+  Go, standard library only (`crypto/ecdh`, `crypto/hkdf`, `crypto/aes` and `crypto/cipher`):
+  `internal/payload` (AES-256-GCM envelopes bound to method, route and status; P-256 key agreement
+  with browsers and apps through `x-payload-epk`; `kid:base64key` rings with `PAYLOAD_KEY_NEXT`; the
+  strict/off switch; the registry generated from `api/openapi.json`), the `net/http` middleware and
+  its buffering writer in `internal/httpapi` (outside the kin-openapi validator, matched through a
+  private `ServeMux`, `Vary: x-payload-epk, x-payload-kid` on every sealed answer), the five
+  `ENVELOPE_*` codes in `internal/apperr/payload_codes.go`, `config.LoadPayload`,
+  `payload.config.json` (the handshake named `GetPayloadHandshake`, as oapi-codegen exports it),
+  `scripts/generate/payload-server-key.mjs`, the shared contract, short rule and vectors, and
+  `.claude/rules/backend/go-payload.md`. The seeded tests reach 100% of statements and open the
+  shared vectors, the key agreement included; `boundary_test.go` keeps `internal/payload` behind
+  `internal/httpapi` and `cmd/`.
+- `scripts/{lib,generate,check}/payload-registry.mjs`, the same bytes in the three new stacks (plain
+  Node, no dependencies), are installed in every repo. The generator writes the registry from the
+  spec and `payload.config.json` in the layout gofmt keeps. The check fails on a switch other than
+  `strict`, registry drift, a stale exemption or one without a reason, a spec whose `Problem.code`
+  lacks an `ENVELOPE_*` code, a handshake that is missing, not a GET or not exempted `none`, and
+  spec or exemption drift from a checked-out peer of any stack. Without `payload.config.json` it
+  says the contract is not adopted and passes.
+- `apperr.Error.WithStatus` answers an error with another 4xx or 5xx status than its code's, for
+  `ENVELOPE_MALFORMED` as a 500 when a service cannot seal its own answer.
+
+#### By hand, once per repo
+
+- Replace `example.com/service` with the module path in `go.mod`, `.golangci.yml` and the seeded Go
+  files.
+- Set `apperr.TypeBase` and `x-problem-type-base` in `api/openapi.yaml` to this API's own https
+  base before the first release; production refuses to start with the placeholder.
+- `git config core.hooksPath .githooks` once per clone.
+- With `payload-encryption=yes`: add the five codes to `Registered()` and to `Problem.code`, add
+  `GET /api/payload/handshake` and exempt it (and the health probe) as `none` when browsers or apps
+  call the service, wire `sealBodies` into `NewRouter` and the edge into `main`, and regenerate. The
+  gates stay red until then, on purpose. The rule file shows each step.
+
+### agent-be-axum 0.1.0
+
+#### Added
+
+- A new, experimental stack plugin for Rust and Axum services on PostgreSQL (axum 0.8, tower-http
+  0.7, sqlx 0.9, utoipa 6). Names and rules may still change before 1.0.0.
+- Hooks: migration-guard keeps hand-written sqlx migrations append-only once a protected branch has
+  them (`appendOnlyMigrationsDirs`), and generated-guard refuses hand edits to the sqlx query cache
+  and the exported `openapi.json` (`generatedPaths`). Both are the shared copies.
+- Commands `/agent-be-axum:setup` and `/agent-be-axum:sync`. Setup asks seven questions
+  (`migrations`, `ci-gate`, `deepseek-review`, `pr-templates`, `analytics`, `serena-workspace`,
+  `payload-encryption`) and installs no `package.json`; a new repo gets `Cargo.toml` from a starter,
+  an existing one a by-hand block (`_kit/snippets/cargo.toml`: the `[lints]` tables and
+  `[profile.release]`).
+- The agent `agent-be-axum:reviewer`, the standards axis of a review. The skills `api-endpoint`
+  (code first: path constant, annotated handler, one red request test, green, regenerated spec) and
+  `db-migration` (expand, backfill, contract; the no-transaction marker; the FK index in the same
+  file; the offline query cache).
+- The template: a 34-rule `AGENTS.md` index (Rules 30 to 34 apply with `payload-encryption=yes`)
+  with a `CLAUDE.md` starter of about 0.5 KB; rules for the service layout, PostgreSQL, testing,
+  error codes and Rust coverage; 20 anti-patterns (10 for Rust, 10 PostgreSQL ones shared with
+  agent-be-go); clippy, rustfmt, cargo-deny, nextest and toolchain config; `.cargo/config.toml`
+  with `[build] warnings = "deny"` and `[env] SQLX_OFFLINE = "true"`; a service skeleton whose error
+  module (RFC 9457, `type` = `PROBLEM_TYPE_BASE` + code, the startup check), `ValidJson` extractor,
+  layers, pool and tests pass every gate at 100% of lines and functions per file; `openapi.json`
+  with `x-problem-type-base` and the inline code enum; the gate scripts `rustfmt.sh`,
+  `cargo-policy.sh`, `rust-source.mjs` (LINES, HANDLERS, ROUTES, LAYERS, SQL, ALLOW),
+  `migrations.sh`, `coverage.sh`, `pooler.sh` and the payload registry check with `gates.list` and
+  `.githooks/pre-commit`; a pull-request-only caller of `be-axum-quality-gate.yml` (held back until
+  the release that pins it), an optional DeepSeek review, PR templates and a CODEOWNERS starter.
+- `payload-encryption=yes` installs the payload contract: `src/payload/` (AES-256-GCM envelopes
+  bound to method, route and status; P-256 key agreement for public clients such as an iOS app;
+  pre-shared key rings with `_NEXT` rotation for server callers; the `strict`/`off` switch, `off`
+  refused in production; the generated endpoint registry) and `src/routes/payload.rs` with
+  `payload_layer.rs` (a `route_layer` that finds the route through `MatchedPath`, opens a sealed
+  request before `ValidJson`, seals the answer with `Vary: x-payload-epk, x-payload-kid`, and the
+  `GET /api/payload/handshake` handler). The seeded tests reach 100% of lines and functions and
+  include the shared vectors and their key-agreement answer. It also installs
+  `payload.config.json`, `scripts/check/payload-vectors.json`,
+  `scripts/generate/payload-server-key.mjs`, the contract document and two rules
+  (`.claude/rules/common/payload-contract.md`, and `.claude/rules/backend/payload.md` for the Rust
+  specifics). RustCrypto only (p256 0.14.0, aes-gcm 0.11.1, sha2 0.11.0, base64 0.22.1): no C
+  library, no build script, and no duplicate version under `cargo deny check`.
+- The shared `payload-registry.mjs` scripts, installed in every repo, write the registry in the
+  layout rustfmt keeps; `rust-source.mjs` LAYERS refuses `crate::payload` outside `src/routes/`,
+  `src/lib.rs` and `src/payload/`.
+- The error seed has a crate-private `WireCode` trait: `problem()` is generic over it, so
+  `PayloadCode` uses the one problem writer without becoming a variant of `ErrorCode`. The
+  `problems` layer keeps any error body whose media type ends in `+json`, so a sealed 4xx answer is
+  never replaced by a plaintext problem.
+
+#### By hand, once per repo
+
+- With `payload-encryption=yes`, wire the module in as `src/payload/mod.rs` lists: `cargo add` the
+  four crates at those versions; the four `PAYLOAD_*` fields in `Config`; the `PAYLOAD_HANDSHAKE`
+  path; `mod payload;`, `payload::routes()` and `payload::document` in `routes/mod.rs`;
+  `routes::payload::seal` in `lib.rs` after every route is merged; `check_payload_settings` in
+  `main.rs`. A module nothing declares is not compiled, so the skeleton stays green until then; the
+  registry gate stays red until `openapi.json` lists the five `ENVELOPE_*` codes and the handshake.
+
+### agent-ios-swiftui 0.1.0
+
+#### Added
+
+- A new, experimental plugin for a SwiftUI iOS app on Xcode 27 and Swift 6.4, on top of agent-core:
+  rules, reviewers and checks. Names, rules and checks may still change before 1.0.0.
+- Hook: `generated-guard` (the shared script) refuses hand edits to the generated API client, the
+  copied OpenAPI spec and the generated payload registry (`generatedPaths`).
+- Commands: `/agent-ios-swiftui:setup` and `/agent-ios-swiftui:sync` (user-only), and
+  `/agent-ios-swiftui:a11y-audit`, which runs the accessibility audit UI tests on a simulator and
+  reports each issue. Agents: `reviewer` (the standards axis) and `i18n-guard`. Skills:
+  `swiftui-screen` (one screen as a tracer bullet, model first) and `openapi-client-update`.
+- Setup installs a 33-rule `AGENTS.md` index (Rules 29 to 33 apply with `payload-encryption=yes`)
+  and a short `CLAUDE.md`; rules for the app target, the logic package, strings, tests, error codes
+  and coverage; 12 anti-patterns; `Config/*.xcconfig` (Swift 6, approachable concurrency, MainActor
+  default isolation, warnings as errors, `SWIFT_PACKAGE_NAME = appcore`); a strict `.swiftlint.yml`
+  pinned to SwiftLint 0.65.1 with custom rules for views, strings, routes, problem codes, tokens and
+  suppressions; `.swift-format`; `.periphery.yml`; a `Packages/AppCore` starter with `AppProblem` (an
+  RFC 9457 problem the generated client decodes into through `typeOverrides`, read member by member,
+  resolved by `type` = base + code) and its tests at 100%; a privacy manifest;
+  `.githooks/pre-commit`; a pull-request-only caller of `ios-swiftui-quality-gate.yml` (held until
+  the release pins it), an optional DeepSeek review, PR templates and a CODEOWNERS starter. Setup
+  questions: `ci-gate`, `deepseek-review`, `pr-templates`, `serena-workspace`, `min-ios`, `locales`,
+  `analytics`, `payload-encryption`.
+- Check scripts: `lint-suppressions.sh` (a reason on every `swiftlint:disable`, no nested config, no
+  `swift-format-ignore`, no lowering `@diagnose`), `xcode-settings.sh` (settings in
+  `Config/*.xcconfig`, no `SWIFT_*` key in the project file, ATS on, no secret in an xcconfig),
+  `package-graph.sh` (layers, a test target per library target, `exact:` pins, both
+  `Package.resolved` files agree, plugins and macros only by decision), `i18n-catalog.mjs` (every
+  locale translated, no stale key, and with `--stringsdata` the catalog against the build),
+  `error-codes.sh` (the app's codes and problem-type base equal the spec's, each code has its
+  message), `privacy-manifest.sh` (python3 plistlib, so it runs on Linux), `coverage.sh` (`swift
+  test` + `llvm-cov export -format=lcov` + `coverage-per-file.mjs`, never xccov) and the shared
+  payload registry check; named scripts `scripts/ios/app.sh` (simulator build and tests by udid, no
+  signing, zero warnings from the result bundle) and `scripts/ios/api-client.sh` (the generator's
+  command plugin, `--check` for drift).
+- `payload-encryption=yes` (yes when the backend seals bodies) installs the app's half of the
+  payload contract, seeded: `Payload*.swift` in `Packages/AppCore/Sources/APIClient` (envelope and
+  AAD, AES-256-GCM, ECDH P-256 with HKDF-SHA-256 and the browser hop's label
+  `payload-envelope/v1/browser`, a `PayloadSession` actor with one handshake in flight and the
+  agreed key in memory only, never pinned and dropped after `ENVELOPE_REJECTED`, a
+  `PayloadMiddleware` placed last in the client's list, and `AppProblem(failure:)`, the one error
+  mapper for payload failures) with Swift Testing tests at 100% of lines and functions, and
+  `payload.config.json` (`language: swift`, the handshake exempted `none`; its operation id is
+  copied from the backend's spec, `GetPayloadHandshake` for an agent-be-go backend). Every payload
+  type is `internal`; a Release build seals even when the handshake or the committed switch says
+  `off`; `PayloadSession(serverURL:)` sends through a URLSession with no URLCache.
+- The generated client is `internal` to `APIClient`, behind hand-written `package` calls: with
+  `accessModifier: package` the generator's `package import` lines are flagged as unused under
+  Swift 6.4 for every component section the spec leaves empty, and the package treats warnings as
+  errors.
+
 ## [1.2.1] - 2026-09-28
 
 The CI callers added in 1.2.0 are pinned to its release commit, so setup now installs the review,
@@ -630,7 +1186,8 @@ First release.
 - Templates: the 3D scene rule, the glTF/GLB asset budget check with its config, and a guide to
   adding 3D skills by reference.
 
-[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.0
 [1.2.1]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.2.1
 [1.2.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.2.0
 [1.1.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.1.0

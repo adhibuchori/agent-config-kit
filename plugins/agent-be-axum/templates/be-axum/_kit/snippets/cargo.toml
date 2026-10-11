@@ -1,0 +1,59 @@
+# agent-be-axum: the [lints] tables and the release profile its gates expect, for a Cargo.toml
+# that already exists. Setup never edits Cargo.toml: paste the block below into yours, keep your
+# [package] and [dependencies], then run the gates (bash scripts/check/gates.sh). A key you
+# already set keeps your value; cargo-policy.sh and clippy then say what they expect.
+
+# >>> agent-be-axum: lints and release profile (the same text as _kit/snippets/cargo.toml)
+# Lints are errors: .cargo/config.toml sets build.warnings = "deny", so a warning fails every
+# cargo call without rebuilding the dependencies. A suppression is #[expect(lint, reason = "...")]
+# only (Rule 23).
+[lints.rust]
+unsafe_code = "forbid"
+unreachable_pub = "deny"
+rust_2018_idioms = { level = "deny", priority = -1 }
+let_underscore_drop = "deny"
+unused_qualifications = "deny"
+unused_lifetimes = "deny"
+redundant_lifetimes = "deny"
+trivial_casts = "deny"
+trivial_numeric_casts = "deny"
+non_ascii_idents = "deny"
+unexpected_cfgs = { level = "deny", check-cfg = ["cfg(coverage_nightly)"] }
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+# restriction lints, picked one by one (the group as a whole is not meant to be enabled)
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+dbg_macro = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+allow_attributes = "deny"
+allow_attributes_without_reason = "deny"
+indexing_slicing = "deny"
+as_conversions = "deny"
+string_slice = "deny"
+exit = "deny"
+mem_forget = "deny"
+unwrap_in_result = "deny"
+get_unwrap = "deny"
+let_underscore_must_use = "deny"
+self_named_module_files = "deny" # mod.rs: a folder never sits beside a file of the same name
+clone_on_ref_ptr = "deny"
+map_err_ignore = "deny"
+cognitive_complexity = "deny" # a restriction lint: on only when named
+missing_assert_message = "deny"
+
+# panic = "unwind" keeps CatchPanicLayer able to answer 500 (Rule 29); tests ignore this setting,
+# so "abort" would pass every test and still end the process on the first panic in production.
+[profile.release]
+panic = "unwind"
+overflow-checks = true # release builds otherwise wrap where the tests panic
+lto = "thin"
+debug = "line-tables-only" # file:line in a backtrace, without full debug info
+# <<< agent-be-axum

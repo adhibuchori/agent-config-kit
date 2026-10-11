@@ -109,6 +109,34 @@ write_then_check() {
   grep -qF '| `.claude/settings.json` | merged into yours (additive; your values win) |' "$K/README.md"
 }
 
+@test "catalog: a cell escapes a backslash before a pipe, so neither is read as Markdown" {
+  cat >"$K/plugins/agent-demo/skills/tidy/SKILL.md" <<'EOF'
+---
+name: tidy
+description: Use when tidying a\|b paths.
+---
+EOF
+  jq '.components["agent-demo/tidy"].use = "split on \\| here"' "$K/docs/catalog.json" >"$K/c.json"
+  mv "$K/c.json" "$K/docs/catalog.json"
+  write_then_check
+  grep -qF '| `agent-demo:tidy` | Skill | Use when tidying a\\\|b paths. | split on \\\| here |' "$K/README.md"
+}
+
+@test "catalog: ** in a setup glob crosses folders, * stays in one" {
+  local t="$K/plugins/agent-demo/templates/demo"
+  mkdir -p "$t/src/deep/a/b" "$t/src/flat/a"
+  printf '# Deep\n' >"$t/src/deep/a/b/file.md"
+  printf '# Flat\n' >"$t/src/flat/a/file.md"
+  cat >"$t/_kit/setup.json" <<'EOF'
+{ "stack": "demo", "questions": [ { "id": "extra", "choices": ["yes", "no"], "recommended": "no",
+  "install": { "yes": ["src/deep/**", "src/flat/*"] } } ] }
+EOF
+  write_then_check
+  # src/deep/** reaches two folders down; src/flat/* does not reach src/flat/a/file.md.
+  grep -qF '| `src/deep/a/b/file.md` | with `extra=yes`; sync keeps it current |' "$K/README.md"
+  grep -qF '| `src/flat/a/file.md` | always; sync keeps it current |' "$K/README.md"
+}
+
 @test "catalog: a long hook matcher becomes a short label, a short one stays code" {
   local h="$K/plugins/agent-core/hooks/hooks.json"
   python3 - "$h" <<'PY'
@@ -169,6 +197,21 @@ PY
     [[ "$output" == *"allow rule $rule runs any code without a prompt"* ]] || { echo "not refused: $rule" >&2; return 1; }
   done
   printf '{ "permissions": { "allow": ["Bash(bun run test:*)", "Bash(uv run pytest:*)"], "ask": ["Bash(docker compose:*)"] } }\n' \
+    >"$K/plugins/agent-demo/templates/demo/.claude/settings.json"
+  write_then_check
+}
+
+@test "catalog: Go, Rust and Swift runners are bare runners too; named commands pass" {
+  local rule
+  for rule in 'Bash(go run:*)' 'Bash(go generate:*)' 'Bash(go get:*)' 'Bash(go install:*)' 'Bash(cargo run:*)' \
+    'Bash(cargo install:*)' 'Bash(cargo add:*)' 'Bash(swift run:*)' 'Bash(swift package:*)' 'Bash(xcodebuild:*)' \
+    'Bash(xcrun:*)' 'Bash(xcrun *)' 'Bash(cargo run)'; do
+    printf '{ "permissions": { "allow": ["%s"] } }\n' "$rule" >"$K/plugins/agent-demo/templates/demo/.claude/settings.json"
+    catalog --check
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"allow rule $rule runs any code without a prompt"* ]] || { echo "not refused: $rule" >&2; return 1; }
+  done
+  printf '{ "permissions": { "allow": ["Bash(go test:*)", "Bash(cargo clippy --locked --all-targets)", "Bash(swift test:*)", "Bash(xcodebuild -version)", "Bash(xcrun swift-format lint:*)", "Bash(go tool golangci-lint:*)"], "ask": ["Bash(cargo run:*)", "Bash(xcodebuild:*)"] } }\n' \
     >"$K/plugins/agent-demo/templates/demo/.claude/settings.json"
   write_then_check
 }
@@ -323,6 +366,20 @@ PY
   printf 'import subprocess\nsubprocess.run(["curl", "x"])\n' >"$K/plugins/agent-core/scripts/guard.sh"
   catalog
   [ "$status" -eq 1 ]
+}
+
+@test "catalog: runtime code that runs a Rust, Swift or Homebrew installer fails; a pinned toolchain call does not" {
+  local line
+  for line in 'cargo install sqlx-cli' 'rustup toolchain install' 'x=1; rustup component add clippy' \
+    'brew install swiftlint' 'mint install realm/SwiftLint'; do
+    printf '#!/usr/bin/env bash\n%s\n' "$line" >"$K/plugins/agent-core/scripts/guard.sh"
+    catalog
+    [ "$status" -eq 1 ] || { echo "not refused: $line" >&2; return 1; }
+    [[ "$output" == *"plugins/agent-core/scripts/guard.sh:2: runtime code must not download"* ]] || false
+  done
+  printf '#!/usr/bin/env bash\n# never: cargo install, rustup, brew install\nRUSTUP_AUTO_INSTALL=0 cargo clippy --locked\nmsg="run rustup yourself"\n' \
+    >"$K/plugins/agent-core/scripts/guard.sh"
+  write_then_check
 }
 
 @test "catalog: a hook script must be executable, on disk and in the git index" {

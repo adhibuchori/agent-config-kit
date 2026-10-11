@@ -1,0 +1,57 @@
+# AGENTS.md: <Project Name>
+
+The numbered rules of this Go service. Each row says what enforces it; `reviewer` means the
+`agent-be-go:reviewer` subagent or a person, not a machine. How and why live in the file the Detail
+column names, which loads when you touch the files it covers. Numbers are append-only: a new rule
+takes the next free number, and a retired one keeps its number, marked retired.
+
+## Compliance status
+
+Fill this in before relying on a rule: an agent that cites a rule for code that does not follow it
+yet wastes a session. For each Partial or Not met row, name the shape to follow meanwhile.
+
+| Rules | Status | Meanwhile |
+| --- | --- | --- |
+| 1–5, 10, 18–24 Service | `<Enforced / Partial / Not met>` | `<...>` |
+| 6–9 Error contract | `<status>` | `<...>` |
+| 11–17 Database | `<status>` | `<...>` |
+| 25–26 Tests | `<status>` | `<...>` |
+| 27 Secrets | `<status>` | `<...>` |
+| 28–32 Payload contract (only with `payload-encryption=yes`) | `<status>` | `<...>` |
+
+## Rules
+
+| # | Rule | Enforced by | Detail |
+| --- | --- | --- | --- |
+| 1 | Logic lives under `internal/`; `cmd/` only wires the packages together | compiler (`internal`), reviewer | `.claude/rules/backend/go-service.md` |
+| 2 | A request flows handler → service → store: modules never import `net/http`, and only `internal/postgres` imports pgx | depguard | `.claude/rules/backend/go-service.md` |
+| 3 | A package exposes a small surface and passes the deletion test; packages are named for what they hold, never `util` or `common` | compiler, `unused`, revive, reviewer | `.claude/rules/backend/go-service.md` |
+| 4 | An interface is declared by its consumer, once a second implementation exists (a fake for a real external system counts) | reviewer | `.claude/rules/backend/go-service.md` |
+| 5 | A handler body holds 15 code lines or fewer | `internal/httpapi/handler_size_test.go`, reviewer | `.claude/rules/backend/go-service.md` |
+| 6 | Every error a client receives carries a registered `apperr.Code` | compiler (unexported fields), `registry_test.go`, `reassign` | `.claude/rules/common/error-codes.md` |
+| 7 | `apperr.Write` writes every error response: RFC 9457, `type` = base + code, `requestId` in the body and the log; production refuses the placeholder base | forbidigo (`http.Error`), apperr tests, the startup check | `.claude/rules/common/error-codes.md` |
+| 8 | Every operation in the spec declares the errors it can return; one with a body or parameters declares 400, 413 and 422 | `internal/httpapi/spec_test.go`, reviewer | `.claude/rules/common/error-codes.md` |
+| 9 | A refusal relayed from an upstream service keeps its code and status (`apperr.Lookup`) | reviewer | `.claude/rules/common/error-codes.md` |
+| 10 | Route paths exist only in the generated server | `scripts/check/endpoints.sh` | `.claude/rules/backend/go-service.md` |
+| 11 | A migration on a protected branch never changes; a schema change is a new file | migration-guard, `scripts/check/migrations.sh` | `.claude/rules/backend/postgres.md` |
+| 12 | `CREATE INDEX CONCURRENTLY` runs only in a `-- +goose NO TRANSACTION` file | `scripts/check/migrations.sh`, squawk | `.claude/rules/backend/postgres.md` |
+| 13 | Every foreign key has an index led by its columns | the catalog query on the CI database | `.claude/rules/backend/postgres.md` |
+| 14 | A list query has `LIMIT` and pages by key; every query names its columns | `sqlc vet`, `scripts/check/generated.sh` | `.claude/rules/backend/postgres.md` |
+| 15 | One query per set, never one per row; writes go in batches | reviewer | `.claude/rules/backend/postgres.md` |
+| 16 | A transaction is short, lives in `internal/postgres`, and makes no network call | depguard (pgx), reviewer | `.claude/rules/backend/postgres.md` |
+| 17 | The pool is explicit (3 or more connections, lifetimes, connect timeout); database timeouts are set on the role | `postgres.Config`, `internal/postgres/pool_test.go` | `.claude/rules/backend/postgres.md` |
+| 18 | The server sets its four timeouts and a body limit; the request ID is the outermost middleware; CORS comes from an origin list | gosec G112/G114, `server_test.go`, `router_test.go` | `.claude/rules/backend/go-service.md` |
+| 19 | Only `internal/config` reads the environment | forbidigo | `.claude/rules/backend/go-service.md` |
+| 20 | Logs go through the injected `*slog.Logger` | forbidigo, sloglint | `.claude/rules/backend/go-service.md` |
+| 21 | A context is the first parameter and never a struct field; only `main` and tests start one | revive, containedctx, forbidigo | `.claude/rules/backend/go-service.md` |
+| 22 | A file holds 200 code lines or fewer; blank and comment lines do not count | revive `file-length-limit` | `.claude/rules/backend/go-service.md` |
+| 23 | A suppression is `//nolint:<linter> // <reason>` and only while it is needed | nolintlint, `scripts/check/lint.sh` | `.claude/rules/backend/go-service.md` |
+| 24 | A type assertion takes the `, ok` form; generics come before `any` and a type switch | errcheck `check-type-assertions` | `.claude/rules/go/types.md` |
+| 25 | Every hand-written file is at 100% statement coverage; exemptions are a closed list with reasons | `scripts/check/coverage.sh`, `coverage-policy.mjs`, the coverage floor | `.claude/rules/go/coverage.md` |
+| 26 | Tests go through the seam callers use, fake only system boundaries, and take expected values from the spec | reviewer, depguard (no mocking library) | `.claude/rules/backend/testing.md` |
+| 27 | No secret and no `.env` file is ever committed | gitleaks, the gate's committed-env check | `scripts/check/secrets.sh` |
+| 28 | Every body that crosses a service boundary is sealed, unless `payload.config.json` exempts its route with a reason (rules 28–32 apply where setup answered `payload-encryption=yes`) | `scripts/check/payload-registry.mjs`, the `internal/httpapi` payload tests | `.claude/rules/backend/go-payload.md` |
+| 29 | The payload middleware wraps the routes outside the validator; only `internal/httpapi` and `cmd/` import `internal/payload` | `internal/payload/boundary_test.go`, reviewer | `.claude/rules/backend/go-payload.md` |
+| 30 | Payload keys are added, never repurposed (`kid:base64key`, `PAYLOAD_KEY_NEXT`, `PAYLOAD_SERVER_JWK`); only `internal/config` reads them, and nothing logs them | forbidigo, gitleaks, reviewer | `.claude/rules/backend/go-payload.md` |
+| 31 | The committed switch says `strict`; production refuses `off` | `scripts/check/payload-registry.mjs`, `internal/payload/mode_test.go` | `.claude/rules/backend/go-payload.md` |
+| 32 | A payload refusal is an `apperr` code the spec lists; the cipher passes the shared vectors | `registry_test.go`, `contract_test.go`, `internal/payload/vectors_test.go` | `.claude/rules/backend/go-payload.md` |

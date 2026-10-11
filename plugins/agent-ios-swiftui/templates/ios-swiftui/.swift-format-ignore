@@ -1,0 +1,7 @@
+# Paths swift-format leaves alone, in .gitignore syntax (Xcode's swift-format reads this file).
+# Generated code is formatted by its generator, and build folders hold other people's code. An
+# inline `swift-format-ignore` comment is refused by scripts/check/lint-suppressions.sh: list the
+# path here instead.
+**/.build/
+**/GeneratedSources/
+*.generated.swift

@@ -2,6 +2,8 @@
 import json
 from collections.abc import MutableMapping
 
+import pytest
+
 from app.core.payload.codec import open_json, parse_envelope, seal_json
 from app.core.payload.envelope import (
     ENCRYPTED_MEDIA_TYPE,
@@ -17,6 +19,8 @@ from app.core.payload.policy import Endpoint
 
 # Test-only key material: 32 bytes of one value, never a real key.
 RING = create_key_ring([("TEST_KEY", f"k1:{to_base64url(bytes([5]) * 32)}")])
+# The kit's placeholder base; a real service passes PROBLEM_TYPE_BASE from core/errors/problems.py.
+BASE = "https://example.invalid/problems/"
 REGISTRY = {
     "POST_NOTES": Endpoint("POST", "/api/notes"),
     "GET_NOTE": Endpoint("GET", "/api/notes/:id"),
@@ -62,7 +66,9 @@ async def call(
     mode: EncryptionMode = "strict",
     split: bool = False,
 ) -> tuple[int, dict[str, str], bytes]:
-    app = PayloadMiddleware(echo, mode=mode, registry=REGISTRY, key_ring=RING)
+    app = PayloadMiddleware(
+        echo, mode=mode, registry=REGISTRY, key_ring=RING, problem_type_base=BASE
+    )
     sent: list[Message] = []
     first: Message = {"type": "http.request", "more_body": False}
     if body is not None:
@@ -122,16 +128,25 @@ async def test_opens_a_sealed_request_and_seals_the_answer() -> None:
     )
     assert status == 201
     assert out["content-type"] == ENCRYPTED_MEDIA_TYPE
+    assert out["vary"] == "x-payload-epk, x-payload-kid"
     assert opened(status, body, "/api/notes") == {"got": '{"t": 1}', "path": "/api/notes"}
 
 
+def refusal(status: int, code: str, title: str) -> dict[str, object]:
+    """The whole refusal body: a member added later, such as an internal message, fails."""
+    return {"type": BASE + code, "title": title, "status": status, "code": code}
+
+
 async def test_refuses_plaintext_on_a_sealed_route_and_an_unknown_key() -> None:
-    status, _, body = await call(
+    status, out, body = await call(
         "POST", "/api/notes", b'{"t":1}', [(b"content-type", b"application/json")]
     )
-    assert (status, json.loads(body)["code"]) == (400, "ENVELOPE_REQUIRED")
+    assert out["content-type"] == "application/problem+json"
+    required = refusal(400, "ENVELOPE_REQUIRED", "Sealed body required")
+    assert (status, json.loads(body)) == (400, required)
     status, _, body = await call("GET", "/api/notes/1", headers=[(KID_HEADER.encode(), b"k9")])
-    assert (status, json.loads(body)["code"]) == (400, "ENVELOPE_KEY_UNKNOWN")
+    unknown = refusal(400, "ENVELOPE_KEY_UNKNOWN", "Unknown payload key")
+    assert (status, json.loads(body)) == (400, unknown)
 
 
 async def test_seals_a_bodiless_get_and_leaves_a_204_and_an_empty_post_alone() -> None:
@@ -152,7 +167,28 @@ async def test_half_policies_none_unregistered_and_off_pass_plaintext_through() 
 
 async def test_refuses_to_seal_a_body_that_is_not_json() -> None:
     status, _, body = await call("GET", "/api/text")
-    assert (status, json.loads(body)["code"]) == (500, "ENVELOPE_MALFORMED")
+    malformed = refusal(500, "ENVELOPE_MALFORMED", "Malformed envelope")
+    assert (status, json.loads(body)) == (500, malformed)
+
+
+@pytest.mark.parametrize(
+    "base",
+    [
+        "/problems/",
+        "http://example.invalid/problems/",
+        "https:///problems/",
+        "https://Example.invalid/problems/",
+        "https://example.invalid/problems",
+        "https://example.invalid/problems/?v=1",
+        "https://example.invalid/problems/#x",
+        "https://example.invalid/my problems/",
+    ],
+)
+def test_refuses_to_start_with_a_base_that_cannot_prefix_a_type(base: str) -> None:
+    with pytest.raises(ValueError, match="problem_type_base must be an absolute https URI"):
+        PayloadMiddleware(
+            echo, mode="strict", registry=REGISTRY, key_ring=RING, problem_type_base=base
+        )
 
 
 async def test_lifespan_passes_through() -> None:
@@ -167,7 +203,7 @@ async def test_lifespan_passes_through() -> None:
     async def drop(message: Message) -> None:
         return None
 
-    await PayloadMiddleware(app, mode="strict", registry=REGISTRY, key_ring=RING)(
-        {"type": "lifespan"}, nothing, drop
-    )
+    await PayloadMiddleware(
+        app, mode="strict", registry=REGISTRY, key_ring=RING, problem_type_base=BASE
+    )({"type": "lifespan"}, nothing, drop)
     assert seen == ["lifespan"]

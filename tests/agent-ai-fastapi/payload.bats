@@ -38,6 +38,47 @@ pytest_run() {
   [[ "$output" == *"Required test coverage of 100% reached"* ]]
 }
 
+# replace_once <file> <old> <new>: the first occurrence only, and fail loudly when it is absent.
+replace_once() {
+  python3 - "$1" "$2" "$3" <<'PY'
+import sys
+path, old, new = sys.argv[1:]
+text = open(path).read()
+if old not in text:
+    sys.exit(f"{old!r} not found in {path}")
+open(path, "w").write(text.replace(old, new, 1))
+PY
+}
+
+@test "payload (python): a refusal that sends the internal message as detail fails the seeded tests" {
+  replace_once "$REPO/src/app/core/payload/middleware.py" '"status": status,' \
+    '"status": status, "detail": str(error),'
+  pytest_run
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"test_refuses_plaintext_on_a_sealed_route_and_an_unknown_key"* ]]
+  [[ "$output" == *"'detail': 'POST /api/notes takes a sealed body'"* ]]
+}
+
+@test "payload (python): a refusal typed about:blank, or one that takes any base, fails the seeded tests" {
+  replace_once "$REPO/src/app/core/payload/middleware.py" '"type": base + error.code,' '"type": "about:blank",'
+  pytest_run
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"'type': 'about:blank'"* ]]
+  cp "$TPL/src/app/core/payload/middleware.py" "$REPO/src/app/core/payload/"
+  replace_once "$REPO/src/app/core/payload/middleware.py" "self.base = _problem_type_base(problem_type_base)" \
+    "self.base = problem_type_base"
+  pytest_run
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"test_refuses_to_start_with_a_base_that_cannot_prefix_a_type"* ]]
+}
+
+@test "payload (python): a sealed answer without Vary fails the seeded tests" {
+  replace_once "$REPO/src/app/core/payload/middleware.py" "length, _SEALED_VARY]" "length]"
+  pytest_run
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"test_opens_a_sealed_request_and_seals_the_answer"* ]]
+}
+
 @test "payload (python): an AAD builder that drifted fails the shared vectors" {
   python3 - "$REPO/src/app/core/payload/envelope.py" <<'PY'
 import sys

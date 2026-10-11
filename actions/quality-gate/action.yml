@@ -1,26 +1,27 @@
-# agent-config-kit quality gate: the steps behind the five <stack>-quality-gate.yml reusable
+# agent-config-kit quality gate: the steps behind the eight <stack>-quality-gate.yml reusable
 # workflows. It runs the repo's own gates (scripts/check/gates.list, which the pre-commit hook runs
 # on staged files) and then only what needs a pull request: the coverage floor, a committed .env,
 # the diff scans, gitleaks over the pull request's commits, the audit, a changed skill, the
-# production build and the stack's post-build checks. README.md next to this file lists every check
-# per stack and every input.
+# production build and the stack's post-build checks (for the Go and Rust stacks also the
+# migrations from zero on PostgreSQL, the catalog checks and an optional PgBouncer check).
+# README.md next to this file lists every check per stack and every input.
 #
 # Check out the repository with fetch-depth: 0 and persist-credentials: false first. The scripts
 # ship inside this action (scripts/, reached through GITHUB_ACTION_PATH), so a caller pinned to one
 # commit runs exactly that commit's checks. Nothing here needs a secret or a write permission.
 name: agent-config-kit quality gate
-description: Runs a repository's agent-config-kit gates plus the pull-request checks for its stack (Next.js app or static site, Hono API, FastAPI service, Nextra docs).
+description: Runs a repository's agent-config-kit gates plus the pull-request checks for its stack (Next.js app or static site, Hono, Go or axum API, FastAPI service, SwiftUI app, Nextra docs).
 author: Mochammad Adhi Buchori
 
 inputs:
   stack:
-    description: fe-nextjs, fe-nextjs-static, be-hono, ai-fastapi or docs-nextra.
+    description: fe-nextjs, fe-nextjs-static, be-hono, be-go, be-axum, ai-fastapi, ios-swiftui or docs-nextra.
     required: true
   base-ref:
     description: The branch (or commit) the pull request merges into. The diff checks compare against it; a branch name resolves to origin/<name>.
     required: true
   package-manager:
-    description: auto (from the lockfile), bun, pnpm, npm or yarn. ai-fastapi always uses uv.
+    description: auto (from the lockfile), bun, pnpm, npm or yarn. ai-fastapi always uses uv; be-go, be-axum and ios-swiftui take auto only.
     required: false
     default: auto
   coverage-threshold:
@@ -28,7 +29,7 @@ inputs:
     required: false
     default: ''
   env-file:
-    description: A committed *.example file of dummy KEY=VALUE variables that the tests and the build need (a settings module that validates at import time, a NEXT_PUBLIC_ URL). Never real secrets. Empty to load none.
+    description: A committed *.example file of dummy KEY=VALUE variables that the tests and the build need (a settings module that validates at import time, a NEXT_PUBLIC_ URL, a test database URL). Never real secrets. Empty to load none.
     required: false
     default: .env.ci.example
   ignore-scripts:
@@ -39,6 +40,30 @@ inputs:
     description: ai-fastapi only. true runs pytest -m integration with RUN_INTEGRATION_TESTS=1; the caller must provide a reachable DATABASE_URL.
     required: false
     default: 'false'
+  phase:
+    description: ios-swiftui only. static (Linux checks), build (macOS build and tests) or all. Every other stack takes all.
+    required: false
+    default: all
+  database:
+    description: be-go and be-axum. true runs the database checks on the PostgreSQL the workflow starts on 127.0.0.1:5432; false for a repo that owns no schema.
+    required: false
+    default: 'true'
+  pgbouncer-tests:
+    description: be-go and be-axum only. true also runs scripts/check/pooler.sh while PgBouncer 1.26.0 (a pinned image) listens on 127.0.0.1:6432 in transaction mode.
+    required: false
+    default: 'false'
+  pgbouncer-max-prepared-statements:
+    description: PgBouncer's max_prepared_statements for pgbouncer-tests, a whole number; 0 copies a production pooler that disables it.
+    required: false
+    default: '200'
+  xcode-version:
+    description: ios-swiftui build phase. The Xcode release the runner must be using (the first line of xcodebuild -version reads "Xcode <this>"); empty checks nothing.
+    required: false
+    default: ''
+  scheme:
+    description: ios-swiftui build phase. The Xcode scheme to build and test; empty uses the project's name.
+    required: false
+    default: ''
   node-version:
     description: Node.js version for setup-node.
     required: false
@@ -72,6 +97,10 @@ runs:
         QG_PACKAGE_MANAGER: ${{ inputs.package-manager }}
         QG_COVERAGE_THRESHOLD: ${{ inputs.coverage-threshold }}
         QG_STRICT: ${{ inputs.strict }}
+        QG_PHASE: ${{ inputs.phase }}
+        QG_DATABASE: ${{ inputs.database }}
+        QG_PGBOUNCER_TESTS: ${{ inputs.pgbouncer-tests }}
+        QG_PGBOUNCER_MAX_PREPARED: ${{ inputs.pgbouncer-max-prepared-statements }}
       run: bash "${GITHUB_ACTION_PATH}/scripts/plan.sh"
 
     # No dependency caches: the gate installs exactly the lockfile every time, so nothing restored
@@ -98,6 +127,28 @@ runs:
         python-version: ${{ inputs.python-version }}
         enable-cache: false
 
+    # Go at the version go.mod names (its toolchain line when it has one).
+    - name: Setup Go
+      if: steps.plan.outputs.go == 'true'
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    # Exactly the toolchain and components rust-toolchain.toml names: rustup installs the active
+    # toolchain when given no name. Every later step runs with RUSTUP_AUTO_INSTALL=0.
+    - name: Setup Rust
+      if: steps.plan.outputs.rust == 'true'
+      shell: bash
+      run: |
+        if [ ! -f rust-toolchain.toml ]; then
+          echo "::error::rust-toolchain.toml is missing; the be-axum gate installs exactly the toolchain it names"
+          exit 1
+        fi
+        rustup --version
+        rustup toolchain install
+        rustc --version
+
     # pnpm and yarn come from Corepack, at the version package.json's packageManager field names.
     - name: Enable Corepack
       if: steps.plan.outputs.corepack == 'true'
@@ -105,8 +156,18 @@ runs:
       run: corepack enable
 
     - name: Install gitleaks
+      if: steps.plan.outputs.gitleaks == 'true'
       shell: bash
       run: bash "${GITHUB_ACTION_PATH}/scripts/install-gitleaks.sh"
+
+    # golangci-lint, squawk, the cargo tools, SwiftLint, Periphery: scripts/tools.lock pins each one.
+    - name: Install pinned tools
+      if: steps.plan.outputs.tools != ''
+      shell: bash
+      env:
+        QG_TOOLS: ${{ steps.plan.outputs.tools }}
+        RUSTUP_AUTO_INSTALL: '0'
+      run: bash "${GITHUB_ACTION_PATH}/scripts/install-release.sh"
 
     - name: Quality Gate
       shell: bash
@@ -115,8 +176,15 @@ runs:
         QG_BASE: ${{ steps.plan.outputs.base }}
         QG_PM: ${{ steps.plan.outputs.pm }}
         QG_COVERAGE_THRESHOLD: ${{ steps.plan.outputs.coverage-threshold }}
+        QG_PHASE: ${{ steps.plan.outputs.phase }}
         QG_ENV_FILE: ${{ inputs.env-file }}
         QG_IGNORE_SCRIPTS: ${{ inputs.ignore-scripts }}
         QG_INTEGRATION_TESTS: ${{ inputs.integration-tests }}
+        QG_DATABASE: ${{ inputs.database }}
+        QG_PGBOUNCER_TESTS: ${{ inputs.pgbouncer-tests }}
+        QG_PGBOUNCER_MAX_PREPARED: ${{ inputs.pgbouncer-max-prepared-statements }}
+        QG_XCODE_VERSION: ${{ inputs.xcode-version }}
+        QG_IOS_SCHEME: ${{ inputs.scheme }}
         QG_STRICT: ${{ inputs.strict }}
+        RUSTUP_AUTO_INSTALL: '0'
       run: bash "${GITHUB_ACTION_PATH}/scripts/gate.sh"

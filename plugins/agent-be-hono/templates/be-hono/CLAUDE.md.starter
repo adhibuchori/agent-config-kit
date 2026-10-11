@@ -169,16 +169,16 @@ src/lib/auth/auth.ts        ← better-auth config; breaks every authenticated r
 
 Nothing below loads automatically. Read the file when its row matches the task. The shared docs
 ship as `.claude/*.example.md`: copy one to its name without `.example`, fill every placeholder,
-and delete the ones you do not use along with their rows.
+and delete the rest with their rows.
 
 | Read when | File |
 | --- | --- |
-| Hooks, GitHub and CI, reviews, MCP pins, deploy verification, skill scanning | `.claude/OPERATIONS.md` |
+| Hooks, GitHub and CI, reviews, MCP pins, deploys, skill scanning | `.claude/OPERATIONS.md` |
 | Known traps — scan the trigger keywords before debugging | `.claude/anti-patterns/INDEX.md` |
 | Reviewing a change: the human checklist, keyed to AGENTS.md rules | `.claude/docs/code-review-checklist.md` |
 | Postgres through `db-dev`/`db-prod`: topology, tunnel, production rules | `.claude/DATABASE.md` |
 | CI runner pools and what they cost | `.claude/CI-RUNNERS.md` |
-| The analytics read API | `.claude/ANALYTICS.md` |
-| Serena scoping across several repos | `.claude/SERENA-WORKSPACE.md` |
+| Analytics read API | `.claude/ANALYTICS.md` (with `analytics=yes`) |
+| Serena across several repos | `.claude/SERENA-WORKSPACE.md` (with `serena-workspace=yes`) |
 | Rarely used MCP servers, loaded per session with `claude --mcp-config` | `.claude/mcp/*.json` |
 | Unlocking `.env` edits or production writes, and what the lock does not stop | `docs/unlock.md` |

@@ -39,7 +39,7 @@ MINE="$(json_get "$PLUGIN_JSON" '.version' version)"
 [[ -n "$MINE" ]] || exit 0
 
 if [[ ! -f "$LOCK" ]]; then
-  report "agent-core: .claude/agent-config.json opts this project into the agent-config-kit hooks, but setup has not run here, so the permissions, rules, check scripts and the unlock and .env helpers are missing. Suggest /agent-core:setup to the user (or the stack plugin's own setup, which includes agent-core's)." SessionStart
+  report "agent-core: .claude/agent-config.json opts this project into the agent-config-kit hooks, but setup has not run here, so the permissions, rules, check scripts and the unlock and .env* helpers are missing. Suggest /agent-core:setup to the user (or the stack plugin's own setup, which includes agent-core's)." SessionStart
   exit 0
 fi
 

@@ -1,0 +1,8 @@
+# rustfmt, stable options only: stable rustfmt ignores an unstable key with a warning and exit 0,
+# so scripts/check/rustfmt.sh fails on that warning.
+edition = "2024"
+style_edition = "2024"
+max_width = 100
+newline_style = "Unix"
+use_field_init_shorthand = true
+use_try_shorthand = true

@@ -9,17 +9,19 @@ refuse a caller before anything is decrypted.
 Two ASGI rules this file keeps: the request body is read once and replayed as one message, and
 every later ``receive()`` goes to the server's own channel. Synthesising ``http.disconnect`` would
 tell a streaming route its client left. A refusal raised here leaves as plaintext problem+json with
-a code and no payload: the caller may hold no working key.
+a code and no payload: the caller may hold no working key. Its ``type`` is the API's problem-type
+base plus the code, the same base every other problem this service sends is minted under.
 """
 
 from __future__ import annotations
 
 import json
 from collections.abc import Awaitable, Callable, MutableMapping
+from urllib.parse import urlsplit
 
 from app.core.payload.codec import open_json, parse_envelope, seal_json
 from app.core.payload.envelope import ENCRYPTED_MEDIA_TYPE, KID_HEADER, request_aad, response_aad
-from app.core.payload.errors import PayloadError
+from app.core.payload.errors import PayloadCode, PayloadError
 from app.core.payload.keys import KeyRing
 from app.core.payload.mode import EncryptionMode
 from app.core.payload.policy import (
@@ -39,6 +41,17 @@ Receive = Callable[[], Awaitable[Message]]
 Send = Callable[[Message], Awaitable[None]]
 App = Callable[[Scope, Receive, Send], Awaitable[None]]
 _REPLACED = (b"content-type", b"content-length")
+# A sealed answer depends on the key these request headers chose, so a shared cache keys on them and
+# never serves one caller's envelope to another. The same value in every stack.
+_SEALED_VARY = (b"vary", b"x-payload-epk, x-payload-kid")
+# One title per code: it names the problem type, never the occurrence (RFC 9457 section 3.1.3).
+_TITLES: dict[PayloadCode, str] = {
+    "ENVELOPE_REQUIRED": "Sealed body required",
+    "ENVELOPE_MALFORMED": "Malformed envelope",
+    "ENVELOPE_EXPIRED": "Envelope expired",
+    "ENVELOPE_KEY_UNKNOWN": "Unknown payload key",
+    "ENVELOPE_REJECTED": "Envelope rejected",
+}
 
 
 def _pairs(value: object) -> list[tuple[bytes, bytes]]:
@@ -64,14 +77,39 @@ def _body(message: Message) -> bytes:
     return body if isinstance(body, bytes) else b""
 
 
-async def _refuse(send: Send, status: int, error: PayloadError) -> None:
-    detail = {
-        "title": "Payload refused",
+def _problem_type_base(base: str) -> str:
+    """The base every refusal's ``type`` is minted from, checked once, at startup.
+
+    Raises:
+        ValueError: unless it is an absolute https URI in lower case with no query or fragment,
+            ending in ``/``.
+    """
+    host = urlsplit(base).netloc
+    usable = (
+        base.startswith("https://")
+        and host != ""
+        and host == host.lower()
+        and base.endswith("/")
+        and not any(char.isspace() or char in "?#" for char in base)
+    )
+    if not usable:
+        raise ValueError(
+            "problem_type_base must be an absolute https URI ending in /, with no query or "
+            f'fragment: "{base}"'
+        )
+    return base
+
+
+async def _refuse(send: Send, base: str, status: int, error: PayloadError) -> None:
+    # The code and never the message: the message names route patterns and server state, and is
+    # for logs (errors.py).
+    problem = {
+        "type": base + error.code,
+        "title": _TITLES[error.code],
         "status": status,
-        "detail": str(error),
         "code": error.code,
     }
-    body = json.dumps(detail).encode()
+    body = json.dumps(problem).encode()
     headers = [
         (b"content-type", b"application/problem+json"),
         (b"content-length", str(len(body)).encode()),
@@ -93,12 +131,19 @@ class PayloadMiddleware:
     """Enforces the contract for the registry it is given."""
 
     def __init__(
-        self, app: App, *, mode: EncryptionMode, registry: dict[str, Endpoint], key_ring: KeyRing
+        self,
+        app: App,
+        *,
+        mode: EncryptionMode,
+        registry: dict[str, Endpoint],
+        key_ring: KeyRing,
+        problem_type_base: str,
     ) -> None:
         self.app = app
         self.mode = mode
         self.registry = registry
         self.ring = key_ring
+        self.base = _problem_type_base(problem_type_base)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         method, path = scope.get("method"), scope.get("path")
@@ -120,7 +165,7 @@ class PayloadMiddleware:
             if opens:
                 receive = await self._open(scope, receive, match)
         except PayloadError as error:
-            await _refuse(send, 400, error)
+            await _refuse(send, self.base, 400, error)
             return
         await self.app(scope, receive, self._sealing(send, match, kid) if seals else send)
 
@@ -178,7 +223,7 @@ class PayloadMiddleware:
                 parsed: object = json.loads(raw)
             except ValueError:
                 reason = f"{match.pattern} answered with a body that is not JSON"
-                await _refuse(send, 500, PayloadError("ENVELOPE_MALFORMED", reason))
+                await _refuse(send, self.base, 500, PayloadError("ENVELOPE_MALFORMED", reason))
                 return
             envelope = seal_json(
                 parsed,
@@ -189,7 +234,8 @@ class PayloadMiddleware:
             body = json.dumps(envelope).encode()
             kept = [(k, v) for k, v in _pairs(start.get("headers")) if k.lower() not in _REPLACED]
             sealed_type = (b"content-type", ENCRYPTED_MEDIA_TYPE.encode())
-            headers = [*kept, sealed_type, (b"content-length", str(len(body)).encode())]
+            length = (b"content-length", str(len(body)).encode())
+            headers = [*kept, sealed_type, length, _SEALED_VARY]
             await send({**start, "headers": headers})
             await send({"type": "http.response.body", "body": body})
 

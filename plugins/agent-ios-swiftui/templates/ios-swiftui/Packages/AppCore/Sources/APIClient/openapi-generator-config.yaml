@@ -1,0 +1,22 @@
+# swift-openapi-generator's settings for the APIClient target. bash scripts/ios/api-client.sh runs
+# the generator's command plugin (the exact version in Package.resolved) on openapi.json, the copy of
+# the backend's exported spec beside this file, and writes GeneratedSources/. The spec copy and the
+# generated code are committed and never edited by hand (AGENTS.md Rule 11); the quality gate runs
+# the same plugin and fails on any difference. The plugin reads both files from this folder, so
+# SwiftPM reports them as unhandled files when it builds: that note is expected, and Xcode's build
+# does not count it as a warning.
+generate:
+  - types
+  - client
+# Internal to APIClient: the target's own `package` functions are the API the screens call, and
+# they return Domain values, never generated types (.claude/rules/ios/packages.md). A `package`
+# client would also emit `package import` lines that Swift 6 flags as unused in every section the
+# spec leaves empty, and this package treats warnings as errors.
+accessModifier: internal
+namingStrategy: idiomatic
+# The spec's Problem.code enum is closed: a code the backend adds after this build shipped would make
+# the whole response fail to decode. AppProblem reads every problem body leniently instead
+# (AGENTS.md Rule 12).
+typeOverrides:
+  schemas:
+    Problem: AppProblem

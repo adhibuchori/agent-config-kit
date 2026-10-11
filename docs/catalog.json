@@ -55,6 +55,168 @@
         "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
       }
     },
+    "agent-be-axum/api-endpoint": {
+      "use": "\"add GET /api/orders/{id}\", or `/agent-be-axum:api-endpoint`",
+      "why": "One endpoint at a time, test first, spec and code from one declaration",
+      "id": {
+        "what": "Menambah atau mengubah satu endpoint secara code-first: path, handler beranotasi, satu test merah, lalu hijau, lalu spec diekspor ulang",
+        "use": "\"add GET /api/orders/{id}\", atau `/agent-be-axum:api-endpoint`",
+        "why": "Satu endpoint sekali jalan, test lebih dulu, spec dan kode dari satu deklarasi"
+      }
+    },
+    "agent-be-axum/db-migration": {
+      "use": "\"add a column to orders\", or `/agent-be-axum:db-migration`",
+      "why": "Schema changes that deploy without downtime and never rewrite history",
+      "id": {
+        "what": "Menulis perubahan skema PostgreSQL sebagai migrasi sqlx baru tanpa downtime (expand, backfill, contract) dan memperbarui cache query offline",
+        "use": "\"add a column to orders\", atau `/agent-be-axum:db-migration`",
+        "why": "Perubahan skema yang di-deploy tanpa downtime dan tidak pernah menulis ulang riwayat"
+      }
+    },
+    "agent-be-axum/deepseek-review": {
+      "use": "Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run",
+      "why": "A second reader on every pull request for a cent or two",
+      "id": {
+        "what": "Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout",
+        "use": "Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang",
+        "why": "Pembaca kedua di setiap pull request dengan biaya satu atau dua sen"
+      }
+    },
+    "agent-be-axum/generated-guard": {
+      "use": "Runs by itself before file writes",
+      "why": "The query cache and the spec change only through their generators",
+      "id": {
+        "what": "Menolak edit tangan pada output generator: cache query sqlx dan openapi.json",
+        "use": "Berjalan sendiri sebelum penulisan file",
+        "why": "Cache query dan spec hanya berubah lewat generatornya"
+      }
+    },
+    "agent-be-axum/migration-guard": {
+      "use": "Runs by itself before file writes",
+      "why": "A migration a database may have run never changes",
+      "id": {
+        "what": "Menjaga migrasi sqlx tulisan tangan tetap append-only setelah masuk branch terlindungi",
+        "use": "Berjalan sendiri sebelum penulisan file",
+        "why": "Migrasi yang mungkin sudah dijalankan database tidak pernah berubah"
+      }
+    },
+    "agent-be-axum/quality-gate": {
+      "use": "Answer `ci-gate=yes` (recommended); runs on every pull request",
+      "why": "Every pull request runs the same gates as the pre-commit hook, and more",
+      "id": {
+        "what": "Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit",
+        "use": "Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request",
+        "why": "Setiap pull request menjalankan gate yang sama dengan hook pre-commit, dan lebih"
+      }
+    },
+    "agent-be-axum/reviewer": {
+      "use": "Via `/agent-core:review`",
+      "why": "Query and layering mistakes the compiler cannot see are caught in review",
+      "id": {
+        "what": "Lapisan lewat privasi modul, kontrak error, query dan migrasi sqlx, serta test",
+        "use": "Lewat `/agent-core:review`",
+        "why": "Kesalahan query dan lapisan yang tidak terlihat compiler tertangkap saat review"
+      }
+    },
+    "agent-be-axum/setup": {
+      "use": "`/agent-be-axum:setup`, once per repo",
+      "why": "Plugins cannot ship permissions or rules; you see every write first",
+      "id": {
+        "what": "Memasang aturan backend, anti-pattern, kerangka layanan, skrip gate, konfigurasi lint dan tes, serta CI pull request untuk layanan Rust + Axum setelah dry run yang Anda setujui",
+        "use": "`/agent-be-axum:setup`, sekali per repo",
+        "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-be-axum/sync": {
+      "use": "`/agent-be-axum:sync --check`",
+      "why": "Drift and double hook wiring show up with an exit code",
+      "id": {
+        "what": "Memeriksa repo terhadap file yang dipasang agent-be-axum (`--check`), atau memperbaruinya setelah dry run",
+        "use": "`/agent-be-axum:sync --check`",
+        "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
+      }
+    },
+    "agent-be-go/api-endpoint": {
+      "use": "\"add an endpoint\", or `/agent-be-go:api-endpoint`",
+      "why": "The spec, the generated server and one test per response move together",
+      "id": {
+        "what": "Menambah atau mengubah endpoint HTTP secara kontrak-dulu sebagai tracer bullet: spesifikasi, antarmuka hasil generator, satu tes merah di seam handler, lalu kode yang membuatnya hijau",
+        "use": "\"add an endpoint\", atau `/agent-be-go:api-endpoint`",
+        "why": "Spesifikasi, server hasil generator, dan satu tes per respons bergerak bersama"
+      }
+    },
+    "agent-be-go/db-migration": {
+      "use": "\"add a column\", or `/agent-be-go:db-migration`",
+      "why": "Schema changes deploy without downtime and never rewrite history",
+      "id": {
+        "what": "Menulis perubahan skema PostgreSQL sebagai migrasi goose baru tanpa downtime (expand, backfill, contract) dan membangkitkan ulang kode query",
+        "use": "\"add a column\", atau `/agent-be-go:db-migration`",
+        "why": "Perubahan skema dirilis tanpa downtime dan tidak pernah menulis ulang riwayat"
+      }
+    },
+    "agent-be-go/deepseek-review": {
+      "use": "Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run",
+      "why": "A second reader on every pull request for a cent or two",
+      "id": {
+        "what": "Meminta DeepSeek meninjau diff pull request dan mempostingnya sebagai satu komentar yang diperbarui di run berikutnya",
+        "use": "Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk menjalankan ulang",
+        "why": "Pembaca kedua di setiap pull request seharga satu atau dua sen"
+      }
+    },
+    "agent-be-go/generated-guard": {
+      "use": "Runs by itself before file writes",
+      "why": "Changes land in the spec or the SQL, not in a file the generator overwrites",
+      "id": {
+        "what": "Menolak edit tangan pada kode hasil generator (server oapi-codegen, kode query sqlc) dan kontrak OpenAPI yang diekspor",
+        "use": "Berjalan sendiri sebelum penulisan file",
+        "why": "Perubahan masuk ke spesifikasi atau SQL, bukan ke file yang akan ditimpa generator"
+      }
+    },
+    "agent-be-go/migration-guard": {
+      "use": "Runs by itself before file writes",
+      "why": "A migration a database may have run never changes; a fix is a new file",
+      "id": {
+        "what": "Menolak edit pada migrasi goose yang sudah ada di branch terlindungi (append-only); file migrasi baru tetap bebas",
+        "use": "Berjalan sendiri sebelum penulisan file",
+        "why": "Migrasi yang mungkin sudah dijalankan database tidak pernah berubah; perbaikan berupa file baru"
+      }
+    },
+    "agent-be-go/quality-gate": {
+      "use": "Answer `ci-gate=yes` (recommended); runs on every pull request",
+      "why": "Every pull request runs the same gates as the pre-commit hook, plus a database built from scratch",
+      "id": {
+        "what": "Pemanggil quality gate reusable milik kit untuk stack ini, di-pin ke satu commit",
+        "use": "Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request",
+        "why": "Setiap pull request menjalankan gate yang sama dengan hook pre-commit, ditambah database yang dibangun dari nol"
+      }
+    },
+    "agent-be-go/reviewer": {
+      "use": "Via `/agent-core:review`",
+      "why": "What no linter decides, a handler doing a service's work or a query in a loop, is caught in review",
+      "id": {
+        "what": "Meninjau diff layanan HTTP Go terhadap aturan AGENTS.md dan .claude/rules (lapisan, kontrak error, akses database, query, tes) dan melaporkan setiap pelanggaran dengan nomor aturannya. Tidak mengubah file.",
+        "use": "Lewat `/agent-core:review`",
+        "why": "Yang tidak diputuskan linter, seperti handler yang mengerjakan tugas service atau query di dalam loop, tertangkap saat review"
+      }
+    },
+    "agent-be-go/setup": {
+      "use": "`/agent-be-go:setup`, once per repo",
+      "why": "Plugins cannot ship permissions or rules; you see every write first",
+      "id": {
+        "what": "Memasang aturan backend, anti-pattern, kerangka layanan, skrip gate, konfigurasi lint dan tes, serta CI pull request ke layanan HTTP Go di PostgreSQL setelah dry run yang Anda setujui",
+        "use": "`/agent-be-go:setup`, sekali per repo",
+        "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-be-go/sync": {
+      "use": "`/agent-be-go:sync --check`",
+      "why": "Drift and double hook wiring show up with an exit code",
+      "id": {
+        "what": "Memeriksa repo ini terhadap file terpasang agent-be-go dengan --check (hanya membaca, keluar non-nol bila ada drift atau hook terpasang ganda), atau memperbaruinya setelah dry run yang Anda setujui",
+        "use": "`/agent-be-go:sync --check`",
+        "why": "Drift dan hook yang terpasang ganda terlihat lewat exit code"
+      }
+    },
     "agent-be-hono/deepseek-review": {
       "use": "Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run",
       "why": "A second reader on every pull request for a cent or two",
@@ -291,11 +453,11 @@
     },
     "agent-core/review": {
       "use": "`/agent-core:review`",
-      "why": "The stack's rules are checked line by line",
+      "why": "The stack's rules and the spec are each checked line by line, and neither report drowns the other",
       "id": {
-        "what": "Me-review perubahan staged atau branch lewat reviewer stack, menurut tingkat keparahan",
+        "what": "Me-review perubahan staged atau branch pada dua sumbu di subagent terpisah: standar repo (reviewer stack) dan spesifikasi yang diimplementasikan, dilaporkan terpisah",
         "use": "`/agent-core:review`",
-        "why": "Aturan stack diperiksa baris demi baris"
+        "why": "Aturan stack dan spesifikasi masing-masing diperiksa baris demi baris, tanpa laporan yang satu menenggelamkan yang lain"
       }
     },
     "agent-core/reviewer": {
@@ -305,6 +467,15 @@
         "what": "Memeriksa diff terhadap `AGENTS.md` dan `.claude/rules/`",
         "use": "Lewat `/agent-core:review` jika tidak ada reviewer stack",
         "why": "Temuan yang mengutip aturan, di stack apa pun"
+      }
+    },
+    "agent-core/spec-reviewer": {
+      "use": "Via `/agent-core:review`, as its spec axis",
+      "why": "A change that passes every rule but misses what was asked is caught before merge",
+      "id": {
+        "what": "Memeriksa diff terhadap spesifikasi yang diimplementasikannya (issue, rencana yang disetujui, atau file spesifikasi), setiap temuan mengutip baris spesifikasinya",
+        "use": "Lewat `/agent-core:review`, sebagai sumbu spesifikasi",
+        "why": "Perubahan yang lolos semua aturan tetapi meleset dari yang diminta tertangkap sebelum merge"
       }
     },
     "agent-core/safety-check": {
@@ -765,6 +936,96 @@
         "use": "`/agent-fe-threejs:sync --check`",
         "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
       }
+    },
+    "agent-ios-swiftui/a11y-audit": {
+      "use": "`/agent-ios-swiftui:a11y-audit`",
+      "why": "Contrast, Dynamic Type and missing labels are found on a simulator before release",
+      "id": {
+        "what": "Menjalankan audit aksesibilitas UI test di simulator, lalu membaca view untuk label dan trait; hanya melapor",
+        "use": "`/agent-ios-swiftui:a11y-audit`",
+        "why": "Kontras, Dynamic Type, dan label yang hilang ketahuan di simulator sebelum rilis"
+      }
+    },
+    "agent-ios-swiftui/deepseek-review": {
+      "use": "Answer `deepseek-review=yes`, add `DEEPSEEK_API_KEY`; comment `/ask-deepseek` to re-run",
+      "why": "A second reader on every pull request for a cent or two",
+      "id": {
+        "what": "Review AI dari DeepSeek atas diff pull request, sebagai satu komentar yang diperbarui; tanpa checkout",
+        "use": "Jawab `deepseek-review=yes`, tambahkan `DEEPSEEK_API_KEY`; komentari `/ask-deepseek` untuk mengulang",
+        "why": "Pembaca kedua di setiap pull request dengan biaya satu atau dua sen"
+      }
+    },
+    "agent-ios-swiftui/generated-guard": {
+      "use": "Runs by itself before file writes",
+      "why": "The client changes only through its generator, so it always matches the spec",
+      "id": {
+        "what": "Menolak edit tangan pada klien API hasil generator dan salinan spesifikasi OpenAPI dari backend",
+        "use": "Berjalan sendiri sebelum penulisan file",
+        "why": "Klien hanya berubah lewat generatornya, jadi selalu cocok dengan spesifikasinya"
+      }
+    },
+    "agent-ios-swiftui/i18n-guard": {
+      "use": "Ask after changing a view's text or a String Catalog",
+      "why": "No screen shows a key or untranslated text",
+      "id": {
+        "what": "Teks yang melewati String Catalog, locale yang hilang, pesan kode error, dan format angka dan tanggal",
+        "use": "Minta setelah mengubah teks view atau String Catalog",
+        "why": "Tidak ada layar yang menampilkan key atau teks yang belum diterjemahkan"
+      }
+    },
+    "agent-ios-swiftui/openapi-client-update": {
+      "use": "\"the backend added an error code\", or `/agent-ios-swiftui:openapi-client-update`",
+      "why": "A new error code fails the build until every screen maps it",
+      "id": {
+        "what": "Menyalin spesifikasi backend, meregenerasi klien, menambah panggilan package, dan memetakan setiap kode error baru beserta pesannya di setiap locale",
+        "use": "\"the backend added an error code\", atau `/agent-ios-swiftui:openapi-client-update`",
+        "why": "Kode error baru menggagalkan build sampai setiap layar memetakannya"
+      }
+    },
+    "agent-ios-swiftui/quality-gate": {
+      "use": "Answer `ci-gate=yes` (recommended); runs on every pull request",
+      "why": "A Linux job catches what needs no Mac before macOS minutes are spent",
+      "id": {
+        "what": "Pemanggil quality gate reusable milik kit untuk app iOS, di-pin ke satu commit: job Linux lalu job macOS",
+        "use": "Jawab `ci-gate=yes` (disarankan); berjalan di setiap pull request",
+        "why": "Job Linux menangkap yang tidak butuh Mac sebelum menit macOS terpakai"
+      }
+    },
+    "agent-ios-swiftui/reviewer": {
+      "use": "Via `/agent-core:review`",
+      "why": "Logic in views and errors chosen by status are caught in review",
+      "id": {
+        "what": "View yang hanya merender, model layar, paket logika, konkurensi, kode error, token, tes, dan aksesibilitas",
+        "use": "Lewat `/agent-core:review`",
+        "why": "Logika di view dan error yang dipilih dari status tertangkap saat review"
+      }
+    },
+    "agent-ios-swiftui/setup": {
+      "use": "`/agent-ios-swiftui:setup`, once per repo",
+      "why": "Plugins cannot ship permissions or rules; you see every write first",
+      "id": {
+        "what": "Memasang aturan iOS, anti-pattern, skrip gate, konfigurasi SwiftLint, swift-format dan xcconfig, tipe problem beserta tesnya, hook pre-commit, serta CI pull request ke app SwiftUI setelah dry run yang Anda setujui",
+        "use": "`/agent-ios-swiftui:setup`, sekali per repo",
+        "why": "Plugin tidak bisa membawa izin atau aturan; Anda melihat setiap penulisan lebih dulu"
+      }
+    },
+    "agent-ios-swiftui/swiftui-screen": {
+      "use": "\"add an order detail screen\", or `/agent-ios-swiftui:swiftui-screen`",
+      "why": "Every screen arrives tested, translated and audited",
+      "id": {
+        "what": "Membangun satu layar sebagai tracer bullet: seam yang disepakati, tes model layar merah lalu hijau, view, string katalog, dan audit aksesibilitas",
+        "use": "\"add an order detail screen\", atau `/agent-ios-swiftui:swiftui-screen`",
+        "why": "Setiap layar datang lengkap dengan tes, terjemahan, dan audit"
+      }
+    },
+    "agent-ios-swiftui/sync": {
+      "use": "`/agent-ios-swiftui:sync --check`",
+      "why": "Drift and double hook wiring show up with an exit code",
+      "id": {
+        "what": "Memeriksa repo terhadap file yang dipasang agent-ios-swiftui (`--check`), atau memperbaruinya setelah dry run",
+        "use": "`/agent-ios-swiftui:sync --check`",
+        "why": "Pergeseran dan hook yang terpasang dua kali terlihat lewat kode keluar"
+      }
     }
   },
   "files": {
@@ -787,6 +1048,10 @@
     ".claude/mcp/vps-provider.example.json": {
       "en": "An on-demand VPS-provider MCP server to fill in and pin",
       "id": "Server MCP penyedia VPS sesuai kebutuhan, untuk diisi dan di-pin"
+    },
+    ".claude/mcp/xcode.example.json": {
+      "en": "Xcode's MCP bridge (xcrun mcpbridge), loaded for one session with --mcp-config while Xcode is open",
+      "id": "Jembatan MCP Xcode (xcrun mcpbridge), dimuat untuk satu sesi dengan --mcp-config selagi Xcode terbuka"
     },
     ".claude/settings.json": {
       "en": "Permissions (allow, ask, deny) and, from agent-core, the Bash sandbox",
@@ -820,13 +1085,37 @@
       "en": "Lint rules for oxlint; the reasons are in .claude/docs/lint-config.md",
       "id": "Aturan lint oxlint; alasannya ada di .claude/docs/lint-config.md"
     },
+    ".swift-format": {
+      "en": "swift-format settings: 4-space indentation, 120-character lines",
+      "id": "Pengaturan swift-format: indentasi 4 spasi, baris 120 karakter"
+    },
+    "App/PrivacyInfo.xcprivacy": {
+      "en": "The app's privacy manifest: collected data and the reasons for each required-reason API",
+      "id": "Privacy manifest app: data yang dikumpulkan dan alasan untuk setiap required-reason API"
+    },
+    "api/openapi.json": {
+      "en": "The contract exported for clients, generated from api/openapi.yaml",
+      "id": "Kontrak yang diekspor untuk klien, dibangkitkan dari api/openapi.yaml"
+    },
     "bunfig.toml": {
       "en": "Bun's test settings, including the test preload",
       "id": "Pengaturan tes Bun, termasuk preload tes"
     },
+    "db/roles.sql": {
+      "en": "The database roles: the migrator, the service (DML only, its timeouts) and the read-only agent role",
+      "id": "Role database: migrator, layanan (hanya DML, beserta timeout-nya), dan role agen yang hanya membaca"
+    },
     "doctor.config.json": {
       "en": "React Doctor settings (dead code is left to knip)",
       "id": "Pengaturan React Doctor (dead code diserahkan ke knip)"
+    },
+    "go.mod": {
+      "en": "The module, its Go version and the tool lines that pin the generators and checkers",
+      "id": "Modul, versi Go-nya, dan baris tool yang mem-pin generator dan pemeriksa"
+    },
+    "go.sum": {
+      "en": "The checksums of go.mod's modules",
+      "id": "Checksum modul-modul go.mod"
     },
     "knip.json": {
       "en": "Dead-code settings for knip",
@@ -839,6 +1128,10 @@
     "lighthouserc.json": {
       "en": "Lighthouse CI budgets: LCP, CLS and TBT",
       "id": "Anggaran Lighthouse CI: LCP, CLS, dan TBT"
+    },
+    "openapi.json": {
+      "en": "The OpenAPI document cargo run --bin openapi writes from the handlers; generated, never edited",
+      "id": "Dokumen OpenAPI yang ditulis cargo run --bin openapi dari handler; hasil generator, tidak pernah diedit"
     },
     "oxlint.json": {
       "en": "Lint rules for oxlint; the reasons are in .claude/docs/lint-config.md",
@@ -860,9 +1153,17 @@
       "en": "Where each kind of identifier lives, for the constants check",
       "id": "Tempat tiap jenis identifier berada, untuk pemeriksa konstanta"
     },
+    "scripts/check/i18n-catalog.json": {
+      "en": "The locales every String Catalog key needs, read by i18n-catalog.mjs",
+      "id": "Locale yang wajib dimiliki setiap key String Catalog, dibaca i18n-catalog.mjs"
+    },
+    "scripts/check/package-graph.json": {
+      "en": "The logic package's layers and the build-tool plugins allowed, read by package-graph.sh",
+      "id": "Lapisan paket logika dan plugin build-tool yang diizinkan, dibaca package-graph.sh"
+    },
     "scripts/check/payload-vectors.json": {
-      "en": "Shared test vectors every implementation of the envelope must open and refuse; never regenerated to pass",
-      "id": "Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope; tidak pernah dibuat ulang agar lolos"
+      "en": "Shared test vectors every implementation of the envelope must open and refuse, its key agreement included; never regenerated to pass",
+      "id": "Vektor uji bersama yang wajib dibuka dan ditolak setiap implementasi envelope, termasuk kesepakatan kuncinya; tidak pernah dibuat ulang agar lolos"
     },
     "scripts/check/site.config.json": {
       "en": "Site URL, mode and budgets the site checks read",
@@ -883,6 +1184,62 @@
     "scripts/vulture/whitelist.py": {
       "en": "Names vulture must not report as dead code",
       "id": "Nama yang tidak boleh dilaporkan vulture sebagai dead code"
+    },
+    "src/payload/boundary_tests.rs": {
+      "en": "Unit tests of the payload boundary: startup refusals, which sides a route seals, the exchange key, opening and sealing",
+      "id": "Unit test boundary payload: penolakan saat start, sisi yang disegel tiap rute, kunci pertukaran, membuka dan menyegel"
+    },
+    "src/payload/cipher_tests.rs": {
+      "en": "Unit tests of AES-256-GCM: a fresh nonce per seal, one refusal for every failure, a key that never prints",
+      "id": "Unit test AES-256-GCM: nonce baru tiap segel, satu penolakan untuk setiap kegagalan, kunci yang tidak pernah tercetak"
+    },
+    "src/payload/code_tests.rs": {
+      "en": "Unit tests of the ENVELOPE_* codes: wire names, titles and problem types from the contract table",
+      "id": "Unit test kode ENVELOPE_*: nama di wire, judul, dan problem type dari tabel kontrak"
+    },
+    "src/payload/codec_tests.rs": {
+      "en": "Unit tests of sealing and opening JSON: freshness first, base64url fields, plaintext that is not JSON",
+      "id": "Unit test menyegel dan membuka JSON: kesegaran dicek dulu, field base64url, plaintext yang bukan JSON"
+    },
+    "src/payload/encoding_tests.rs": {
+      "en": "Unit tests of base64url: unpadded on the wire, standard base64 read too",
+      "id": "Unit test base64url: tanpa padding di wire, base64 standar tetap terbaca"
+    },
+    "src/payload/envelope_tests.rs": {
+      "en": "Unit tests of the envelope: version 1 only, the two-minute window, the AAD strings",
+      "id": "Unit test envelope: hanya versi 1, jendela dua menit, string AAD"
+    },
+    "src/payload/keyring_tests.rs": {
+      "en": "Unit tests of the key ring: kid:base64key, rotation with _NEXT, refusals by variable name",
+      "id": "Unit test key ring: kid:base64key, rotasi dengan _NEXT, penolakan menyebut nama variabelnya"
+    },
+    "src/payload/mode_tests.rs": {
+      "en": "Unit tests of the strict/off switch: the variable wins, a typo is refused, off never in production",
+      "id": "Unit test sakelar strict/off: variabel menang, salah ketik ditolak, off tidak pernah di produksi"
+    },
+    "src/payload/policy_tests.rs": {
+      "en": "Unit tests of the policies and the registry lookup, the generated registry included",
+      "id": "Unit test kebijakan dan pencarian registry, termasuk registry hasil generator"
+    },
+    "src/payload/setup_tests.rs": {
+      "en": "Unit tests of the startup errors: each names what to fix, never a value",
+      "id": "Unit test error saat start: masing-masing menyebut apa yang harus diperbaiki, tidak pernah nilainya"
+    },
+    "src/platform/config_tests.rs": {
+      "en": "Unit tests of the configuration reader",
+      "id": "Unit test pembaca konfigurasi"
+    },
+    "src/platform/error_tests.rs": {
+      "en": "Unit tests of the error codes, the problem body and the problem-type base",
+      "id": "Unit test kode error, body problem, dan base problem type"
+    },
+    "src/platform/extract_tests.rs": {
+      "en": "Unit tests of ValidJson: 422 by field without the value, 413 over the limit",
+      "id": "Unit test ValidJson: 422 per field tanpa nilainya, 413 di atas batas"
+    },
+    "src/platform/middleware_tests.rs": {
+      "en": "Unit tests of the layers: every bare error status becomes a problem with a code",
+      "id": "Unit test layer: setiap status error polos menjadi problem dengan kode"
     }
   }
 }

@@ -15,7 +15,8 @@ A plugin cannot carry a repo's rules or check scripts, so this command installs 
   once and is the repo's from then on).
 - `docs/3d-skills.md`: how to add third-party 3D skills by reference, with `skills-lock.json` and
   `skillOverrides`. The kit vendors no skill.
-- An `allow` rule so Claude runs the budget check without asking (it reads local files only).
+- An `allow` rule so Claude runs the budget check without a permission prompt (it reads local
+  files only).
 
 Nothing is written until the user has seen the whole draft and replied **go**. Existing files are
 never overwritten: the only edits to files that already exist are the managed merges the draft lists

@@ -1,0 +1,15 @@
+# <Project Name>
+
+<One sentence: what this Go service does, and for whom.>
+
+Done means `bash scripts/check/gates.sh` passes: the list pre-commit and CI run.
+
+## On-demand references
+
+| Read when | File |
+| --- | --- |
+| Citing or checking a numbered rule | `AGENTS.md` |
+| A failure that looks familiar | `.claude/anti-patterns/INDEX.md` |
+| Postgres through `db-dev` or `db-prod` | `.claude/DATABASE.md` |
+| Hooks, CI, reviews, MCP pins | `.claude/OPERATIONS.md` |
+| Unlocking `.env` edits or production writes | `docs/unlock.md` |

@@ -1,0 +1,11 @@
+{
+  "//": "What scripts/check/package-graph.sh allows in the packages under Packages/ (AGENTS.md Rules 1, 2, 21 and 22). Setup created this file once; it is yours now.",
+  "//layers": "Each library target, and the targets of its own package it may import. A target missing here fails the check: add it with its allowed imports when you add it to Package.swift. Features never import each other.",
+  "layers": {
+    "Domain": [],
+    "APIClient": ["Domain"],
+    "Features": ["Domain", "APIClient"]
+  },
+  "//plugins": "Build-tool plugins and macros run third-party code in every build. Each one a target uses is named here with the decision that allowed it (a sentence and a link to the ADR); anything unnamed fails.",
+  "plugins": {}
+}

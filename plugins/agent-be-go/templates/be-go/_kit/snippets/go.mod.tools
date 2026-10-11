@@ -1,0 +1,33 @@
+// agent-be-go: what the gates need in go.mod. Setup never edits go.mod: merge this into yours by
+// hand, then run `go mod tidy` once (it downloads the modules). A repo without go.mod got
+// go.mod.starter instead, with these lines already in it.
+//
+// - The generators and checkers the gates call through `go tool`, so go.mod pins their versions.
+//   golangci-lint is the one tool outside go.mod (scripts/check/tools.env). goose is a library too:
+//   internal/postgres/main_test.go migrates the test database with it.
+// - kin-openapi validates requests against the spec (internal/httpapi/validate.go).
+// - pgx v5.11.0 alone resolves golang.org/x/text v0.29.0, which has two reachable vulnerabilities
+//   (GO-2026-6629, GO-2026-5970); require a fixed release, as below.
+// - go 1.27.0 with toolchain go1.27.2: golangci-lint v2.14.0 is built with Go 1.27 and refuses a
+//   newer go line. Move both together.
+
+go 1.27.0
+
+toolchain go1.27.2
+
+tool (
+	github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
+	github.com/pressly/goose/v3/cmd/goose
+	github.com/sqlc-dev/sqlc/cmd/sqlc
+	golang.org/x/vuln/cmd/govulncheck
+)
+
+require (
+	github.com/getkin/kin-openapi v0.149.0
+	github.com/jackc/pgx/v5 v5.11.0
+	github.com/pressly/goose/v3 v3.28.0
+	github.com/oapi-codegen/oapi-codegen/v2 v2.8.0 // indirect
+	github.com/sqlc-dev/sqlc v1.31.1 // indirect
+	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/vuln v1.8.0 // indirect
+)

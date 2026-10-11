@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# The commit gate: the gates for what is staged, from the list CI runs. Turn it on once per clone:
+#   git config core.hooksPath .githooks
+bash scripts/check/gates.sh --hook --fail-fast

@@ -1,0 +1,4 @@
+# Files left out of the coverage report: `<glob>  # <reason>`, one per line, from the categories
+# .claude/rules/rust/coverage.md lists. coverage-per-file.mjs refuses a line without its reason.
+src/main.rs  # composition root: process start, signals and serve; the library it calls is tested
+src/bin/**  # composition root: prints the document tests/api/openapi.rs already checks

@@ -1,0 +1,61 @@
+# AGENTS.md — <repo-name>
+
+The numbered rules of this Rust + Axum service. A rule is stated here once; how to follow it, with
+examples, is in the file its Detail column names, which loads when you edit a matching path. Cite
+rules by number (`Rule 12`): `scripts/check/ai-config.sh` fails on a cited number this file does
+not define. Append new rules; never renumber.
+
+## Compliance Status
+
+Fill this in once the codebase exists: a template has nothing to comply with yet. A group marked
+Partial or Not met names the shape to follow meanwhile.
+
+| Rules | Group | Status | Notes |
+| --- | --- | --- | --- |
+| 1–5 | Layers | `<Enforced / Partial / Not met>` | |
+| 6–10 | Errors and the contract | `<status>` | |
+| 11–17 | Database | `<status>` | |
+| 18–21 | Runtime | `<status>` | |
+| 22–25 | Code quality and coverage | `<status>` | |
+| 26 | Tests | `<status>` | |
+| 27–29 | Secrets and supply chain | `<status>` | |
+| 30–34 | Payload contract (only where `payload-encryption` is yes) | `<status / N/A>` | |
+
+## Rules
+
+| # | Rule | Enforced by | Detail |
+| --- | --- | --- | --- |
+| 1 | Logic lives in the library: `main.rs` starts the runtime and serves, `lib.rs` only composes | coverage (only `main.rs` and `src/bin/` are exempt) + reviewer | `.claude/rules/backend/rust-service.md` |
+| 2 | A request goes routes → service → repo; `repo` is private to its domain; `src/routes/` never names `sqlx`, and a domain never names `axum`, `tower` or `http` | module privacy (compiler) + `rust-source.mjs` LAYERS | `.claude/rules/backend/rust-service.md` |
+| 3 | A domain exposes a small surface through its `mod.rs`; every other item is `pub(crate)` or private; no `utils` or `common` module | `unreachable_pub = "deny"` + reviewer | `.claude/rules/backend/rust-service.md` |
+| 4 | A trait arrives with its second adapter (a fake for a real external system counts) | reviewer | `.claude/rules/backend/rust-service.md` |
+| 5 | A handler body holds at most 15 lines of code | `rust-source.mjs` HANDLERS | `.claude/rules/backend/rust-service.md` |
+| 6 | Every error a client sees carries a registered `ErrorCode`, and a code nothing builds fails the build | `pub(crate) enum` + `dead_code` under `build.warnings = "deny"`; `rust-source.mjs` ALLOW refuses `Deserialize` on `ErrorCode` | `.claude/rules/common/error-codes.md` |
+| 7 | `platform::error::problem()` builds every error body: RFC 9457, `type` = base + code, `requestId`; production refuses the placeholder base; a JSON body is read through `ValidJson` only (a 422 names the field, never the value) | seeded tests + the startup check + reviewer | `.claude/rules/common/error-codes.md` |
+| 8 | Every operation declares each error status it can return, a 422 when it takes a body, and a `description` on every response | `tests/api/openapi.rs` | `.claude/rules/common/error-codes.md` |
+| 9 | A refusal relayed from an upstream keeps its code and status, minted again under this API's base | reviewer | `.claude/rules/common/error-codes.md` |
+| 10 | A route path is spelled only in `src/routes/paths.rs`; `.route(` and `Router::new()` appear only in `src/routes/mod.rs` and `src/lib.rs` | `rust-source.mjs` ROUTES + the spec drift test | `.claude/rules/backend/rust-service.md` |
+| 11 | A migration a protected branch has stays as it is; a new one has a version above the base's highest | migration-guard + `migrations.sh --base` in CI | `.claude/rules/backend/postgres.md` |
+| 12 | `CREATE INDEX CONCURRENTLY` stands alone in a file that starts with `-- no-transaction` | `migrations.sh` + squawk in CI | `.claude/rules/backend/postgres.md` |
+| 13 | Every foreign key has an index that leads with its columns | catalog query in the CI database | `.claude/rules/backend/postgres.md` |
+| 14 | A list query pages with `LIMIT` and a keyset `WHERE`; it names its columns; `AssertSqlSafe(` sits under a `// sql-safe: <reason>` comment | `rust-source.mjs` SQL + reviewer | `.claude/rules/backend/postgres.md` |
+| 15 | Queries run as one batch (`= ANY($1)`, `UNNEST`, `QueryBuilder::push_values`), never one per loop turn | reviewer | `.claude/rules/backend/postgres.md` |
+| 16 | A transaction is short, opens only in a `repo.rs`, and makes no network call | `rust-source.mjs` LAYERS + reviewer | `.claude/rules/backend/postgres.md` |
+| 17 | The pool is explicit (`max_connections` of 3 or more, `acquire_timeout`, lifetimes) and sends `extra_float_digits(None)`; database timeouts come from `ALTER ROLE` | `Config` check + CI grep + `tests/pooler` | `.claude/rules/backend/postgres.md` |
+| 18 | The layers run request id first (a client's value checked), then body limit, `TimeoutLayer::with_status_code(504)` and a CORS allowlist; shutdown has a deadline | clippy `disallowed-methods` + seeded tests | `.claude/rules/backend/rust-service.md` |
+| 19 | Only `src/platform/config.rs` reads the environment | clippy `disallowed-methods` (`std::env::var*`) + one `#[expect(..., reason)]` | `.claude/rules/backend/rust-service.md` |
+| 20 | Logs go through `tracing` | clippy `print_stdout`, `print_stderr`, `dbg_macro` | `.claude/rules/backend/rust-service.md` |
+| 21 | Code outside tests returns errors with `?`: no `unwrap`, `expect`, `panic!` or indexing | clippy restriction lints in `Cargo.toml` | `.claude/rules/backend/rust-service.md` |
+| 22 | A file holds at most 200 lines of code; blank and comment lines do not count | `rust-source.mjs` LINES | `.claude/rules/backend/rust-service.md` |
+| 23 | A suppression is `#[expect(lint, reason = "...")]` on the item, never `#[allow]` or `#![allow(` | clippy `allow_attributes`, `allow_attributes_without_reason`, `unfulfilled_lint_expectations`; `rust-source.mjs` ALLOW | `.claude/rules/backend/rust-service.md` |
+| 24 | Types stay honest: `unsafe` is forbidden, casts use `From`/`TryFrom`, and `serde_json::Value` lives only at a system boundary, parsed at once into a `deny_unknown_fields` struct | `unsafe_code = "forbid"`, clippy `as_conversions` + reviewer | `.claude/rules/backend/rust-service.md` |
+| 25 | Every file is covered at 100% of lines and functions; an exemption is closed and gives its reason | `coverage.sh` + `coverage-per-file.mjs` + `coverage-policy.mjs` + the CI coverage floor | `.claude/rules/rust/coverage.md` |
+| 26 | A test goes through the seam its caller uses; mocks stand only at system boundaries; expected values come from the spec | reviewer | `.claude/rules/backend/testing.md` |
+| 27 | Secrets and `.env` files stay out of git; `.cargo/config.toml` keeps `SQLX_OFFLINE = "true"` | gitleaks + the CI `.env` check + `cargo-policy.sh` | `.claude/rules/backend/rust-service.md` |
+| 28 | `Cargo.lock` is committed and every cargo call passes `--locked`; an upgrade moves one crate family, after its CHANGELOG is read | `cargo-policy.sh` + cargo-deny + reviewer | `.claude/rules/backend/rust-service.md` |
+| 29 | The release profile keeps `panic = "unwind"` (CatchPanicLayer stays alive) and sets `overflow-checks = true` | `cargo-policy.sh` | `.claude/rules/backend/rust-service.md` |
+| 30 | Where setup answered `payload-encryption=yes` (Rules 30 to 34): every body that crosses a service boundary is sealed, unless `payload.config.json` exempts its route with a written reason | `payload-registry.mjs` + `src/routes/payload_layer_tests.rs` | `.claude/rules/backend/payload.md` |
+| 31 | The payload layer is the `route_layer` `lib.rs` adds once every route is merged; only `src/routes/` and `src/lib.rs` name `crate::payload` | `rust-source.mjs` LAYERS + reviewer | `.claude/rules/backend/payload.md` |
+| 32 | Payload keys are added, never repurposed (`kid:base64`, `_NEXT` to rotate, `PAYLOAD_SERVER_JWK`); only `src/platform/config.rs` reads them, and none is logged or printed | clippy `disallowed-methods` + gitleaks + reviewer | `.claude/rules/backend/payload.md` |
+| 33 | The committed switch says `strict`; `off` is refused in production | `payload-registry.mjs` + `src/payload/mode_tests.rs` | `.claude/rules/backend/payload.md` |
+| 34 | A payload refusal is a `PayloadCode` the spec lists, built by `problem()`; the cipher passes the shared vectors | `payload-registry.mjs` + `src/payload/vectors_tests.rs` | `.claude/rules/backend/payload.md` |

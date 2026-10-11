@@ -5,6 +5,9 @@ paths:
   - 'scripts/**'
   - 'components/**'
   - 'lib/**'
+  - 'Sources/**'
+  - 'Tests/**'
+  - 'Packages/**'
 ---
 
 # SHAPE — Folder Shape
@@ -13,6 +16,10 @@ A file's path should be guessable from what it does. Enforced by `scripts/check/
 in pre-commit and the quality gate, which reports violations as SHAPE-1 to SHAPE-4. Where a stack
 adds its own file-organization rule (a frontend's `web/file-organization.md`, for example), that
 rule sits on top of this one.
+
+The check walks `src/`, `tests/`, `scripts/`, `components/`, `lib/` and each Swift package's
+`Sources/` and `Tests/` (the root package, or `Packages/<name>/`). Go is not walked: its packages
+live in `cmd/` and `internal/`, and the compiler and the stack's package rule shape them.
 
 ## Shape
 
@@ -28,7 +35,10 @@ rule sits on top of this one.
 - **SHAPE-2.** A test sits at the mirror of the source it is named after. Next.js:
   `src/lib/format/date.ts` → `src/testing/lib/format/date.test.ts`. Hono or another TypeScript
   API: the `__tests__/` folder beside the source. Python: `src/app/core/settings/config.py` →
-  `tests/unit/core/settings/test_config.py`, under `unit/`, `routes/` or `integration/`.
+  `tests/unit/core/settings/test_config.py`, under `unit/`, `routes/` or `integration/`. Swift:
+  `Packages/AppCore/Sources/Domain/Money/Amount.swift` →
+  `Packages/AppCore/Tests/DomainTests/Money/AmountTests.swift`. Rust tests sit in the module they
+  test, or in `tests/<area>/main.rs`, and are not mirrored.
 - A second test of one source adds an aspect: `date.timezone.test.ts`. A test that spans several
   sources sits in the nearest folder that holds all of them.
 - **SHAPE-4.** Mocks, fixtures, helpers and stubs live in
@@ -42,12 +52,13 @@ rule sits on top of this one.
 - Route trees the framework shapes, in a Next.js repo: `src/app/**`, `app/**` and Nextra's
   `content/**`.
 - Entrypoints at a fixed path: `src/{app,index,env,proxy,middleware,instrumentation}.ts`,
-  `src/instrumentation-client.ts`, `src/app/{main,cli}.py`, and `src/testing/setup.ts`, with tests
-  of those entrypoints at the root of the test tree.
-- `__tests__/` does not count as a subfolder. `__init__.py`, `conftest.py` and `py.typed` do not
-  count as files.
+  `src/instrumentation-client.ts`, `src/app/{main,cli}.py`, `src/testing/setup.ts`, and Rust's
+  `src/main.rs` and `src/lib.rs`, with tests of those entrypoints at the root of the test tree.
+- `__tests__/` does not count as a subfolder. `__init__.py`, `conftest.py`, `py.typed` and, in a
+  Rust crate, `mod.rs` do not count as files.
 - Tool output and caches: `migrations/`, `generated/`, `*.generated.*`, `node_modules/`, `.next/`,
-  `out/`, `dist/`, `coverage/` and the Python tool caches.
+  `out/`, `dist/`, `coverage/`, the Python tool caches, Rust's `target/`, and Swift's
+  `GeneratedSources/` and `.build/` (every folder whose name starts with a dot, `.sqlx/` too).
 
 A `.gitkeep` is not exempt: delete it once the folder has content. Adding an exemption means
 changing this file and `scripts/check/folder-shape.mjs` together, in one change.

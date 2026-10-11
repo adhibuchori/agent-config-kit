@@ -1,0 +1,128 @@
+{
+  "stack": "ios-swiftui",
+  "conflictsWith": ["agent-ai-fastapi", "agent-be-axum", "agent-be-go", "agent-be-hono", "agent-docs-nextra", "agent-fe-nextjs", "agent-fe-nextjs-static"],
+  "questions": [
+    {
+      "id": "ci-gate",
+      "ask": "Run agent-config-kit's iOS quality gate on every pull request (.github/workflows/quality-gate.yml)?",
+      "why": "Installs a small caller of the kit's ios-swiftui-quality-gate workflow, pinned to one commit: a Linux job runs SwiftLint, the catalog, error-code, suppression and privacy checks, secrets and the skill scan first; only when it passes does a macOS job with Xcode 27 run the whole gate list, the simulator build with a zero-warning count, the tests and the accessibility audit, the String Catalog check against the build, dead code, client drift and the coverage floor. Read-only token, no secrets, and no signing. It needs GitHub Actions; macOS minutes cost about ten times Linux ones on a private repository. An existing quality-gate.yml is kept either way.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "the repo is on GitHub (a github.com remote or a .github/ folder); .github/workflows/quality-gate.yml already exists",
+      "install": { "yes": [".github/workflows/quality-gate.yml"] }
+    },
+    {
+      "id": "deepseek-review",
+      "ask": "Review each pull request with DeepSeek, a low-cost paid AI model (.github/workflows/deepseek-review.yml)?",
+      "why": "Installs a caller of agent-config-kit's reusable DeepSeek review, with notes about this stack: one comment per pull request from a branch of this repository, updated when the repository's owner, a member or a collaborator comments /ask-deepseek. It reads the diff over the GitHub API and runs no pull-request code. It needs the repository secret DEEPSEEK_API_KEY and costs about ten US cents a review at most, usually a cent or two (the diff and the answer are capped); without the secret it passes and sends nothing.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": ".github/workflows/deepseek-review.yml already exists, or the user has asked for an AI review in CI",
+      "install": { "yes": [".github/workflows/deepseek-review.yml"] }
+    },
+    {
+      "id": "pr-templates",
+      "ask": "Add pull-request templates for work pull requests and dev → prod promotions (.github/PULL_REQUEST_TEMPLATE/)?",
+      "why": "They list only what the gate cannot decide: what a person checks on a simulator, the screens the accessibility audit reaches, the copy in every locale, and the release steps of a promotion. They assume dev and prod branches.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "branches dev and prod exist (git branch --list dev prod); .github/PULL_REQUEST_TEMPLATE/ already has files",
+      "install": { "yes": [".github/PULL_REQUEST_TEMPLATE/*.md"] }
+    },
+    {
+      "id": "serena-workspace",
+      "ask": "Do you open several repositories as one Serena workspace (for example this app and the backend whose spec it copies)?",
+      "why": "Adds .claude/SERENA-WORKSPACE.example.md, which explains how to scope Serena's searches across repos. With a single repo the default needs no documentation.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": ".mcp.json runs Serena and a .serena/project.yml above this repo lists several folders, or AGENT_WORKSPACE_ROOT is set",
+      "install": { "yes": [".claude/SERENA-WORKSPACE.example.md"] }
+    },
+    {
+      "id": "min-ios",
+      "ask": "Which iOS version is the oldest the app supports?",
+      "why": "17.0 is the oldest with Observation and the accessibility audit the rules use, and the oldest Xcode 27 still runs on a simulator; 18.0 or 26.0 drop older devices for newer APIs without #available checks. The seeded files say 17.0: for another answer, set IPHONEOS_DEPLOYMENT_TARGET in Config/Base.xcconfig and .iOS(...) in Packages/AppCore/Package.swift to it (the draft repeats this step).",
+      "choices": ["17.0", "18.0", "26.0"],
+      "recommended": "17.0",
+      "detect": "IPHONEOS_DEPLOYMENT_TARGET in the .xcodeproj or an existing xcconfig; .iOS(.vNN) in a Package.swift"
+    },
+    {
+      "id": "locales",
+      "ask": "Which languages does the app ship (en, or en and id)?",
+      "why": "en,id installs scripts/check/i18n-catalog.json, which makes the String Catalog check require both locales, translated, for every key; list more locales there when the app ships them. en installs nothing: each catalog is then checked against its own source language.",
+      "choices": ["en", "en,id"],
+      "recommended": "en",
+      "detect": "the locales a Localizable.xcstrings already holds, or knownRegions in the .xcodeproj",
+      "install": { "en,id": ["scripts/check/i18n-catalog.json"] }
+    },
+    {
+      "id": "analytics",
+      "ask": "Does an agent need to read a self-hosted analytics API from this repo?",
+      "why": "Adds .claude/ANALYTICS.example.md, a template to fill in for that read API. An unfilled template is worse than none, because an agent will try to use it.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "the code names an analytics client, or .claude/ANALYTICS.md exists",
+      "install": { "yes": [".claude/ANALYTICS.example.md"] }
+    },
+    {
+      "id": "payload-encryption",
+      "ask": "Does the backend this app calls seal request and response bodies (the payload contract: encrypted envelopes, one operation registry, checked before merge)?",
+      "why": "Yes installs the app's half of the payload contract, with its tests at 100%: Payload*.swift in Packages/AppCore/Sources/APIClient (AES-256-GCM envelopes bound to method, route and status; one key agreed per session over the backend's handshake with CryptoKit, in memory only and never pinned; a client middleware, last in the list, that seals and opens every registered operation; AppProblem(failure:) for the five ENVELOPE_* codes), payload.config.json, the shared test vectors, the contract and a rule. The steps after it are yours: copy the backend's spec once it has the handshake and the ENVELOPE_* codes, run node scripts/generate/payload-registry.mjs, add the codes to ProblemCode with their messages, and give each API a PayloadSession; the gates stay red until then. No new package. Answer no when bodies need no sealing beyond TLS.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "payload.config.json or Packages/AppCore/Sources/APIClient/Payload*.swift already exists, or the backend's spec has a payload handshake or ENVELOPE_* codes",
+      "install": {
+        "yes": [
+          ".claude/PAYLOAD-CONTRACT.md",
+          ".claude/rules/common/payload-contract.md",
+          ".claude/rules/ios/payload.md",
+          "payload.config.json",
+          "scripts/check/payload-vectors.json",
+          "Packages/AppCore/Sources/APIClient/Payload*.swift",
+          "Packages/AppCore/Tests/APIClientTests/Payload*.swift"
+        ]
+      }
+    }
+  ],
+  "seed": [
+    ".claude/*.example.md",
+    ".claude/agent-config.json",
+    ".claude/anti-patterns/INDEX.md",
+    ".env.ci.example",
+    ".githooks/pre-commit",
+    ".github/CODEOWNERS",
+    ".github/PULL_REQUEST_TEMPLATE/*.md",
+    ".periphery.yml",
+    ".swift-format",
+    ".swift-format-ignore",
+    ".swiftlint.yml",
+    "App/PrivacyInfo.xcprivacy",
+    "Config/*.xcconfig",
+    "Packages/AppCore/Sources/APIClient/AppProblem.swift",
+    "Packages/AppCore/Sources/APIClient/openapi-generator-config.yaml",
+    "Packages/AppCore/Sources/APIClient/Payload*.swift",
+    "Packages/AppCore/Tests/APIClientTests/AppProblemTests.swift",
+    "Packages/AppCore/Tests/APIClientTests/Payload*.swift",
+    "payload.config.json",
+    "scripts/check/coverage-exempt.txt",
+    "scripts/check/gates.list",
+    "scripts/check/i18n-catalog.json",
+    "scripts/check/package-graph.json"
+  ],
+  "snippets": {},
+  "gitignore": [
+    ".serena/",
+    ".skillspector/",
+    ".env",
+    ".env.*",
+    "!.env.example",
+    "!.env.*.example",
+    ".build/",
+    ".swiftpm/",
+    "/coverage",
+    "DerivedData/",
+    "xcuserdata/",
+    "*.xcresult"
+  ],
+  "packageScripts": {}
+}

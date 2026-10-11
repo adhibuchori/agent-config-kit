@@ -1,0 +1,7 @@
+# The toolchain every cargo call in this repo uses: an exact release, the same on every laptop and
+# in CI. Move it in its own pull request, together with rust-version in Cargo.toml. With
+# RUSTUP_AUTO_INSTALL=0 a missing toolchain is an error instead of a download.
+[toolchain]
+channel = "1.99.0"
+profile = "minimal"
+components = ["clippy", "rustfmt", "llvm-tools"]

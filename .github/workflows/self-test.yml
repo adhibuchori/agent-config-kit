@@ -8,11 +8,14 @@
 #   |                           | scripts/catalog.mjs --check (README catalog, docs pages, layout);   |
 #   |                           | scripts/version-sync.mjs --check against the pull request's base;   |
 #   |                           | scripts/readme-pair.mjs (README.md and README.id.md change together)|
+#   |                           | scripts/check-comment-style.mjs (JS and TS comments are blocks)     |
 #   | Shell Lint                | ShellCheck -x -S style on every *.sh and bin/ script (pinned image) |
 #   | Bats (macos-15, ubuntu)   | bash 3.2 syntax (/bin/bash -n on macOS) and every test in tests/    |
 #   | fe-nextjs-static Fixtures | the static-site checks against the toy site; a skipped test fails   |
 #   | Workflows Lint            | actionlint, zizmor, pinact and the trigger policy (a called file)   |
 #   | Secret Scan               | gitleaks over the full history and the tree (pinned image)          |
+#   | SkillSpector (plugins)    | every plugin's commands, agents, skills and hook scripts through    |
+#   |                           | the users' skills.sh gate and baseline; no new baseline line        |
 #
 # Every tool is pinned: the actions by commit SHA, the images by digest, and the npm tools by the
 # lockfiles under .github/tools/, installed with npm ci. Nothing here needs a secret or a write
@@ -73,6 +76,10 @@ jobs:
       - name: Catalog and layout invariants
         run: node scripts/catalog.mjs --check
 
+      # JavaScript and TypeScript notes are /** */ or /* */; `//` is left to tool directives.
+      - name: Comment style
+        run: node scripts/check-comment-style.mjs
+
       # The base commit comes through env, never as an expression inside the script.
       - name: Version sync
         env:
@@ -98,10 +105,11 @@ jobs:
           persist-credentials: false
 
       # ShellCheck 0.11.0 from the same pinned image workflows-lint.yml runs actionlint from.
+      # :(glob) keeps each * inside one folder, so a template's src/bin/ is not a plugin's bin/.
       - name: ShellCheck
         run: |
           files=()
-          while IFS= read -r -d '' f; do files+=("$f"); done < <(git ls-files -z -- '*.sh' 'plugins/*/bin/*')
+          while IFS= read -r -d '' f; do files+=("$f"); done < <(git ls-files -z -- '*.sh' ':(glob)plugins/*/bin/*')
           echo "shellcheck: ${#files[@]} file(s)"
           # -P SCRIPTDIR: a script sources its lib.sh from its own folder, not from the checkout root.
           docker run --rm -v "$PWD:/repo:ro" -w /repo --entrypoint shellcheck \
@@ -145,7 +153,8 @@ jobs:
           version: 0.12.17
           enable-cache: false
 
-      # On macOS /bin/bash is 3.2, the oldest bash a hook or bin/ script may meet.
+      # On macOS /bin/bash is 3.2, the oldest bash a hook or bin/ script may meet (the same files
+      # as ShellCheck).
       - name: Shell syntax (/bin/bash -n)
         run: |
           /bin/bash --version | head -1
@@ -153,7 +162,7 @@ jobs:
           while IFS= read -r -d '' f; do
             /bin/bash -n "$f"
             count=$((count + 1))
-          done < <(git ls-files -z -- '*.sh' '*.bash' 'plugins/*/bin/*')
+          done < <(git ls-files -z -- '*.sh' '*.bash' ':(glob)plugins/*/bin/*')
           echo "bash -n: ${count} file(s) parse"
 
       - name: bats
@@ -223,7 +232,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      # .github/gitleaks.toml keeps the default rules and allows one exact fixture value.
+      # .github/gitleaks.toml keeps the default rules and allows one fixture value and go.sum hashes.
       - name: gitleaks (history and tree)
         run: |
           image=ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
@@ -232,10 +241,45 @@ jobs:
           docker run --rm -v "$PWD:/repo:ro" -w /repo "$image" dir . --no-banner --redact --config .github/gitleaks.toml || status=1
           exit "$status"
 
+  skills:
+    name: SkillSpector (plugins)
+    runs-on: ubuntu-24.04
+    # A full scan of every plugin takes a few minutes; the install adds about one.
+    timeout-minutes: 20
+
+    steps:
+      # Full history: the scan compares the baseline with the pull request's base.
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: 0.12.17
+          enable-cache: false
+
+      # The build users' repos run: the commit scripts/check/skills.sh pins, on Python 3.12.
+      - name: Install SkillSpector
+        run: |
+          ref=$(sed -n 's/^PINNED_REF="\([0-9a-f]\{40\}\)"$/\1/p' plugins/agent-core/templates/common/scripts/check/skills.sh)
+          [ -n "$ref" ] || { echo "::error::no PINNED_REF in skills.sh"; exit 1; }
+          uv tool install --python 3.12 "git+https://github.com/NVIDIA/skillspector.git@${ref}"
+          uv tool dir --bin >> "$GITHUB_PATH"
+
+      # Every command, agent, skill and hook script, laid out as a repo would hold it, through the
+      # gate and baseline users get; a new baseline line fails the pull request.
+      - name: Scan every plugin component
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: bash scripts/skills-plugins.sh --base "$BASE_SHA"
+
   self-test:
     name: Self Test
     if: ${{ always() }}
-    needs: [manifests, shell, bats, fixtures, workflows, secrets]
+    needs: [manifests, shell, bats, fixtures, workflows, secrets, skills]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
 

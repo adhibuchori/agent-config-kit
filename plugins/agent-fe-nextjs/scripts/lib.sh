@@ -34,6 +34,7 @@ HOOK_DEFAULTS='{
   "localePairs": [],
   "migrationsDirs": ["src/db/migrations", "drizzle", "src/app/db/migrations/versions", "alembic/versions",
                      "migrations/versions"],
+  "appendOnlyMigrationsDirs": [],
   "dbWriteGuard": {"toolPattern": "mcp__db-prod__execute_sql"}
 }'
 
@@ -310,7 +311,7 @@ def valid(key, value):
             re.compile(value)
         except re.error:
             return False
-    if key in ("generatedPaths", "migrationsDirs", "protectedPaths", "localePairs"):
+    if key in ("generatedPaths", "migrationsDirs", "appendOnlyMigrationsDirs", "protectedPaths", "localePairs"):
         return not value.startswith("/") and ".." not in value.split("/")
     return True
 

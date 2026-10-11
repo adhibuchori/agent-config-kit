@@ -1,16 +1,18 @@
 #!/usr/bin/env node
-// Security headers for static hosting. next.config headers() does not apply to a static export,
-// so the headers live in a file the host reads: a `_headers` file (path lines, then indented
-// "Name: value" lines) or an nginx config (add_header). headersFile in scripts/check/site.config.json
-// names it (default public/_headers). Checks CSP, HSTS, nosniff, Referrer-Policy, framing and
-// Permissions-Policy for every built page path (or / without a build).
-//   --verify-hashes  every inline <script> in the build is allowed by the page's CSP (hash-based
-//                    CSP: a hash that is missing means the page will not hydrate)
-//   --print-hashes   print the 'sha256-...' sources each page needs, to write a hash-based CSP
-// Rule: .claude/rules/web/security.md. The live response is what counts: re-check it on the
-// deployed URL (curl -I).
-//
-//   node scripts/check/security-headers.mjs [--verify-hashes | --print-hashes] [--file F] [--dir out]
+/**
+ * Security headers for static hosting. next.config headers() does not apply to a static export,
+ * so the headers live in a file the host reads: a `_headers` file (path lines, then indented
+ * "Name: value" lines) or an nginx config (add_header). headersFile in scripts/check/site.config.json
+ * names it (default public/_headers). Checks CSP, HSTS, nosniff, Referrer-Policy, framing and
+ * Permissions-Policy for every built page path (or / without a build).
+ *   --verify-hashes  every inline <script> in the build is allowed by the page's CSP (hash-based
+ *                    CSP: a hash that is missing means the page will not hydrate)
+ *   --print-hashes   print the 'sha256-...' sources each page needs, to write a hash-based CSP
+ * Rule: .claude/rules/web/security.md. The live response is what counts: re-check it on the
+ * deployed URL (curl -I).
+ *
+ *   node scripts/check/security-headers.mjs [--verify-hashes | --print-hashes] [--file F] [--dir out]
+ */
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -168,7 +170,7 @@ run(
     const { format, rules } = parseHeadersFile(readFileSync(path, 'utf8'));
     const paths = site ? site.pages.map((p) => p.path) : ['/'];
 
-    // Pages that get the same headers are checked once.
+    /* Pages that get the same headers are checked once. */
     const groups = new Map();
     for (const p of paths) {
       const h = headersFor(rules, p);

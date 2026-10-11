@@ -1,9 +1,11 @@
 #!/usr/bin/env node
-// Per-route metadata of the built pages: <html lang>, viewport, a unique title and description,
-// an absolute self-canonical on the production origin, and reciprocal hreflang alternates with
-// x-default. Rule: .claude/rules/web/seo.md. Runs after `next build`.
-//
-//   node scripts/check/metadata.mjs [--dir out] [--root .] [--config scripts/check/site.config.json]
+/**
+ * Per-route metadata of the built pages: <html lang>, viewport, a unique title and description,
+ * an absolute self-canonical on the production origin, and reciprocal hreflang alternates with
+ * x-default. Rule: .claude/rules/web/seo.md. Runs after `next build`.
+ *
+ *   node scripts/check/metadata.mjs [--dir out] [--root .] [--config scripts/check/site.config.json]
+ */
 import { readFileSync } from 'node:fs';
 import {
   isNoindex,

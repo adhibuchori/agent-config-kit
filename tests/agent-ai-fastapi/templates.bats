@@ -31,23 +31,13 @@ template_paths() {
   [ "$output" = "true" ]
 }
 
-@test "_kit/setup.json: no unlock alias here, and every other primary stack is a conflict" {
+@test "_kit/setup.json: no unlock alias here, and other primary stacks are conflicts" {
   local f="$TPL/_kit/setup.json"
   run jq -r '.packageScripts | length' "$f"
   [ "$output" = "0" ]
-  run jq -r '.conflictsWith | sort | join(",")' "$f"
-  [ "$output" = "agent-be-hono,agent-docs-nextra,agent-fe-nextjs,agent-fe-nextjs-static" ]
-}
-
-@test "conflicts are mutual: each primary stack that is built names agent-ai-fastapi back" {
-  local p other
-  for p in agent-be-hono agent-docs-nextra agent-fe-nextjs agent-fe-nextjs-static; do
-    for other in "$KIT_ROOT/plugins/$p/templates"/*/_kit/setup.json; do
-      [ -f "$other" ] || continue
-      run jq -r '.conflictsWith | index("agent-ai-fastapi") != null' "$other"
-      [ "$output" = "true" ]
-    done
-  done
+  # tests/setup/conflicts.bats checks the full list against every stack on disk.
+  run jq -r '(.conflictsWith | length > 0) and (.conflictsWith | index("agent-ai-fastapi") == null)' "$f"
+  [ "$output" = "true" ]
 }
 
 # glob_matches <glob>: 0 when a template path matches (* within a folder, ** across, ? one char).

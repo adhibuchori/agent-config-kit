@@ -1,0 +1,4 @@
+{
+  "appendOnlyMigrationsDirs": ["migrations"],
+  "generatedPaths": [".sqlx", "openapi.json"]
+}

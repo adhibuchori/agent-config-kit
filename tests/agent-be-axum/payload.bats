@@ -1,0 +1,179 @@
+#!/usr/bin/env bats
+# The payload contract in agent-be-axum: what payload-encryption installs either way, the seeded
+# registry against the shared generator, the LAYERS and @generated probes of rust-source.mjs, the
+# key generator, and (with the Rust toolchain rust-toolchain.toml pins and crates.io in reach)
+# the seeded Rust wired in and tested, with an AAD or HKDF label drift that the vectors refuse.
+
+load helpers
+
+ENVELOPE_CODES='["ENVELOPE_REQUIRED","ENVELOPE_MALFORMED","ENVELOPE_EXPIRED","ENVELOPE_KEY_UNKNOWN","ENVELOPE_REJECTED"]'
+HONO_TPL="$KIT_ROOT/plugins/agent-be-hono/templates/be-hono"
+
+setup() {
+  ax_setup_env
+}
+
+# payload_setup <yes|no>: a new repo set up with this answer; sets PROJ.
+payload_setup() {
+  ax_engine || skip "agent-core's bin/agent-setup and bin/agent-sync are not built yet"
+  make_project empty
+  ax_setup --answer "payload-encryption=$1"
+}
+
+# wired_spec <repo>: the template's spec as the wired service exports it: the handshake operation,
+# and the ENVELOPE_* codes after the service's own.
+wired_spec() {
+  jq --argjson codes "$ENVELOPE_CODES" \
+    '.paths["/api/payload/handshake"] = {"get": {"operationId": "getPayloadHandshake", "responses": {"200": {"description": "the key"}}}}
+     | .components.schemas.Problem.properties.code.enum += $codes' "$TPL/openapi.json" >"$1/openapi.json"
+}
+
+@test "payload-encryption=no installs no payload code, and the registry gate passes as not adopted" {
+  payload_setup no
+  local p
+  for p in src/payload src/routes/payload.rs src/routes/payload_layer.rs payload.config.json \
+    .claude/PAYLOAD-CONTRACT.md .claude/rules/common/payload-contract.md .claude/rules/backend/payload.md \
+    scripts/check/payload-vectors.json scripts/generate/payload-server-key.mjs; do
+    [ ! -e "$PROJ/$p" ] || {
+      echo "installed with no: $p" >&2
+      return 1
+    }
+  done
+  grep -qx 'code	node scripts/check/payload-registry.mjs' "$PROJ/scripts/check/gates.list"
+  run -0 --separate-stderr node "$PROJ/scripts/check/payload-registry.mjs"
+  [[ "$output" == *"not adopted"* ]] || false
+  run -1 grep -F 'payload-registry.mjs' "$PROJ/.claude/settings.json"
+}
+
+@test "payload-encryption=yes installs the seeded code, the shared files and the two registry permissions" {
+  payload_setup yes
+  local f
+  for f in payload.config.json src/payload/mod.rs src/payload/endpoints_generated.rs src/payload/vectors_tests.rs \
+    src/routes/payload.rs src/routes/payload_layer.rs src/routes/payload_client_tests.rs \
+    scripts/generate/payload-server-key.mjs scripts/check/payload-vectors.json .claude/rules/backend/payload.md; do
+    cmp "$PROJ/$f" "$TPL/$f"
+  done
+  for f in .claude/PAYLOAD-CONTRACT.md .claude/rules/common/payload-contract.md scripts/check/payload-vectors.json; do
+    cmp "$PROJ/$f" "$HONO_TPL/$f"
+  done
+  grep -qF '"Bash(node scripts/generate/payload-registry.mjs:*)"' "$PROJ/.claude/settings.json"
+  run -0 python3 -c 'import json, sys; c = json.load(open(sys.argv[1])); print(c["encryption"], c["language"], c["registry"])' \
+    "$PROJ/payload.config.json"
+  [ "$output" = "strict rust src/payload/endpoints_generated.rs" ]
+}
+
+@test "unwired, the registry gate stays red until the spec lists the envelope codes and the handshake" {
+  payload_setup yes
+  run --separate-stderr node "$PROJ/scripts/check/payload-registry.mjs"
+  [ "$status" -eq 1 ]
+  [[ "$output$stderr" == *ENVELOPE_* ]] || false
+  [[ "$output$stderr" == *getPayloadHandshake* ]] || false
+}
+
+@test "the seeded registry is byte for byte what the generator writes from the wired spec" {
+  payload_setup yes
+  wired_spec "$PROJ"
+  cp "$PROJ/src/payload/endpoints_generated.rs" "$BATS_TEST_TMPDIR/seeded.rs"
+  run -0 --separate-stderr node "$PROJ/scripts/generate/payload-registry.mjs"
+  cmp "$BATS_TEST_TMPDIR/seeded.rs" "$PROJ/src/payload/endpoints_generated.rs"
+  run -0 --separate-stderr node "$PROJ/scripts/check/payload-registry.mjs"
+  [[ "$output" == *"all checks passed"* ]] || false
+}
+
+@test "LAYERS: crate::payload outside src/routes/ and src/lib.rs blocks; inside them it passes" {
+  make_repo
+  install scripts/check/rust-source.mjs
+  mkdir -p "$REPO/src/payload" "$REPO/src/orders"
+  rs src/payload/mod.rs 'pub(crate) struct Boundary;'
+  rs src/routes/payload.rs 'use crate::payload::Boundary;'
+  rs src/lib.rs 'mod payload;' 'pub use crate::payload::Boundary;'
+  commit_all fixture
+  source_check
+  [ "$status" -eq 0 ]
+  rs src/orders/service.rs 'use crate::payload::Boundary;'
+  source_check
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"src/orders/service.rs:1: [LAYERS] crate::payload outside src/routes/ and src/lib.rs"* ]] || false
+}
+
+@test "a file marked @generated is held to no check; the same file unmarked is" {
+  make_repo
+  install scripts/check/rust-source.mjs
+  local body=() i
+  for ((i = 0; i < 205; i++)); do body+=("pub(crate) const ROUTE_$i: &str = \"/api/r$i\";"); done
+  rs src/payload/endpoints_generated.rs '// @generated by scripts/generate/payload-registry.mjs. Do not edit.' "${body[@]}"
+  commit_all fixture
+  source_check
+  [ "$status" -eq 0 ]
+  rs src/payload/endpoints_generated.rs "${body[@]}"
+  source_check
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"[LINES] 205 lines of code"* ]] || false
+  [[ "$stderr" == *'[ROUTES] path literal "/api/r0"'* ]] || false
+}
+
+@test "the key generator writes a P-256 private JWK as base64url text, the PAYLOAD_SERVER_JWK format" {
+  command -v node >/dev/null 2>&1 || skip "node is not installed"
+  # shellcheck disable=SC2016 # $1 expands in the child shell
+  run -0 --separate-stderr bash -c 'node "$1" | cat' _ "$TPL/scripts/generate/payload-server-key.mjs"
+  [[ "$output" =~ ^[A-Za-z0-9_-]+$ ]] || false
+  run -0 node -e '
+const jwk = JSON.parse(Buffer.from(process.argv[1], "base64url").toString("utf8"));
+const sizes = ["d", "x", "y"].map((k) => Buffer.from(jwk[k], "base64url").length);
+if (jwk.kty !== "EC" || jwk.crv !== "P-256" || sizes.join() !== "32,32,32" || Object.keys(jwk).length !== 5) process.exit(1);' "$output"
+}
+
+# The Rust tier: one wired crate per run of this file, built once, shared by the tests below.
+rust_crate() {
+  command -v cargo >/dev/null 2>&1 || skip "cargo is not installed (the Rust toolchain rust-toolchain.toml pins)"
+  CRATE="$BATS_FILE_TMPDIR/crate"
+  export CARGO_TARGET_DIR="$BATS_FILE_TMPDIR/target" RUSTUP_AUTO_INSTALL=0 CARGO_TERM_COLOR=never
+  if [ ! -f "$BATS_FILE_TMPDIR/wired" ]; then
+    rm -rf "$CRATE"
+    payload_setup yes
+    mv "$PROJ" "$CRATE"
+    (cd "$CRATE" && cargo --version) >/dev/null 2>&1 || skip "the toolchain rust-toolchain.toml pins is not installed"
+    python3 "$FIXTURES/wire-payload.py" "$CRATE" >/dev/null
+    (cd "$CRATE" && cargo generate-lockfile -q && cargo add -q p256@0.14.0 --no-default-features --features ecdh &&
+      cargo add -q aes-gcm@0.11.1 sha2@0.11.0 base64@0.22.1) || skip "crates.io is not reachable"
+    touch "$BATS_FILE_TMPDIR/wired"
+  fi
+}
+
+# payload_tests <filter>: the library's unit tests whose path holds the filter.
+payload_tests() {
+  # shellcheck disable=SC2016 # $1 and $2 expand in the child shell
+  run --separate-stderr bash -c 'cd "$1" && cargo test --locked --quiet --lib -- "$2" 2>&1' _ "$CRATE" "$1"
+}
+
+@test "Rust: wired in, the payload tests pass, the shared vectors and the layer through a router included" {
+  rust_crate
+  payload_tests payload::
+  echo "$output" | tail -20
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ test\ result:\ ok\.\ [1-9][0-9]*\ passed ]] || false
+}
+
+@test "Rust: an AAD with the method in lower case fails the shared vectors" {
+  rust_crate
+  local f="$CRATE/src/payload/envelope.rs"
+  sed -i.orig 's/let method = method.to_ascii_uppercase();/let method = method.to_ascii_lowercase();/' "$f"
+  run cmp -s "$f" "$f.orig"
+  [ "$status" -ne 0 ]
+  payload_tests payload::vectors_tests
+  mv "$f.orig" "$f"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"the AAD"* ]] || false
+}
+
+@test "Rust: a changed HKDF label fails the key agreement" {
+  rust_crate
+  local f="$CRATE/src/payload/ecdh.rs"
+  sed -i.orig 's#b"payload-envelope/v1/browser"#b"payload-envelope/v1/app"#' "$f"
+  run cmp -s "$f" "$f.orig"
+  [ "$status" -ne 0 ]
+  payload_tests payload::vectors_tests::every_agreement
+  mv "$f.orig" "$f"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"the HKDF label"* ]] || false
+}

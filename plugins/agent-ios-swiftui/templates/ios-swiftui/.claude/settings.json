@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(bash scripts/check/gates.sh:*)",
+      "Bash(bash scripts/check/coverage.sh:*)",
+      "Bash(bash scripts/check/error-codes.sh:*)",
+      "Bash(bash scripts/check/lint-suppressions.sh:*)",
+      "Bash(bash scripts/check/package-graph.sh:*)",
+      "Bash(bash scripts/check/privacy-manifest.sh:*)",
+      "Bash(bash scripts/check/xcode-settings.sh:*)",
+      "Bash(node scripts/check/i18n-catalog.mjs:*)",
+      "Bash(bash scripts/ios/app.sh:*)",
+      "Bash(bash scripts/ios/api-client.sh:*)",
+      "Bash(swift build:*)",
+      "Bash(swift test:*)",
+      "Bash(swiftlint lint:*)",
+      "Bash(xcrun swift-format lint:*)",
+      "Bash(xcrun swift-format format:*)"
+    ],
+    "ask": [
+      "Bash(xcodebuild:*)",
+      "Bash(swift package:*)",
+      "Bash(swift run:*)",
+      "Bash(xcrun simctl:*)"
+    ],
+    "deny": [
+      "Edit(AGENTS.md)"
+    ]
+  }
+}

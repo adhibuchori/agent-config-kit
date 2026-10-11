@@ -1,0 +1,6 @@
+# squawk, the migration linter the quality gate runs over migrations/ (an exact release: new
+# releases turn rules on). sqlx runs each file in a transaction, so squawk assumes one; a file that
+# starts with -- no-transaction says so to squawk on its second line:
+# -- squawk-disable-assume-in-transaction
+pg_version = "17.0"
+assume_in_transaction = true

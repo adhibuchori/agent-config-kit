@@ -1,0 +1,124 @@
+{
+  "stack": "be-axum",
+  "conflictsWith": ["agent-ai-fastapi", "agent-be-go", "agent-be-hono", "agent-docs-nextra", "agent-fe-nextjs", "agent-fe-nextjs-static", "agent-ios-swiftui"],
+  "questions": [
+    {
+      "id": "migrations",
+      "ask": "Does this service own its database schema, so its sqlx migrations live in migrations/ here?",
+      "why": "Yes writes .claude/agent-config.json, which keeps migrations/ append-only once a protected branch has a file (migration-guard; edit a migration freely until it merges) and has generated-guard refuse hand edits to .sqlx and openapi.json, plus .squawk.toml, the migration linter's settings for the quality gate, and db/roles.sql: the roles app_owner (the migrator), app_rw (the service, its timeouts on the role) and agent_ro, which the quality gate creates before the tests. Answer no when another repo owns the schema: no migration file is guarded then, and generated-guard falls back to its defaults (openapi.json); add .sqlx to generatedPaths yourself if you commit a query cache.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "migrations/ already holds sqlx migrations (<version>_<name>.sql), or Cargo.toml enables sqlx's migrate feature; no when the schema is managed elsewhere",
+      "install": { "yes": [".claude/agent-config.json", ".squawk.toml", "db/roles.sql"] }
+    },
+    {
+      "id": "ci-gate",
+      "ask": "Run agent-config-kit's Rust + Axum quality gate on every pull request (.github/workflows/quality-gate.yml)?",
+      "why": "Installs a small caller of the kit's be-axum-quality-gate workflow, pinned to one commit: your gates.list, the coverage floor, migrations applied to an empty PostgreSQL, the offline query cache, unindexed foreign keys, cargo-deny, the exported OpenAPI document, the release build and secret scans, with a read-only token and no secrets. It needs GitHub Actions; an existing quality-gate.yml is kept either way.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "the repo is on GitHub (a github.com remote or a .github/ folder); .github/workflows/quality-gate.yml already exists",
+      "install": { "yes": [".github/workflows/quality-gate.yml"] }
+    },
+    {
+      "id": "deepseek-review",
+      "ask": "Review each pull request with DeepSeek, a low-cost paid AI model (.github/workflows/deepseek-review.yml)?",
+      "why": "Installs a caller of agent-config-kit's reusable DeepSeek review, with notes about this stack: one comment per pull request from a branch of this repository, updated when the repository's owner, a member or a collaborator comments /ask-deepseek. It reads the diff over the GitHub API and runs no pull-request code. It needs the repository secret DEEPSEEK_API_KEY and costs about ten US cents a review at most, usually a cent or two (the diff and the answer are capped); without the secret it passes and sends nothing.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": ".github/workflows/deepseek-review.yml already exists, or the user has asked for an AI review in CI",
+      "install": { "yes": [".github/workflows/deepseek-review.yml"] }
+    },
+    {
+      "id": "pr-templates",
+      "ask": "Add pull-request templates for work pull requests and dev → prod promotions (.github/PULL_REQUEST_TEMPLATE/)?",
+      "why": "They list only what the gate cannot decide: the migration and query checks a person reads, and the migration and deploy steps of a promotion. They assume dev and prod branches.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "branches dev and prod exist (git branch --list dev prod); .github/PULL_REQUEST_TEMPLATE/ already has files",
+      "install": { "yes": [".github/PULL_REQUEST_TEMPLATE/*.md"] }
+    },
+    {
+      "id": "analytics",
+      "ask": "Does an agent need to read a self-hosted analytics API from this repo?",
+      "why": "Adds .claude/ANALYTICS.example.md, a template to fill in for that read API. An unfilled template is worse than none, because an agent will try to use it.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "the code or .env.*.example names an analytics client, or .claude/ANALYTICS.md exists",
+      "install": { "yes": [".claude/ANALYTICS.example.md"] }
+    },
+    {
+      "id": "serena-workspace",
+      "ask": "Do you open several repositories as one Serena workspace?",
+      "why": "Adds .claude/SERENA-WORKSPACE.example.md, which explains how to scope Serena's searches across repos. With a single repo the default needs no documentation.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": ".mcp.json runs Serena and a .serena/project.yml above this repo lists several folders, or AGENT_WORKSPACE_ROOT is set",
+      "install": { "yes": [".claude/SERENA-WORKSPACE.example.md"] }
+    },
+    {
+      "id": "payload-encryption",
+      "ask": "Seal request and response bodies between this API and its callers (the payload contract: encrypted envelopes, one endpoint registry, checked before merge)?",
+      "why": "Yes installs the payload contract: src/payload/ (AES-256-GCM envelopes bound to method, route and status; P-256 key agreement for public clients such as an iOS app; pre-shared key rings for server callers; the strict/off switch; the generated endpoint registry) and src/routes/payload.rs with payload_layer.rs (a route_layer that opens a sealed request before ValidJson and seals the answer, and the GET /api/payload/handshake handler), with tests at 100% that include the shared test vectors; payload.config.json, scripts/check/payload-vectors.json, scripts/generate/payload-server-key.mjs, the contract document and two rules. Setup leaves it unwired, and cargo compiles no module nothing declares, so the skeleton stays green until you wire it in by hand, as src/payload/mod.rs lists: cargo add p256, aes-gcm, sha2 and base64; the four PAYLOAD_* fields in src/platform/config.rs; the PAYLOAD_HANDSHAKE constant in src/routes/paths.rs; mod payload; and the route_layer (routes::payload::seal) in src/lib.rs, after every route is merged; the handshake routes in src/routes/mod.rs; check_payload_settings in src/main.rs. The gate node scripts/check/payload-registry.mjs, installed either way, passes as not adopted without payload.config.json; with it, the gate stays red until openapi.json lists the five ENVELOPE_* codes and the handshake, so a contract adopted halfway never passes quietly. Answer no when bodies need no sealing beyond TLS.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "payload.config.json or src/payload/ already exists, or a client of this API (an app, a frontend) seals its bodies",
+      "install": {
+        "yes": [
+          ".claude/PAYLOAD-CONTRACT.md",
+          ".claude/rules/backend/payload.md",
+          ".claude/rules/common/payload-contract.md",
+          "payload.config.json",
+          "scripts/check/payload-vectors.json",
+          "scripts/generate/payload-server-key.mjs",
+          "src/payload/**",
+          "src/routes/payload*.rs"
+        ]
+      },
+      "settings": {
+        "yes": {
+          "/permissions/allow": ["Bash(node scripts/check/payload-registry.mjs:*)", "Bash(node scripts/generate/payload-registry.mjs:*)"]
+        }
+      }
+    }
+  ],
+  "seed": [
+    ".cargo/config.toml",
+    ".claude/agent-config.json",
+    ".claude/anti-patterns/INDEX.md",
+    ".config/nextest.toml",
+    ".env.ci.example",
+    ".github/CODEOWNERS",
+    ".github/PULL_REQUEST_TEMPLATE/*.md",
+    ".githooks/pre-commit",
+    ".squawk.toml",
+    "build.rs",
+    "clippy.toml",
+    "db/roles.sql",
+    "deny.toml",
+    "openapi.json",
+    "payload.config.json",
+    "rust-toolchain.toml",
+    "rustfmt.toml",
+    "scripts/check/coverage-exempt.txt",
+    "scripts/check/gates.list",
+    "scripts/check/pooler.sh",
+    "src/**",
+    "tests/**"
+  ],
+  "snippets": { "Cargo.toml": "snippets/cargo.toml" },
+  "gitignore": [
+    ".env",
+    ".env.*",
+    "!.env.example",
+    "!.env.*.example",
+    ".envrc",
+    ".serena/",
+    ".skillspector/",
+    "/coverage",
+    "/target",
+    "junit.xml",
+    "._*"
+  ],
+  "packageScripts": {}
+}

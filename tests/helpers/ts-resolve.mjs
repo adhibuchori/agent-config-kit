@@ -1,7 +1,9 @@
-// Lets the kit's tests run the TypeScript check scripts on Node when Bun is not installed (CI).
-// Node strips types by itself (22.18+); this hook adds what Bun resolves and Node does not: an
-// extensionless relative import (`./codec`) and a folder import (`./dir` → `./dir/index.ts`).
-// Loaded with `node --import <this file> script.ts`. Test tooling only; never shipped to a repo.
+/**
+ * Lets the kit's tests run the TypeScript check scripts on Node when Bun is not installed (CI).
+ * Node strips types by itself (22.18+); this hook adds what Bun resolves and Node does not: an
+ * extensionless relative import (`./codec`) and a folder import (`./dir` → `./dir/index.ts`).
+ * Loaded with `node --import <this file> script.ts`. Test tooling only; never shipped to a repo.
+ */
 import { existsSync } from 'node:fs';
 import { register } from 'node:module';
 import { fileURLToPath } from 'node:url';

@@ -1,11 +1,13 @@
 #!/usr/bin/env node
-// robots.txt and the sitemap of the built site. Production (default): robots does not block the
-// site, names the sitemap by absolute URL; the sitemap lists every indexable page exactly once, by
-// absolute URL on the production origin, and nothing that is noindex, blocked or missing.
-// --env preview: the build must keep search engines out (Disallow: / or noindex on every page).
-// Rule: .claude/rules/web/seo.md. Runs after `next build`.
-//
-//   node scripts/check/sitemap-robots.mjs [--env production|preview] [--dir out] [--root .]
+/**
+ * robots.txt and the sitemap of the built site. Production (default): robots does not block the
+ * site, names the sitemap by absolute URL; the sitemap lists every indexable page exactly once, by
+ * absolute URL on the production origin, and nothing that is noindex, blocked or missing.
+ * --env preview: the build must keep search engines out (Disallow: / or noindex on every page).
+ * Rule: .claude/rules/web/seo.md. Runs after `next build`.
+ *
+ *   node scripts/check/sitemap-robots.mjs [--env production|preview] [--dir out] [--root .]
+ */
 import { readFileSync } from 'node:fs';
 import {
   UsageError,
@@ -137,7 +139,7 @@ run('sitemap-robots', ({ args, root, cfg, report }) => {
     }
   }
 
-  // The sitemap files: those robots names on this site, else /sitemap.xml; an index is followed.
+  /* The sitemap files: those robots names on this site, else /sitemap.xml; an index is followed. */
   const queue = (robots?.sitemaps || []).filter((s) => origin && onSite(s, origin)).map(urlPath);
   if (!queue.length) queue.push(`${site.basePath}/sitemap.xml`);
   const listed = new Map();

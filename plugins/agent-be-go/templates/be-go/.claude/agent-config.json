@@ -1,0 +1,4 @@
+{
+  "appendOnlyMigrationsDirs": ["db/migrations"],
+  "generatedPaths": ["api/openapi.json", "internal/httpapi/api.gen.go", "internal/postgres/db"]
+}

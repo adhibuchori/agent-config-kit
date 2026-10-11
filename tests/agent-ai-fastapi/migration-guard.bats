@@ -112,7 +112,7 @@ setup() {
 @test "a Serena replace_in_files that reaches the revisions is refused; a narrowed one passes" {
   run_guard "$(serena_scope_payload alembic)"
   [ "$status" -eq 2 ]
-  [[ "$stderr" == *"this replace_in_files reaches generated migrations"* ]] || false
+  [[ "$stderr" == *"this replace_in_files reaches migrations"* ]] || false
   run_guard '{"tool_name":"mcp__serena__replace_in_files","tool_input":{"needle":"down_revision","repl":"b","mode":"literal"}}'
   [ "$status" -eq 2 ]
   run_guard "$(serena_scope_payload src)"

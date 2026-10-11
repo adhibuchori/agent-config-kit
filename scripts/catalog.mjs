@@ -1,64 +1,66 @@
 #!/usr/bin/env node
-// Generates the plugin catalog in the READMEs and enforces the repository's layout invariants.
-//
-//   node scripts/catalog.mjs            rewrite the generated blocks, then check
-//   node scripts/catalog.mjs --check    check only; never writes (CI runs this)
-//   --root DIR                          the repository to read (default: this script's repository)
-//
-// Generated blocks (the text between the markers is replaced whole):
-//   <!-- catalog:start --> ... <!-- catalog:end -->  README.md and README.id.md: every plugin;
-//                                                    plugins/<p>/README.md: that plugin only.
-//                                                    One row per component: Component, Kind,
-//                                                    What it does, How to use, Why it helps, Docs.
-//                                                    A component is a hook, command, agent or skill,
-//                                                    or a workflow a plugin's setup installs
-//                                                    (templates/<stack>/.github/workflows/*.y*ml).
-//                                                    README.id.md gets the same table in Indonesian.
-//   <!-- install:start --> ... <!-- install:end -->  README.md: docs/install-block.md, verbatim;
-//                                                    README.id.md: docs/install-block.id.md, verbatim;
-//                                                    plugins/<p>/README.md: docs/install-block.plugin.md
-//                                                    with that plugin's own name and install lines.
-//   <!-- files:start --> ... <!-- files:end -->      README.md and README.id.md (optional): every file
-//                                                    each plugin's setup installs, when, and what it is.
-// "What it does" is the description in a command's, agent's or skill's frontmatter, and for a hook or
-// a workflow the first sentence under "## What it does" in its docs page (README.id.md:
-// docs/catalog.json).
-// "How to use" and "Why it helps" come from docs/catalog.json, one entry per component, keyed by its
-// docs page (<plugin>/<page name>). "What it is" for an installed file is its first Markdown heading
-// or its first comment sentence, else the entry for its name or path in docs/catalog.json "files".
-//
-// Invariants (--check, and after a rewrite):
-//   - README.md has both marker pairs; every plugins/<p>/README.md exists with the install markers;
-//     every generated block is current.
-//   - Every component (hook script wired in hooks/hooks.json, command, agent, skill, template
-//     workflow) has a page at docs/<plugin>/<name>.md (<name>.<kind>.md when two kinds share a name;
-//     a workflow alone takes <name>.workflow.md when it shares its name with another component), and
-//     every page in docs/<plugin>/ belongs to a component. lib.sh and setup-check.sh are not
-//     components.
-//   - plugins/agent-core/commands/help.md names every command of every plugin as /<plugin>:<command>.
-//   - marketplace.json: one entry per plugins/<p>, sorted by name, names ^[a-z0-9][a-z0-9-]{1,63}$,
-//     source ./plugins/<name>, no version, a description of 10-2000 characters identical to the
-//     plugin.json one.
-//   - No hidden or bidirectional Unicode in the manifests, hooks.json or component markdown.
-//   - Every plugins/<p>/scripts/lib.sh has the same bytes as agent-core's.
-//   - Templates (plugins/<p>/templates/<stack>/, _kit/ aside): no package.json, no file named
-//     .gitignore, nothing under .claude/{hooks,commands,agents,skills}/, no symlink, no real .env
-//     file, CLAUDE.md and AGENTS.md only as *.starter; a .claude/settings.json holds only
-//     $schema, permissions, sandbox, env, extraKnownMarketplaces and enabledPlugins (never hooks);
-//     a destination path shipped by two plugins has the same bytes, unless it is
-//     .claude/settings.json (merged) or the two plugins name each other in conflictsWith.
-//   - plugins/*/bin/* and plugins/*/scripts/*.sh are mode 100755 in the git index (on disk when
-//     not yet tracked).
-//   - Hook scripts, bin/, libexec/ and hooks/ never run a download tool (curl, wget, npx, bunx,
-//     uvx, pipx, pnpx, pip/npm/bun install, uv tool install, go install).
-//   - docs/catalog.json has an entry (use, why, id.what, id.use, id.why) for every component and none
-//     for a component that does not exist; every installed file has a "What it is".
-//   - A template settings.json never allows a bare runner (`bun run`, `npm run`, `uv run`, `npx`,
-//     `docker compose`, …): each would run any code without a prompt. Allow named scripts instead.
-//   - The commands that commit, push, merge, post to GitHub or install files are user-only
-//     (`disable-model-invocation: true`), and so is every skill that may download code.
-//
-// Node 20 or newer, no dependencies. Exit 0 clean, 1 stale or invalid, 2 usage or unreadable input.
+/**
+ * Generates the plugin catalog in the READMEs and enforces the repository's layout invariants.
+ *
+ *   node scripts/catalog.mjs            rewrite the generated blocks, then check
+ *   node scripts/catalog.mjs --check    check only; never writes (CI runs this)
+ *   --root DIR                          the repository to read (default: this script's repository)
+ *
+ * Generated blocks (the text between the markers is replaced whole):
+ *   <!-- catalog:start --> ... <!-- catalog:end -->  README.md and README.id.md: every plugin;
+ *                                                    plugins/<p>/README.md: that plugin only.
+ *                                                    One row per component: Component, Kind,
+ *                                                    What it does, How to use, Why it helps, Docs.
+ *                                                    A component is a hook, command, agent or skill,
+ *                                                    or a workflow a plugin's setup installs
+ *                                                    (templates/<stack>/.github/workflows/*.y*ml).
+ *                                                    README.id.md gets the same table in Indonesian.
+ *   <!-- install:start --> ... <!-- install:end -->  README.md: docs/install-block.md, verbatim;
+ *                                                    README.id.md: docs/install-block.id.md, verbatim;
+ *                                                    plugins/<p>/README.md: docs/install-block.plugin.md
+ *                                                    with that plugin's own name and install lines.
+ *   <!-- files:start --> ... <!-- files:end -->      README.md and README.id.md (optional): every file
+ *                                                    each plugin's setup installs, when, and what it is.
+ * "What it does" is the description in a command's, agent's or skill's frontmatter, and for a hook or
+ * a workflow the first sentence under "## What it does" in its docs page (README.id.md:
+ * docs/catalog.json).
+ * "How to use" and "Why it helps" come from docs/catalog.json, one entry per component, keyed by its
+ * docs page (<plugin>/<page name>). "What it is" for an installed file is its first Markdown heading
+ * or its first comment sentence, else the entry for its name or path in docs/catalog.json "files".
+ *
+ * Invariants (--check, and after a rewrite):
+ *   - README.md has both marker pairs; every plugins/<p>/README.md exists with the install markers;
+ *     every generated block is current.
+ *   - Every component (hook script wired in hooks/hooks.json, command, agent, skill, template
+ *     workflow) has a page at docs/<plugin>/<name>.md (<name>.<kind>.md when two kinds share a name;
+ *     a workflow alone takes <name>.workflow.md when it shares its name with another component), and
+ *     every page in docs/<plugin>/ belongs to a component. lib.sh and setup-check.sh are not
+ *     components.
+ *   - plugins/agent-core/commands/help.md names every command of every plugin as /<plugin>:<command>.
+ *   - marketplace.json: one entry per plugins/<p>, sorted by name, names ^[a-z0-9][a-z0-9-]{1,63}$,
+ *     source ./plugins/<name>, no version, a description of 10-2000 characters identical to the
+ *     plugin.json one.
+ *   - No hidden or bidirectional Unicode in the manifests, hooks.json or component markdown.
+ *   - Every plugins/<p>/scripts/lib.sh has the same bytes as agent-core's.
+ *   - Templates (plugins/<p>/templates/<stack>/, _kit/ aside): no package.json, no file named
+ *     .gitignore, nothing under .claude/{hooks,commands,agents,skills}/, no symlink, no real .env
+ *     file, CLAUDE.md and AGENTS.md only as *.starter; a .claude/settings.json holds only
+ *     $schema, permissions, sandbox, env, extraKnownMarketplaces and enabledPlugins (never hooks);
+ *     a destination path shipped by two plugins has the same bytes, unless it is
+ *     .claude/settings.json (merged) or the two plugins name each other in conflictsWith.
+ *   - plugins/<p>/bin/* and plugins/<p>/scripts/*.sh are mode 100755 in the git index (on disk when
+ *     not yet tracked).
+ *   - Hook scripts, bin/, libexec/ and hooks/ never run a download tool (curl, wget, npx, bunx,
+ *     uvx, pipx, pnpx, pip/npm/bun install, uv tool install, go install).
+ *   - docs/catalog.json has an entry (use, why, id.what, id.use, id.why) for every component and none
+ *     for a component that does not exist; every installed file has a "What it is".
+ *   - A template settings.json never allows a bare runner (`bun run`, `npm run`, `uv run`, `npx`,
+ *     `docker compose`, …): each would run any code without a prompt. Allow named scripts instead.
+ *   - The commands that commit, push, merge, post to GitHub or install files are user-only
+ *     (`disable-model-invocation: true`), and so is every skill that may download code.
+ *
+ * Node 20 or newer, no dependencies. Exit 0 clean, 1 stale or invalid, 2 usage or unreadable input.
+ */
 import { execFileSync } from 'node:child_process';
 import { existsSync, lstatSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -68,19 +70,31 @@ const CORE = 'agent-core';
 const NOT_COMPONENTS = new Set(['lib', 'setup-check']);
 const NAME_RE = /^[a-z0-9][a-z0-9-]{1,63}$/;
 const SETTINGS_KEYS = new Set(['$schema', 'permissions', 'sandbox', 'env', 'extraKnownMarketplaces', 'enabledPlugins']);
-// Zero-width, bidirectional controls, word joiners, BOM, soft hyphen, and C0/C1 controls other than
-// tab, newline and carriage return.
+/**
+ * Zero-width, bidirectional controls, word joiners, BOM, soft hyphen, and C0/C1 controls other than
+ * tab, newline and carriage return.
+ */
 const HIDDEN = /[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/u;
-const DOWNLOAD = /(?:^|[;&|(`]|\$\()\s*(?:sudo\s+)?(?:curl|wget|npx|bunx|uvx|pipx|pnpx|pip3?\s+install|npm\s+(?:install|i|ci)|uv\s+tool\s+install|bun\s+(?:add|install)|go\s+install)(?:\s|$)/;
+/*
+ * A command that downloads or installs code: the tools the header names, and the Rust, Swift and
+ * Homebrew installers (cargo install, rustup, brew install, mint install).
+ */
+const DOWNLOAD = /(?:^|[;&|(`]|\$\()\s*(?:sudo\s+)?(?:curl|wget|npx|bunx|uvx|pipx|pnpx|pip3?\s+install|npm\s+(?:install|i|ci)|uv\s+tool\s+install|bun\s+(?:add|install)|go\s+install|cargo\s+install|rustup|brew\s+install|mint\s+install)(?:\s|$)/;
 const DOWNLOAD_EXEC = /\[\s*["'](?:curl|wget|npx|bunx|uvx|pipx|pnpx)["']/;
 const MARK = {
   catalog: ['<!-- catalog:start -->', '<!-- catalog:end -->'],
   install: ['<!-- install:start -->', '<!-- install:end -->'],
   files: ['<!-- files:start -->', '<!-- files:end -->'],
 };
-// A permission that lets Claude run any code without a prompt.
-const BROAD_ALLOW = /^Bash\((?:(?:npm|pnpm|yarn|bun) run|uv run|uvx|npx|bunx|pnpx|pnpm dlx|yarn dlx|docker(?: compose)?|node|bun|python3?|bash|sh|eval)(?::\*|\s\*)?\)$/;
-// Commands a user must type themselves: they commit, push, merge, post to GitHub or install files.
+/*
+ * A permission that lets Claude run any code without a prompt. Go, Rust and Swift runners count:
+ * `go run`, a cargo build script or proc-macro, and a Swift package plugin all execute third-party
+ * code, and bare `xcodebuild`/`xcrun` reach every build phase and developer tool.
+ */
+const BROAD_ALLOW = /^Bash\((?:(?:npm|pnpm|yarn|bun) run|uv run|uvx|npx|bunx|pnpx|pnpm dlx|yarn dlx|docker(?: compose)?|node|bun|python3?|bash|sh|eval|go (?:run|generate|get|install)|cargo (?:run|install|add)|swift (?:run|package)|xcodebuild|xcrun)(?::\*|\s\*)?\)$/;
+/**
+ * Commands a user must type themselves: they commit, push, merge, post to GitHub or install files.
+ */
 const USER_ONLY = new Set(['setup', 'sync', 'branch-cleanup', 'checkpoint', 'commit', 'create-pr', 'merge-pr',
   'promote', 'resolve-pr-review', 'ship', 'promote-deploy', 'verify-deploy']);
 const GENERATED_NOTE = '<!-- Generated by scripts/catalog.mjs from the plugin manifests, docs/ and docs/catalog.json. Edit those, then run it. -->';
@@ -124,7 +138,9 @@ function walk(dir, out = []) {
   return out;
 }
 
-// The frontmatter's top-level keys: plain, quoted, or a block scalar (| or >) on indented lines.
+/**
+ * The frontmatter's top-level keys: plain, quoted, or a block scalar (| or >) on indented lines.
+ */
 function frontmatter(text) {
   const lines = text.split('\n');
   if (lines[0].trim() !== '---') return null;
@@ -155,7 +171,9 @@ function firstSentence(text) {
   return m ? m[1] : flat;
 }
 
-// The first paragraph under "## What it does" in a hook's docs page.
+/**
+ * The first paragraph under "## What it does" in a hook's docs page.
+ */
 function whatItDoes(page) {
   if (!existsSync(page)) return '';
   const lines = read(page).split('\n');
@@ -173,21 +191,47 @@ function whatItDoes(page) {
   return firstSentence(para.join(' '));
 }
 
-// Table cells: one line, pipes escaped, and < > & as entities so a word like <scope> is shown, not
-// swallowed as an HTML tag.
+/**
+ * Table cells: one line, backslashes and then pipes escaped (an unescaped backslash would swallow
+ * the pipe's escape), and < > & as entities so a word like <scope> is shown, not swallowed as an
+ * HTML tag.
+ */
 const cell = (s) =>
   String(s ?? '')
     .replace(/\s+/g, ' ')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
+    .replace(/\\/g, '\\\\')
     .replace(/\|/g, '\\|')
     .trim();
 
-// A setup.json install glob as a regular expression: ** crosses folders, * and ? do not.
-const globRe = (g) => new RegExp(`^${g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*\//g, '(?:.*/)?').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]')}$`);
+/**
+ * A setup.json install glob as a regular expression: ** crosses folders, * and ? do not. One pass,
+ * token by token, as the engine's glob_re (agentkit.py) does: replacing ** first and * afterwards
+ * would rewrite the * inside the .* that ** became, so ** would stop at one folder.
+ */
+const globRe = (g) => {
+  let out = '';
+  for (let i = 0; i < g.length; ) {
+    if (g.startsWith('**/', i)) {
+      out += '(?:.*/)?';
+      i += 3;
+    } else if (g.startsWith('**', i)) {
+      out += '.*';
+      i += 2;
+    } else {
+      const c = g[i];
+      out += c === '*' ? '[^/]*' : c === '?' ? '[^/]' : c.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+      i += 1;
+    }
+  }
+  return new RegExp(`^${out}$`);
+};
 
-// ── Manifests ────────────────────────────────────────────────────────────────────────────────
+/**
+ * ── Manifests ────────────────────────────────────────────────────────────────────────────────
+ */
 const marketplacePath = join(root, '.claude-plugin', 'marketplace.json');
 if (!existsSync(marketplacePath)) usage(`${rel(marketplacePath)} not found; is --root a checkout of agent-config-kit?`);
 const marketplaceText = read(marketplacePath);
@@ -227,10 +271,12 @@ for (const entry of entries) {
   if (entry.description !== desc) problem(`marketplace.json: ${name} description differs from its plugin.json (node scripts/version-sync.mjs copies it)`);
   plugins.push({ name, dir, manifest });
 }
-// agent-core first, then the others in marketplace order.
+/* agent-core first, then the others in marketplace order. */
 plugins.sort((a, b) => (a.name === CORE ? -1 : b.name === CORE ? 1 : 0));
 
-// ── Components ───────────────────────────────────────────────────────────────────────────────
+/**
+ * ── Components ───────────────────────────────────────────────────────────────────────────────
+ */
 function checkHidden(path, text) {
   if (HIDDEN.test(text)) problem(`${rel(path)}: hidden or bidirectional Unicode`);
 }
@@ -292,8 +338,10 @@ for (const p of plugins) {
       comps.push({ kind: 'skill', name, invoke: `${p.name}:${name}`, desc: fm.description ?? '', userOnly });
     }
   }
-  // The workflows setup installs: every templates/<stack>/.github/workflows/*.y*ml. One is optional
-  // when a setup question gates it.
+  /**
+   * The workflows setup installs: every templates/<stack>/.github/workflows/*.y*ml. One is optional
+   * when a setup question gates it.
+   */
   const templatesDir = join(p.dir, 'templates');
   const workflows = [];
   if (existsSync(templatesDir)) {
@@ -309,9 +357,11 @@ for (const p of plugins) {
       }
     }
   }
-  // Docs pages: <name>.md, or <name>.<kind>.md when two kinds in one plugin share a name. A workflow
-  // that shares its name with another component takes <name>.workflow.md and leaves the other's page
-  // where it is.
+  /**
+   * Docs pages: <name>.md, or <name>.<kind>.md when two kinds in one plugin share a name. A workflow
+   * that shares its name with another component takes <name>.workflow.md and leaves the other's page
+   * where it is.
+   */
   const kindsByName = new Map();
   for (const c of comps) kindsByName.set(c.name, (kindsByName.get(c.name) ?? 0) + 1);
   for (const c of comps) c.page = `docs/${p.name}/${kindsByName.get(c.name) > 1 ? `${c.name}.${c.kind}` : c.name}.md`;
@@ -321,7 +371,7 @@ for (const p of plugins) {
   p.comps = comps;
 }
 
-// ── Docs pages both ways ─────────────────────────────────────────────────────────────────────
+/* ── Docs pages both ways ───────────────────────────────────────────────────────────────────── */
 for (const p of plugins) {
   const expected = new Set(p.comps.map((c) => c.page));
   for (const c of p.comps) if (!existsSync(join(root, c.page))) problem(`${c.page}: missing (the page for ${c.kind} ${c.invoke})`);
@@ -335,7 +385,9 @@ for (const p of plugins) {
   }
 }
 
-// ── docs/catalog.json: how to use, why it helps, and the Indonesian texts ──────────────────────
+/**
+ * ── docs/catalog.json: how to use, why it helps, and the Indonesian texts ──────────────────────
+ */
 const notesPath = join(root, 'docs', 'catalog.json');
 const notes = existsSync(notesPath) ? readJson(notesPath) : null;
 const noteOf = (c) => notes?.components?.[c.page.replace(/^docs\//, '').replace(/\.md$/, '')] ?? null;
@@ -358,7 +410,9 @@ else {
   }
 }
 
-// ── The router names every command ───────────────────────────────────────────────────────────
+/**
+ * ── The router names every command ───────────────────────────────────────────────────────────
+ */
 const helpPath = join(root, 'plugins', CORE, 'commands', 'help.md');
 if (plugins.some((p) => p.name === CORE)) {
   if (!existsSync(helpPath)) problem(`plugins/${CORE}/commands/help.md: missing (the router must name every command)`);
@@ -373,7 +427,9 @@ if (plugins.some((p) => p.name === CORE)) {
   }
 }
 
-// ── lib.sh copies ────────────────────────────────────────────────────────────────────────────
+/**
+ * ── lib.sh copies ────────────────────────────────────────────────────────────────────────────
+ */
 const coreLib = join(root, 'plugins', CORE, 'scripts', 'lib.sh');
 for (const p of plugins) {
   const lib = join(p.dir, 'scripts', 'lib.sh');
@@ -382,10 +438,12 @@ for (const p of plugins) {
   else if (!readFileSync(lib).equals(readFileSync(coreLib))) problem(`${rel(lib)}: differs from plugins/${CORE}/scripts/lib.sh (it must be an exact copy)`);
 }
 
-// ── Templates ────────────────────────────────────────────────────────────────────────────────
-const destinations = new Map(); // dest path -> [{plugin, file}]
-const conflicts = new Map(); // plugin -> Set(conflictsWith)
-const stacks = new Map(); // plugin -> { dir, setup }
+/**
+ * ── Templates ────────────────────────────────────────────────────────────────────────────────
+ */
+const destinations = new Map(); /* dest path -> [{plugin, file}] */
+const conflicts = new Map(); /* plugin -> Set(conflictsWith) */
+const stacks = new Map(); /* plugin -> { dir, setup } */
 for (const p of plugins) {
   const tdir = join(p.dir, 'templates');
   if (!existsSync(tdir)) continue;
@@ -451,7 +509,9 @@ for (const [dest, list] of destinations) {
   }
 }
 
-// ── Modes and runtime downloads ──────────────────────────────────────────────────────────────
+/**
+ * ── Modes and runtime downloads ──────────────────────────────────────────────────────────────
+ */
 let indexModes = null;
 try {
   const out = execFileSync('git', ['-C', root, 'ls-files', '-s', '--', 'plugins'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
@@ -484,7 +544,9 @@ for (const p of plugins) {
   }
 }
 
-// ── Generated blocks ─────────────────────────────────────────────────────────────────────────
+/**
+ * ── Generated blocks ─────────────────────────────────────────────────────────────────────────
+ */
 const LANG = {
   en: {
     head: '| Component | Kind | What it does | How to use | Why it helps | Docs |',
@@ -511,8 +573,10 @@ const LANG = {
 function catalogBlock(list, fromDir, lang = 'en') {
   const L = LANG[lang];
   const link = (page) => relative(fromDir, join(root, page)).split(sep).join('/');
-  // A short matcher stays as code; a long one (a tool alternation that would stretch the column)
-  // becomes a plain label. The exact matcher lives in the plugin's hooks/hooks.json.
+  /**
+   * A short matcher stays as code; a long one (a tool alternation that would stretch the column)
+   * becomes a plain label. The exact matcher lives in the plugin's hooks/hooks.json.
+   */
   const matcherLabel = (m) => {
     if (m.length <= 24 && !/[()|]/.test(m)) return `\`${m}\``;
     if (/\b(Write|Edit|MultiEdit)\b/.test(m)) return L.matchers.edits;
@@ -541,8 +605,14 @@ function catalogBlock(list, fromDir, lang = 'en') {
       const what = lang === 'id' ? n.id?.what : c.desc;
       const use = lang === 'id' ? n.id?.use : n.use;
       const why = lang === 'id' ? n.id?.why : n.why;
-      // "How to use" is written as Markdown (it holds `code`): only its pipes are escaped.
-      const md = (v) => String(v ?? '').replace(/\s+/g, ' ').replace(/\|/g, '\\|').trim();
+      /* "How to use" is written as Markdown (it holds `code`): only its backslashes and pipes are
+         escaped, backslashes first. */
+      const md = (v) =>
+        String(v ?? '')
+          .replace(/\s+/g, ' ')
+          .replace(/\\/g, '\\\\')
+          .replace(/\|/g, '\\|')
+          .trim();
       out.push(`| \`${cell(c.invoke)}\` | ${cell(kindLabel(c))} | ${lang === 'id' ? md(what) : cell(what)} | ${md(use)} | ${md(why)} | ${docs} |`);
     }
     out.push('');
@@ -550,8 +620,10 @@ function catalogBlock(list, fromDir, lang = 'en') {
   return out.join('\n');
 }
 
-// A plugin's role decides its install lines: agent-core, a stack plugin (it names the stacks it
-// conflicts with), or an add-on that sits next to any stack.
+/**
+ * A plugin's role decides its install lines: agent-core, a stack plugin (it names the stacks it
+ * conflicts with), or an add-on that sits next to any stack.
+ */
 function roleOf(p) {
   if (p.name === CORE) return 'core';
   return (conflicts.get(p.name)?.size ?? 0) > 0 ? 'stack' : 'addon';
@@ -575,7 +647,9 @@ function pluginInstall(p, template) {
   return text;
 }
 
-// ── Every installed file ─────────────────────────────────────────────────────────────────────
+/**
+ * ── Every installed file ─────────────────────────────────────────────────────────────────────
+ */
 const FILES_LANG = {
   en: {
     head: '| File | When setup installs it | What it is |',
@@ -615,7 +689,9 @@ const FILES_LANG = {
   },
 };
 
-// The first Markdown heading, or the first sentence of the first comment block.
+/**
+ * The first Markdown heading, or the first sentence of the first comment block.
+ */
 function describe(file) {
   let text;
   try {
@@ -633,11 +709,13 @@ function describe(file) {
   const block = [];
   for (const raw of lines.slice(0, 40)) {
     const l = raw.trim();
-    if (!block.length && (l === '' || l.startsWith('#!') || /^#\s*shellcheck\b/.test(l) || /^\/\/\s*@ts-/.test(l) || /^(import|export|const|let|from|use)\b/.test(l) || l === '/**')) {
+    /* Go's build constraints and generate lines (//go:build, // +build, //go:generate) are directives, not prose. */
+    if (!block.length && (l === '' || l.startsWith('#!') || /^#\s*shellcheck\b/.test(l) || /^\/\/\s*@ts-/.test(l) || /^\/\/(go:|\s*\+build\b)/.test(l) || /^(import|export|const|let|from|use)\b/.test(l) || l === '/**')) {
       if (/^(import|export|const|let|use)\b/.test(l)) break;
       continue;
     }
-    const m = l.match(/^(?:#|\/\/|\*|\/\*\*?)\s?(.*?)(?:\s*\*\/)?$/);
+    /* `//!` and `///` are Rust's doc comments: the marker is not part of the sentence. */
+    const m = l.match(/^(?:#|\/\/[!/]?|\*|\/\*\*?)\s?(.*?)(?:\s*\*\/)?$/);
     if (!m) break;
     if (/^\s*shellcheck\b/.test(m[1])) continue;
     if (m[1] === '' && block.length) break;
@@ -768,7 +846,9 @@ for (const t of targets) {
   }
 }
 
-// ── Report ───────────────────────────────────────────────────────────────────────────────────
+/**
+ * ── Report ───────────────────────────────────────────────────────────────────────────────────
+ */
 const count = plugins.reduce((n, p) => n + p.comps.length, 0);
 if (problems.length) {
   for (const m of problems) console.log(`FAIL: ${m}`);

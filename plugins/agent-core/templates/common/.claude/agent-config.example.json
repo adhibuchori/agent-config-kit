@@ -25,7 +25,7 @@
     "DESIGN.md"
   ],
 
-  "//generatedPaths": "Files or folders generated-guard.sh keeps agents from editing by hand (Write, Edit, MultiEdit and Serena's write tools, including a folder-wide replace_in_files). Change the source and run the generator instead. A path the repo does not have guards nothing.",
+  "//generatedPaths": "Files or folders generated-guard.sh keeps agents from editing by hand (Write, Edit, MultiEdit and Serena's write tools, including a folder-wide replace_in_files). Change the source and run the generator instead. A path the repo does not have guards nothing. Beyond this list, the guard refuses a Go file whose header has `// Code generated ... DO NOT EDIT.` before the package clause, and a Rust file with @generated in a comment among its first five lines.",
   "generatedPaths": [
     "src/lib/api/generated",
     "src/generated",
@@ -42,6 +42,9 @@
     "alembic/versions",
     "migrations/versions"
   ],
+
+  "//appendOnlyMigrationsDirs": "Folders of hand-written migrations (goose, sqlx, golang-migrate) that migration-guard.sh keeps append-only: a new file, or one only the work branch has, stays editable; a file any protectedBranches branch already holds (locally, or as origin/<branch> from the last fetch) may have run against a database, so it is refused and the fix is a new migration. Empty by default; a stack's setup seeds it. A repo where git cannot answer is refused.",
+  "appendOnlyMigrationsDirs": [],
 
   "//commandWrappers": "Commands that run another command, which safety-check.sh peels off before judging it: \"name [subcommand ...] [-opt= ...]\". The name and any listed subcommands are dropped, then the wrapper's options up to --; an option written with a trailing = takes the next word as its value. Example: \"dotenvx run -f= --env-file=\" makes `dotenvx run -f .env.local -- git push origin main` read as `git push origin main`. env, command, exec, nohup, time, sudo, nice, xargs, shells (bash -c) and rtk (rtk proxy too) are always peeled.",
   "commandWrappers": [],

@@ -1,0 +1,116 @@
+{
+  "stack": "be-go",
+  "conflictsWith": ["agent-ai-fastapi", "agent-be-axum", "agent-be-hono", "agent-docs-nextra", "agent-fe-nextjs", "agent-fe-nextjs-static", "agent-ios-swiftui"],
+  "questions": [
+    {
+      "id": "migrations",
+      "ask": "Does this service own its database schema, with goose migrations in db/migrations?",
+      "why": "Yes installs .squawk.toml, the settings of the migration linter the quality gate runs on every new migration. No suits a service that reads a schema another repo owns. Either way the tests run against a real PostgreSQL with db/roles.sql applied, the gate's migration checks say 'nothing to check' while db/migrations does not exist, and the migration guard stays silent until it does.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "db/migrations exists or go.mod requires github.com/pressly/goose/v3: yes; the schema lives in another repository: no",
+      "install": { "yes": [".squawk.toml"] }
+    },
+    {
+      "id": "ci-gate",
+      "ask": "Run agent-config-kit's Go quality gate on every pull request (.github/workflows/quality-gate.yml)?",
+      "why": "Installs a small caller of the kit's be-go-quality-gate workflow, pinned to one commit: gates.list again, the coverage floor, a PostgreSQL 18 database built from the migrations, squawk, govulncheck, secret scans and the build, with a read-only token and no secrets. It needs GitHub Actions; an existing quality-gate.yml is kept either way.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "the repo is on GitHub (a github.com remote or a .github/ folder); .github/workflows/quality-gate.yml already exists",
+      "install": { "yes": [".github/workflows/quality-gate.yml"] }
+    },
+    {
+      "id": "deepseek-review",
+      "ask": "Review each pull request with DeepSeek, a low-cost paid AI model (.github/workflows/deepseek-review.yml)?",
+      "why": "Installs a caller of agent-config-kit's reusable DeepSeek review, with notes about this stack: one comment per pull request from a branch of this repository, updated when the repository's owner, a member or a collaborator comments /ask-deepseek. It reads the diff over the GitHub API and runs no pull-request code. It needs the repository secret DEEPSEEK_API_KEY and costs about ten US cents a review at most, usually a cent or two (the diff and the answer are capped); without the secret it passes and sends nothing.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": ".github/workflows/deepseek-review.yml already exists, or the user has asked for an AI review in CI",
+      "install": { "yes": [".github/workflows/deepseek-review.yml"] }
+    },
+    {
+      "id": "pr-templates",
+      "ask": "Add pull-request templates for work pull requests and dev → prod promotions (.github/PULL_REQUEST_TEMPLATE/)?",
+      "why": "They list only what the gate cannot decide: the error codes an operation declares, the migration and query checks a person reads, and the migration and deploy steps of a promotion. They assume dev and prod branches.",
+      "choices": ["yes", "no"],
+      "recommended": "yes",
+      "detect": "branches dev and prod exist (git branch --list dev prod); .github/PULL_REQUEST_TEMPLATE/ already has files",
+      "install": { "yes": [".github/PULL_REQUEST_TEMPLATE/*.md"] }
+    },
+    {
+      "id": "analytics",
+      "ask": "Does an agent need to read a self-hosted analytics API from this repo?",
+      "why": "Adds .claude/ANALYTICS.example.md, a template to fill in for that read API. An unfilled template is worse than none, because an agent will try to use it.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "the code or .env.*.example names an analytics client, or .claude/ANALYTICS.md exists",
+      "install": { "yes": [".claude/ANALYTICS.example.md"] }
+    },
+    {
+      "id": "serena-workspace",
+      "ask": "Do you open several repositories as one Serena workspace?",
+      "why": "Adds .claude/SERENA-WORKSPACE.example.md, which explains how to scope Serena's searches across repos. With a single repo the default needs no documentation.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": ".mcp.json runs Serena and a .serena/project.yml above this repo lists several folders, or AGENT_WORKSPACE_ROOT is set",
+      "install": { "yes": [".claude/SERENA-WORKSPACE.example.md"] }
+    },
+    {
+      "id": "payload-encryption",
+      "ask": "Seal request and response bodies between this service and its callers (the payload contract: encrypted envelopes, a registry generated from the spec, checked before merge)?",
+      "why": "Yes installs the payload contract in Go, standard library only: internal/payload (AES-256-GCM envelopes bound to method, route and status; P-256 key agreement with browsers and apps; key rings for server callers; the strict/off switch; the registry generated from api/openapi.json) with tests at 100% that read the shared vectors, the net/http middleware in internal/httpapi, the five ENVELOPE_* codes in internal/apperr, the payload variables in internal/config, payload.config.json, the key script, the contract document and its rules. Four steps stay yours: add the five codes to Registered() and to Problem.code in api/openapi.yaml; add GET /api/payload/handshake when browsers or apps call the service, and exempt it and the health probe as none in payload.config.json; wire the middleware into NewRouter and main; regenerate the server and the registry. The gates stay red until the spec lists the codes, on purpose: a half-adopted contract never passes. Answer no when bodies need no sealing beyond TLS.",
+      "choices": ["yes", "no"],
+      "recommended": "no",
+      "detect": "payload.config.json or internal/payload/ already exists, or the browsers, apps or services that call this one seal their bodies",
+      "install": {
+        "yes": [
+          ".claude/PAYLOAD-CONTRACT.md",
+          ".claude/rules/backend/go-payload.md",
+          ".claude/rules/common/payload-contract.md",
+          "internal/apperr/payload_codes.go",
+          "internal/config/payload*.go",
+          "internal/httpapi/payload*.go",
+          "internal/payload/**",
+          "payload.config.json",
+          "scripts/check/payload-vectors.json",
+          "scripts/generate/payload-server-key.mjs"
+        ]
+      },
+      "settings": { "yes": { "/permissions/deny": ["Bash(node scripts/generate/payload-server-key.mjs:*)"] } }
+    }
+  ],
+  "seed": [
+    ".claude/agent-config.json",
+    ".claude/anti-patterns/INDEX.md",
+    ".env.ci.example",
+    ".githooks/pre-commit",
+    ".github/CODEOWNERS",
+    ".github/PULL_REQUEST_TEMPLATE/*.md",
+    ".golangci.yml",
+    ".squawk.toml",
+    "api/**",
+    "cmd/**",
+    "db/roles.sql",
+    "internal/**",
+    "payload.config.json",
+    "scripts/check/coverage-exempt.txt",
+    "scripts/check/gates.list",
+    "scripts/check/tools.env",
+    "sqlc.yaml"
+  ],
+  "snippets": { "go.mod": "snippets/go.mod.tools" },
+  "gitignore": [
+    ".env",
+    ".env.*",
+    "!.env.ci.example",
+    "!.env.*.example",
+    ".envrc",
+    ".serena/",
+    ".skillspector/",
+    "/bin/",
+    "/coverage/",
+    "*.test"
+  ],
+  "packageScripts": {}
+}

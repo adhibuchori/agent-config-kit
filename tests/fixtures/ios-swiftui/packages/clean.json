@@ -1,0 +1,32 @@
+{
+  "name": "AppCore",
+  "dependencies": [
+    { "sourceControl": [{ "identity": "swift-openapi-runtime", "requirement": { "exact": ["1.13.0"] } }] },
+    { "sourceControl": [{ "identity": "swift-openapi-urlsession", "requirement": { "exact": ["1.3.2"] } }] }
+  ],
+  "targets": [
+    { "name": "Domain", "type": "regular", "dependencies": [], "pluginUsages": null },
+    {
+      "name": "APIClient",
+      "type": "regular",
+      "dependencies": [
+        { "byName": ["Domain", null] },
+        { "product": ["OpenAPIRuntime", "swift-openapi-runtime", null, null] }
+      ],
+      "pluginUsages": null
+    },
+    {
+      "name": "Features",
+      "type": "regular",
+      "dependencies": [{ "byName": ["Domain", null] }, { "byName": ["APIClient", null] }],
+      "pluginUsages": null
+    },
+    { "name": "DomainTests", "type": "test", "dependencies": [{ "byName": ["Domain", null] }] },
+    { "name": "APIClientTests", "type": "test", "dependencies": [{ "byName": ["APIClient", null] }] },
+    {
+      "name": "FeaturesTests",
+      "type": "test",
+      "dependencies": [{ "target": ["Features", null] }, { "byName": ["Domain", null] }]
+    }
+  ]
+}

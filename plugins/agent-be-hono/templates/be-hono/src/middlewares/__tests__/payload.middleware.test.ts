@@ -1,6 +1,7 @@
 /* Unit tests for the Hono payload middleware: part of the payload contract (.claude/PAYLOAD-CONTRACT.md). */
 import { describe, expect, test } from 'bun:test';
 import { Hono } from 'hono';
+import { requestId } from 'hono/request-id';
 import { toBase64Url } from '../../lib/payload/base64url';
 import { openJson, parseEnvelope, sealJson } from '../../lib/payload/codec';
 import {
@@ -18,6 +19,7 @@ import {
 } from '../../lib/payload/envelope';
 import { createKeyRing, type KeyRing } from '../../lib/payload/key-ring';
 import type { EndpointMap } from '../../lib/payload/policy';
+import { PAYLOAD_TITLES } from '../../lib/payload/refusal';
 import { createPayloadMiddleware, type PayloadMiddlewareOptions } from '../payload.middleware';
 
 /**
@@ -51,12 +53,15 @@ const ring: KeyRing = await createKeyRing([
   { value: `k1:${toBase64Url(new Uint8Array(32).fill(5))}`, name: 'TEST_KEY' },
 ]);
 const server = await importServerKeyPair(await generateServerKeyJwk());
+/* The kit's placeholder base; a real API passes PROBLEM_TYPE_BASE from src/lib/errors/problem.ts. */
+const BASE = 'https://example.invalid/problems/';
 
 function app(options: Partial<PayloadMiddlewareOptions> = {}): Hono {
   const hono = new Hono();
   hono.use(
     createPayloadMiddleware({
       mode: 'strict',
+      problemTypeBase: BASE,
       registry,
       keyRing: async () => ring,
       browserKeyPair: async () => server,
@@ -76,6 +81,14 @@ function app(options: Partial<PayloadMiddlewareOptions> = {}): Hono {
   return hono;
 }
 
+/* The whole refusal body: a member added later, such as an internal message, fails. */
+const refusal = (status: number, code: keyof typeof PAYLOAD_TITLES) => ({
+  type: `${BASE}${code}`,
+  title: PAYLOAD_TITLES[code],
+  status,
+  code,
+});
+
 const aadFor = (method: string, pattern: string) => (kid: string, ts: number) =>
   requestAad(method, pattern, kid, ts);
 
@@ -87,6 +100,7 @@ async function sealed(body: unknown, pattern = '/api/notes'): Promise<string> {
 
 async function opened(response: Response, pattern: string): Promise<unknown> {
   expect(response.headers.get('content-type')).toBe(ENCRYPTED_MEDIA_TYPE);
+  expect(response.headers.get('vary')).toBe(`${EPK_HEADER}, ${KID_HEADER}`);
   const envelope = parseEnvelope(await response.text());
   return openJson(envelope, {
     key: ring.resolve(envelope.kid),
@@ -113,7 +127,7 @@ describe('payload middleware, server callers', () => {
     });
     expect(response.status).toBe(400);
     expect(response.headers.get('content-type')).toBe('application/problem+json');
-    expect(await response.json()).toMatchObject({ code: 'ENVELOPE_REQUIRED' });
+    expect(await response.json()).toEqual(refusal(400, 'ENVELOPE_REQUIRED'));
   });
 
   test('seals a bodiless GET under the key its header names, or the primary', async () => {
@@ -123,15 +137,14 @@ describe('payload middleware, server callers', () => {
     expect(await opened(defaulted, '/api/notes/:id')).toEqual({ id: '8' });
   });
 
-  test('refuses a key id it does not hold', async () => {
-    const response = await app().request('/api/notes/7', { headers: { [KID_HEADER]: 'k9' } });
+  test('refuses a key id it does not hold, with the request id where requestId() runs', async () => {
+    const init = { headers: { [KID_HEADER]: 'k9' } };
+    const response = await app().request('/api/notes/7', init);
     expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({ code: 'ENVELOPE_KEY_UNKNOWN' });
-  });
-
-  test('lets a bodiless DELETE through and leaves a 204 alone', async () => {
-    const response = await app().request('/api/notes/7', { method: 'DELETE' });
-    expect(response.status).toBe(204);
+    expect(await response.json()).toEqual(refusal(400, 'ENVELOPE_KEY_UNKNOWN'));
+    const traced = new Hono().use(requestId({ generator: () => 'req-1' })).route('/', app());
+    const answer = await (await traced.request('/api/notes/7', init)).json();
+    expect(answer).toEqual({ ...refusal(400, 'ENVELOPE_KEY_UNKNOWN'), requestId: 'req-1' });
   });
 
   test('takes a plain multipart upload on a response-only route and seals the answer', async () => {
@@ -152,13 +165,14 @@ describe('payload middleware, server callers', () => {
     expect(await off.json()).toEqual({ id: '7' });
   });
 
-  test('refuses to seal a body that is not JSON, and skips an empty one', async () => {
+  test('refuses to seal a body that is not JSON, and skips an empty one and a 204', async () => {
     const text = await app().request('/api/text');
     expect(text.status).toBe(500);
-    expect(await text.json()).toMatchObject({ code: 'ENVELOPE_MALFORMED' });
+    expect(await text.json()).toEqual(refusal(500, 'ENVELOPE_MALFORMED'));
     const empty = await app().request('/api/empty');
     expect(empty.status).toBe(200);
     expect(await empty.text()).toBe('');
+    expect((await app().request('/api/notes/7', { method: 'DELETE' })).status).toBe(204);
   });
 
   test('uses the refusal the app supplies', async () => {
@@ -205,8 +219,8 @@ describe('payload middleware, browser callers', () => {
     const noBrowser = await app({ browserKeyPair: undefined }).request('/api/notes/1', {
       headers: { [EPK_HEADER]: browser.publicKey },
     });
-    expect(await noBrowser.json()).toMatchObject({ code: 'ENVELOPE_KEY_UNKNOWN' });
+    expect(await noBrowser.json()).toEqual(refusal(400, 'ENVELOPE_KEY_UNKNOWN'));
     const noRing = await app({ keyRing: undefined }).request('/api/notes/1');
-    expect(await noRing.json()).toMatchObject({ code: 'ENVELOPE_REQUIRED' });
+    expect(await noRing.json()).toEqual(refusal(400, 'ENVELOPE_REQUIRED'));
   });
 });

@@ -87,7 +87,7 @@ Every component, generated from the manifests and the docs pages; each links to 
 
 | Hook | Event | Matcher | Data it reads | Block or warn | Timeout | Network |
 | --- | --- | --- | --- | --- | --- | --- |
-| [generated-guard](../../docs/agent-docs-nextra/generated-guard.md) | PreToolUse | `Write`, `Edit`, `MultiEdit` and Serena's write tools | the target path; `generatedPaths` | **blocks** (exit 2) | 10 s | no |
+| [generated-guard](../../docs/agent-docs-nextra/generated-guard.md) | PreToolUse | `Write`, `Edit`, `MultiEdit` and Serena's write tools | the target path; `generatedPaths`; the header of a `*.go` or `*.rs` file | **blocks** (exit 2) | 10 s | no |
 
 **What setup installs** (`/agent-docs-nextra:setup`): the docs-content rule, anti-patterns, gate
 scripts and comment checks, oxlint, oxfmt and knip config, the env helper
@@ -97,7 +97,8 @@ changelog and deploy workflows, React Doctor and a DeepSeek review of each pull 
 ## Configuration
 
 `generatedPaths` in `.claude/agent-config.json`. The `generated-pages` answer `yes` seeds it with
-`content/technical` and `content/changelog.mdx`. `"generatedPaths": []` turns the guard off.
+`content/technical` and `content/changelog.mdx`. `"generatedPaths": []` turns the guard off, except
+for a Go or Rust file whose header marks it generated.
 
 ## Enabling and disabling
 

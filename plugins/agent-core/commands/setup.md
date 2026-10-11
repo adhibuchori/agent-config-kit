@@ -1,5 +1,5 @@
 ---
-description: Install agent-core's permissions, rules, check scripts and the unlock and .env helpers into this repo, after a dry run you approve
+description: Install agent-core's permissions, rules, check scripts and the unlock and `.env` helpers into this repo, after a dry run you approve
 argument-hint: "[--answer id=value ...]"
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Bash(git status:*), Bash(agent-setup questions:*), Bash(agent-setup plan:*), Bash(agent-sync check:*)
@@ -32,7 +32,8 @@ Read what setup would touch, and note what you find:
 - `package.json` and the lockfile (`bun.lock`, `bun.lockb`, `pnpm-lock.yaml`, `yarn.lock`,
   `package-lock.json`): the package manager decides how the user types `unlock`
   (`docs/unlock.md` once installed). No `package.json` means no alias: unlock is then
-  `./scripts/ops/unlock.sh`. Also `tsconfig.json` and `pyproject.toml` (the `language` question).
+  `./scripts/ops/unlock.sh`. Also `tsconfig.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`,
+  `Package.swift` and `*.xcodeproj` (the `language` question).
 - `.claude/settings.json` and `.claude/settings.local.json`: any `hooks` wiring there that runs a
   script agent-core also runs (safety-check.sh, db-guard.sh, ...) is **double wiring**; each such
   hook would run twice. Setup never edits `hooks`; the draft warns, and the fix is to remove those

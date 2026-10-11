@@ -3,17 +3,19 @@
  * COVER: refuses a coverage gate that was weakened.
  *
  * The suite itself proves coverage; this proves the suite is still asked the right question. It
- * reads the coverage config of whichever stack the repo has (vitest.config.ts, bunfig.toml, or
- * pyproject.toml's [tool.coverage]), and fails when a threshold drops below 100, a logic folder
- * falls out of scope, an exemption carries no reason, or the pre-commit hook stops running the
- * coverage suite. A repo with no test runner configured has nothing to check and passes.
- * The rule is the language's `coverage.md`: `.claude/rules/typescript/` or `.claude/rules/python/`.
+ * reads the coverage config of whichever stack the repo has (vitest.config.ts, bunfig.toml,
+ * pyproject.toml's [tool.coverage], or the scripts/check/coverage.sh of a Go, Rust or Swift repo),
+ * and fails when a threshold drops below 100, a logic folder falls out of scope, an exemption
+ * carries no reason, or the pre-commit hook stops running the coverage suite. A repo with no test
+ * runner configured has nothing to check and passes.
+ * The rule is the language's `coverage.md` under `.claude/rules/` (typescript, python, go, rust or
+ * swift).
  *
  * usage: node scripts/check/coverage-policy.mjs
  */
 import { existsSync, readFileSync } from 'node:fs';
 
-const RULES = ['.claude/rules/typescript/coverage.md', '.claude/rules/python/coverage.md'];
+const RULES = ['typescript', 'python', 'go', 'rust', 'swift'].map((l) => `.claude/rules/${l}/coverage.md`);
 const problems = [];
 const read = (path) => (existsSync(path) ? readFileSync(path, 'utf8') : null);
 
@@ -76,8 +78,10 @@ function checkVitest(config) {
         `vitest.config: coverage.thresholds.${metric} is ${value ?? 'missing'}, must be 100`,
       );
   }
-  // Read include and exclude inside the `coverage: {` block, so the test-file globs of
-  // `test.include` are never mistaken for the coverage scope.
+  /**
+   * Read include and exclude inside the `coverage: {` block, so the test-file globs of
+   * `test.include` are never mistaken for the coverage scope.
+   */
   const at = config.search(/\bcoverage\s*:\s*\{/);
   const coverage = at < 0 ? '' : config.slice(at);
   const include = listAfter(coverage, /\binclude\s*:\s*\[/);
@@ -148,9 +152,11 @@ function checkPython(pyproject) {
   const floor = report.match(/^\s*fail_under\s*=\s*([\d.]+)/m)?.[1];
   if (Number(floor) !== 100)
     problems.push(`pyproject.toml: fail_under is ${floor ?? 'missing'}, must be 100`);
-  // Only a live line counts: a comment that mentions pytest and --cov runs nothing. The suite runs
-  // from .pre-commit-config.yaml directly, or from gates.list when pre-commit (or husky) hands the
-  // commit to gates.sh --hook.
+  /**
+   * Only a live line counts: a comment that mentions pytest and --cov runs nothing. The suite runs
+   * from .pre-commit-config.yaml directly, or from gates.list when pre-commit (or husky) hands the
+   * commit to gates.sh --hook.
+   */
   const runsPytest = (path) => active(path).some((l) => /pytest.*--cov/.test(l));
   const hooks = active('.pre-commit-config.yaml');
   const viaGates = [...hooks, ...active(HOOK)].some((l) => /scripts\/check\/gates\.sh\b.*--hook/.test(l));
@@ -160,20 +166,58 @@ function checkPython(pyproject) {
     );
 }
 
+/**
+ * A repo whose coverage runs from scripts/check/coverage.sh (Go, Rust, Swift): the script measures,
+ * then hands the report to coverage-per-file.mjs, which demands 100% of every file; gates.list runs
+ * it through ci-env.sh, so the tests see CI's variables and none of the developer's. A file leaves
+ * the measurement only through scripts/check/coverage-exempt.txt, one `<path or glob>  # <category>:
+ * <reason>` per line, and the categories are closed: a composition root (main.go, src/main.rs) or
+ * generated code.
+ */
+const COVERAGE_SH = 'scripts/check/coverage.sh';
+const EXEMPT = 'scripts/check/coverage-exempt.txt';
+const EXEMPT_REASON = /^(composition root|generated)\s*[:\u2014-]\s*\S/i;
+function checkCoverageScript() {
+  if (!active(COVERAGE_SH).some((l) => l.includes('coverage-per-file.mjs')))
+    problems.push(`${COVERAGE_SH} must hand its report to scripts/check/coverage-per-file.mjs (100% per file)`);
+  if (!active(GATES_LIST).some((l) => /scripts\/check\/ci-env\.sh\b.*scripts\/check\/coverage\.sh\b/.test(l)))
+    problems.push(`${GATES_LIST} must run \`bash scripts/check/ci-env.sh bash scripts/check/coverage.sh\``);
+  (read(EXEMPT) ?? '').split('\n').forEach((raw, i) => {
+    const line = raw.trim();
+    if (line === '' || line.startsWith('#')) return;
+    const hash = line.indexOf('#');
+    const entry = (hash < 0 ? line : line.slice(0, hash)).trim();
+    const reason = hash < 0 ? '' : line.slice(hash + 1).trim();
+    const at = `${EXEMPT}:${i + 1}: '${entry}'`;
+    if (/^[*./]+$/.test(entry)) problems.push(`${at} exempts everything`);
+    if (reason === '') problems.push(`${at} has no \`# reason\``);
+    else if (!EXEMPT_REASON.test(reason))
+      problems.push(`${at} is not a closed category: write \`# composition root: <why>\` or \`# generated: <why>\``);
+  });
+}
+
 const vitest = read('vitest.config.ts') ?? read('vitest.config.mts');
 const bunfig = read('bunfig.toml');
 const pyproject = read('pyproject.toml');
+const coverageSh = existsSync(COVERAGE_SH);
 if (vitest) checkVitest(vitest);
 if (bunfig?.includes('coverageThreshold') || bunfig?.includes('[test]')) checkBun(bunfig);
 if (pyproject?.includes('[tool.coverage')) checkPython(pyproject);
-if (!vitest && !bunfig && !pyproject?.includes('[tool.coverage')) {
+if (coverageSh) checkCoverageScript();
+if (!vitest && !bunfig && !pyproject?.includes('[tool.coverage') && !coverageSh) {
   console.log('coverage-policy: no test runner configured here, nothing to check.');
   process.exit(0);
 }
 
 if (problems.length > 0) {
-  // The rule file the repo ships, else the one its runner's language implies.
-  const rule = RULES.find((path) => existsSync(path)) ?? RULES[vitest || bunfig ? 0 : 1];
+  /* The rule file the repo ships, else the one its runner's language implies. */
+  const implied = [
+    vitest || bunfig,
+    pyproject?.includes('[tool.coverage'),
+    existsSync('go.mod'),
+    existsSync('Cargo.toml'),
+  ].findIndex(Boolean);
+  const rule = RULES.find((path) => existsSync(path)) ?? RULES[implied < 0 ? 4 : implied];
   console.error(`coverage-policy (COVER): ${problems.length} problem(s) — see ${rule}`);
   for (const p of problems) console.error(`  ${p}`);
   process.exit(1);

@@ -29,6 +29,7 @@ permissions:
 jobs:
   gate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -103,6 +104,7 @@ permissions:
 jobs:
   review:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write
@@ -234,6 +236,34 @@ EOF
   [[ "$output" == *"loose.yml: no top-level \`permissions:\`"* ]]
   [[ "$output" == *"job \`call\` uses \`secrets: inherit\`"* ]]
   [[ "$output" == *"job \`build\` step 1 checks out without an explicit \`persist-credentials:\`"* ]]
+}
+
+@test "workflow-policy: a job that runs steps needs timeout-minutes; a reusable-workflow call does not" {
+  cat >"$K/.github/workflows/slow.yml" <<'EOF'
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  call:
+    uses: ./.github/workflows/demo-quality-gate.yml
+  bounded:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: echo bounded
+  unbounded:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo unbounded
+EOF
+  policy
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"slow.yml: job \`unbounded\` runs steps without \`timeout-minutes:\`"* ]] || false
+  [[ "$output" != *"job \`bounded\`"* ]] || false
+  [[ "$output" != *"job \`call\`"* ]] || false
+  replace_in "$K/.github/workflows/slow.yml" $'  unbounded:\n    runs-on: ubuntu-latest\n' $'  unbounded:\n    runs-on: ubuntu-latest\n    timeout-minutes: ${{ inputs.timeout }}\n'
+  policy
+  [ "$status" -eq 0 ]
 }
 
 @test "workflow-policy: the placeholder pin warns, and fails with --release" {

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(bash scripts/check/gates.sh:*)",
+      "Bash(bash scripts/check/lint.sh:*)",
+      "Bash(bash scripts/check/generated.sh:*)",
+      "Bash(bash scripts/check/migrations.sh:*)",
+      "Bash(bash scripts/check/endpoints.sh:*)",
+      "Bash(bash scripts/check/ci-env.sh bash scripts/check/coverage.sh:*)",
+      "Bash(bash scripts/check/ci-env.sh bash scripts/check/pooler.sh:*)",
+      "Bash(node scripts/check/payload-registry.mjs:*)",
+      "Bash(node scripts/generate/payload-registry.mjs:*)",
+      "Bash(go build:*)",
+      "Bash(go vet:*)",
+      "Bash(go test:*)",
+      "Bash(go mod tidy -diff:*)",
+      "Bash(go tool sqlc vet:*)",
+      "Bash(go tool sqlc diff:*)",
+      "Bash(golangci-lint run:*)",
+      "Bash(golangci-lint fmt:*)"
+    ],
+    "ask": [
+      "Bash(go run:*)",
+      "Bash(go generate:*)",
+      "Bash(go get:*)",
+      "Bash(go install:*)",
+      "Bash(go mod tidy)",
+      "Bash(go tool goose:*)",
+      "Bash(go tool govulncheck:*)",
+      "Bash(docker compose:*)"
+    ],
+    "deny": [
+      "Edit(AGENTS.md)",
+      "Bash(node scripts/generate/payload-server-key.mjs:*)"
+    ]
+  }
+}

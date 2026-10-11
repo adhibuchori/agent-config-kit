@@ -13,6 +13,18 @@
       "category": "development"
     },
     {
+      "name": "agent-be-axum",
+      "source": "./plugins/agent-be-axum",
+      "description": "Experimental (0.x): rules, a reviewer, two skills and checks for Rust + Axum services on PostgreSQL (sqlx, utoipa) in Claude Code, on top of agent-core. Hooks: migration-guard keeps hand-written sqlx migrations append-only once a protected branch has them, and generated-guard refuses hand edits to the sqlx query cache and the exported OpenAPI document (paths in .claude/agent-config.json; a repo without them is unaffected). Commands: setup and sync install and verify the backend and Rust rules, anti-patterns, a service skeleton whose error module and tests hold the gates, clippy, rustfmt, cargo-deny and nextest config, quality-gate check scripts (rustfmt, cargo policy, Rust source checks, migrations, coverage), a pull-request-only CI caller, an optional DeepSeek review of each pull request and a CODEOWNERS starter. Agent: reviewer. Skills: api-endpoint and db-migration. No package.json needed. The hooks run on your machine, open no network connection and stay silent until the project opts in.",
+      "category": "development"
+    },
+    {
+      "name": "agent-be-go",
+      "source": "./plugins/agent-be-go",
+      "description": "Experimental (0.x): rules, a reviewer, skills and checks for Go HTTP services on PostgreSQL (net/http, oapi-codegen, pgx, sqlc, goose) in Claude Code, on top of agent-core. Hooks: migration-guard refuses edits to migrations a protected branch already has (append-only), and generated-guard refuses hand edits to generated code and the exported contract (both read .claude/agent-config.json; a repo without one is unaffected). Commands: setup and sync install and verify the backend and Go rules, PostgreSQL rules shared with agent-be-axum, anti-patterns, a seeded service skeleton (error-code registry with an RFC 9457 writer, router, pool, tests at 100%), gate scripts, golangci-lint and sqlc config, the database roles, a pull-request-only CI caller, an optional DeepSeek review of each pull request and a CODEOWNERS starter. Agent: reviewer. Skills: api-endpoint, db-migration. The hooks run on your machine, open no network connection and stay silent until the project opts in.",
+      "category": "development"
+    },
+    {
       "name": "agent-be-hono",
       "source": "./plugins/agent-be-hono",
       "description": "Rules, a reviewer and checks for Bun + Hono + Drizzle APIs in Claude Code, on top of agent-core. Hook: migration-guard refuses hand edits to generated Drizzle migrations (folders in .claude/agent-config.json; a repo without one is unaffected). Commands: setup and sync install and verify the backend and TypeScript rules, anti-patterns, quality-gate check scripts (migrations, index coverage, coverage policy, module mocks, constants), lint and test config, a pull-request-only CI caller, an optional DeepSeek review of each pull request and a CODEOWNERS starter. Agent: reviewer. The hook runs on your machine, opens no network connection and stays silent until the project opts in.",
@@ -52,6 +64,12 @@
       "name": "agent-fe-threejs",
       "source": "./plugins/agent-fe-threejs",
       "description": "Optional 3D add-on for Next.js sites that use three.js or React Three Fiber; install it next to agent-fe-nextjs or agent-fe-nextjs-static. No hooks. Commands: setup and sync install and verify rules for gating the scene, a still fallback, reduced motion, disposing GPU resources and asset budgets, plus a guide to adding third-party 3D skills by reference (nothing is vendored).",
+      "category": "development"
+    },
+    {
+      "name": "agent-ios-swiftui",
+      "source": "./plugins/agent-ios-swiftui",
+      "description": "Experimental (0.x: names and rules may still change). Rules, reviewers and checks for SwiftUI iOS apps in Claude Code, on top of agent-core: an app target of views over one Swift package of tested logic, a generated API client, String Catalogs. Hook: generated-guard refuses hand edits to the generated API client and the copied OpenAPI spec (paths in .claude/agent-config.json). Commands: setup and sync install and verify the iOS rules, anti-patterns, gate scripts (SwiftLint suppressions, Xcode settings, package graph, String Catalogs, error codes, privacy manifest, per-file coverage), SwiftLint, swift-format and xcconfig settings, a seeded RFC 9457 problem type with its tests, a pre-commit hook and a pull-request-only CI caller; a11y-audit runs the accessibility audit UI tests on a simulator. Agents: reviewer and i18n-guard. Skills: swiftui-screen and openapi-client-update. Nothing signs a build or touches a provisioning profile. The hook runs on your machine, opens no network connection and stays silent until the project opts in.",
       "category": "development"
     }
   ]

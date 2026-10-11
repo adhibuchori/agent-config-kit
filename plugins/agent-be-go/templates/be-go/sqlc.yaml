@@ -1,0 +1,20 @@
+# sqlc: the Go in internal/postgres/db is generated from the SQL in db/queries, type-checked against
+# the schema the goose migrations build (it reads them in name order and ignores their Down parts).
+# `go generate ./...` regenerates it; scripts/check/generated.sh fails on drift and runs the vet
+# rules below.
+version: "2"
+rules:
+  - name: list-has-limit
+    message: "a :many query returns one page: add LIMIT, and page by key (Rule 14)"
+    rule: query.cmd == "many" && !query.sql.contains("LIMIT")
+sql:
+  - engine: postgresql
+    schema: db/migrations
+    queries: db/queries
+    rules: [list-has-limit]
+    gen:
+      go:
+        package: db
+        out: internal/postgres/db
+        sql_package: pgx/v5
+        emit_interface: false

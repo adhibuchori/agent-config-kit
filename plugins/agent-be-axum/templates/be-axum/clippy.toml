@@ -1,0 +1,22 @@
+# Clippy's settings for this repo. It must exist here: without it, clippy reads the first
+# clippy.toml in a parent folder (cargo-policy.sh checks). The lint levels live in Cargo.toml's
+# [lints]; the rules they enforce are in .claude/rules/backend/rust-service.md.
+too-many-lines-threshold = 60
+cognitive-complexity-threshold = 15
+excessive-nesting-threshold = 4 # 0, the default, switches the lint off
+
+# Tests may unwrap and panic; a helper outside a #[test] fn counts only in a #![cfg(test)] file.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+allow-indexing-slicing-in-tests = true
+
+disallowed-methods = [
+  { path = "std::env::var", reason = "only src/platform/config.rs reads the environment (Rule 19)" },
+  { path = "std::env::var_os", reason = "only src/platform/config.rs reads the environment (Rule 19)" },
+  { path = "std::env::vars", reason = "only src/platform/config.rs reads the environment (Rule 19)" },
+  { path = "std::env::vars_os", reason = "only src/platform/config.rs reads the environment (Rule 19)" },
+  { path = "tower_http::cors::CorsLayer::permissive", reason = "list the allowed origins (Rule 18)" },
+  { path = "tower_http::cors::CorsLayer::very_permissive", reason = "it allows credentials from any origin (Rule 18)" },
+  { path = "tower_http::timeout::TimeoutLayer::new", reason = "it answers 408; use TimeoutLayer::with_status_code(StatusCode::GATEWAY_TIMEOUT, ..) (Rule 18)" },
+]

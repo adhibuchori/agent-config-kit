@@ -1,9 +1,11 @@
-// Shared helpers for the static-site checks in scripts/check/ (installed by agent-fe-nextjs-static).
-// Node >= 20, no dependencies, no network. Each check reads the project from the current folder
-// (or --root) and the built pages from --dir (default: the mode's output folder).
-//
-// Exit codes, the same for every check: 0 clean (warnings allowed), 1 at least one error,
-// 2 usage or setup problem (bad flag, unreadable config, nothing built yet).
+/**
+ * Shared helpers for the static-site checks in scripts/check/ (installed by agent-fe-nextjs-static).
+ * Node >= 20, no dependencies, no network. Each check reads the project from the current folder
+ * (or --root) and the built pages from --dir (default: the mode's output folder).
+ *
+ * Exit codes, the same for every check: 0 clean (warnings allowed), 1 at least one error,
+ * 2 usage or setup problem (bad flag, unreadable config, nothing built yet).
+ */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
@@ -26,7 +28,9 @@ const DEFAULTS = {
   a11y: { standard: 'WCAG2AA', exclude: [] },
 };
 
-// Pages that are never indexable and never in a sitemap: error and not-found pages.
+/**
+ * Pages that are never indexable and never in a sitemap: error and not-found pages.
+ */
 const SPECIAL_PAGES = new Set([
   '404.html',
   '500.html',

@@ -1,0 +1,9 @@
+{
+  "encryption": "strict",
+  "spec": "api/openapi.json",
+  "registry": "internal/payload/registry.gen.go",
+  "language": "go",
+  "handshake": "GetPayloadHandshake",
+  "exemptions": {},
+  "peers": []
+}

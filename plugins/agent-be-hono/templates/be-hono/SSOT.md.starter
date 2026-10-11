@@ -92,12 +92,15 @@ then a mirror. End sessions through better-auth, never with a row delete
 
 ## Error Contract — RFC 9457
 
-Every thrown error becomes `application/problem+json`: `{ type, title, status, detail, instance,
-code }`, plus `requestId`, and `fields` on a 422. `app.onError` (`handleAppError` in
-`src/lib/errors/problem.ts`, wired in `src/app.ts`) is the single mapper for `DomainError`
-subclasses, Hono `HTTPException` and unknown errors; `app.notFound` gives unmatched routes the same
-shape. Schema validation failures return `422`. Every code is listed once in
-`src/lib/errors/error-codes.ts`. Rules: `AGENTS.md` §C and `.claude/rules/common/error-codes.md`.
+Every thrown error becomes `application/problem+json`: `{ type, title, status, code, requestId }`,
+plus a client-safe `detail` where one helps, and `fields` on a 422. `type` is `PROBLEM_TYPE_BASE`
+(exported by `src/lib/errors/problem.ts`, published in the spec as `x-problem-type-base`) plus the
+code, never `about:blank`; `title` is fixed per code. Problem type base:
+`<https://api.example.com/problems/ — set once, before the first release, never changed>`.
+`app.onError` (`handleAppError` in `src/lib/errors/problem.ts`, wired in `src/app.ts`) is the single
+mapper for `DomainError` subclasses, Hono `HTTPException` and unknown errors; `app.notFound` gives
+unmatched routes the same shape. Schema validation failures return `422`. Every code is listed once
+in `src/lib/errors/error-codes.ts`. Rules: `AGENTS.md` §C and `.claude/rules/common/error-codes.md`.
 
 ## Database
 

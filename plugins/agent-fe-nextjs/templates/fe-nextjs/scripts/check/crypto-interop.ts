@@ -6,9 +6,11 @@
  * Independent copies of one format fail in one way worth guarding: each copy passes its own
  * suite, and the break shows only when two services talk. So this runs the copy in
  * src/lib/payload against the shared known-answer vectors (the AAD string byte for byte, the
- * committed ciphertext opened, every reject refused), round-trips a body, and, for each peer in
- * payload.config.json that is checked out beside this repo, seals with one copy and opens with the
- * other in both directions. A peer that is not checked out is reported as skipped, never passed.
+ * committed ciphertext opened, every reject refused, the key agreement derived from both sides and
+ * every bad point refused: scripts/lib/payload-agreement.ts), round-trips a body, and, for each
+ * peer in payload.config.json that is checked out beside this repo, seals with one copy and opens
+ * with the other in both directions. A peer that is not checked out is reported as skipped, never
+ * passed.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -17,8 +19,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import type * as AesModule from '../../src/lib/payload/aes-gcm';
 import type * as B64Module from '../../src/lib/payload/base64url';
 import type * as CodecModule from '../../src/lib/payload/codec';
+import type * as EcdhModule from '../../src/lib/payload/ecdh';
 import type * as EnvModule from '../../src/lib/payload/envelope';
 import { CONFIG_FILE, readPayloadConfig } from '../lib/openapi-endpoints';
+import { checkAgreements, type Agreement, type PointReject } from '../lib/payload-agreement';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const VECTORS = join(ROOT, 'scripts/check/payload-vectors.json');
@@ -43,6 +47,7 @@ type Aes = typeof AesModule;
 type B64 = typeof B64Module;
 type Env = typeof EnvModule;
 type Codec = typeof CodecModule;
+type Ecdh = typeof EcdhModule;
 
 /** One copy of the implementation: this repo's, or a peer's. */
 interface Impl {
@@ -50,6 +55,7 @@ interface Impl {
   b64: B64;
   env: Env;
   codec: Codec;
+  ecdh: Ecdh;
 }
 
 const CONSTANTS = [
@@ -69,7 +75,8 @@ async function load(dir: string): Promise<Impl> {
   const b64: B64 = await import(at('base64url'));
   const env: Env = await import(at('envelope'));
   const codec: Codec = await import(at('codec'));
-  return { aes, b64, env, codec };
+  const ecdh: Ecdh = await import(at('ecdh'));
+  return { aes, b64, env, codec, ecdh };
 }
 
 async function refuses(promise: Promise<unknown>): Promise<boolean> {
@@ -102,6 +109,8 @@ interface VectorFile {
   testBytes: string;
   vectors: Vector[];
   rejects: { name: string; vector: string; aad: string }[];
+  agreements?: Agreement[];
+  pointRejects?: PointReject[];
 }
 const file: VectorFile = JSON.parse(readFileSync(VECTORS, 'utf8'));
 const { aes, b64, env, codec } = impl;
@@ -199,13 +208,17 @@ async function checkPeer(peer: { name: string; root: string }): Promise<string[]
   }
 }
 
-const results = await Promise.all([
-  ...file.vectors.map(checkVector),
-  ...file.rejects.map(checkReject),
-  checkRoundTrip(),
-  ...config.peers.map(checkPeer),
+const [results, agreement] = await Promise.all([
+  Promise.all([
+    ...file.vectors.map(checkVector),
+    ...file.rejects.map(checkReject),
+    checkRoundTrip(),
+    ...config.peers.map(checkPeer),
+  ]),
+  /* A repo with the browser client is the client side: bad peer points are the server's to refuse. */
+  checkAgreements(file, impl, existsSync(join(ROOT, 'src/lib/payload/client.ts')) ? 'client' : 'server'),
 ]);
-problems.push(...results.flat());
+problems.push(...results.flat(), ...agreement.problems);
 
 if (problems.length > 0) {
   console.error(`[check:crypto-interop] ✗ ${problems.length} problem(s):`);
@@ -216,5 +229,5 @@ if (problems.length > 0) {
   process.exit(1);
 }
 console.log(
-  `[check:crypto-interop] ✓ ${file.vectors.length} vector(s) opened, ${file.rejects.length} replay(s) refused, round trip ok; peers checked: ${config.peers.length}.`,
+  `[check:crypto-interop] ✓ ${file.vectors.length} vector(s) opened, ${file.rejects.length} replay(s) refused, round trip ok; ${agreement.agreements} key agreement(s) derived from both sides, ${agreement.points} bad point(s) refused; peers checked: ${config.peers.length}.`,
 );

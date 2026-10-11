@@ -106,13 +106,13 @@ Nothing below loads automatically: read a file when its row matches the task. Th
 files ship as `.claude/<NAME>.example.md` templates when setup installed them: fill one in and drop
 `.example`, or delete the template and its row.
 
-| Read when                                                                   | File                                    |
-| --------------------------------------------------------------------------- | --------------------------------------- |
-| Hooks, GitHub and CI, reviews, MCP pins, deploys, skill scanning            | `.claude/OPERATIONS.md`                 |
-| CI runner pools and billed minutes                                          | `.claude/CI-RUNNERS.md`                 |
-| Database access through `db-dev` / `db-prod` (a docs site usually has none) | `.claude/DATABASE.md`                   |
-| The analytics read API                                                      | `.claude/ANALYTICS.md`                  |
-| Reviewing a change, or running `/agent-core:review`                         | `.claude/docs/code-review-checklist.md` |
-| A build or dev failure that should not happen: scan the trigger keywords    | `.claude/anti-patterns/INDEX.md`        |
-| `.env*` files and production writes: the user's unlock                      | `docs/unlock.md`                        |
-| A rarely used MCP server, loaded for one session with `claude --mcp-config` | `.claude/mcp/*.json`                    |
+| Read when                                                                   | File                                          |
+| --------------------------------------------------------------------------- | --------------------------------------------- |
+| Hooks, GitHub and CI, reviews, MCP pins, deploys, skill scanning            | `.claude/OPERATIONS.md`                       |
+| CI runner pools and billed minutes                                          | `.claude/CI-RUNNERS.md`                       |
+| Database access through `db-dev` / `db-prod` (a docs site usually has none) | `.claude/DATABASE.md`                         |
+| The analytics read API                                                      | `.claude/ANALYTICS.md` (with `analytics=yes`) |
+| Reviewing a change, or running `/agent-core:review`                         | `.claude/docs/code-review-checklist.md`       |
+| A build or dev failure that should not happen: scan the trigger keywords    | `.claude/anti-patterns/INDEX.md`              |
+| `.env*` files and production writes: the user's unlock                      | `docs/unlock.md`                              |
+| A rarely used MCP server, loaded for one session with `claude --mcp-config` | `.claude/mcp/*.json`                          |

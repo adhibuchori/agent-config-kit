@@ -90,10 +90,13 @@ the reasoning:
 | 7 | `rateLimiter` (`/api/*`) | Last, so a request already rejected above never consumes quota |
 
 `bodyLimit`'s default `onError` throws an `HTTPException` carrying its own plain-text 413
-`Response`, which `handleAppError` would render with a generic title — `app.ts` passes an
-explicit `onError` that throws a message-only `HTTPException(413)` so the problem+json `detail`
-stays meaningful. `timeout()` already throws a message-carrying 504, so it needs no equivalent.
-Both land in `app.onError`, so the request budget does not punch a hole in the error contract.
+`Response`, which would leave as that plain text — `app.ts` passes an explicit `onError` that throws
+a message-only `HTTPException(413)`, so the problem+json `detail` stays meaningful. `timeout()`
+already throws a message-carrying 504, so it needs no equivalent. Both land in `app.onError`, so the
+request budget does not punch a hole in the error contract. `handleAppError` maps an
+`HTTPException` to the code registered for its status (the body-limit code for a 413, the timeout
+code for a 504) and mints its `type` from that code like any other problem's, never
+`about:blank` (`.claude/rules/common/error-codes.md`).
 
 `app.onError` and `app.notFound` are registered once, globally. Hono resolves them at request
 time regardless of where they sit relative to route mounts, but keeping them visually above the

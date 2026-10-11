@@ -10,8 +10,10 @@
  * 4. Support files — mocks, fixtures and helpers live in their own folders in a test tree
  *
  * Plain Node ESM with no dependencies, so the same file runs under bun in the TypeScript repos and
- * under the runner's node in the Python ones. Exit code 1 on any violation; `--warn` reports and
- * exits 0, for a repo whose existing tree has not been moved yet.
+ * under the runner's node in the Python, Rust and Swift ones. Exit code 1 on any violation; `--warn`
+ * reports and exits 0, for a repo whose existing tree has not been moved yet.
+ *
+ * Go is not walked: its packages live in cmd/ and internal/, which are not roots here.
  */
 
 import { existsSync, readdirSync, statSync } from 'node:fs';
@@ -20,24 +22,46 @@ import { basename, dirname, join } from 'node:path';
 const WARN = process.argv.includes('--warn');
 const RULES = '.claude/rules/common/folder-shape.md';
 
+/* The repo root's entries as spelled on disk, so tests/ and a Swift package's Tests/ stay apart on
+ * a file system that ignores case. */
+const TOP = new Set(readdirSync('.'));
 const IS_NEXT = ['next.config.ts', 'next.config.mjs', 'next.config.js'].some((f) => existsSync(f));
 const IS_PYTHON = existsSync('pyproject.toml');
+const IS_RUST = TOP.has('Cargo.toml');
 
-const ROOTS = ['src', 'tests', 'scripts', 'components', 'lib'].filter((r) => existsSync(r));
+/* Swift packages: one at the root, or each Packages/<name> that has a Package.swift. '' is the root. */
+const SWIFT_PACKAGES = [
+  ...(TOP.has('Package.swift') ? [''] : []),
+  ...(TOP.has('Packages') && statSync('Packages').isDirectory()
+    ? readdirSync('Packages')
+        .filter((p) => existsSync(`Packages/${p}/Package.swift`))
+        .map((p) => `Packages/${p}`)
+    : []),
+];
+const inPackage = (pkg, sub) => (pkg ? `${pkg}/${sub}` : sub);
+const SWIFT_ROOTS = SWIFT_PACKAGES.flatMap((pkg) => [inPackage(pkg, 'Sources'), inPackage(pkg, 'Tests')]);
 
-/* Output of a tool, or a cache: nobody chooses its shape, so nobody is held to one. */
+const ROOTS = [
+  ...['src', 'tests', 'scripts', 'components', 'lib'].filter((r) => TOP.has(r)),
+  ...SWIFT_ROOTS.filter((r) => existsSync(r)),
+];
+
+/* Output of a tool, or a cache: nobody chooses its shape, so nobody is held to one. Folders whose
+ * name starts with a dot (.build, .sqlx) are skipped too. */
 const SKIPPED_DIRS = new Set(
   'node_modules __pycache__ .pytest_cache .mypy_cache .ruff_cache .next out dist coverage generated migrations'.split(
     ' ',
   ),
 );
+if (IS_RUST) SKIPPED_DIRS.add('target');
+if (SWIFT_PACKAGES.length > 0) SKIPPED_DIRS.add('GeneratedSources');
 
 /* Route trees: the framework decides that page files sit beside their child routes. */
 const ROUTE_TREES = IS_NEXT ? ['src/app', 'app', 'content'] : [];
 
 /* Files a runtime or tool requires at a fixed path. */
 const ENTRYPOINTS = new Set(
-  'src/app.ts src/index.ts src/env.ts src/proxy.ts src/middleware.ts src/instrumentation.ts src/instrumentation-client.ts src/app/main.py src/app/cli.py src/testing/setup.ts'.split(
+  'src/app.ts src/index.ts src/env.ts src/proxy.ts src/middleware.ts src/instrumentation.ts src/instrumentation-client.ts src/app/main.py src/app/cli.py src/testing/setup.ts src/main.rs src/lib.rs'.split(
     ' ',
   ),
 );
@@ -46,6 +70,8 @@ const isEntrypointTest = (path) =>
   path.startsWith('src/testing/') &&
   ENTRYPOINTS.has(path.replace('src/testing/', 'src/').replace(/\.test\.(ts|tsx)$/, '.ts'));
 const IGNORED_FILES = new Set(['.DS_Store', '__init__.py', 'conftest.py', 'py.typed']);
+/* A Rust folder module declares its children in mod.rs, as a Python package does in __init__.py. */
+if (IS_RUST) IGNORED_FILES.add('mod.rs');
 
 const SUPPORT_DIRS = new Set(['helpers', 'mocks', 'fixtures', 'stubs']);
 const BANNED_NAMES = new Set(
@@ -56,6 +82,11 @@ const BANNED_NAMES = new Set(
 
 const SOURCE_EXT = /\.(ts|tsx|mts|js|mjs|jsx)$/;
 const TEST_FILE = /\.test\.(ts|tsx|mts)$|^test_.+\.py$/;
+const SWIFT_TEST = /Tests\.swift$/;
+
+/* A Swift target's sources: <package>/Sources/<Target>/… */
+const isSwiftSources = (root) =>
+  SWIFT_PACKAGES.some((pkg) => root.startsWith(`${inPackage(pkg, 'Sources')}/`));
 
 const errors = [];
 
@@ -100,9 +131,11 @@ function walk(dir, visit) {
 }
 
 /** Lib: stemOf
- * The name a test and its source share: everything before the first dot.
+ * The name a test and its source share: everything before the first dot, without a Python test's
+ * test_ prefix or a Swift test's Tests suffix.
  */
 function stemOf(file) {
+  if (SWIFT_TEST.test(file)) return file.replace(SWIFT_TEST, '');
   return file.replace(/^test_/, '').split('.')[0];
 }
 
@@ -115,9 +148,14 @@ function collectSources(root, recursive) {
   if (sourceCache.has(key)) return sourceCache.get(key);
   const byStem = new Map();
   sourceCache.set(key, byStem);
+  const swift = isSwiftSources(root);
   const visit = (dir, files) => {
     for (const file of files) {
-      const isSource = IS_PYTHON ? file.endsWith('.py') : SOURCE_EXT.test(file);
+      const isSource = swift
+        ? file.endsWith('.swift')
+        : IS_PYTHON
+          ? file.endsWith('.py')
+          : SOURCE_EXT.test(file);
       if (!isSource || TEST_FILE.test(file)) continue;
       const stem = stemOf(file);
       byStem.set(stem, [...(byStem.get(stem) ?? []), dir]);
@@ -241,6 +279,23 @@ if (IS_PYTHON && existsSync('tests')) {
       }
       const toTestDir = (home) => home.replace(/^src\/app/, `tests/${kind}`);
       checkMirror(path, ['src/app', ...segments.slice(1)].join('/'), 'src/app', true, toTestDir);
+    }
+  });
+}
+
+/* Swift: <package>/Tests/<Target>Tests/<path>/XTests.swift tests <package>/Sources/<Target>/<path>/X.swift. */
+for (const pkg of SWIFT_PACKAGES) {
+  const tests = inPackage(pkg, 'Tests');
+  if (!existsSync(tests)) continue;
+  walk(tests, (dir, files) => {
+    const [target, ...rest] = dir.slice(tests.length + 1).split('/');
+    if (!target?.endsWith('Tests')) return;
+    const sources = `${inPackage(pkg, 'Sources')}/${target.slice(0, -'Tests'.length)}`;
+    const toTestDir = (home) => `${tests}/${target}${home.slice(sources.length)}`;
+    for (const file of files) {
+      if (SWIFT_TEST.test(file)) {
+        checkMirror(`${dir}/${file}`, [sources, ...rest].join('/'), sources, true, toTestDir);
+      }
     }
   });
 }

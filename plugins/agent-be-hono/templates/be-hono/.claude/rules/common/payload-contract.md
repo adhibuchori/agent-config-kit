@@ -33,8 +33,10 @@ The full contract, threat model and wiring: `.claude/PAYLOAD-CONTRACT.md`.
 - **Keys are added, never repurposed**; never `NEXT_PUBLIC_`; rotation is `<NAME>_NEXT`. Never
   print, log or commit a key; tests use placeholder bytes.
 - **Never log a sealed body's plaintext.** Log the code, pattern, `kid` and request id.
-- **Refusals leave in plaintext** problem+json with a `ENVELOPE_*` code; a plaintext success on a
-  sealed route is a downgrade.
+- **Refusals leave in plaintext** problem+json: `type` is the API's problem-type base plus the
+  `ENVELOPE_*` code, `title` is the code's, and the internal message is never a `detail`. A
+  plaintext success on a sealed route is a downgrade. A sealed answer carries
+  `Vary: x-payload-epk, x-payload-kid`.
 - **Tests go through the real cipher**, and the shared vectors are never regenerated to pass.
 - **Do not call it end-to-end encryption** on the browser hop: the browser holds the key.
 - **The switch stays `strict` in the committed file**; debug with `PAYLOAD_MODE=off` in

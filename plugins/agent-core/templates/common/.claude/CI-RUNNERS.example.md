@@ -11,12 +11,14 @@ moving a pool is a variable change, not a commit. Workflows run on pull request 
 ```yaml
 runs-on: ${{ vars.CI_RUNNER_FAST || vars.CI_RUNNER || 'ubuntu-latest' }} # a person waits on it
 runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }} # nobody waits on it
+runs-on: ${{ vars.CI_RUNNER_MACOS || 'xcode-27' }} # needs Xcode: the iOS build job
 ```
 
-| Variable         | Holds                                | Unset means                             |
-| ---------------- | ------------------------------------ | --------------------------------------- |
-| `CI_RUNNER`      | `<default-runner-label>`, or nothing | every job falls through to the next one |
-| `CI_RUNNER_FAST` | `<fast-runner-label>`, or nothing    | the fast jobs fall through to CI_RUNNER |
+| Variable          | Holds                                | Unset means                             |
+| ----------------- | ------------------------------------ | --------------------------------------- |
+| `CI_RUNNER`       | `<default-runner-label>`, or nothing | every job falls through to the next one |
+| `CI_RUNNER_FAST`  | `<fast-runner-label>`, or nothing    | the fast jobs fall through to CI_RUNNER |
+| `CI_RUNNER_MACOS` | `<macos-runner-label>`, or nothing   | the iOS build job runs on `xcode-27`    |
 
 Read the combinations before changing either:
 
@@ -35,13 +37,29 @@ Set them with `gh variable set CI_RUNNER_FAST --body <label>`; remove one with
 The kit's workflows already follow this split; a reusable workflow's `runs-on` input overrides it
 for one caller.
 
-| Pool                   | Workflows the kit installs                                      | Why                             |
-| ---------------------- | --------------------------------------------------------------- | ------------------------------- |
-| `CI_RUNNER_FAST` first | `quality-gate` (every stack), the docs site's `ci-cd` build     | a person waits on it; it builds |
-| `CI_RUNNER`            | `codeql`, `dependency-review`, `workflows-lint`, `react-doctor` | advisory; sub-minute anywhere   |
-| `CI_RUNNER`            | `deepseek-review`                                               | advisory and network-bound      |
-| `CI_RUNNER`            | `deploy`, `strip-ai`, the docs site's `changelog`               | post-merge; nobody waits on it  |
-| Yours                  | `<preview build>`, `<anything else in this repo>`               | `<who waits on it>`             |
+| Pool                    | Workflows the kit installs                                      | Why                             |
+| ----------------------- | --------------------------------------------------------------- | ------------------------------- |
+| `CI_RUNNER_FAST` first  | `quality-gate` (every stack), the docs site's `ci-cd` build     | a person waits on it; it builds |
+| `CI_RUNNER_MACOS` first | the iOS `quality-gate`'s build job, then `xcode-27`             | it needs Xcode and a simulator  |
+| `CI_RUNNER`             | `codeql`, `dependency-review`, `workflows-lint`, `react-doctor` | advisory; sub-minute anywhere   |
+| `CI_RUNNER`             | `deepseek-review`                                               | advisory and network-bound      |
+| `CI_RUNNER`             | `deploy`, `strip-ai`, the docs site's `changelog`               | post-merge; nobody waits on it  |
+| Yours                   | `<preview build>`, `<anything else in this repo>`               | `<who waits on it>`             |
+
+## The iOS gate: Linux first, macOS second
+
+A macOS minute costs about ten Linux minutes on a private repository, so the iOS `quality-gate`
+runs in three jobs. The **static** job runs on the fast Linux pool: SwiftLint, the Node and bash
+checks, the `.env` check, gitleaks and the skill scan. The **build** job runs on
+`CI_RUNNER_MACOS` (else `xcode-27`) only after static passed, so a lint failure never pays for a
+Mac. The last job, **Quality Gate (ios-swiftui)**, passes only when both did; require that one, not
+the other two, because a job skipped after a failure does not block a merge on its own. A passing
+run waits about a minute longer for its Mac; a failing one answers in about a minute instead of
+eight.
+
+Point `CI_RUNNER_MACOS` at a runner whose Xcode is the release the gate pins (its `xcode-version`
+input); the build job fails on any other. A self-hosted Mac keeps state between jobs and runs pull
+request code, so use one only where every contributor is trusted.
 
 ## The allocation rule
 

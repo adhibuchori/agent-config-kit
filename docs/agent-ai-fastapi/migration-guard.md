@@ -10,6 +10,12 @@ migration-guard refuses hand edits to generated migrations: files under the fold
 A migration that already ran is history. Editing it makes the database, the migration log and the
 schema disagree, and the next deploy fails or silently skips the change.
 
+Hand-written migrations (goose, sqlx, golang-migrate) go in `appendOnlyMigrationsDirs` instead,
+empty by default. There the guard lets Claude write a new migration and edit one that only the work
+branch has, and refuses a write to a file a protected branch already holds: an
+[append-only migration](../../CONTEXT.md#append-only-migration) never changes once it merges
+([ADR 0007](../adr/0007-hand-written-migrations-are-append-only.md)).
+
 ## When to reach for it
 
 It runs by itself before `Write`, `Edit`, `MultiEdit` and Serena's write tools. Claude changes the
@@ -28,11 +34,13 @@ hook switches itself off in a repo without migrations.
 | --- | --- | --- |
 | `Write`, `Edit` or `MultiEdit` on a file under a `migrationsDirs` folder | The migration may already have run somewhere | Change the schema and generate a new migration |
 | Serena's write tools there, including a folder-wide `replace_in_files` | Same | Same |
-| A payload it cannot read | Fail closed | Fix the cause; `replace_in_files` without python3 is refused |
+| A write to a file under an `appendOnlyMigrationsDirs` folder that a `protectedBranches` branch (local, or `origin/<branch>` as last fetched) already has | A database may have run it | Write a new migration that changes what this one did |
+| A folder-wide `replace_in_files` that reaches an `appendOnlyMigrationsDirs` folder | It could rewrite a merged migration | Narrow `relative_path`, or add `paths_exclude_glob` |
+| A payload it cannot read, or a repo where git cannot say whether a protected branch has the file | Fail closed | Fix the cause; `replace_in_files` without python3 is refused |
 
 ### How to disable
 
-- **This guard only:** set `"migrationsDirs": []` in `.claude/agent-config.json`. An empty list turns the guard off in a repo that has migrations.
+- **This guard only:** set `"migrationsDirs": []`, and leave `appendOnlyMigrationsDirs` empty, in `.claude/agent-config.json`. Empty lists turn the guard off in a repo that has migrations.
 - **This repo, for you only:** `claude plugin disable agent-ai-fastapi@agent-config-kit --scope local`.
   agent-core keeps running.
 - **This repo, for everyone:** the same command with `--scope project` in place of `--scope local`,

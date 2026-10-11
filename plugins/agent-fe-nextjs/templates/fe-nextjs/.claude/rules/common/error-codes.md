@@ -6,6 +6,7 @@ paths:
   - 'src/modules/**'
   - 'src/middlewares/**'
   - 'scripts/check/error-*.ts'
+  - 'scripts/check/openapi.ts'
   - 'openapi.json'
 ---
 
@@ -25,13 +26,34 @@ section binds the backend; the frontend section binds every app that reads its `
   nothing raises.
 - `problem.ts` owns the RFC 9457 envelope: `requestId` goes in every body and every error log line,
   5xx go to the error tracker where one is configured, 422 carries `fields` (Zod issue code by path,
-  never the value). A relayed upstream refusal keeps its own code and status.
+  never the value). `detail`, when present, is a client-safe sentence, never an internal message.
+- Every problem's `type` is `PROBLEM_TYPE_BASE` plus its code. The base is one absolute https URI
+  per API, ending in `/`, with no query or fragment (`https://api.example.com/problems/`), exported
+  by `problem.ts` (and handed to the payload middleware as `problemTypeBase` where that contract is
+  adopted). The kit's placeholder is `https://example.invalid/problems/`: set yours before the first
+  release, refuse to start in production while its host ends in `.invalid`, and never change it
+  afterwards, because every installed client resolves failures by it. `title` is fixed per code,
+  never per occurrence.
+- Never `about:blank`: a 404, a 405, an `HTTPException` and an unknown 500 each map to a registered
+  code. A relayed upstream refusal keeps its own code and status, and is minted again under this
+  API's base, so its code is in `ERROR_CODES` too.
+- The spec publishes the contract on `components.schemas.Problem`: `code` with the `ERROR_CODES`
+  enum inline (frontends read it there and follow no `$ref`), `type` with `format: uri` and
+  `x-problem-type-base`, both `required`, and no `type` values enumerated. `check:openapi` fails on
+  a missing schema, a `$ref` or empty code enum, a code that is not upper snake case, a missing or
+  malformed base, or `about:blank` as a default, const or enum value.
 
 ## Frontend
 
 - Map every code the app can receive in `src/lib/errors/problem-key.ts`, with copy in every locale
   file. A code the app never receives is listed in `scripts/check/error-codes.ts` with the reason.
   `check:error-codes` fails on anything else, and on a mapped code the API does not send.
+- Resolve a problem by its `type`. `problem-key.ts` exports `PROBLEM_TYPE_BASE`, equal to the spec's
+  `x-problem-type-base` (`check:error-codes` compares them), and one function reads a body in this
+  order: a `type` that is not a string counts as absent; `type` equal to the base plus a known
+  `code` gets that code's message; an absent or `about:blank` type falls back to the code alone,
+  for an API that does not mint types yet (remove the fallback once it does); anything else, such
+  as a known code under another base or a `type` whose last segment is not the `code`, is unknown.
 - Branch on the code, never on a bare status when a code exists: "any 400 means duplicate" is how
   a refused request gets reported to people as a success.
 - Resolve failures through the app's one error-message helper; a fixed "save failed" line is a

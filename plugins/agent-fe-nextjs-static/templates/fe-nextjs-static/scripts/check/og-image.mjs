@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-// Share cards of the built pages: every indexable page has og:title and an og:image that is an
-// absolute URL on the production origin, exists in the build, is PNG/JPEG/GIF/WebP, is at least
-// the configured size (1200x630 by default) and under the byte budget, and matches any declared
-// og:image:width/height. Rule: .claude/rules/web/seo.md. Runs after `next build`.
-//
-//   node scripts/check/og-image.mjs [--dir out] [--root .] [--config scripts/check/site.config.json]
+/**
+ * Share cards of the built pages: every indexable page has og:title and an og:image that is an
+ * absolute URL on the production origin, exists in the build, is PNG/JPEG/GIF/WebP, is at least
+ * the configured size (1200x630 by default) and under the byte budget, and matches any declared
+ * og:image:width/height. Rule: .claude/rules/web/seo.md. Runs after `next build`.
+ *
+ *   node scripts/check/og-image.mjs [--dir out] [--root .] [--config scripts/check/site.config.json]
+ */
 import { readFileSync, statSync } from 'node:fs';
 import { relative } from 'node:path';
 import {

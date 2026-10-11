@@ -70,6 +70,12 @@ Flag any file under `src/lib/` or `src/middlewares/` importing from `src/modules
   (`.claude/rules/common/error-codes.md`)
 - A route whose `responses` map doesn't include `errorResponses(...)` for at least `422`, or
   for a status the route's service visibly throws (§C Rule 13)
+- A problem whose `type` is `about:blank`, or a `type` built anywhere but `problem.ts` and the
+  payload refusal instead of `PROBLEM_TYPE_BASE` plus the code; a `title` that changes per
+  occurrence (an id, a count, a message in it)
+- A changed `PROBLEM_TYPE_BASE` after the first release, or a base left on `example.invalid` that
+  production would accept: BLOCK, because every installed client resolves failures by it
+  (`.claude/rules/common/error-codes.md`)
 
 ### §D Rules 15-17 — Database
 

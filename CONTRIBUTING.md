@@ -26,7 +26,8 @@ claude plugin validate --strict .                     # the marketplace
 for p in plugins/*/; do claude plugin validate --strict "$p"; done
 node scripts/catalog.mjs --check                      # README catalog, docs pages, layout rules
 node scripts/version-sync.mjs --check --base main     # versions, CHANGELOG, bump rules
-git ls-files -z '*.sh' 'plugins/*/bin/*' | xargs -0 shellcheck -x -S style   # .shellcheckrc: source-path=SCRIPTDIR
+node scripts/check-comment-style.mjs                  # JS and TS: /** */ or /* */, // only for directives
+git ls-files -z '*.sh' ':(glob)plugins/*/bin/*' | xargs -0 shellcheck -x -S style   # .shellcheckrc: source-path=SCRIPTDIR
 bats -r tests/                                        # about 15 minutes; the hook probes are most of it
 markdownlint-cli2                                     # the globs in .markdownlint-cli2.jsonc
 lychee --offline --no-progress --hidden --exclude-path node_modules "**/*.md"   # .lycheeignore

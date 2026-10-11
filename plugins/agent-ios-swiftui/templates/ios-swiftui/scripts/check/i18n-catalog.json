@@ -1,0 +1,4 @@
+{
+  "//": "The locales every String Catalog key needs, in state translated (AGENTS.md Rule 6). scripts/check/i18n-catalog.mjs reads this list; without this file it checks each catalog against its own source language only. Setup installed it because you answered locales=en,id: list every locale the app ships.",
+  "locales": ["en", "id"]
+}

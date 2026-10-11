@@ -39,6 +39,17 @@ mcp-guard, generated-guard and migration-guard.
 
 _Avoid:_ filter, blocker, validator (a validator is a review agent).
 
+## Append-only migration
+
+A hand-written migration (goose, sqlx, golang-migrate) in a folder listed in
+`appendOnlyMigrationsDirs`. It stays editable while only a work branch has it. Once a protected
+branch has it, a database may have run it, so it never changes again: a fix is a new migration.
+migration-guard holds this line in Claude Code, and the stack's CI holds it against the pull
+request's base. A generated migration (`migrationsDirs`, drizzle-kit or Alembic output) is stricter:
+it is never edited by hand at all. See [ADR 0007](docs/adr/0007-hand-written-migrations-are-append-only.md).
+
+_Avoid:_ immutable, frozen or locked migration (a lock means something else here).
+
 ## Feedback hook
 
 A hook that only adds context for Claude and never blocks: post-edit, post-commit, prompt-intent
@@ -152,6 +163,17 @@ A managed file you took over with `agent-sync own <path>`. Sync stops checking i
 hands it back to the kit.
 
 _Avoid:_ ignored file, forked file.
+
+## Problem type
+
+The `type` URI of an RFC 9457 problem+json error body: one absolute https base per API, ending in
+`/`, plus the error code, such as `https://example.invalid/problems/ENVELOPE_REQUIRED` with the
+kit's placeholder base. Clients resolve a failure by it, so an API sets its base once, before its
+first release, and never changes it. The spec publishes the base as `x-problem-type-base` on
+`Problem.type`; be-hono's `check:openapi` and fe-nextjs's `check:error-codes` read it there. The
+kit never sends `about:blank`.
+
+_Avoid:_ error type, error URL (it need not resolve), error code (the code is its last segment).
 
 ## Double wiring
 

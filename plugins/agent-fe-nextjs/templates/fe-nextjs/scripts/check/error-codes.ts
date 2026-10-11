@@ -13,6 +13,11 @@
  * Also fails on a stale exemption or problem-table row (a code the spec does not have) and on a code
  * both mapped and exempted, so neither the table nor the lists below can quietly rot. An app with
  * no `problem-key.ts` yet has nothing to check and says so.
+ *
+ * And the problem-type base: an API that mints `type` as its base plus the code publishes the
+ * base as `x-problem-type-base` on `Problem.type`, and `PROBLEM_TYPE_BASE` in `problem-key.ts`
+ * must equal it, or every problem resolves as unknown. A spec that publishes no base (an API that
+ * does not mint types yet) passes with no export, and says that problems resolve by code alone.
  */
 
 import { existsSync, readFileSync } from 'fs';
@@ -37,7 +42,27 @@ const STATUS_RESOLVED: Record<string, string> = {};
 const NOT_SENT_HERE: Record<string, string> = {};
 
 interface Spec {
-  components?: { schemas?: { Problem?: { properties?: { code?: { enum?: unknown } } } } };
+  components?: {
+    schemas?: {
+      Problem?: { properties?: { code?: { enum?: unknown }; type?: Record<string, unknown> } };
+    };
+  };
+}
+
+/* Why `base` cannot prefix a problem type: an absolute https URI with no query or fragment, ending
+   in `/`, written exactly as a URL parser writes it back. The API's own check says the same. */
+function baseError(base: string): string | undefined {
+  let url: URL;
+  try {
+    url = new URL(base);
+  } catch {
+    return 'is not an absolute URI';
+  }
+  if (url.protocol !== 'https:') return 'is not https';
+  if (base.includes('?') || base.includes('#')) return 'carries a query or a fragment';
+  if (!base.endsWith('/')) return 'does not end in /';
+  if (url.href !== base) return `is not written as ${url.href}`;
+  return undefined;
 }
 
 /** The string-keyed table a module exports under `name`, or an empty one when it has none. */
@@ -72,6 +97,12 @@ if (!Array.isArray(published) || published.length === 0) {
 
 const problemTable = await tableFrom(PROBLEM_KEY, 'CODE_TO_KEY');
 const authTable = await tableFrom(AUTH_ERROR, 'AUTH_CODE_TO_KEY');
+const keyModule: unknown = await import(PROBLEM_KEY);
+const appBase: unknown =
+  typeof keyModule === 'object' && keyModule !== null
+    ? Reflect.get(keyModule, 'PROBLEM_TYPE_BASE')
+    : undefined;
+const specBase = spec.components?.schemas?.Problem?.properties?.type?.['x-problem-type-base'];
 
 const codes = new Set(published.filter((code): code is string => typeof code === 'string'));
 const mapped = new Set([...Object.keys(problemTable), ...Object.keys(authTable)]);
@@ -94,6 +125,21 @@ for (const [code, reason] of Object.entries(exempt)) {
   if (!codes.has(code)) failures.push(`${code}: exempted here but no longer in openapi.json`);
   if (mapped.has(code)) failures.push(`${code}: both mapped and exempted — drop the exemption`);
 }
+/* The base the API mints types under, and the one this app resolves them by, are one string. */
+const malformed = typeof specBase === 'string' ? baseError(specBase) : 'is not a string';
+if (specBase !== undefined && malformed) {
+  failures.push(`openapi.json: x-problem-type-base ${JSON.stringify(specBase)} ${malformed}`);
+} else if (specBase !== undefined && appBase === undefined) {
+  failures.push(
+    `problem-key.ts exports no PROBLEM_TYPE_BASE; the API mints types under ${specBase}`,
+  );
+} else if (specBase !== undefined && appBase !== specBase) {
+  failures.push(
+    `PROBLEM_TYPE_BASE is ${JSON.stringify(appBase)}, but openapi.json publishes ${specBase}`,
+  );
+} else if (specBase === undefined && appBase !== undefined) {
+  failures.push('PROBLEM_TYPE_BASE is exported, but openapi.json publishes no x-problem-type-base');
+}
 
 if (failures.length > 0) {
   console.error(`[error-codes] ✗ ${failures.length} problem(s):`);
@@ -104,4 +150,9 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
+if (specBase === undefined) {
+  console.log(
+    '[error-codes] openapi.json publishes no problem-type base; problems resolve by code.',
+  );
+}
 console.log(`[error-codes] ✓ All ${codes.size} API error codes have a message or a stated reason.`);

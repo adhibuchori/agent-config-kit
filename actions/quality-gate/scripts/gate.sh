@@ -7,7 +7,9 @@
 # Reads: QG_STACK, QG_BASE (a resolvable ref), QG_PM (bun|pnpm|npm|yarn|uv; default: from the
 # lockfile), QG_COVERAGE_THRESHOLD (default: 0 for fe-nextjs-static and docs-nextra, else 100),
 # QG_ENV_FILE (default .env.ci.example), QG_IGNORE_SCRIPTS (default true), QG_INTEGRATION_TESTS
-# (default false), QG_STRICT (default true).
+# (default false), QG_STRICT (default true), QG_PHASE (ios-swiftui: static, build or all; default
+# all), QG_DATABASE (be-go, be-axum: default true), QG_PGBOUNCER_TESTS (default false),
+# QG_PGBOUNCER_MAX_PREPARED (default 200), QG_XCODE_VERSION and QG_IOS_SCHEME (ios-swiftui build).
 # Exit 0 the full gate passed, 1 a check failed (or, with strict, did not run), 2 a bad input.
 set -uo pipefail
 
@@ -19,6 +21,7 @@ QG_STACK="${QG_STACK:-}"
 QG_ENV_FILE="${QG_ENV_FILE-.env.ci.example}"
 QG_STRICT="${QG_STRICT:-true}"
 QG_INTEGRATION_TESTS="${QG_INTEGRATION_TESTS:-false}"
+QG_PHASE="${QG_PHASE:-all}"
 
 if ! qg_is_stack "$QG_STACK"; then
   echo "::error::QG_STACK must be one of: $QG_STACKS (got '${QG_STACK}')" >&2
@@ -29,19 +32,32 @@ if ! qg_valid_threshold "$QG_COVERAGE_THRESHOLD"; then
   echo "::error::coverage-threshold must be a number from 0 to 100 (got '${QG_COVERAGE_THRESHOLD}')" >&2
   exit 2
 fi
+case "$QG_STACK:$QG_PHASE" in
+ios-swiftui:static | ios-swiftui:build | *:all) ;;
+*)
+  echo "::error::QG_PHASE must be all, or static or build for ios-swiftui (got '${QG_PHASE}' for $QG_STACK)" >&2
+  exit 2
+  ;;
+esac
 if ! QG_BASE=$(qg_resolve_base "${QG_BASE:-}"); then
   echo "::error::base ref '${QG_BASE:-}' not found; fetch it (git fetch origin) or check out with fetch-depth: 0" >&2
   exit 2
 fi
 if [ -z "${QG_PM:-}" ]; then
-  if [ "$QG_STACK" = ai-fastapi ]; then QG_PM=uv; else QG_PM=$(qg_detect_pm); fi
+  if [ "$QG_STACK" = ai-fastapi ]; then
+    QG_PM=uv
+  elif qg_js_stack "$QG_STACK"; then
+    QG_PM=$(qg_detect_pm)
+  else
+    QG_PM=none
+  fi
 fi
 
 tmp_root="${RUNNER_TEMP:-${TMPDIR:-/tmp}}"
 QG_TMP=$(mktemp -d "${tmp_root%/}/quality-gate.XXXXXX") || exit 2
 trap 'rm -rf "$QG_TMP"' EXIT
 
-echo "agent-config-kit quality gate: $QG_STACK, base $QG_BASE, package manager $QG_PM, coverage floor ${QG_COVERAGE_THRESHOLD}%, strict $QG_STRICT"
+echo "agent-config-kit quality gate: $QG_STACK (phase $QG_PHASE), base $QG_BASE, package manager $QG_PM, coverage floor ${QG_COVERAGE_THRESHOLD}%, strict $QG_STRICT"
 qg_load_env_file "$QG_ENV_FILE" || {
   qg_summary
   exit 1

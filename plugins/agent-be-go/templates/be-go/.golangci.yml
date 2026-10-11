@@ -1,0 +1,195 @@
+# golangci-lint v2 (the version is pinned in scripts/check/tools.env): the linters and formatters
+# scripts/check/lint.sh and the quality gate run. Every finding fails, whatever its severity. Replace
+# example.com/service with this module's path. Each exclusion below carries its reason, and lint.sh
+# fails when one stops excluding anything.
+version: "2"
+
+run:
+  timeout: 5m
+  relative-path-mode: gomod # exclusion and depguard paths are relative to go.mod
+  modules-download-mode: readonly # linting never edits go.mod
+  tests: true # tests are held to the same rules
+  build-tags: [pooler] # internal/postgres/pooler_test.go is linted although only the gate builds it
+
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused; never `all`, which grows with each release
+  enable:
+    # Correctness: errors, resources, contexts.
+    - bodyclose
+    - containedctx
+    - durationcheck
+    - errorlint
+    - exhaustive
+    - fatcontext
+    - gosec
+    - makezero
+    - nilerr
+    - nilnesserr
+    - noctx
+    - reassign
+    - rowserrcheck
+    - sqlclosecheck
+    - unparam
+    # Idiom and the standard library first.
+    - copyloopvar
+    - exptostd
+    - intrange
+    - mirror
+    - modernize
+    - perfsprint
+    - prealloc
+    - predeclared
+    - unconvert
+    - usestdlibvars
+    # Boundaries and house rules.
+    - depguard
+    - forbidigo
+    - gochecknoinits
+    - sloglint
+    # Size and complexity: one linter per limit.
+    - funlen
+    - gocognit
+    - revive
+    # Suppressions.
+    - nolintlint
+    # Tests.
+    - thelper
+    - tparallel
+    - usetesting
+
+  settings:
+    errcheck:
+      check-type-assertions: true # x.(T) without ", ok" is Go's unchecked cast
+      # check-blank stays off: it also reports `_, ok := errors.AsType[...](err)` and `v, _ := x.(T)`.
+
+    exhaustive:
+      check: [switch, map]
+
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment # memory layout, not correctness
+        - shadow # a nested `err :=` is idiomatic Go
+
+    gosec:
+      excludes:
+        - G104 # unchecked errors: errcheck reports them
+
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+      allow-unused: false
+
+    funlen:
+      lines: 60
+      statements: 40
+      ignore-comments: true
+
+    gocognit:
+      min-complexity: 15
+
+    revive:
+      enable-default-rules: true # keep revive's defaults when adding a rule
+      rules:
+        - name: file-length-limit # 200 code lines; blank and comment lines do not count
+          arguments:
+            - max: 200
+              skip-comments: true
+              skip-blank-lines: true
+
+    reassign:
+      patterns: [".*"] # a registered error code is never re-pointed from outside apperr
+
+    depguard:
+      rules:
+        no-unsafe:
+          files: ["$all"]
+          deny:
+            - pkg: unsafe
+              desc: "no unsafe in a service (gosec G103 only audits it)"
+        no-mocking-library:
+          files: ["$all"]
+          deny:
+            - pkg: github.com/stretchr/testify/mock
+              desc: "fakes are small hand-written values at a system boundary"
+            - pkg: go.uber.org/mock
+              desc: "fakes are small hand-written values at a system boundary"
+            - pkg: github.com/golang/mock
+              desc: "fakes are small hand-written values at a system boundary"
+        pgx-only-in-postgres:
+          files: ["$all", "!**/internal/postgres/**"]
+          deny:
+            - pkg: github.com/jackc/pgx
+              desc: "only internal/postgres talks to the database (handler -> service -> store)"
+        modules-have-no-transport:
+          # Every package under internal/ that is not shared or an adapter is a module.
+          files:
+            - "**/internal/**"
+            - "!**/internal/httpapi/**"
+            - "!**/internal/postgres/**"
+            - "!**/internal/apperr/**"
+            - "!**/internal/config/**"
+            - "!**/internal/logging/**"
+          deny:
+            - pkg: net/http
+              desc: "a service never sees HTTP; it returns an apperr code instead"
+            - pkg: example.com/service/internal/httpapi
+              desc: "dependencies point inward: httpapi imports the service, never the reverse"
+            - pkg: example.com/service/internal/postgres
+              desc: "the service depends on its own Store interface; postgres implements it"
+        shared-never-imports-modules:
+          files: ["**/internal/apperr/**", "**/internal/logging/**", "**/internal/config/**"]
+          deny:
+            - pkg: example.com/service/internal/httpapi
+              desc: "shared packages never import the HTTP layer"
+            - pkg: example.com/service/internal/postgres
+              desc: "shared packages never import the store"
+
+    forbidigo:
+      analyze-types: true
+      forbid:
+        - pattern: ^(fmt\.Print(f|ln)?|print|println)$
+          msg: "log through the injected *slog.Logger"
+        - pattern: ^log\.(Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln)$
+          msg: "log through the injected *slog.Logger"
+        - pattern: ^os\.(Getenv|LookupEnv|Environ)$
+          msg: "only internal/config reads the environment"
+        - pattern: ^context\.(Background|TODO)$
+          msg: "take the caller's context; only main starts one, and tests use t.Context()"
+        - pattern: ^http\.Error$
+          msg: "write errors through apperr.Write"
+
+    sloglint:
+      no-global: all
+      context: scope
+      attr-only: true
+      static-msg: true
+      key-naming-case: camel
+
+  exclusions:
+    generated: strict # only `^// Code generated .* DO NOT EDIT\.$` before the package clause
+    warn-unused: true # prints a warning; scripts/check/lint.sh turns it into a failure
+    rules:
+      - path: ^cmd/api/
+        linters: [forbidigo]
+        text: (os\.LookupEnv|context\.Background) # main passes os.LookupEnv to config.Load and owns the root context
+      - path: ^cmd/api/
+        linters: [sloglint]
+        text: default logger # main logs a startup failure before the logger exists
+      - path: _test\.go$
+        linters: [forbidigo]
+        text: os\.Getenv # tests read the test database's address that ci-env.sh passes them
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes: [example.com/service]
+  exclusions:
+    generated: strict # the formatters' default is lax
+
+issues:
+  max-issues-per-linter: 0 # default 50
+  max-same-issues: 0 # default 3

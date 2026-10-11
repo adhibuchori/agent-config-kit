@@ -1,0 +1,88 @@
+# A new Rust + Axum service, from agent-be-axum's starter. Setup creates it only where no
+# Cargo.toml exists; it is yours from then on. Run `cargo generate-lockfile` once and commit
+# Cargo.lock: every cargo call in the gates passes --locked (Rule 28).
+[package]
+name = "service"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99" # the toolchain rust-toolchain.toml pins; the two move together
+publish = false
+description = "<One sentence: what this service does, and for whom.>" # the OpenAPI info
+license = "LicenseRef-Proprietary" # the OpenAPI info; an SPDX expression
+
+# The library's name in main.rs, bin/ and tests/ stays `service` whatever the package is called.
+[lib]
+name = "service"
+path = "src/lib.rs"
+
+# Caret requirements with the full version: Cargo.lock is the pin. Upgrade one crate family per
+# pull request, after reading its CHANGELOG: a 0.x patch release has changed behaviour before.
+[dependencies]
+axum = { version = "0.8.9", default-features = false, features = ["http1", "json", "query", "tokio", "tracing", "matched-path"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+serde_path_to_error = "0.1.20"
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "postgres", "migrate", "macros", "derive", "tls-rustls-ring-webpki"] }
+thiserror = "2.0.21"
+tokio = { version = "1.53.2", features = ["macros", "rt-multi-thread", "signal", "net", "time"] }
+tower = { version = "0.5.3", features = ["util"] }
+tower-http = { version = "0.7.1", features = ["request-id", "trace", "timeout", "limit", "cors", "catch-panic"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
+utoipa = "6.0.0"
+utoipa-axum = "0.3.0"
+
+# >>> agent-be-axum: lints and release profile (the same text as _kit/snippets/cargo.toml)
+# Lints are errors: .cargo/config.toml sets build.warnings = "deny", so a warning fails every
+# cargo call without rebuilding the dependencies. A suppression is #[expect(lint, reason = "...")]
+# only (Rule 23).
+[lints.rust]
+unsafe_code = "forbid"
+unreachable_pub = "deny"
+rust_2018_idioms = { level = "deny", priority = -1 }
+let_underscore_drop = "deny"
+unused_qualifications = "deny"
+unused_lifetimes = "deny"
+redundant_lifetimes = "deny"
+trivial_casts = "deny"
+trivial_numeric_casts = "deny"
+non_ascii_idents = "deny"
+unexpected_cfgs = { level = "deny", check-cfg = ["cfg(coverage_nightly)"] }
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+# restriction lints, picked one by one (the group as a whole is not meant to be enabled)
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+dbg_macro = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+allow_attributes = "deny"
+allow_attributes_without_reason = "deny"
+indexing_slicing = "deny"
+as_conversions = "deny"
+string_slice = "deny"
+exit = "deny"
+mem_forget = "deny"
+unwrap_in_result = "deny"
+get_unwrap = "deny"
+let_underscore_must_use = "deny"
+self_named_module_files = "deny" # mod.rs: a folder never sits beside a file of the same name
+clone_on_ref_ptr = "deny"
+map_err_ignore = "deny"
+cognitive_complexity = "deny" # a restriction lint: on only when named
+missing_assert_message = "deny"
+
+# panic = "unwind" keeps CatchPanicLayer able to answer 500 (Rule 29); tests ignore this setting,
+# so "abort" would pass every test and still end the process on the first panic in production.
+[profile.release]
+panic = "unwind"
+overflow-checks = true # release builds otherwise wrap where the tests panic
+lto = "thin"
+debug = "line-tables-only" # file:line in a backtrace, without full debug info
+# <<< agent-be-axum

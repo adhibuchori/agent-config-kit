@@ -1,12 +1,14 @@
 #!/usr/bin/env node
-// Images and other public/ assets. Always: every raster in public/ is under the byte budget and the
-// width cap, large PNG/JPEG/GIF files are flagged for AVIF/WebP, and every file in public/ is used
-// somewhere (Knip cannot see public/). With a build (--dir, or the mode's output folder when it
-// exists): every <img> carries width and height so it cannot shift the layout, and references
-// from the built files count as uses. --source-only ignores any build (the pre-commit mode).
-// Rule: .claude/rules/web/performance.md. Budgets: images.* in scripts/check/site.config.json.
-//
-//   node scripts/check/image-budget.mjs [--source-only] [--dir out] [--root .] [--config FILE]
+/**
+ * Images and other public/ assets. Always: every raster in public/ is under the byte budget and the
+ * width cap, large PNG/JPEG/GIF files are flagged for AVIF/WebP, and every file in public/ is used
+ * somewhere (Knip cannot see public/). With a build (--dir, or the mode's output folder when it
+ * exists): every <img> carries width and height so it cannot shift the layout, and references
+ * from the built files count as uses. --source-only ignores any build (the pre-commit mode).
+ * Rule: .claude/rules/web/performance.md. Budgets: images.* in scripts/check/site.config.json.
+ *
+ *   node scripts/check/image-budget.mjs [--source-only] [--dir out] [--root .] [--config FILE]
+ */
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
 import {
@@ -24,7 +26,9 @@ import {
 const RASTER = /\.(png|jpe?g|gif|webp|avif)$/i;
 const LEGACY = /\.(png|jpe?g|gif)$/i;
 const TEXT = /\.(html?|css|js|mjs|json|txt|xml|webmanifest|svg|body|rsc)$/i;
-// Served by convention, never referenced from a page.
+/**
+ * Served by convention, never referenced from a page.
+ */
 const CONVENTIONAL = [
   'favicon.ico',
   'robots.txt',
@@ -72,7 +76,7 @@ run(
         );
     }
 
-    // Where to look for references: the build when there is one, and always the source.
+    /* Where to look for references: the build when there is one, and always the source. */
     let site = null;
     if (!args['source-only']) {
       try {
@@ -86,7 +90,7 @@ run(
       try {
         haystack.push(readFileSync(f, 'utf8'));
       } catch {
-        // unreadable: skip
+        /* unreadable: skip */
       }
     };
     sourceFiles(root).forEach(addText);

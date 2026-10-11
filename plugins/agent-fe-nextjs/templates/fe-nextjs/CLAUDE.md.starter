@@ -135,19 +135,19 @@ Nothing below loads automatically. Read the file when its row matches the task. 
 as `<name>.example.md` is a template: fill it in and save it without `.example`, or delete the
 template and its row.
 
-| Read when                                                                          | File                                          |
-| ---------------------------------------------------------------------------------- | --------------------------------------------- |
-| Operations: hooks contract, GitHub and CI, reviews, MCP pins, deploys, skill scans | `.claude/OPERATIONS.md`                       |
-| Known traps — scan trigger keywords before debugging                               | `.claude/anti-patterns/INDEX.md`              |
-| Reviewing a change (`/agent-core:review` reads it)                                 | `.claude/docs/code-review-checklist.md`       |
-| Before `/agent-core:promote`, when the user asks for the audit                     | `.claude/docs/pre-promote-audit.md`           |
-| File organization examples                                                         | `.claude/docs/standards/file-organization.md` |
-| Responsive failures and examples                                                   | `.claude/docs/standards/responsive.md`        |
-| Skeleton derivations and examples                                                  | `.claude/docs/standards/skeletons.md`         |
-| Dialog description examples and sources                                            | `.claude/docs/standards/dialog-content.md`    |
-| Postgres through `db-dev`/`db-prod`: topology, tunnel, production rules            | `.claude/DATABASE.md`                         |
-| CI runner pools and billing                                                        | `.claude/CI-RUNNERS.md`                       |
-| Analytics read API                                                                 | `.claude/ANALYTICS.md`                        |
-| Serena across several repos                                                        | `.claude/SERENA-WORKSPACE.md`                 |
-| Rarely used MCP servers, loaded per session with `claude --mcp-config <file>`      | `.claude/mcp/*.json`                          |
-| What the `.env*` and database locks stop, and how the user opens them              | `docs/unlock.md`                              |
+| Read when                                                                          | File                                                            |
+| ---------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Operations: hooks contract, GitHub and CI, reviews, MCP pins, deploys, skill scans | `.claude/OPERATIONS.md`                                         |
+| Known traps — scan trigger keywords before debugging                               | `.claude/anti-patterns/INDEX.md`                                |
+| Reviewing a change (`/agent-core:review` reads it)                                 | `.claude/docs/code-review-checklist.md`                         |
+| Before `/agent-core:promote`, when the user asks for the audit                     | `.claude/docs/pre-promote-audit.md`                             |
+| File organization examples                                                         | `.claude/docs/standards/file-organization.md`                   |
+| Responsive failures and examples                                                   | `.claude/docs/standards/responsive.md`                          |
+| Skeleton derivations and examples                                                  | `.claude/docs/standards/skeletons.md` (with `skeletons=yes`)    |
+| Dialog description examples and sources                                            | `.claude/docs/standards/dialog-content.md` (with `dialogs=yes`) |
+| Postgres through `db-dev`/`db-prod`: topology, tunnel, production rules            | `.claude/DATABASE.md`                                           |
+| CI runner pools and billing                                                        | `.claude/CI-RUNNERS.md`                                         |
+| Analytics read API                                                                 | `.claude/ANALYTICS.md`                                          |
+| Serena across several repos                                                        | `.claude/SERENA-WORKSPACE.md`                                   |
+| Rarely used MCP servers, loaded per session with `claude --mcp-config <file>`      | `.claude/mcp/*.json`                                            |
+| What the `.env*` and database locks stop, and how the user opens them              | `docs/unlock.md`                                                |

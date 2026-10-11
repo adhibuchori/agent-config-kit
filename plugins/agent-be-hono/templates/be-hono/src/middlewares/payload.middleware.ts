@@ -9,7 +9,8 @@
  * `check:endpoints` is what keeps every real route in the registry.
  *
  * A refusal raised here leaves in plaintext problem+json, with a code and never a payload: the
- * caller may hold no working key, and a refusal it cannot read is one it simply retries.
+ * caller may hold no working key, and a refusal it cannot read is one it simply retries. Its `type`
+ * is minted from the code under the same problem-type base as every other problem this API sends.
  */
 
 import type { Context, MiddlewareHandler } from 'hono';
@@ -34,11 +35,15 @@ import {
   type EndpointMatch,
   type PrefixRule,
 } from '../lib/payload/policy';
+import { checkProblemTypeBase, payloadRefusal } from '../lib/payload/refusal';
 
 /** What the middleware needs; resolve every value once, at startup. */
 export interface PayloadMiddlewareOptions {
   /** From `resolveEncryptionMode`. `off` passes everything through. */
   mode: EncryptionMode;
+  /** This API's problem-type base, `PROBLEM_TYPE_BASE` from `src/lib/errors/problem.ts`: an
+   *  absolute https URI ending in `/`. A refusal's `type` is it plus the code. */
+  problemTypeBase: string;
   /** The registry this service serves. */
   registry: EndpointMap;
   /** Route families that cannot be enumerated, such as an auth library's catch-all. */
@@ -47,7 +52,8 @@ export interface PayloadMiddlewareOptions {
   keyRing?: () => Promise<KeyRing>;
   /** This service's ECDH keypair, when browsers call it directly with an ephemeral key. */
   browserKeyPair?: () => Promise<EcdhKeyPair>;
-  /** Builds the plaintext refusal; defaults to RFC 9457 problem+json with the code. */
+  /** Builds the plaintext refusal; defaults to `payloadRefusal` with the request id. The place to
+   *  log `error.message`, which never goes on the wire. */
   refuse?: (c: Context, status: number, error: PayloadError) => Response;
 }
 
@@ -57,18 +63,14 @@ interface ExchangeKey {
   responseKid: string;
 }
 
-function problem(_c: Context, status: number, error: PayloadError): Response {
-  const body = {
-    type: 'about:blank',
-    title: 'Payload refused',
-    status,
-    detail: error.message,
-    code: error.code,
-  };
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/problem+json' },
-  });
+/* A sealed answer depends on the key these request headers chose, so a shared cache keys on them
+   and never serves one caller's envelope to another. */
+const SEALED_VARY = `${EPK_HEADER}, ${KID_HEADER}`;
+
+/* The id `requestId()` set, when the app mounts it first (AGENTS.md Rule 40). */
+function requestIdOf(c: Context): string | undefined {
+  const id: unknown = c.get('requestId');
+  return typeof id === 'string' ? id : undefined;
 }
 
 async function exchangeKey(c: Context, options: PayloadMiddlewareOptions): Promise<ExchangeKey> {
@@ -138,6 +140,7 @@ async function sealResponse(
   });
   const headers = new Headers(c.res.headers);
   headers.set('content-type', ENCRYPTED_MEDIA_TYPE);
+  headers.append('vary', SEALED_VARY);
   headers.delete('content-length');
   return new Response(JSON.stringify(envelope), { status, headers });
 }
@@ -167,7 +170,13 @@ async function prepare(
  * The Hono middleware that enforces the payload contract for the registry it is given.
  */
 export function createPayloadMiddleware(options: PayloadMiddlewareOptions): MiddlewareHandler {
-  const refuse = options.refuse ?? problem;
+  /* Checked once, at startup: a base that cannot prefix a type would mint a bad one per refusal. */
+  const base = checkProblemTypeBase(options.problemTypeBase);
+  /* The code and never the message: the message names route patterns and server state, and is
+     for logs (errors.ts). */
+  const refuse: Refuse =
+    options.refuse ??
+    ((c, status, error) => payloadRefusal(base, status, error.code, requestIdOf(c)));
   return createMiddleware(async (c, next) => {
     const path = new URL(c.req.url).pathname;
     const match = matchEndpoint(options.registry, options.prefixes ?? [], c.req.method, path);

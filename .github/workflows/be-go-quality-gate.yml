@@ -1,0 +1,144 @@
+# Quality gate for a Go net/http API on PostgreSQL (agent-be-go), as a reusable workflow. The stack
+# plugin's setup installs a small caller in the user's repo (.github/workflows/quality-gate.y*ml).
+# Anyone can call it the same way from a pull_request workflow, pinned to one commit of
+# agent-config-kit:
+#
+#     on:
+#       pull_request:
+#     permissions:
+#       contents: read
+#     jobs:
+#       quality-gate:
+#         permissions:
+#           contents: read
+#         uses: adhibuchori/agent-config-kit/.github/workflows/be-go-quality-gate.yml@<40-hex sha> # v1.3.0
+#         with: # every input is optional
+#           pgbouncer-tests: true
+#
+# What it runs (actions/quality-gate/scripts/stacks/be-go.sh): Go from go.mod, go mod download and
+# go mod verify, with GOTOOLCHAIN=local and GOFLAGS=-mod=readonly; db/roles.sql on PostgreSQL 18.6;
+# the repo's scripts/check/gates.list (golangci-lint, build, tidy, generated code, migrations,
+# endpoints, the kit checks, tests with coverage); the coverage floor from coverage/coverage.out;
+# every migration from zero (goose up) on an empty database; a foreign key without an index, or an
+# INVALID index, fails; scripts/check/pooler.sh behind PgBouncer when pgbouncer-tests is true;
+# scripts/check/migrations.sh --base and squawk over the migrations the pull request adds; the pool
+# and server settings; a committed .env; gitleaks over the pull request's commits; govulncheck;
+# SkillSpector when a skill, command, subagent or hook changed; go build -trimpath; docker build
+# when there is a Dockerfile. A check that cannot run fails the gate unless strict is false.
+#
+# PostgreSQL: a service container, postgres:18.6 pinned by its multi-arch index digest, on
+# 127.0.0.1:5432 with trust auth (it lives for this job only, so no password exists anywhere). The
+# repo's env file names the URLs its tests use. database: false starts none, for a repo that owns no
+# schema.
+#
+# Pinning: the step below names the action as $/actions/quality-gate, GitHub's self-repository form.
+# It resolves to this repository at the commit this workflow file was loaded from, so the caller's
+# SHA pin covers this file, the action and every script it runs; nothing moves until the caller
+# changes its pin. It needs github.com with runner 2.336.0 or newer (GitHub-hosted runners are);
+# GitHub Enterprise Server does not support it. actionlint 1.7.12 does not know the form yet, so
+# .github/actionlint.yaml ignores that one message for the eight *-quality-gate.yml files.
+#
+# Permissions: contents: read only. No secret is needed; nothing is pushed or uploaded, and the
+# checkout keeps no token.
+name: Quality Gate (be-go)
+
+on:
+  workflow_call:
+    inputs:
+      coverage-threshold:
+        description: Minimum statement coverage (0-100) read from coverage/coverage.out; 0 turns the floor off.
+        type: number
+        required: false
+        default: 100
+      env-file:
+        description: A committed *.example file of dummy KEY=VALUE variables the tests need (TEST_DATABASE_URL, TEST_POOLER_DATABASE_URL). Never real secrets.
+        type: string
+        required: false
+        default: .env.ci.example
+      database:
+        description: Start PostgreSQL and run the database checks; false for a repo that owns no schema.
+        type: boolean
+        required: false
+        default: true
+      pgbouncer-tests:
+        description: Also run scripts/check/pooler.sh while PgBouncer 1.26.0 listens on 127.0.0.1:6432 in transaction mode.
+        type: boolean
+        required: false
+        default: false
+      pgbouncer-max-prepared-statements:
+        description: PgBouncer's max_prepared_statements for pgbouncer-tests; 0 copies a production pooler that disables it.
+        type: number
+        required: false
+        default: 200
+      node-version:
+        description: Node.js version. The kit checks in scripts/check/*.mjs need it.
+        type: string
+        required: false
+        default: '22'
+      base-ref:
+        description: The branch the diff checks compare against; empty uses the pull request's base (github.base_ref).
+        type: string
+        required: false
+        default: ''
+      runs-on:
+        description: Runner label (Linux with Docker, for the PostgreSQL service); empty uses the caller repository's CI_RUNNER_FAST, then CI_RUNNER, then ubuntu-latest.
+        type: string
+        required: false
+        default: ''
+      timeout-minutes:
+        description: Job timeout in minutes.
+        type: number
+        required: false
+        default: 30
+      strict:
+        description: Fail the gate when a check could not run (no gitleaks, no coverage report, no gates.list).
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gate:
+    name: Quality Gate (be-go)
+    # The job a developer waits on takes the fast pool first; vars come from the caller's repo.
+    runs-on: ${{ inputs.runs-on || vars.CI_RUNNER_FAST || vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    permissions:
+      contents: read
+
+    # An empty image starts no service: database: false runs without PostgreSQL.
+    services:
+      postgres:
+        image: ${{ inputs.database && 'postgres:18.6@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336' || '' }}
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      # Full history: the diff checks compare the pull request with its base branch.
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Quality Gate
+        uses: $/actions/quality-gate
+        with:
+          stack: be-go
+          base-ref: ${{ inputs.base-ref || github.base_ref }}
+          coverage-threshold: ${{ inputs.coverage-threshold }}
+          env-file: ${{ inputs.env-file }}
+          database: ${{ inputs.database }}
+          pgbouncer-tests: ${{ inputs.pgbouncer-tests }}
+          pgbouncer-max-prepared-statements: ${{ inputs.pgbouncer-max-prepared-statements }}
+          node-version: ${{ inputs.node-version }}
+          strict: ${{ inputs.strict }}

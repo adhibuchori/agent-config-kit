@@ -30,7 +30,7 @@ there is real defence in depth when the hop crosses a network you do not own.
 ## Hops
 
 | Hop                          | Keys                                                            | Where they live                        |
-| ---------------------------- | --------------------------------------------------------------- | -------------------------------------- |
+| --- | --- |
 | Browser ⇄ frontend server    | ECDH P-256 per tab, HKDF-SHA-256 → AES-256-GCM; nothing static  | the server's keypair, server-only env  |
 | Frontend server ⇄ backend    | a pre-shared AES-256 key, `kid:base64` in one variable          | both servers' env, never `NEXT_PUBLIC_`|
 | Service ⇄ service            | one pre-shared key per hop, named after the hop                 | both services' env                     |
@@ -62,6 +62,8 @@ answer several callers holding different keys.
   before the cipher runs. This is not full replay protection; that needs a nonce store.
 - **Status codes stay in clear** on the status line, so `!res.ok` and a sign-out on 401 work
   without decrypting. Error bodies are sealed like any other body.
+- **A sealed response carries `Vary: x-payload-epk, x-payload-kid`**: the key it is sealed under
+  comes from those request headers, so a shared cache never serves one caller's envelope to another.
 
 ## Policies
 
@@ -111,20 +113,31 @@ short-lived signed link minted over a `strict` route. No body (204, 304) means n
 
 ## Refusals and error codes
 
-| Code                    | Meaning                                                        |
-| ----------------------- | -------------------------------------------------------------- |
-| `ENVELOPE_REQUIRED` | a sealed route received plaintext: nearly always a hand-rolled call |
-| `ENVELOPE_MALFORMED`  | an unknown version, a missing field, plaintext that is not JSON |
-| `ENVELOPE_EXPIRED`         | outside the window: a replay, or clocks that drifted           |
-| `ENVELOPE_KEY_UNKNOWN`   | a `kid` this side does not hold: mid-rotation or a bad deploy  |
-| `ENVELOPE_REJECTED`   | the tag did not verify: tampering, the wrong key, another route |
+| Code | Title | Status | Meaning |
+| --- | --- | --- | --- |
+| `ENVELOPE_REQUIRED` | Sealed body required | 400 | a sealed route received plaintext or a body that is not an envelope of a known version (an unknown `v`, a missing field): nearly always a hand-rolled call |
+| `ENVELOPE_MALFORMED` | Malformed envelope | 400, 500 | opened plaintext that is not JSON, or a browser key that is not a P-256 point; a 500 when a server cannot seal its own body because it is not JSON |
+| `ENVELOPE_EXPIRED` | Envelope expired | 400 | outside the window: a replay, or clocks that drifted |
+| `ENVELOPE_KEY_UNKNOWN` | Unknown payload key | 400 | a `kid` this side does not hold: mid-rotation or a bad deploy |
+| `ENVELOPE_REJECTED` | Envelope rejected | 400 | the tag did not verify: tampering, the wrong key, another route |
 
-A refusal raised by the payload layer leaves as **plaintext** problem+json (a 400, or a 500 when a
-server cannot seal its own body), with the code and never a payload: the caller may hold no working
-key. A client accepts a plaintext body only with a failure status or an empty body; a plaintext
-success on a sealed route is a downgrade and is refused. After `ENVELOPE_REJECTED` a browser
-drops its agreed key and negotiates again: that is what a server restarted with a new keypair
-looks like. Add the codes to the backend's problem-code list and the frontend's error map.
+A refusal raised by the payload layer leaves as **plaintext** RFC 9457 problem+json, with the code
+and never a payload: the caller may hold no working key. Its body is exactly
+
+```json
+{ "type": "https://example.invalid/problems/ENVELOPE_REQUIRED", "title": "Sealed body required", "status": 400, "code": "ENVELOPE_REQUIRED", "requestId": "…" }
+```
+
+where `type` is the service's problem-type base plus the code (the kit's placeholder base above;
+yours is the one every other problem of that API is minted under, see
+`.claude/rules/common/error-codes.md`), `title` is the code's from the table, and `requestId` is
+present where the service has one. There is no `detail`: the internal message names route patterns
+and server state, so it goes to the log, and the code is what crosses the wire.
+
+A client accepts a plaintext body only with a failure status or an empty body; a plaintext success
+on a sealed route is a downgrade and is refused. After `ENVELOPE_REJECTED` a browser drops its
+agreed key and negotiates again: that is what a server restarted with a new keypair looks like. Add
+the codes to the backend's problem-code list and the frontend's error map.
 
 ## The switch
 
@@ -162,9 +175,10 @@ out beside this repo; a peer that is not is reported as skipped.
 
 ## Wiring it in
 
-- **Backend (Hono)**: `app.use(createPayloadMiddleware({ mode, registry: ENDPOINTS, prefixes:
-  ENDPOINT_PREFIXES, keyRing }))` after the body limit, rate limit and timeout, before the routes.
-  Build `mode` with `resolveEncryptionMode(env.PAYLOAD_MODE, config.encryption,
+- **Backend (Hono)**: `app.use(createPayloadMiddleware({ mode, problemTypeBase: PROBLEM_TYPE_BASE,
+  registry: ENDPOINTS, prefixes: ENDPOINT_PREFIXES, keyRing }))` after the body limit, rate limit
+  and timeout, before the routes; it refuses to start with a base that cannot prefix a type. Build
+  `mode` with `resolveEncryptionMode(env.PAYLOAD_MODE, config.encryption,
   isProduction)` and the ring with `createKeyRing([{ value: env.PAYLOAD_KEY, name:
   'PAYLOAD_KEY' }, …_NEXT])`, once, in the env module's orbit. A browser calling the backend
   directly needs `browserKeyPair` and a `GET` handshake route registered `none`.
@@ -172,9 +186,11 @@ out beside this repo; a peer that is not is reported as skipped.
   once, then `seal` before each request and `read` after it; a registry miss is refused. The
   handshake route answers `{ publicKey, mode }` with `cache-control: no-store`. The proxy route uses
   `openFromBrowser`, `sealForUpstream`, `openFromUpstream` and `sealForBrowser` from
-  `src/lib/payload/bridge.ts`, in a `server-only` module that reads the keys.
+  `src/lib/payload/bridge.ts`, in a `server-only` module that reads the keys; what it seals for the
+  browser carries the `Vary` above, and a refusal it raises itself has the body above.
 - **Python service**: `app.add_middleware(PayloadMiddleware, mode=…, registry=ROUTES,
-  key_ring=…)` added first, so it runs innermost; a test walks `app.routes` and fails on a route the
+  key_ring=…, problem_type_base=PROBLEM_TYPE_BASE)` added first, so it runs innermost; it refuses
+  to start with a base that cannot prefix a type. A test walks `app.routes` and fails on a route the
   registry lacks. Add `cryptography` to the project's dependencies.
 
 ## Out of scope, on purpose

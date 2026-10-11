@@ -1,0 +1,36 @@
+// Build settings every target of the app project shares (AGENTS.md Rules 19, 20 and 28). The
+// project file keeps only target identity; a setting lives here, or in a target's own xcconfig
+// when only that target needs it. scripts/check/xcode-settings.sh reads this file through
+// Debug.xcconfig and Release.xcconfig, which the project's configurations name as their base.
+// Never put a secret here: every value reaches the built app.
+
+// Swift 6 mode: data races are compile errors. Approachable concurrency, and the app's code runs
+// on the main actor unless it says otherwise; the logic package sets its own (nonisolated) default.
+SWIFT_VERSION = 6.0
+SWIFT_APPROACHABLE_CONCURRENCY = YES
+SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor
+SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES
+SWIFT_TREAT_WARNINGS_AS_ERRORS = YES
+GCC_TREAT_WARNINGS_AS_ERRORS = YES
+
+// The app's targets join Packages/AppCore's package (SwiftPM names it after its folder,
+// lowercased), so they call its `package` API and nothing in it has to be `public`.
+SWIFT_PACKAGE_NAME = appcore
+
+// The oldest iOS the app supports: the setup answer min-ios. 17.0 is the floor of Observation and
+// of the accessibility audit the UI tests run. Keep `.iOS(...)` in Packages/AppCore/Package.swift
+// equal to it.
+IPHONEOS_DEPLOYMENT_TARGET = 17.0
+SDKROOT = iphoneos
+SUPPORTED_PLATFORMS = iphoneos iphonesimulator
+TARGETED_DEVICE_FAMILY = 1,2
+
+// String Catalogs: the compiler extracts the keys, and manual keys get generated symbols.
+LOCALIZATION_PREFERS_STRING_CATALOGS = YES
+SWIFT_EMIT_LOC_STRINGS = YES
+STRING_CATALOG_GENERATE_SYMBOLS = YES
+ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES
+
+ENABLE_USER_SCRIPT_SANDBOXING = YES
+GENERATE_INFOPLIST_FILE = YES
+ALWAYS_SEARCH_USER_PATHS = NO

@@ -35,19 +35,6 @@ ai_audit() {
   fi
 }
 
-ai_docker_build() {
-  qg_step "Production Build (docker build)"
-  if [ ! -f Dockerfile ]; then
-    echo "No Dockerfile; no image to build"
-    return
-  fi
-  if ! command -v docker >/dev/null 2>&1; then
-    qg_skip "Production Build" "the runner has no docker"
-    return
-  fi
-  docker build --pull=false -t quality-gate-build . || qg_fail "docker build failed"
-}
-
 ai_integration() {
   qg_step "Integration Tests"
   if [ "$QG_INTEGRATION_TESTS" != "true" ]; then
@@ -70,6 +57,6 @@ stack_gate() {
   qg_gitleaks
   ai_audit
   qg_skill_scan
-  ai_docker_build
+  qg_docker_build "Production Build (docker build)"
   ai_integration
 }

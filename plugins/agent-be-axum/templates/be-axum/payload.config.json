@@ -1,0 +1,22 @@
+{
+  "encryption": "strict",
+  "spec": "openapi.json",
+  "registry": "src/payload/endpoints_generated.rs",
+  "language": "rust",
+  "handshake": "getPayloadHandshake",
+  "exemptions": {
+    "GET /api/health": {
+      "encryption": "none",
+      "reason": "a liveness probe: the orchestrator calls it without a key"
+    },
+    "GET /api/payload/handshake": {
+      "encryption": "none",
+      "reason": "the handshake: a public client calls it before it holds a key"
+    },
+    "GET /api/ready": {
+      "encryption": "none",
+      "reason": "a readiness probe: the orchestrator calls it without a key"
+    }
+  },
+  "peers": []
+}

@@ -1,12 +1,14 @@
 #!/usr/bin/env node
-// README.md and README.id.md are one document in two languages (English and Bahasa Indonesia).
-// A pull request that changes one must change the other, so neither falls behind.
-//
-//   node scripts/readme-pair.mjs --base <ref>    compare HEAD with <ref> (CI passes the PR base)
-//   --root DIR                                   the repository to read (default: this script's)
-//
-// Node 20 or newer, no dependencies. Exit 0 both changed or neither, 1 only one changed, 2 usage or
-// a base it cannot diff against.
+/**
+ * README.md and README.id.md are one document in two languages (English and Bahasa Indonesia).
+ * A pull request that changes one must change the other, so neither falls behind.
+ *
+ *   node scripts/readme-pair.mjs --base <ref>    compare HEAD with <ref> (CI passes the PR base)
+ *   --root DIR                                   the repository to read (default: this script's)
+ *
+ * Node 20 or newer, no dependencies. Exit 0 both changed or neither, 1 only one changed, 2 usage or
+ * a base it cannot diff against.
+ */
 import { execFileSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

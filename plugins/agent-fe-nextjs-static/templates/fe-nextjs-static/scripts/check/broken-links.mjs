@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-// Internal links and assets of the built pages resolve: every same-site href/src/srcset (links,
-// images, scripts, stylesheets, icons, media) names a file in the build, and every #fragment names
-// an id on its target page. External links are counted, never fetched (no network); http:
-// subresources are errors (mixed content) and javascript: URLs are refused. Runs after `next build`.
-//
-//   node scripts/check/broken-links.mjs [--dir out] [--root .] [--config scripts/check/site.config.json]
+/**
+ * Internal links and assets of the built pages resolve: every same-site href/src/srcset (links,
+ * images, scripts, stylesheets, icons, media) names a file in the build, and every #fragment names
+ * an id on its target page. External links are counted, never fetched (no network); http:
+ * subresources are errors (mixed content) and javascript: URLs are refused. Runs after `next build`.
+ *
+ *   node scripts/check/broken-links.mjs [--dir out] [--root .] [--config scripts/check/site.config.json]
+ */
 import { readFileSync } from 'node:fs';
 import { onSite, openSite, parseHtml, run, siteUrl, urlPath } from './lib/site.mjs';
 

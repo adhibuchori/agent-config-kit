@@ -14,9 +14,9 @@ vendor's written permission. What changed here: the project's own CLI is preferr
 is pinned instead of `@latest`; the triage workflow in `references/triage.md` is written for this
 repo and read locally, never fetched from the vendor's site at run time, so nothing outside the repo
 changes what an agent is told; and scans keep their results local (below). An upgrade raises the pin
-here, in both references, and in agent-fe-nextjs's `.github/workflows/react-doctor.yml` template
-together, after reading the release notes; `/agent-fe-nextjs:sync` then brings the new pin to a repo
-that installed the workflow.
+here, in every reference, and in agent-fe-nextjs's React Doctor workflow template together (the
+files are listed in [references/cli.md](references/cli.md)), after reading the release notes;
+`/agent-fe-nextjs:sync` then brings the new pin to a repo that installed the workflow.
 
 ## Keep scans local
 
@@ -27,28 +27,25 @@ manifest changed, each dependency's name and version also goes to Socket.dev for
 score. `--no-score` (alias `--no-telemetry`) turns off the score API, the share link, crash
 reporting and telemetry; `--no-supply-chain` turns off the dependency lookup. Pass both on every
 run unless the user has agreed to share that data. The report then carries no health score, so
-compare diagnostics instead. Known-vulnerable dependencies are the quality gate's job
-(the audit gate, `scripts/check/audit.ts` in the repo), not this scan's.
+compare diagnostics instead. Known-vulnerable dependencies are the quality gate's job (its audit
+gate), not this scan's.
 
 ## Where the CLI comes from
 
 This skill runs only when the user starts it (`disable-model-invocation`), because it may download
-code.
+code. [references/cli.md](references/cli.md) holds the exact paths and commands for both steps.
 
-1. **The project's own copy first.** When `node_modules/.bin/react-doctor` exists, use it: nothing
-   is downloaded. Print its version once (`node_modules/.bin/react-doctor --version`) and say so
-   when it is not 0.9.14, the version these instructions were written for.
+1. **The project's own copy first.** When the project has React Doctor installed (the binary its
+   own dependencies provide), use it: nothing is downloaded. Print its version once and say so when
+   it is not 0.9.14, the version these instructions were written for.
 2. **Otherwise, the pinned download, after a yes.** `bunx react-doctor@0.9.14` fetches that exact
    version from the npm registry the first time and caches it. Before the first run, tell the user
    exactly that and wait for their yes; on a no, stop and suggest
    `bun add -d react-doctor@0.9.14`, which puts the CLI in the project. Never `@latest`, never an
    unversioned package.
 
-Each shell call starts fresh, so every command below starts by choosing the CLI:
-
-```bash
-RD=(bunx react-doctor@0.9.14); [ -x node_modules/.bin/react-doctor ] && RD=(node_modules/.bin/react-doctor)
-```
+Each shell call starts fresh, so every command below starts with the line in
+[references/cli.md](references/cli.md) that chooses the CLI and sets `RD`.
 
 ## Command
 
@@ -65,9 +62,8 @@ Always the chosen CLI with both flags above.
 - A general cleanup scans the full scope. Fix errors first, then warnings.
 - The design audit runs only the design-tagged composition, typography, interaction,
   accessibility and motion rules, including those that stay opt-in in a general scan.
-- Dead code is not reported here: the repo's `doctor.config.json`
-  sets `deadCode: false`, because Knip owns unused files, exports and dependencies
-  (the dead-code rule, `.claude/rules/typescript/dead-code.md`).
+- Dead code is not reported here: the repo's React Doctor config sets `deadCode: false`, because
+  Knip owns unused files, exports and dependencies (the repo's dead-code rule).
 
 | Flag                | Purpose                                                          |
 | ------------------- | ---------------------------------------------------------------- |
@@ -84,9 +80,12 @@ Always the chosen CLI with both flags above.
 
 When the user asks for a full triage or cleanup pass rather than a regression check, follow
 [references/triage.md](references/triage.md). (`/agent-fe-nextjs:react-doctor` is this skill;
-`/doctor` is Claude Code's own health check.) Guidance for a
-single rule comes from `"${RD[@]}" --no-score rules explain <rule>`; do not fetch rule prompts
-from the web.
+`/doctor` is Claude Code's own health check.) Guidance for a single rule comes from the CLI; do not
+fetch rule prompts from the web:
+
+```bash
+"${RD[@]}" --no-score rules explain <rule>
+```
 
 ## Configuring or explaining rules
 
