@@ -24,7 +24,7 @@ jobs:
     permissions:
       contents: read
     # No secrets: the gate reads the checkout and nothing else.
-    uses: adhibuchori/agent-config-kit/.github/workflows/be-go-quality-gate.yml@0000000000000000000000000000000000000000 # v1.3.0
+    uses: adhibuchori/agent-config-kit/.github/workflows/be-go-quality-gate.yml@17525e4a63778fdc9ebe8289952c97235dd35690 # v1.3.0
     with:
       # PostgreSQL for the tests and the migration checks. false only for a service with no
       # database at all: the tests of internal/postgres need one even when the schema lives elsewhere.

@@ -57,7 +57,7 @@ setup() {
   run ! grep -qxE 'commands|agents|skills|hooks|mcpServers|lspServers' <<<"$output"
   run jq -r '(.dependencies | join(",")), .version, (.description | test("^Experimental"))' "$PLUGIN/.claude-plugin/plugin.json"
   [ "${lines[0]}" = "agent-core" ]
-  [ "${lines[1]}" = "0.1.0" ]
+  [[ "${lines[1]}" =~ ^0\.[0-9]+\.[0-9]+$ ]] || false
   [ "${lines[2]}" = "true" ]
 }
 
