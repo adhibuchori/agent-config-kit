@@ -1186,7 +1186,8 @@ First release.
 - Templates: the 3D scene rule, the glTF/GLB asset budget check with its config, and a guide to
   adding 3D skills by reference.
 
-[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.0
 [1.2.1]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.2.1
 [1.2.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.2.0
 [1.1.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.1.0
