@@ -290,8 +290,9 @@ pre-commit (`scripts/check/gates.list`), then the quality gate's secret scan (gi
 ## §G. Code Quality
 
 **Rule 26 — Max 200 lines per file (error, not warning).** Split into smaller files —
-service, repository, sub-handler — before it grows past this. Enforcement: `.oxlintrc.json`
-`max-lines: ["error", { max: 200 }]`.
+service, repository, sub-handler — before it grows past this. Blank lines and comments do not
+count. Enforcement: `.oxlintrc.json`
+`max-lines: ["error", { max: 200, skipBlankLines: true, skipComments: true }]`.
 
 **Rule 27 — No `oxlint-disable` comments.** Fix the underlying issue instead of suppressing
 the lint. Enforcement: advisory / `agent-be-hono:reviewer`.
