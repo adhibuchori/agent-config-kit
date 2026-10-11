@@ -205,7 +205,9 @@ gerakan dikurangi (reduced motion), yang tampil adalah gambar diam.
 
 - memakai Claude Code (CLI atau ekstensi IDE) di repositori sungguhan, sendiri atau bersama tim;
 - membangun dengan salah satu stack yang didukung: aplikasi Next.js, situs Next.js statis, API Bun +
-  Hono + Drizzle, layanan FastAPI + LLM, atau situs dokumentasi Nextra;
+  Hono + Drizzle, layanan FastAPI + LLM, atau situs dokumentasi Nextra; atau mencoba stack
+  eksperimental (0.x, nama dan aturannya masih bisa berubah): layanan Go atau API Rust + Axum di
+  PostgreSQL, atau aplikasi iOS SwiftUI;
 - menginginkan penolakan yang bisa dipercaya, dan setup yang bisa Anda baca sebelum ia menulis apa pun.
 
 **Tidak cocok jika Anda:**
@@ -225,13 +227,16 @@ Setiap repo mendapat **agent-core** ditambah **satu** plugin stack. Dua add-on b
 ```mermaid
 flowchart TD
     accTitle: Plugin mana yang dipasang
-    accDescr: Mulai dari jenis repo Anda. Aplikasi web Next.js dengan API memakai agent-fe-nextjs. Situs company profile atau landing page memakai agent-fe-nextjs-static. API Bun dan Hono memakai agent-be-hono. Layanan FastAPI dengan penyedia LLM memakai agent-ai-fastapi. Situs dokumentasi Nextra memakai agent-docs-nextra. Selain itu cukup agent-core. Tambahkan agent-fe-threejs untuk scene 3D dan agent-deploy untuk pemeriksaan deploy.
+    accDescr: Mulai dari jenis repo Anda. Aplikasi web Next.js dengan API memakai agent-fe-nextjs. Situs company profile atau landing page memakai agent-fe-nextjs-static. API Bun dan Hono memakai agent-be-hono. Layanan FastAPI dengan penyedia LLM memakai agent-ai-fastapi. Situs dokumentasi Nextra memakai agent-docs-nextra. Eksperimental: layanan Go di PostgreSQL memakai agent-be-go, layanan Rust dan Axum di PostgreSQL memakai agent-be-axum, dan aplikasi iOS SwiftUI memakai agent-ios-swiftui. Selain itu cukup agent-core. Tambahkan agent-fe-threejs untuk scene 3D dan agent-deploy untuk pemeriksaan deploy.
     Q{Repo ini apa?}
     Q -->|Aplikasi web Next.js dengan API| FE[agent-fe-nextjs]
     Q -->|Company profile atau landing page| ST[agent-fe-nextjs-static]
     Q -->|API Bun + Hono + Drizzle| BE[agent-be-hono]
     Q -->|Layanan FastAPI dengan penyedia LLM| AI[agent-ai-fastapi]
     Q -->|Situs dokumentasi Nextra| DOCS[agent-docs-nextra]
+    Q -->|Layanan Go di PostgreSQL, eksperimental| GO[agent-be-go]
+    Q -->|Layanan Rust + Axum di PostgreSQL, eksperimental| RS[agent-be-axum]
+    Q -->|Aplikasi iOS SwiftUI, eksperimental| IOS[agent-ios-swiftui]
     Q -->|Yang lain| CORE[agent-core saja]
     X([Opsional, di samping plugin stack mana pun]) -.->|scene 3D| TJ[+ agent-fe-threejs]
     X -.->|cek deploy| DEP[+ agent-deploy]
@@ -239,12 +244,15 @@ flowchart TD
 
 | Plugin | Untuk | Tambahan di atas agent-core |
 | --- | --- | --- |
-| [agent-core](plugins/agent-core/README.md) | setiap repo (wajib) | 7 hook dan satu pengingat setup, 16 perintah, 2 agen, mesin setup |
+| [agent-core](plugins/agent-core/README.md) | setiap repo (wajib) | 7 hook dan satu pengingat setup, 16 perintah, 3 agen, mesin setup |
 | [agent-fe-nextjs](plugins/agent-fe-nextjs/README.md) | aplikasi Next.js dengan klien API hasil generator | generated-guard, 5 perintah, 3 agen, 2 skill |
 | [agent-fe-nextjs-static](plugins/agent-fe-nextjs-static/README.md) | company profile, landing page | 6 perintah, 3 agen, 11 pemeriksaan situs |
 | [agent-be-hono](plugins/agent-be-hono/README.md) | API Bun + Hono + Drizzle | migration-guard, reviewer, gate backend |
 | [agent-ai-fastapi](plugins/agent-ai-fastapi/README.md) | FastAPI + penyedia LLM, uv | migration-guard, reviewer layanan AI |
 | [agent-docs-nextra](plugins/agent-docs-nextra/README.md) | situs dokumentasi Nextra | generated-guard, reviewer keamanan dan SEO |
+| [agent-be-go](plugins/agent-be-go/README.md) | eksperimental: layanan HTTP Go di PostgreSQL | migration-guard (append-only), generated-guard, reviewer, 2 skill |
+| [agent-be-axum](plugins/agent-be-axum/README.md) | eksperimental: layanan Rust + Axum di PostgreSQL | migration-guard (append-only), generated-guard, reviewer, 2 skill |
+| [agent-ios-swiftui](plugins/agent-ios-swiftui/README.md) | eksperimental: aplikasi iOS SwiftUI | generated-guard, 3 perintah, 2 agen, 2 skill |
 | [agent-fe-threejs](plugins/agent-fe-threejs/README.md) | add-on: three.js / React Three Fiber | aturan 3D dan pemeriksaan anggaran aset |
 | [agent-deploy](plugins/agent-deploy/README.md) | add-on: host mana pun | smoke test deploy dari luar, promosi cadangan |
 
@@ -388,7 +396,7 @@ pembaruan plugin ikut memperbarui hook. Setiap berkas dari setiap plugin, satu p
 ```mermaid
 flowchart TB
     accTitle: Cara agent-config-kit tersusun
-    accDescr: Marketplace berisi delapan plugin. agent-core memuat hook, perintah, dan mesin setup. Plugin stack bergantung pada agent-core dan menambahkan hook, perintah, agen, dan template sendiri. Setup memasang template ke repo Anda dan menulis lock. Lock membuat repo ikut serta, yang menyalakan hook. Sync membandingkan repo dengan lock. Di CI, pemanggil quality gate di repo menjalankan reusable workflow dari repositori ini, di-pin ke satu commit.
+    accDescr: Marketplace berisi sebelas plugin. agent-core memuat hook, perintah, dan mesin setup. Plugin stack bergantung pada agent-core dan menambahkan hook, perintah, agen, dan template sendiri. Setup memasang template ke repo Anda dan menulis lock. Lock membuat repo ikut serta, yang menyalakan hook. Sync membandingkan repo dengan lock. Di CI, pemanggil quality gate di repo menjalankan reusable workflow dari repositori ini, di-pin ke satu commit.
     subgraph KIT[marketplace agent-config-kit]
         CORE[agent-core<br/>hook, perintah, mesin setup]
         STACK[plugin stack<br/>hook, perintah, agen, template]
@@ -680,7 +688,7 @@ tidak menyimpan token.
 
 | Nama | Fungsinya | Cara memakai | Mengapa berguna |
 | --- | --- | --- | --- |
-| `<stack>-quality-gate.yml` (lima reusable workflow di repo ini) | Pasang dari lockfile, jalankan `gates.list`, batas cakupan, `.env` yang ter-commit, pemindaian HTML tak aman/`eval`/skema URL pada baris yang ditambahkan, gitleaks, audit, SkillSpector, build, source map, tambahan per stack | Setup memasang pemanggilnya; lihat [CI](#ci-workflow-yang-dapat-dipakai-ulang) | Satu gate, banyak repo, satu pin |
+| `<stack>-quality-gate.yml` (delapan reusable workflow di repo ini) | Pasang dari lockfile, jalankan `gates.list`, batas cakupan, `.env` yang ter-commit, pemindaian HTML tak aman/`eval`/skema URL pada baris yang ditambahkan, gitleaks, audit, SkillSpector, build, source map, tambahan per stack | Setup memasang pemanggilnya; lihat [CI](#ci-workflow-yang-dapat-dipakai-ulang) | Satu gate, banyak repo, satu pin |
 | `deepseek-review.yml`, `deploy-webhook.yml`, `strip-ai.yml` (reusable, repo ini) | Review AI, deploy saat merge, dan pembersihan konfigurasi agen di balik pemanggil di bawah | Setup memasang pemanggilnya; lihat [CI](#ci-workflow-yang-dapat-dipakai-ulang) | Satu implementasi teruji, di-pin oleh setiap pemanggil |
 | `.github/workflows/quality-gate.y*ml` (di repo Anda) | Pemanggil kecil untuk gate stack Anda, pada pull request | Dipasang oleh setup (lewat pertanyaan `ci-gate` bila ada) | Tidak perlu menyalin apa pun dengan tangan |
 | `codeql.yml`, `dependency-review.yml`, `workflows-lint.yml` (core, di repo Anda) | CodeQL di PR; dependensi baru yang rentan atau berlisensi buruk; actionlint, zizmor, dan pinact saat workflow berubah | Dipasang oleh setup agent-core | Pemeriksaan rantai pasok tanpa penjadwal |
@@ -689,7 +697,7 @@ tidak menyimpan token.
 | `strip-ai.yml` (deploy; opsional) | Setelah merge ke `prod`, menghapus konfigurasi agen di sana, merge balik ke `dev`, lalu memeriksa keduanya | `strip-ai=yes` | Produksi tidak membawa instruksi agen |
 | `react-doctor.yml` (fe-nextjs, fe-nextjs-static, docs-nextra; opsional) | Komentar React Doctor yang bersifat saran di PR; action milik vendor melapor ke layanan skornya | Pertanyaan setup (disarankan **no**) | Tidak pernah menggagalkan pemeriksaan |
 | `changelog.yaml`, `ci-cd.yaml` (docs-nextra; opsional) | Membuat ulang halaman dokumentasi dan deploy saat merge ke `prod` | Pertanyaan setup | Dokumentasi mengikuti kode |
-| `actions/quality-gate` (repo ini) | Composite action yang dijalankan kelima gate reusable: rencana, instalasi, gate, batas cakupan, pemindaian diff, gitleaks | Dipanggil oleh reusable workflow; lihat [README-nya](actions/quality-gate/README.md) | Satu implementasi teruji di balik gate setiap stack |
+| `actions/quality-gate` (repo ini) | Composite action yang dijalankan kedelapan gate reusable: rencana, instalasi, gate, batas cakupan, pemindaian diff, gitleaks | Dipanggil oleh reusable workflow; lihat [README-nya](actions/quality-gate/README.md) | Satu implementasi teruji di balik gate setiap stack |
 | `actions/deepseek-review`, `actions/deploy-webhook`, `actions/strip-ai` (repo ini) | Langkah di balik review, deploy, dan pembersihan | Dipanggil oleh reusable workflow; lihat README-nya: [review](actions/deepseek-review/README.md), [deploy](actions/deploy-webhook/README.md), [strip](actions/strip-ai/README.md) | Diuji dengan bats terhadap tiruan HTTPS lokal |
 | `self-test.yml` (repo ini) | validate `--strict`, katalog dan versi, ShellCheck, bats di macOS dan Ubuntu, lint workflow, gitleaks, pasangan README | Berjalan di setiap PR di sini | Kit menguji dirinya dengan cara yang sama |
 
@@ -2047,8 +2055,10 @@ mengubahnya, dan pull request dari fork tidak pernah dikirim.
 ## CI: workflow yang dapat dipakai ulang
 
 Setiap stack punya quality gate reusable di repo ini: `fe-nextjs-quality-gate.yml`,
-`fe-nextjs-static-quality-gate.yml`, `be-hono-quality-gate.yml`, `ai-fastapi-quality-gate.yml`, dan
-`docs-nextra-quality-gate.yml`. Pertanyaan `ci-gate` saat setup memasang pemanggil seperti ini
+`fe-nextjs-static-quality-gate.yml`, `be-hono-quality-gate.yml`, `ai-fastapi-quality-gate.yml`,
+`docs-nextra-quality-gate.yml`, `be-go-quality-gate.yml`, `be-axum-quality-gate.yml`, dan
+`ios-swiftui-quality-gate.yml` (job Linux untuk pemeriksaan statis, lalu build macOS, lalu satu
+check gabungan). Pertanyaan `ci-gate` saat setup memasang pemanggil seperti ini
 (semua input opsional):
 
 ```yaml
@@ -2127,7 +2137,7 @@ checkout sama sekali, dan strip melakukan checkout branch produksi tanpa menyimp
   diam saat gagal.
 - **Setiap aturan dibuktikan dua arah.** 845 baris probe menyatakan apa yang wajib diblokir
   safety-check (569) dan apa yang wajib diloloskan (276); harness probe milik kit menjalankan 2.288
-  probe terhadap skrip plugin; 1.563 tes bats mencakup hook, mesin setup, pemeriksa stack, dan skrip
+  probe terhadap skrip plugin; 1.997 tes bats mencakup hook, mesin setup, pemeriksa stack, dan skrip
   CI, di macOS (bash 3.2) dan Ubuntu. Silakan audit: [tests/hooks/](tests/hooks/safety-probes.bats),
   [tests/setup/](tests/setup/check.bats).
 - **Tidak ada yang dipasang diam-diam.** Setup menampilkan draf, baru menulis setelah **go**, tidak
@@ -2152,8 +2162,8 @@ Diukur di Apple M5 dengan `/bin/bash` 3.2 macOS dan python3 3.14, median dari 25
 | db-guard, mcp-guard, post-edit (tanpa formatter terpasang) | sekitar 70 ms masing-masing |
 | post-commit, prompt-intent, session-start, setup-check | sekitar 42–62 ms |
 | Blok `CLAUDE.md` yang ditambahkan setup (agent-core + agent-fe-nextjs) | 1.498 byte, 25 baris |
-| Konteks yang selalu dimuat setelah setup baru (`CLAUDE.md` starter + blok + aturan tanpa `paths`) | agent-core 5,5 KB, fe-nextjs 14,2 KB, fe-nextjs-static 9,2 KB, be-hono 14,7 KB, ai-fastapi 13,8 KB, docs-nextra 13,5 KB; `ai-config.sh` gagal di atas 15.000 byte |
-| Deskripsi perintah, agen, dan skill yang didaftar Claude Code | agent-core 3,9 KB; tiap plugin stack 0,3–2,5 KB |
+| Konteks yang selalu dimuat setelah setup baru (`CLAUDE.md` starter + blok + aturan tanpa `paths`) | agent-core 5,5 KB, fe-nextjs 14,5 KB, fe-nextjs-static 9,3 KB, be-hono 14,7 KB, ai-fastapi 13,8 KB, docs-nextra 13,8 KB, be-go 6,5 KB, be-axum 6,6 KB, ios-swiftui 6,5 KB; `ai-config.sh` gagal di atas 15.000 byte |
+| Deskripsi perintah, agen, dan skill yang didaftar Claude Code | agent-core 4,5 KB; tiap plugin stack 0,3–2,5 KB |
 | CI | hanya berjalan di pull request; tidak ada saat push, tidak ada jadwal |
 | Review DeepSeek yang opsional | biasanya satu atau dua sen per pull request, paling banyak sekitar sepuluh sen dolar AS (diff dan jawabannya dibatasi); setiap komentar menampilkan tokennya |
 
