@@ -203,7 +203,9 @@ for reduced motion, they show a still picture instead.
 
 - use Claude Code (the CLI or an IDE extension) on real repositories, alone or in a team;
 - build with one of the supported stacks: a Next.js app, a static Next.js site, a Bun + Hono +
-  Drizzle API, a FastAPI + LLM service, or a Nextra docs site;
+  Drizzle API, a FastAPI + LLM service, or a Nextra docs site; or try an experimental one (0.x,
+  names and rules may still change): a Go service or a Rust + Axum API on PostgreSQL, or a SwiftUI
+  iOS app;
 - want refusals you can trust, and a setup you can read before it writes anything.
 
 **Not a fit if you:**
@@ -222,13 +224,16 @@ Every repo gets **agent-core** plus **one** stack plugin. The two add-ons are op
 ```mermaid
 flowchart TD
     accTitle: Which plugin to install
-    accDescr: Start from what your repo is. A Next.js web app with an API uses agent-fe-nextjs. A company profile or landing site uses agent-fe-nextjs-static. A Bun and Hono API uses agent-be-hono. A FastAPI service with LLM providers uses agent-ai-fastapi. A Nextra docs site uses agent-docs-nextra. Anything else uses agent-core alone. Add agent-fe-threejs for 3D scenes and agent-deploy for deploy checks.
+    accDescr: Start from what your repo is. A Next.js web app with an API uses agent-fe-nextjs. A company profile or landing site uses agent-fe-nextjs-static. A Bun and Hono API uses agent-be-hono. A FastAPI service with LLM providers uses agent-ai-fastapi. A Nextra docs site uses agent-docs-nextra. Experimental: a Go service on PostgreSQL uses agent-be-go, a Rust and Axum service on PostgreSQL uses agent-be-axum, and a SwiftUI iOS app uses agent-ios-swiftui. Anything else uses agent-core alone. Add agent-fe-threejs for 3D scenes and agent-deploy for deploy checks.
     Q{What is this repo?}
     Q -->|Next.js web app with an API| FE[agent-fe-nextjs]
     Q -->|Company profile or landing site| ST[agent-fe-nextjs-static]
     Q -->|Bun + Hono + Drizzle API| BE[agent-be-hono]
     Q -->|FastAPI service with LLM providers| AI[agent-ai-fastapi]
     Q -->|Nextra docs site| DOCS[agent-docs-nextra]
+    Q -->|Go service on PostgreSQL, experimental| GO[agent-be-go]
+    Q -->|Rust + Axum service on PostgreSQL, experimental| RS[agent-be-axum]
+    Q -->|SwiftUI iOS app, experimental| IOS[agent-ios-swiftui]
     Q -->|Something else| CORE[agent-core alone]
     X([Optional, next to any stack plugin]) -.->|3D scenes| TJ[+ agent-fe-threejs]
     X -.->|deploy checks| DEP[+ agent-deploy]
@@ -236,12 +241,15 @@ flowchart TD
 
 | Plugin | For | Adds on top of agent-core |
 | --- | --- | --- |
-| [agent-core](plugins/agent-core/README.md) | every repo (required) | 7 hooks and a setup reminder, 16 commands, 2 agents, the setup engine |
+| [agent-core](plugins/agent-core/README.md) | every repo (required) | 7 hooks and a setup reminder, 16 commands, 3 agents, the setup engine |
 | [agent-fe-nextjs](plugins/agent-fe-nextjs/README.md) | Next.js app with a generated API client | generated-guard, 5 commands, 3 agents, 2 skills |
 | [agent-fe-nextjs-static](plugins/agent-fe-nextjs-static/README.md) | company profile, landing page | 6 commands, 3 agents, 11 site checks |
 | [agent-be-hono](plugins/agent-be-hono/README.md) | Bun + Hono + Drizzle API | migration-guard, reviewer, backend gates |
 | [agent-ai-fastapi](plugins/agent-ai-fastapi/README.md) | FastAPI + LLM providers, uv | migration-guard, AI-service reviewer |
 | [agent-docs-nextra](plugins/agent-docs-nextra/README.md) | Nextra documentation site | generated-guard, security and SEO reviewers |
+| [agent-be-go](plugins/agent-be-go/README.md) | experimental: Go HTTP service on PostgreSQL | migration-guard (append-only), generated-guard, reviewer, 2 skills |
+| [agent-be-axum](plugins/agent-be-axum/README.md) | experimental: Rust + Axum service on PostgreSQL | migration-guard (append-only), generated-guard, reviewer, 2 skills |
+| [agent-ios-swiftui](plugins/agent-ios-swiftui/README.md) | experimental: SwiftUI iOS app | generated-guard, 3 commands, 2 agents, 2 skills |
 | [agent-fe-threejs](plugins/agent-fe-threejs/README.md) | add-on: three.js / React Three Fiber | 3D rule and asset budget check |
 | [agent-deploy](plugins/agent-deploy/README.md) | add-on: any host | outside deploy smoke test, fallback promotion |
 
@@ -384,7 +392,7 @@ update to the plugin updates them. Every file of every plugin, one by one, is in
 ```mermaid
 flowchart TB
     accTitle: How agent-config-kit fits together
-    accDescr: The marketplace holds eight plugins. agent-core holds the hooks, commands and the setup engine. Stack plugins depend on agent-core and add their own hooks, commands, agents and templates. Setup installs templates into your repo and writes a lock. The lock opts the repo in, which turns the hooks on. Sync compares the repo with the lock. In CI, the repo's quality gate caller runs a reusable workflow from this repository, pinned to a commit.
+    accDescr: The marketplace holds eleven plugins. agent-core holds the hooks, commands and the setup engine. Stack plugins depend on agent-core and add their own hooks, commands, agents and templates. Setup installs templates into your repo and writes a lock. The lock opts the repo in, which turns the hooks on. Sync compares the repo with the lock. In CI, the repo's quality gate caller runs a reusable workflow from this repository, pinned to a commit.
     subgraph KIT[agent-config-kit marketplace]
         CORE[agent-core<br/>hooks, commands, setup engine]
         STACK[stack plugin<br/>its hook, commands, agents, templates]
@@ -671,7 +679,7 @@ no token.
 
 | Name | What it does | How to use | Why it helps |
 | --- | --- | --- | --- |
-| `<stack>-quality-gate.yml` (five reusable workflows in this repo) | Install from the lockfile, run `gates.list`, coverage floor, committed `.env`, unsafe-HTML/`eval`/URL-scheme scans on added lines, gitleaks, audit, SkillSpector, build, source maps, stack extras | Setup installs a caller; see [CI](#ci-reusable-workflows) | One gate, many repos, one pin |
+| `<stack>-quality-gate.yml` (eight reusable workflows in this repo) | Install from the lockfile, run `gates.list`, coverage floor, committed `.env`, unsafe-HTML/`eval`/URL-scheme scans on added lines, gitleaks, audit, SkillSpector, build, source maps, stack extras | Setup installs a caller; see [CI](#ci-reusable-workflows) | One gate, many repos, one pin |
 | `deepseek-review.yml`, `deploy-webhook.yml`, `strip-ai.yml` (reusable, this repo) | The AI review, the deploy on merge and the agent-config strip behind the callers below | Setup installs the callers; see [CI](#ci-reusable-workflows) | One tested implementation, pinned by every caller |
 | `.github/workflows/quality-gate.y*ml` (in your repo) | The small caller of your stack's gate, on pull requests | Installed by setup (the `ci-gate` question where there is one) | Nothing to copy by hand |
 | `codeql.yml`, `dependency-review.yml`, `workflows-lint.yml` (core, in your repo) | CodeQL on PRs; new vulnerable or badly licensed dependencies; actionlint, zizmor and pinact on workflow changes | Installed by agent-core's setup | Supply-chain checks without schedulers |
@@ -680,7 +688,7 @@ no token.
 | `strip-ai.yml` (deploy; optional) | After a merge into `prod`, removes the agent config there, merges back into `dev`, verifies both | `strip-ai=yes` | Production carries no agent instructions |
 | `react-doctor.yml` (fe-nextjs, fe-nextjs-static, docs-nextra; optional) | Advisory React Doctor comments on PRs; the vendor's action reports to its score service | Setup question (recommended **no**) | Never fails the check |
 | `changelog.yaml`, `ci-cd.yaml` (docs-nextra; optional) | Regenerate docs pages and deploy on a merge into `prod` | Setup question | Docs follow the code |
-| `actions/quality-gate` (this repo) | The composite action the five reusable gates run: plan, install, gates, coverage floor, diff scans, gitleaks | Called by the reusable workflows; see its [README](actions/quality-gate/README.md) | One tested implementation behind every stack's gate |
+| `actions/quality-gate` (this repo) | The composite action the eight reusable gates run: plan, install, gates, coverage floor, diff scans, gitleaks | Called by the reusable workflows; see its [README](actions/quality-gate/README.md) | One tested implementation behind every stack's gate |
 | `actions/deepseek-review`, `actions/deploy-webhook`, `actions/strip-ai` (this repo) | The steps behind the review, the deploy and the strip | Called by the reusable workflows; see their READMEs: [review](actions/deepseek-review/README.md), [deploy](actions/deploy-webhook/README.md), [strip](actions/strip-ai/README.md) | Tested with bats against a local HTTPS stand-in |
 | `self-test.yml` (this repo) | validate `--strict`, catalog and versions, ShellCheck, bats on macOS and Ubuntu, workflow lint, gitleaks, README pair | Runs on every PR here | The kit tests itself the same way |
 
@@ -2030,8 +2038,10 @@ and a fork's pull request is never sent.
 ## CI: reusable workflows
 
 Each stack has a reusable quality gate in this repo: `fe-nextjs-quality-gate.yml`,
-`fe-nextjs-static-quality-gate.yml`, `be-hono-quality-gate.yml`, `ai-fastapi-quality-gate.yml` and
-`docs-nextra-quality-gate.yml`. Setup's `ci-gate` question installs a caller like this one (every
+`fe-nextjs-static-quality-gate.yml`, `be-hono-quality-gate.yml`, `ai-fastapi-quality-gate.yml`,
+`docs-nextra-quality-gate.yml`, `be-go-quality-gate.yml`, `be-axum-quality-gate.yml` and
+`ios-swiftui-quality-gate.yml` (a Linux job for the static checks, then the macOS build, then one
+aggregate check). Setup's `ci-gate` question installs a caller like this one (every
 input is optional):
 
 ```yaml
@@ -2103,7 +2113,7 @@ the strip checks out the production branch without keeping the token.
   through. So each guard refuses what it cannot check (bad input, missing python3, a hang), and
   each feedback hook stays silent on failure.
 - **Every rule is proven both ways.** 845 probe rows say what safety-check must block (569) and let
-  through (276); the kit's own probe harness runs 2,288 probes against the plugin's scripts; 1,563
+  through (276); the kit's own probe harness runs 2,288 probes against the plugin's scripts; 1,997
   bats tests cover the hooks, the setup engine, the stack checks and the CI scripts, on macOS
   (bash 3.2) and Ubuntu. Audit them: [tests/hooks/](tests/hooks/safety-probes.bats),
   [tests/setup/](tests/setup/check.bats).
@@ -2128,8 +2138,8 @@ Measured on an Apple M5 with macOS `/bin/bash` 3.2 and python3 3.14, median of 2
 | db-guard, mcp-guard, post-edit (no formatter installed) | about 70 ms each |
 | post-commit, prompt-intent, session-start, setup-check | about 42–62 ms |
 | The `CLAUDE.md` block setup adds (agent-core + agent-fe-nextjs) | 1,498 bytes, 25 lines |
-| Always-loaded context after a fresh setup (starter `CLAUDE.md` + block + unscoped rules) | agent-core 5.5 KB, fe-nextjs 14.2 KB, fe-nextjs-static 9.2 KB, be-hono 14.7 KB, ai-fastapi 13.8 KB, docs-nextra 13.5 KB; `ai-config.sh` fails above 15,000 bytes |
-| Command, agent and skill descriptions Claude Code lists | agent-core 3.9 KB; each stack plugin 0.3–2.5 KB |
+| Always-loaded context after a fresh setup (starter `CLAUDE.md` + block + unscoped rules) | agent-core 5.5 KB, fe-nextjs 14.5 KB, fe-nextjs-static 9.3 KB, be-hono 14.7 KB, ai-fastapi 13.8 KB, docs-nextra 13.8 KB, be-go 6.5 KB, be-axum 6.6 KB, ios-swiftui 6.5 KB; `ai-config.sh` fails above 15,000 bytes |
+| Command, agent and skill descriptions Claude Code lists | agent-core 4.5 KB; each stack plugin 0.3–2.5 KB |
 | CI | runs only on pull requests; nothing on push, nothing on a schedule |
 | The optional DeepSeek review | usually a cent or two a pull request, at most about ten US cents (the diff and the answer are capped); each comment shows its tokens |
 
