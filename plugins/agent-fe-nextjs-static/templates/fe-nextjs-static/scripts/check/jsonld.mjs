@@ -1,15 +1,19 @@
 #!/usr/bin/env node
-// Structured data in the built pages: every <script type="application/ld+json"> parses as JSON,
-// names schema.org as its @context, gives every node a @type, carries the minimum properties this
-// kit asks of common types, and uses absolute URLs. It proves the markup is well formed; it does
-// not promise a rich result. Rule: .claude/rules/web/seo.md. Runs after `next build`.
-//
-//   node scripts/check/jsonld.mjs [--dir out] [--root .] [--config scripts/check/site.config.json]
+/**
+ * Structured data in the built pages: every <script type="application/ld+json"> parses as JSON,
+ * names schema.org as its @context, gives every node a @type, carries the minimum properties this
+ * kit asks of common types, and uses absolute URLs. It proves the markup is well formed; it does
+ * not promise a rich result. Rule: .claude/rules/web/seo.md. Runs after `next build`.
+ *
+ *   node scripts/check/jsonld.mjs [--dir out] [--root .] [--config scripts/check/site.config.json]
+ */
 import { readFileSync } from 'node:fs';
 import { openSite, parseHtml, run } from './lib/site.mjs';
 
-// The kit's minimum per type: what a reader of the data needs to identify the thing. Search
-// engines document more for specific features; check those with their own validators.
+/**
+ * The kit's minimum per type: what a reader of the data needs to identify the thing. Search
+ * engines document more for specific features; check those with their own validators.
+ */
 const REQUIRED = {
   Organization: ['name', 'url'],
   Corporation: ['name', 'url'],

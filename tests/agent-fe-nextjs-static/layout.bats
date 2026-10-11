@@ -237,7 +237,7 @@ PY
 
 @test "every check script parses, documents its usage, and site-audit runs only checks that exist" {
   for f in "$CHECKS"/*.mjs "$CHECKS"/lib/*.mjs; do node --check "$f"; done
-  for f in "$CHECKS"/*.mjs; do grep -q "^//   node scripts/check/$(basename "$f")" "$f"; done
+  for f in "$CHECKS"/*.mjs; do grep -q "^ \*   node scripts/check/$(basename "$f")" "$f"; done
   run -0 python3 - "$CHECKS" <<'PY'
 import os, re, sys
 d = sys.argv[1]

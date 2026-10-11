@@ -1,18 +1,20 @@
 #!/usr/bin/env node
-// Keeps a static site static, from the source (no build needed; fast enough for pre-commit).
-//
-// export mode (next.config sets output: 'export'): refuses what `next build` either rejects late
-// or drops without failing: a proxy/middleware file, headers()/redirects()/rewrites() in
-// next.config, route handlers other than a force-static GET, server actions, request-time APIs
-// (cookies(), headers(), draftMode(), searchParams in a server page), force-dynamic, ISR
-// revalidate, dynamicParams = true, a dynamic segment without generateStaticParams, next/image
-// without an export-safe loader, and a missing not-found page.
-// ssg-with-endpoints mode: pages stay prerendered (no force-dynamic, request-time APIs or
-// dynamic segments without generateStaticParams); route handlers, server actions and request-time
-// APIs live only under the `endpoints` globs of scripts/check/site.config.json.
-// Also warns about app machinery a brochure site does not need. Rule: .claude/rules/web/static-export.md.
-//
-//   node scripts/check/static-export.mjs [--mode export|ssg-with-endpoints] [--root .] [--config FILE]
+/**
+ * Keeps a static site static, from the source (no build needed; fast enough for pre-commit).
+ *
+ * export mode (next.config sets output: 'export'): refuses what `next build` either rejects late
+ * or drops without failing: a proxy/middleware file, headers()/redirects()/rewrites() in
+ * next.config, route handlers other than a force-static GET, server actions, request-time APIs
+ * (cookies(), headers(), draftMode(), searchParams in a server page), force-dynamic, ISR
+ * revalidate, dynamicParams = true, a dynamic segment without generateStaticParams, next/image
+ * without an export-safe loader, and a missing not-found page.
+ * ssg-with-endpoints mode: pages stay prerendered (no force-dynamic, request-time APIs or
+ * dynamic segments without generateStaticParams); route handlers, server actions and request-time
+ * APIs live only under the `endpoints` globs of scripts/check/site.config.json.
+ * Also warns about app machinery a brochure site does not need. Rule: .claude/rules/web/static-export.md.
+ *
+ *   node scripts/check/static-export.mjs [--mode export|ssg-with-endpoints] [--root .] [--config FILE]
+ */
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
 import {
@@ -68,7 +70,7 @@ run('static-export', ({ args, root, cfg, report }) => {
     return sources.get(f);
   };
 
-  // next.config
+  /* next.config */
   if (exportMode && nc) {
     for (const key of ['headers', 'redirects', 'rewrites']) {
       if (new RegExp(`\\b(async\\s+)?${key}\\s*(\\(|:)`).test(nc.text)) {
@@ -93,7 +95,7 @@ run('static-export', ({ args, root, cfg, report }) => {
     );
   }
 
-  // proxy / middleware
+  /* proxy / middleware */
   for (const base of ['', 'src/']) {
     for (const name of ['middleware', 'proxy']) {
       for (const ext of ['ts', 'js', 'mjs', 'tsx']) {
@@ -113,7 +115,7 @@ run('static-export', ({ args, root, cfg, report }) => {
     }
   }
 
-  // The app tree: special files, dynamic segments, not-found.
+  /* The app tree: special files, dynamic segments, not-found. */
   const appFiles = appDirs.flatMap((d) =>
     filesUnder(d, ['node_modules'])
       .filter((f) => CODE.test(f) || f.endsWith('.mdx'))
@@ -189,8 +191,8 @@ run('static-export', ({ args, root, cfg, report }) => {
       );
     }
 
-    // Dynamic segments between the app root and this page need generateStaticParams in the page
-    // or in a layout at or below the segment.
+    /* Dynamic segments between the app root and this page need generateStaticParams in the page
+       or in a layout at or below the segment. */
     if (
       !endpoint &&
       (/^(page|route)\./.test(name) ||
@@ -220,7 +222,7 @@ run('static-export', ({ args, root, cfg, report }) => {
     }
   }
 
-  // Server actions and request-time APIs anywhere in the source.
+  /* Server actions and request-time APIs anywhere in the source. */
   for (const f of sourceFiles(root)) {
     if (!CODE.test(f) || basename(f).startsWith('next.config')) continue;
     const src = read(f);

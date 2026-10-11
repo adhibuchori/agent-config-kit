@@ -1,11 +1,13 @@
 #!/usr/bin/env node
-// Font budget: at most fonts.maxFamilies families (default 2), self-hosted (no third-party font
-// requests), with the file count, total size, static weights and formats kept in check.
-//   --source (or no build): reads next/font imports, localFont() calls and @font-face in the source.
-//   with a build: reads the @font-face rules of the built CSS and the files they load.
-// Rule: .claude/rules/web/performance.md. Budgets: fonts.* in scripts/check/site.config.json.
-//
-//   node scripts/check/font-budget.mjs [--source] [--dir out] [--root .] [--config FILE]
+/**
+ * Font budget: at most fonts.maxFamilies families (default 2), self-hosted (no third-party font
+ * requests), with the file count, total size, static weights and formats kept in check.
+ *   --source (or no build): reads next/font imports, localFont() calls and @font-face in the source.
+ *   with a build: reads the @font-face rules of the built CSS and the files they load.
+ * Rule: .claude/rules/web/performance.md. Budgets: fonts.* in scripts/check/site.config.json.
+ *
+ *   node scripts/check/font-budget.mjs [--source] [--dir out] [--root .] [--config FILE]
+ */
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import {
@@ -58,7 +60,7 @@ function fromBuild(site, root, cfg, report) {
   const files = new Map();
   for (const css of cssFiles) {
     for (const face of fontFaces(readFileSync(css, 'utf8'))) {
-      if (!face.urls.length) continue; // a local() fallback face downloads nothing
+      if (!face.urls.length) continue; /* a local() fallback face downloads nothing */
       const entry = families.get(face.family) || {
         weights: new Set(),
         where: toPosix(relative(root, css)),

@@ -1,12 +1,14 @@
 #!/usr/bin/env node
-// Runs every static-site check against the built site and prints one table: the post-build gate
-// (CI after `next build`, /agent-fe-nextjs-static:seo-audit and :launch-checklist). Each check can
-// also run alone; see its header. The browser checks (a11y.mjs, Lighthouse CI) are not in this
-// list: they need a checker installed and a browser, so they run on their own.
-//
-//   node scripts/check/site-audit.mjs [--only a,b] [--env production|preview] [--dir out] [--root .] [--config FILE]
-//
-// Exit: 0 every check passed (warnings allowed), 1 a check failed, 2 a check could not run.
+/**
+ * Runs every static-site check against the built site and prints one table: the post-build gate
+ * (CI after `next build`, /agent-fe-nextjs-static:seo-audit and :launch-checklist). Each check can
+ * also run alone; see its header. The browser checks (a11y.mjs, Lighthouse CI) are not in this
+ * list: they need a checker installed and a browser, so they run on their own.
+ *
+ *   node scripts/check/site-audit.mjs [--only a,b] [--env production|preview] [--dir out] [--root .] [--config FILE]
+ *
+ * Exit: 0 every check passed (warnings allowed), 1 a check failed, 2 a check could not run.
+ */
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

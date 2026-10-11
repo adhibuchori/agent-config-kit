@@ -1,32 +1,34 @@
 #!/usr/bin/env node
-// Keeps versions, the changelog, the marketplace and the release tags in agreement.
-//
-//   node scripts/version-sync.mjs                  copy each plugin.json description into its
-//                                                  marketplace entry (the one derived field), then check
-//   node scripts/version-sync.mjs --check          check only; never writes
-//   node scripts/version-sync.mjs --check --base <ref>
-//                                                  also: every plugin changed since <ref> has a higher
-//                                                  version than at <ref>, and CHANGELOG.md changed
-//   --root DIR                                     the repository to read (default: this script's)
-//
-// What agrees with what:
-//   - plugin.json `version` is the single source, X.Y.Z. Marketplace entries carry no version
-//     (`claude plugin tag` reads plugin.json and accepts that), and their description equals
-//     plugin.json's.
-//   - Every plugin except agent-core depends on agent-core.
-//   - CHANGELOG.md (Keep a Changelog 1.1.0): `## [Unreleased]` first, then repository releases
-//     `## [X.Y.Z] - YYYY-MM-DD`, newest first. Every plugin's current version has a
-//     `### <plugin> <version>` heading.
-//   - Tags: a plugin release is tagged `<plugin>--vX.Y.Z` (claude plugin tag); a local tag newer than
-//     plugin.json means the manifest fell behind a release. The reusable workflows are released as
-//     `vX.Y.Z`: every template's call to them pins a `# vX.Y.Z` comment that must be a release in
-//     CHANGELOG.md (a warning when it is not the newest).
-//   - With --base: a change to actions/ or to a reusable workflow (one with workflow_call) also needs
-//     a CHANGELOG entry.
-//   - A caller pinned to the all-zero placeholder (before its release commit exists) names the coming
-//     release: the newest in CHANGELOG.md (the release being cut) or a newer one, never an older one.
-//
-// Node 20 or newer, no dependencies. Exit 0 clean, 1 out of sync, 2 usage or unreadable input.
+/**
+ * Keeps versions, the changelog, the marketplace and the release tags in agreement.
+ *
+ *   node scripts/version-sync.mjs                  copy each plugin.json description into its
+ *                                                  marketplace entry (the one derived field), then check
+ *   node scripts/version-sync.mjs --check          check only; never writes
+ *   node scripts/version-sync.mjs --check --base <ref>
+ *                                                  also: every plugin changed since <ref> has a higher
+ *                                                  version than at <ref>, and CHANGELOG.md changed
+ *   --root DIR                                     the repository to read (default: this script's)
+ *
+ * What agrees with what:
+ *   - plugin.json `version` is the single source, X.Y.Z. Marketplace entries carry no version
+ *     (`claude plugin tag` reads plugin.json and accepts that), and their description equals
+ *     plugin.json's.
+ *   - Every plugin except agent-core depends on agent-core.
+ *   - CHANGELOG.md (Keep a Changelog 1.1.0): `## [Unreleased]` first, then repository releases
+ *     `## [X.Y.Z] - YYYY-MM-DD`, newest first. Every plugin's current version has a
+ *     `### <plugin> <version>` heading.
+ *   - Tags: a plugin release is tagged `<plugin>--vX.Y.Z` (claude plugin tag); a local tag newer than
+ *     plugin.json means the manifest fell behind a release. The reusable workflows are released as
+ *     `vX.Y.Z`: every template's call to them pins a `# vX.Y.Z` comment that must be a release in
+ *     CHANGELOG.md (a warning when it is not the newest).
+ *   - With --base: a change to actions/ or to a reusable workflow (one with workflow_call) also needs
+ *     a CHANGELOG entry.
+ *   - A caller pinned to the all-zero placeholder (before its release commit exists) names the coming
+ *     release: the newest in CHANGELOG.md (the release being cut) or a newer one, never an older one.
+ *
+ * Node 20 or newer, no dependencies. Exit 0 clean, 1 out of sync, 2 usage or unreadable input.
+ */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -79,7 +81,9 @@ function cmp(a, b) {
   return 0;
 }
 
-// ── Manifests ────────────────────────────────────────────────────────────────────────────────
+/**
+ * ── Manifests ────────────────────────────────────────────────────────────────────────────────
+ */
 const marketplacePath = join(root, '.claude-plugin', 'marketplace.json');
 if (!existsSync(marketplacePath)) usage(`${marketplacePath} not found`);
 const marketplaceRaw = readFileSync(marketplacePath, 'utf8');
@@ -115,7 +119,9 @@ if (rewrote) {
   console.log('version-sync: copied plugin.json descriptions into marketplace.json');
 }
 
-// ── CHANGELOG.md ─────────────────────────────────────────────────────────────────────────────
+/**
+ * ── CHANGELOG.md ─────────────────────────────────────────────────────────────────────────────
+ */
 const changelogPath = join(root, 'CHANGELOG.md');
 const releases = [];
 if (!existsSync(changelogPath)) {
@@ -146,7 +152,9 @@ if (!existsSync(changelogPath)) {
   }
 }
 
-// ── Tags ─────────────────────────────────────────────────────────────────────────────────────
+/**
+ * ── Tags ─────────────────────────────────────────────────────────────────────────────────────
+ */
 let tags = [];
 try {
   tags = git('tag', '--list').split('\n').filter(Boolean);
@@ -162,7 +170,9 @@ for (const p of plugins) {
   }
 }
 
-// The version comment of every call to this repository's reusable workflows is a release.
+/**
+ * The version comment of every call to this repository's reusable workflows is a release.
+ */
 const releaseSet = new Set(releases.map((r) => r.version));
 const newest = releases[0]?.version;
 const pluginsDir = join(root, 'plugins');
@@ -176,9 +186,9 @@ if (existsSync(pluginsDir)) {
       for (const f of readdirSync(wdir).filter((f) => /\.ya?ml$/.test(f))) {
         const rel = `plugins/${p}/templates/${stack}/.github/workflows/${f}`;
         for (const [, sha, version] of readFileSync(join(wdir, f), 'utf8').matchAll(CALL)) {
-          // The all-zero placeholder names the release whose commit will replace it (RELEASING.md):
-          // the coming release, or in the release pull request itself the release being cut, never
-          // an older one.
+          /* The all-zero placeholder names the release whose commit will replace it (RELEASING.md):
+             the coming release, or in the release pull request itself the release being cut, never
+             an older one. */
           if (sha === PLACEHOLDER) {
             if (!SEMVER.test(version) || (newest && cmp(version, newest) < 0)) {
               problem(`${rel}: the placeholder pin names # v${version}; it must name the coming release, not one older than v${newest}`);
@@ -191,7 +201,7 @@ if (existsSync(pluginsDir)) {
   }
 }
 
-// ── Against the base ─────────────────────────────────────────────────────────────────────────
+/* ── Against the base ───────────────────────────────────────────────────────────────────────── */
 if (base !== null) {
   let changed;
   try {
@@ -211,13 +221,13 @@ if (base !== null) {
     try {
       before = JSON.parse(git('show', `${base}:${prefix}.claude-plugin/plugin.json`)).version;
     } catch {
-      continue; // new since base: its first version needs no bump
+      continue; /* new since base: its first version needs no bump */
     }
     if (SEMVER.test(String(before)) && SEMVER.test(p.version) && cmp(p.version, before) <= 0) {
       problem(`plugins/${p.name}: ${touched.length} file(s) changed since ${base} but the version is still ${p.version} (was ${before}); bump it in plugin.json`);
     }
   }
-  // actions/ and the reusable workflows (any .github/workflows file a caller can call) ship to users.
+  /* actions/ and the reusable workflows (any .github/workflows file a caller can call) ship to users. */
   const reusable = (f) => /^\.github\/workflows\/[^/]+\.ya?ml$/.test(f) && existsSync(join(root, f)) && /^\s*workflow_call:/m.test(readFileSync(join(root, f), 'utf8'));
   if (changed.some((f) => f.startsWith('actions/') || reusable(f))) needsChangelog = true;
   if (needsChangelog && !changed.includes('CHANGELOG.md')) {

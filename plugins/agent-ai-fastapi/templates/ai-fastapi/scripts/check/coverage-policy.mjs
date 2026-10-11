@@ -78,8 +78,10 @@ function checkVitest(config) {
         `vitest.config: coverage.thresholds.${metric} is ${value ?? 'missing'}, must be 100`,
       );
   }
-  // Read include and exclude inside the `coverage: {` block, so the test-file globs of
-  // `test.include` are never mistaken for the coverage scope.
+  /**
+   * Read include and exclude inside the `coverage: {` block, so the test-file globs of
+   * `test.include` are never mistaken for the coverage scope.
+   */
   const at = config.search(/\bcoverage\s*:\s*\{/);
   const coverage = at < 0 ? '' : config.slice(at);
   const include = listAfter(coverage, /\binclude\s*:\s*\[/);
@@ -150,9 +152,11 @@ function checkPython(pyproject) {
   const floor = report.match(/^\s*fail_under\s*=\s*([\d.]+)/m)?.[1];
   if (Number(floor) !== 100)
     problems.push(`pyproject.toml: fail_under is ${floor ?? 'missing'}, must be 100`);
-  // Only a live line counts: a comment that mentions pytest and --cov runs nothing. The suite runs
-  // from .pre-commit-config.yaml directly, or from gates.list when pre-commit (or husky) hands the
-  // commit to gates.sh --hook.
+  /**
+   * Only a live line counts: a comment that mentions pytest and --cov runs nothing. The suite runs
+   * from .pre-commit-config.yaml directly, or from gates.list when pre-commit (or husky) hands the
+   * commit to gates.sh --hook.
+   */
   const runsPytest = (path) => active(path).some((l) => /pytest.*--cov/.test(l));
   const hooks = active('.pre-commit-config.yaml');
   const viaGates = [...hooks, ...active(HOOK)].some((l) => /scripts\/check\/gates\.sh\b.*--hook/.test(l));

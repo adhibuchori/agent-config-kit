@@ -1,14 +1,16 @@
 #!/usr/bin/env node
-// Serves the built site on 127.0.0.1 the way a static host would, for the checks that need a
-// browser: a11y.mjs, and Lighthouse CI through lighthouserc.json. It reads both layouts: out/
-// (export) and .next/server/app + .next/static + public/ (ssg-with-endpoints). A path that is not
-// built gets the site's own 404 page with status 404. Text responses are gzipped when the client
-// accepts it, as hosts do, so a lab run measures realistic transfer sizes. It binds 127.0.0.1 only,
-// and it serves pages, not endpoints: route handlers need `next start`.
-//
-//   node scripts/check/serve.mjs [--port 4173] [--dir out] [--root .] [--config FILE]
-//
-// It prints "ready on http://127.0.0.1:<port>/" once it listens, and stops on Ctrl-C or SIGTERM.
+/**
+ * Serves the built site on 127.0.0.1 the way a static host would, for the checks that need a
+ * browser: a11y.mjs, and Lighthouse CI through lighthouserc.json. It reads both layouts: out/
+ * (export) and .next/server/app + .next/static + public/ (ssg-with-endpoints). A path that is not
+ * built gets the site's own 404 page with status 404. Text responses are gzipped when the client
+ * accepts it, as hosts do, so a lab run measures realistic transfer sizes. It binds 127.0.0.1 only,
+ * and it serves pages, not endpoints: route handlers need `next start`.
+ *
+ *   node scripts/check/serve.mjs [--port 4173] [--dir out] [--root .] [--config FILE]
+ *
+ * It prints "ready on http://127.0.0.1:<port>/" once it listens, and stops on Ctrl-C or SIGTERM.
+ */
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { basename, extname } from 'node:path';
@@ -42,8 +44,10 @@ const TYPES = {
   '.pdf': 'application/pdf',
 };
 
-// By extension, as most static hosts decide it. An extension-less file (a generated
-// opengraph-image under export) is served as bytes, which is what such a host sends too.
+/**
+ * By extension, as most static hosts decide it. An extension-less file (a generated
+ * opengraph-image under export) is served as bytes, which is what such a host sends too.
+ */
 const typeFor = (name) => TYPES[extname(name).toLowerCase()] || 'application/octet-stream';
 const COMPRESSIBLE = /^(text\/|application\/(json|xml|manifest\+json)|image\/svg\+xml)/;
 
@@ -81,7 +85,7 @@ export function startServer(site, port = 0) {
       res.writeHead(status, headers);
       res.end(req.method === 'HEAD' ? undefined : body);
     };
-    // A prerendered metadata route in the ssg layout is <name>.body: its type comes from the URL.
+    /* A prerendered metadata route in the ssg layout is <name>.body: its type comes from the URL. */
     if (file) send(200, file, file.endsWith('.body') ? path : file);
     else if (notFound) send(404, notFound.file, notFound.file);
     else {

@@ -8,6 +8,7 @@
 #   |                           | scripts/catalog.mjs --check (README catalog, docs pages, layout);   |
 #   |                           | scripts/version-sync.mjs --check against the pull request's base;   |
 #   |                           | scripts/readme-pair.mjs (README.md and README.id.md change together)|
+#   |                           | scripts/check-comment-style.mjs (JS and TS comments are blocks)     |
 #   | Shell Lint                | ShellCheck -x -S style on every *.sh and bin/ script (pinned image) |
 #   | Bats (macos-15, ubuntu)   | bash 3.2 syntax (/bin/bash -n on macOS) and every test in tests/    |
 #   | fe-nextjs-static Fixtures | the static-site checks against the toy site; a skipped test fails   |
@@ -74,6 +75,10 @@ jobs:
 
       - name: Catalog and layout invariants
         run: node scripts/catalog.mjs --check
+
+      # JavaScript and TypeScript notes are /** */ or /* */; `//` is left to tool directives.
+      - name: Comment style
+        run: node scripts/check-comment-style.mjs
 
       # The base commit comes through env, never as an expression inside the script.
       - name: Version sync

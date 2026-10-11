@@ -1,16 +1,18 @@
 #!/usr/bin/env node
-// Accessibility of the built pages in a real browser. It serves the build on 127.0.0.1 (serve.mjs)
-// and runs the project's own checker over every page that is not an error page:
-//   pa11y-ci   with the axe runner and the standard in a11y.standard (WCAG2AA by default); the
-//              `defaults` of a .pa11yci.json in the project are kept, its `urls` are not used
-//   axe        @axe-core/cli with the WCAG A and AA tags; it needs a ChromeDriver that matches Chrome
-// Nothing is downloaded: the checker must be a dev dependency (node_modules/.bin). An automated
-// checker finds a part of the problems only; /agent-fe-nextjs-static:a11y-audit covers the rest.
-// Rule: AGENTS.md § E (accessibility). Runs after `next build`.
-//
-//   node scripts/check/a11y.mjs [--tool pa11y-ci|axe] [--only /,/about] [--dir out] [--root .] [--config FILE]
-//
-// Exit: 0 no violations, 1 violations, 2 the check could not run (no build, no checker, a crash).
+/**
+ * Accessibility of the built pages in a real browser. It serves the build on 127.0.0.1 (serve.mjs)
+ * and runs the project's own checker over every page that is not an error page:
+ *   pa11y-ci   with the axe runner and the standard in a11y.standard (WCAG2AA by default); the
+ *              `defaults` of a .pa11yci.json in the project are kept, its `urls` are not used
+ *   axe        @axe-core/cli with the WCAG A and AA tags; it needs a ChromeDriver that matches Chrome
+ * Nothing is downloaded: the checker must be a dev dependency (node_modules/.bin). An automated
+ * checker finds a part of the problems only; /agent-fe-nextjs-static:a11y-audit covers the rest.
+ * Rule: AGENTS.md § E (accessibility). Runs after `next build`.
+ *
+ *   node scripts/check/a11y.mjs [--tool pa11y-ci|axe] [--only /,/about] [--dir out] [--root .] [--config FILE]
+ *
+ * Exit: 0 no violations, 1 violations, 2 the check could not run (no build, no checker, a crash).
+ */
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -63,7 +65,7 @@ async function viaPa11y(bin, urls, root, cfg, report) {
   writeFileSync(file, `${JSON.stringify({ defaults, urls }, null, 2)}\n`);
   try {
     const { status, error } = await spawnTool(bin, ['--config', file], root, false);
-    // pa11y-ci exits 2 when a page has errors and 1 when it could not run at all.
+    /* pa11y-ci exits 2 when a page has errors and 1 when it could not run at all. */
     if (status === 2)
       report.error('pa11y-ci', 'reported accessibility errors; its own output lists each one');
     else if (status !== 0)
@@ -77,8 +79,10 @@ async function viaPa11y(bin, urls, root, cfg, report) {
 
 async function viaAxe(bin, urls, root, cfg, report, base) {
   const tags = AXE_TAGS[cfg.a11y.standard] || AXE_TAGS.WCAG2AA;
-  // --stdout prints the results as JSON and exits 0 whatever they hold, so a crash (non-zero) and
-  // a violation (in the JSON) can be told apart; axe's own --exit gives both the same code.
+  /**
+   * --stdout prints the results as JSON and exits 0 whatever they hold, so a crash (non-zero) and
+   * a violation (in the JSON) can be told apart; axe's own --exit gives both the same code.
+   */
   const { status, stdout, error } = await spawnTool(
     bin,
     [...urls, '--tags', tags, '--stdout'],

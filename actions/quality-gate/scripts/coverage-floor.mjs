@@ -69,7 +69,7 @@ if (found.length === 0) {
   console.log(`coverage-floor: no coverage report under ${dirs.join(', ')}`);
   process.exit(3);
 }
-// The newest report is the run that just happened; an older one is left over from a local run.
+/* The newest report is the run that just happened; an older one is left over from a local run. */
 found.sort((a, b) => b.mtime - a.mtime || a.path.localeCompare(b.path));
 const report = found[0].path;
 
@@ -102,7 +102,7 @@ function fromLcov(text) {
       case 'BRF': m.branches.total += Number(value); break;
       case 'BRH': m.branches.covered += Number(value); break;
       case 'end_of_record':
-        // LF/LH when the tool wrote them, otherwise the DA lines.
+        /* LF/LH when the tool wrote them, otherwise the DA lines. */
         m.lines.total += lf ?? da?.total ?? 0;
         m.lines.covered += lh ?? da?.covered ?? 0;
         da = null;
@@ -201,7 +201,7 @@ console.log(`coverage-floor: ${report} (floor ${floor}%)`);
 let below = 0;
 for (const [name, { total, covered }] of measured) {
   const pct = (covered * 100) / total;
-  // Compare in integers: 99.995% must not round up to 100.
+  /* Compare in integers: 99.995% must not round up to 100. */
   const ok = covered * 100 >= floor * total;
   if (!ok) below += 1;
   console.log(`  ${name.padEnd(11)} ${String(covered).padStart(7)} / ${String(total).padEnd(7)} ${pct.toFixed(2).padStart(6)}%  ${ok ? 'ok' : 'BELOW'}`);

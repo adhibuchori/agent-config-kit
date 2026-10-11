@@ -1,6 +1,8 @@
-// Merge the `coverage` block below into the `test` section of your vitest.config.ts.
-// scripts/check/coverage-policy.mjs refuses to pass until coverage asks for 100% on the logic layer
-// and every exclusion carries its reason.
+/**
+ * Merge the `coverage` block below into the `test` section of your vitest.config.ts.
+ * scripts/check/coverage-policy.mjs refuses to pass until coverage asks for 100% on the logic layer
+ * and every exclusion carries its reason.
+ */
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({

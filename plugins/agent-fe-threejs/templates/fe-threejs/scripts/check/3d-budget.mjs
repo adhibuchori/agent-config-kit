@@ -64,7 +64,9 @@ const clean = (text) => {
 };
 const plural = (n, word) => `${n.toLocaleString('en-US')} ${word}${n === 1 ? '' : 's'}`;
 
-// ── arguments and configuration ─────────────────────────────────────────────────────────────────
+/**
+ * ── arguments and configuration ─────────────────────────────────────────────────────────────────
+ */
 
 const args = process.argv.slice(2);
 if (args.includes('-h') || args.includes('--help')) {
@@ -146,7 +148,9 @@ const loadConfig = () => {
 
 const config = loadConfig();
 
-// ── findings ────────────────────────────────────────────────────────────────────────────────────
+/**
+ * ── findings ────────────────────────────────────────────────────────────────────────────────────
+ */
 
 const findings = [];
 const warnings = [];
@@ -177,7 +181,9 @@ const measure = (file, subject, key, value, detail = '') => {
 };
 const unreadable = (subject, reason) => findings.push(`${subject}: unreadable, ${reason}`);
 
-// ── image headers ───────────────────────────────────────────────────────────────────────────────
+/**
+ * ── image headers ───────────────────────────────────────────────────────────────────────────────
+ */
 
 const jpegSize = (b) => {
   let i = 2;
@@ -247,7 +253,9 @@ const checkImage = (file, subject, bytes) => {
   if (size) measure(file, subject, 'texturePx', Math.max(size.width, size.height), ` (${size.width}x${size.height})`);
 };
 
-// ── glTF ────────────────────────────────────────────────────────────────────────────────────────
+/**
+ * ── glTF ────────────────────────────────────────────────────────────────────────────────────────
+ */
 
 const parseGlb = (data) => {
   if (data.length < 20 || data.readUInt32LE(0) !== 0x46546c67) throw new Unreadable('not a glTF binary (no glTF header)');
@@ -364,7 +372,7 @@ const checkModel = (model) => {
     }
     if (!isObject(gltf) || !/^2\./.test(String(gltf.asset?.version ?? ''))) throw new Unreadable('not glTF 2.0 (asset.version)');
 
-    // Bytes: the file, plus every buffer and image file it points at.
+    /* Bytes: the file, plus every buffer and image file it points at. */
     let bytes = data.length;
     const counted = new Set();
     const buffers = [];
@@ -396,7 +404,7 @@ const checkModel = (model) => {
         const buffer = buffers[view?.buffer];
         const start = view?.byteOffset ?? 0;
         if (!view || !buffer || !Number.isInteger(view.byteLength) || start + view.byteLength > buffer.length) {
-          if (view && buffers[view.buffer] === undefined && gltf.buffers?.[view.buffer]?.uri) continue; // remote, warned
+          if (view && buffers[view.buffer] === undefined && gltf.buffers?.[view.buffer]?.uri) continue; /* remote, warned */
           throw new Unreadable(`image ${i} points at bytes the model does not hold`);
         }
         checkImage(model, subject, buffer.subarray(start, start + view.byteLength));
@@ -409,7 +417,7 @@ const checkModel = (model) => {
         else external.push({ i, path: where.path, name });
       }
     }
-    // An image file counts toward every model that uses it, and is checked once however many do.
+    /* An image file counts toward every model that uses it, and is checked once however many do. */
     for (const { i, path, name } of external) {
       const content = readFileSync(path);
       if (!counted.has(path)) bytes += content.length;
@@ -422,7 +430,7 @@ const checkModel = (model) => {
     measure(model, model, 'triangles', renderedTriangles(gltf));
     return images.length;
   } catch (error) {
-    // A malformed file (a field of the wrong type included) is a finding about that file, not a crash.
+    /* A malformed file (a field of the wrong type included) is a finding about that file, not a crash. */
     unreadable(model, clean(error instanceof Unreadable ? error.message : error.code ?? error.message));
     return 0;
   }
@@ -438,7 +446,9 @@ const readOrReport = (path) => {
   }
 };
 
-// ── the scan ────────────────────────────────────────────────────────────────────────────────────
+/**
+ * ── the scan ────────────────────────────────────────────────────────────────────────────────────
+ */
 
 const walk = (dir, out) => {
   const entries = readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
@@ -470,7 +480,7 @@ let imagesInside = 0;
 for (const model of models) imagesInside += checkModel(model);
 let textureCount = 0;
 for (const texture of textures) {
-  if (modelImages.has(texture)) continue; // checked as part of the model that uses it
+  if (modelImages.has(texture)) continue; /* checked as part of the model that uses it */
   textureCount += 1;
   const content = readOrReport(texture);
   if (content) checkImage(texture, texture, content);

@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-// Writes the toy site's binary assets at test time, so the repo holds no binary files:
-//   node make-assets.mjs <site dir>              every image and font stub the fixture needs
-//   node make-assets.mjs --png <file> <w> <h>    one solid PNG of that size
-//   node make-assets.mjs --bytes <file> <kb>     one file of that many KB (a budget breaker)
+/**
+ * Writes the toy site's binary assets at test time, so the repo holds no binary files:
+ *   node make-assets.mjs <site dir>              every image and font stub the fixture needs
+ *   node make-assets.mjs --png <file> <w> <h>    one solid PNG of that size
+ *   node make-assets.mjs --bytes <file> <kb>     one file of that many KB (a budget breaker)
+ */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { deflateSync } from 'node:zlib';
@@ -31,10 +33,10 @@ export function png(width, height) {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 2; // RGB
+  ihdr[8] = 8; /* bit depth */
+  ihdr[9] = 2; /* RGB */
   const row = Buffer.alloc(1 + width * 3, 0x4f);
-  row[0] = 0; // filter: none
+  row[0] = 0; /* filter: none */
   const raw = Buffer.concat(Array.from({ length: height }, () => row));
   return Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
@@ -65,7 +67,7 @@ if (cmd === '--png') {
     write(join(base, 'logo.png'), logo);
   }
   write(join(site, 'out/opengraph-image'), hero);
-  // A font stub: the WOFF2 signature and padding. The checks read names and sizes, not glyphs.
+  /* A font stub: the WOFF2 signature and padding. The checks read names and sizes, not glyphs. */
   write(join(site, 'out/_next/static/media/brand.woff2'), Buffer.concat([Buffer.from('wOF2', 'ascii'), Buffer.alloc(2044)]));
 } else {
   console.error('usage: make-assets.mjs <site dir> | --png <file> <w> <h> | --bytes <file> <kb>');

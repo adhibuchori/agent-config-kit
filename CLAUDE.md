@@ -27,6 +27,8 @@ A Claude Code plugin marketplace: eight plugins under `plugins/`, reusable CI un
   checked shape). No `push:`, `schedule:` or Dependabot.
   Every `uses:` pinned to a full SHA with `# vX.Y.Z`; `contents: read`; `persist-credentials:
   false`; no `secrets: inherit`; no event data in `${{ }}` inside `run:`.
+- JavaScript and TypeScript comments are `/** */` (a file or a declaration) or `/* */`; `//` only
+  for tool directives (`node scripts/check-comment-style.mjs`, `--fix` rewrites).
 - `README.md` and `README.id.md` change together in the same pull request.
 - Contributions are leak-free: no real hostnames, tokens, emails, product names or private repo
   names in code, fixtures, docs or commit messages.
@@ -34,6 +36,7 @@ A Claude Code plugin marketplace: eight plugins under `plugins/`, reusable CI un
 ## Before you open a pull request
 
 `bats -r tests/`, `node scripts/catalog.mjs --check`, `node scripts/version-sync.mjs --check`,
-`markdownlint-cli2` (its globs cover docs, commands, agents and skills) and
-`lychee --offline --hidden` on changed docs. A new guard rule gets a probe that must block and one
-that must pass. Every `.json` file is strict JSON (`jq empty`); notes go in Markdown next to it.
+`node scripts/check-comment-style.mjs`, `markdownlint-cli2` (its globs cover docs, commands, agents
+and skills) and `lychee --offline --hidden` on changed docs. A new guard rule gets a probe that must
+block and one that must pass. Every `.json` file is strict JSON (`jq empty`); notes go in Markdown
+next to it.

@@ -1,13 +1,15 @@
 #!/usr/bin/env node
-// First-load weight of every built page: the JavaScript it runs (same-site <script src> files plus
-// inline scripts) and the CSS it loads (stylesheets plus inline <style>), gzipped at level 6 the way
-// most hosts send them. Each page must stay under bundle.maxJsKB and bundle.maxCssKB from
-// scripts/check/site.config.json. Scripts from other hosts are listed, not measured (no network).
-// --report prints every page's numbers, heaviest first: run it on the first build to see what the
-// framework itself costs, then set the budget to what you ship plus some headroom.
-// Rule: .claude/rules/web/performance.md. Runs after `next build`.
-//
-//   node scripts/check/bundle-budget.mjs [--report] [--dir out] [--root .] [--config FILE]
+/**
+ * First-load weight of every built page: the JavaScript it runs (same-site <script src> files plus
+ * inline scripts) and the CSS it loads (stylesheets plus inline <style>), gzipped at level 6 the way
+ * most hosts send them. Each page must stay under bundle.maxJsKB and bundle.maxCssKB from
+ * scripts/check/site.config.json. Scripts from other hosts are listed, not measured (no network).
+ * --report prints every page's numbers, heaviest first: run it on the first build to see what the
+ * framework itself costs, then set the budget to what you ship plus some headroom.
+ * Rule: .claude/rules/web/performance.md. Runs after `next build`.
+ *
+ *   node scripts/check/bundle-budget.mjs [--report] [--dir out] [--root .] [--config FILE]
+ */
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { onSite, openSite, parseHtml, run, siteUrl, urlPath } from './lib/site.mjs';
