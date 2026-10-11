@@ -206,8 +206,8 @@ gerakan dikurangi (reduced motion), yang tampil adalah gambar diam.
 - memakai Claude Code (CLI atau ekstensi IDE) di repositori sungguhan, sendiri atau bersama tim;
 - membangun dengan salah satu stack yang didukung: aplikasi Next.js, situs Next.js statis, API Bun +
   Hono + Drizzle, layanan FastAPI + LLM, atau situs dokumentasi Nextra; atau mencoba stack
-  eksperimental (0.x, nama dan aturannya masih bisa berubah): layanan Go atau API Rust + Axum di
-  PostgreSQL, atau aplikasi iOS SwiftUI;
+  eksperimental (0.x, nama dan aturannya masih bisa berubah): API Go + net/http + sqlc, API Rust +
+  Axum + sqlx, atau aplikasi iOS SwiftUI;
 - menginginkan penolakan yang bisa dipercaya, dan setup yang bisa Anda baca sebelum ia menulis apa pun.
 
 **Tidak cocok jika Anda:**
@@ -227,15 +227,15 @@ Setiap repo mendapat **agent-core** ditambah **satu** plugin stack. Dua add-on b
 ```mermaid
 flowchart TD
     accTitle: Plugin mana yang dipasang
-    accDescr: Mulai dari jenis repo Anda. Aplikasi web Next.js dengan API memakai agent-fe-nextjs. Situs company profile atau landing page memakai agent-fe-nextjs-static. API Bun dan Hono memakai agent-be-hono. Layanan FastAPI dengan penyedia LLM memakai agent-ai-fastapi. Situs dokumentasi Nextra memakai agent-docs-nextra. Eksperimental: layanan Go di PostgreSQL memakai agent-be-go, layanan Rust dan Axum di PostgreSQL memakai agent-be-axum, dan aplikasi iOS SwiftUI memakai agent-ios-swiftui. Selain itu cukup agent-core. Tambahkan agent-fe-threejs untuk scene 3D dan agent-deploy untuk pemeriksaan deploy.
+    accDescr: Mulai dari jenis repo Anda. Aplikasi web Next.js dengan API memakai agent-fe-nextjs. Situs company profile atau landing page memakai agent-fe-nextjs-static. API Bun, Hono, dan Drizzle memakai agent-be-hono. Layanan FastAPI dengan penyedia LLM memakai agent-ai-fastapi. Situs dokumentasi Nextra memakai agent-docs-nextra. Eksperimental: API Go dengan net/http dan sqlc memakai agent-be-go, API Rust dengan Axum dan sqlx memakai agent-be-axum, dan aplikasi iOS SwiftUI memakai agent-ios-swiftui. Selain itu cukup agent-core. Tambahkan agent-fe-threejs untuk scene 3D dan agent-deploy untuk pemeriksaan deploy.
     Q{Repo ini apa?}
     Q -->|Aplikasi web Next.js dengan API| FE[agent-fe-nextjs]
     Q -->|Company profile atau landing page| ST[agent-fe-nextjs-static]
     Q -->|API Bun + Hono + Drizzle| BE[agent-be-hono]
     Q -->|Layanan FastAPI dengan penyedia LLM| AI[agent-ai-fastapi]
     Q -->|Situs dokumentasi Nextra| DOCS[agent-docs-nextra]
-    Q -->|Layanan Go di PostgreSQL, eksperimental| GO[agent-be-go]
-    Q -->|Layanan Rust + Axum di PostgreSQL, eksperimental| RS[agent-be-axum]
+    Q -->|API Go + net/http + sqlc, eksperimental| GO[agent-be-go]
+    Q -->|API Rust + Axum + sqlx, eksperimental| RS[agent-be-axum]
     Q -->|Aplikasi iOS SwiftUI, eksperimental| IOS[agent-ios-swiftui]
     Q -->|Yang lain| CORE[agent-core saja]
     X([Opsional, di samping plugin stack mana pun]) -.->|scene 3D| TJ[+ agent-fe-threejs]
@@ -244,14 +244,14 @@ flowchart TD
 
 | Plugin | Untuk | Tambahan di atas agent-core |
 | --- | --- | --- |
-| [agent-core](plugins/agent-core/README.md) | setiap repo (wajib) | 7 hook dan satu pengingat setup, 16 perintah, 3 agen, mesin setup |
+| [agent-core](plugins/agent-core/README.md) | setiap repo (wajib) | 7 hook dan satu pengingat setup, 17 perintah, 3 agen, mesin setup |
 | [agent-fe-nextjs](plugins/agent-fe-nextjs/README.md) | aplikasi Next.js dengan klien API hasil generator | generated-guard, 5 perintah, 3 agen, 2 skill |
 | [agent-fe-nextjs-static](plugins/agent-fe-nextjs-static/README.md) | company profile, landing page | 6 perintah, 3 agen, 11 pemeriksaan situs |
 | [agent-be-hono](plugins/agent-be-hono/README.md) | API Bun + Hono + Drizzle | migration-guard, reviewer, gate backend |
 | [agent-ai-fastapi](plugins/agent-ai-fastapi/README.md) | FastAPI + penyedia LLM, uv | migration-guard, reviewer layanan AI |
 | [agent-docs-nextra](plugins/agent-docs-nextra/README.md) | situs dokumentasi Nextra | generated-guard, reviewer keamanan dan SEO |
-| [agent-be-go](plugins/agent-be-go/README.md) | eksperimental: layanan HTTP Go di PostgreSQL | migration-guard (append-only), generated-guard, reviewer, 2 skill |
-| [agent-be-axum](plugins/agent-be-axum/README.md) | eksperimental: layanan Rust + Axum di PostgreSQL | migration-guard (append-only), generated-guard, reviewer, 2 skill |
+| [agent-be-go](plugins/agent-be-go/README.md) | eksperimental: API Go + net/http + sqlc | migration-guard (append-only), generated-guard, reviewer, 2 skill |
+| [agent-be-axum](plugins/agent-be-axum/README.md) | eksperimental: API Rust + Axum + sqlx | migration-guard (append-only), generated-guard, reviewer, 2 skill |
 | [agent-ios-swiftui](plugins/agent-ios-swiftui/README.md) | eksperimental: aplikasi iOS SwiftUI | generated-guard, 3 perintah, 2 agen, 2 skill |
 | [agent-fe-threejs](plugins/agent-fe-threejs/README.md) | add-on: three.js / React Three Fiber | aturan 3D dan pemeriksaan anggaran aset |
 | [agent-deploy](plugins/agent-deploy/README.md) | add-on: host mana pun | smoke test deploy dari luar, promosi cadangan |
