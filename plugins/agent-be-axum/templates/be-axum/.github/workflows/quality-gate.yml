@@ -25,4 +25,4 @@ jobs:
     #   with:
     #     database: false # the schema lives in another repo (setup's migrations=no)
     #     pgbouncer-tests: true # run tests/pooler through PgBouncer in transaction mode
-    uses: adhibuchori/agent-config-kit/.github/workflows/be-axum-quality-gate.yml@0000000000000000000000000000000000000000 # v1.3.0
+    uses: adhibuchori/agent-config-kit/.github/workflows/be-axum-quality-gate.yml@17525e4a63778fdc9ebe8289952c97235dd35690 # v1.3.0

@@ -10,6 +10,32 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-10-11
+
+The quality-gate callers of the three stacks added in 1.3.0 are pinned to its release commit, so
+setup now installs the CI gate with the rest.
+
+### agent-be-go 0.1.1
+
+#### Fixed
+
+- The quality-gate caller is pinned to the v1.3.0 release commit, so setup installs it instead of
+  holding it back.
+
+### agent-be-axum 0.1.1
+
+#### Fixed
+
+- The quality-gate caller is pinned to the v1.3.0 release commit, so setup installs it instead of
+  holding it back.
+
+### agent-ios-swiftui 0.1.1
+
+#### Fixed
+
+- The quality-gate caller is pinned to the v1.3.0 release commit, so setup installs it instead of
+  holding it back.
+
 ## [1.3.0] - 2026-10-11
 
 Three experimental stack plugins join the marketplace at 0.1.0: agent-be-go (a Go HTTP service on
@@ -1186,7 +1212,8 @@ First release.
 - Templates: the 3D scene rule, the glTF/GLB asset budget check with its config, and a guide to
   adding 3D skills by reference.
 
-[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.1
 [1.3.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.0
 [1.2.1]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.2.1
 [1.2.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.2.0

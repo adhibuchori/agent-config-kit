@@ -27,13 +27,17 @@ print("ok")' "$output"
   [ "$output" = ok ]
 }
 
-@test "a new repo: Cargo.toml and CLAUDE.md from the starters, the skeleton seeded, the caller held" {
+@test "a new repo: Cargo.toml and CLAUDE.md from the starters, the skeleton seeded, the caller held until a release pins it" {
   ax_setup
   grep -qE '^  seed +Cargo\.toml ' <<<"$PLAN"
   grep -qE '^  by-hand +Cargo\.toml +add what .*/templates/be-axum/_kit/snippets/cargo\.toml holds' <<<"$PLAN"
   grep -qE '^  note +package\.json +none here' <<<"$PLAN"
   grep -qE '^  block +CLAUDE\.md +## Agent config kit \(new file\) from the starter$' <<<"$PLAN"
-  grep -qE '^  warn +\.github/workflows/quality-gate\.yml +not installed: .*release placeholder' <<<"$PLAN"
+  if grep -Eq '@0{40}' "$TPL/.github/workflows/quality-gate.yml"; then
+    grep -qE '^  warn +\.github/workflows/quality-gate\.yml +not installed: .*release placeholder' <<<"$PLAN"
+  else
+    grep -qE '^  create +\.github/workflows/quality-gate\.yml' <<<"$PLAN"
+  fi
   cmp "$PROJ/Cargo.toml" "$TPL/Cargo.toml.starter"
   cmp "$PROJ/AGENTS.md" "$TPL/AGENTS.md.starter"
   cmp "$PROJ/src/platform/error.rs" "$TPL/src/platform/error.rs"
@@ -45,7 +49,11 @@ print("ok")' "$output"
   cmp "$PROJ/scripts/check/rust-source.mjs" "$TPL/scripts/check/rust-source.mjs"
   [ -x "$PROJ/.githooks/pre-commit" ]
   [ ! -e "$PROJ/package.json" ]
-  [ ! -e "$PROJ/.github/workflows/quality-gate.yml" ]
+  if grep -Eq '@0{40}' "$TPL/.github/workflows/quality-gate.yml"; then
+    [ ! -e "$PROJ/.github/workflows/quality-gate.yml" ]
+  else
+    cmp "$PROJ/.github/workflows/quality-gate.yml" "$TPL/.github/workflows/quality-gate.yml"
+  fi
   [ ! -e "$PROJ/.github/workflows/deepseek-review.yml" ]
   [ -f "$PROJ/.github/PULL_REQUEST_TEMPLATE/dev.md" ]
   grep -qx '/target' "$PROJ/.gitignore"

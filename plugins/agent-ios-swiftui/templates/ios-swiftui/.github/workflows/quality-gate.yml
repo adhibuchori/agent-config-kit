@@ -29,4 +29,4 @@ jobs:
     permissions:
       contents: read
     # No secrets: the gate reads the checkout and nothing else, and never signs a build.
-    uses: adhibuchori/agent-config-kit/.github/workflows/ios-swiftui-quality-gate.yml@0000000000000000000000000000000000000000 # v1.3.0
+    uses: adhibuchori/agent-config-kit/.github/workflows/ios-swiftui-quality-gate.yml@17525e4a63778fdc9ebe8289952c97235dd35690 # v1.3.0

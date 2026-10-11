@@ -157,9 +157,10 @@ print("ok")
 PY
 }
 
-@test "the CI callers: the quality gate held at the release placeholder with its inputs, DeepSeek pinned" {
+@test "the CI callers: the quality gate pinned to a release commit with its inputs, DeepSeek pinned" {
   local qg="$TPL/.github/workflows/quality-gate.yml"
-  grep -qE '^    uses: adhibuchori/agent-config-kit/\.github/workflows/be-go-quality-gate\.yml@0{40} # v[0-9]+\.[0-9]+\.[0-9]+$' "$qg"
+  grep -qE '^    uses: adhibuchori/agent-config-kit/\.github/workflows/be-go-quality-gate\.yml@[0-9a-f]{40} # v[0-9]+\.[0-9]+\.[0-9]+$' "$qg"
+  run ! grep -qE '@0{40}' "$qg"
   grep -qE '^      database: true$' "$qg"
   grep -qE '^      pgbouncer-tests: false$' "$qg"
   grep -qE '^      pgbouncer-max-prepared-statements: 200$' "$qg"

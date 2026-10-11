@@ -10,7 +10,7 @@
 
 [![Self Test](https://github.com/adhibuchori/agent-config-kit/actions/workflows/self-test.yml/badge.svg)](https://github.com/adhibuchori/agent-config-kit/actions/workflows/self-test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-4f46e5)](LICENSE)
-[![Version 1.3.0](https://img.shields.io/badge/version-1.3.0-4f46e5)](CHANGELOG.md)
+[![Version 1.3.1](https://img.shields.io/badge/version-1.3.1-4f46e5)](CHANGELOG.md)
 
 Kumpulan plugin Claude Code yang mencegah agen AI melakukan hal yang akan Anda sesali: force-push
 ke `main`, menghapus `src/`, membaca `.env` ke dalam percakapan, atau menulis ke database produksi.
@@ -891,7 +891,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk pekerjaan yang masuk ke dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
 | `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; sync menjaganya tetap terbaru | An AI review of each pull request by DeepSeek, installed by /agent-be-axum:setup when you answer deepseek-review=yes. |
-| `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
+| `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; sync menjaganya tetap terbaru | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
 | `.squawk.toml` | jika `migrations=yes`; sekali; lalu milik Anda | squawk, the migration linter the quality gate runs over migrations/ (an exact release: new releases turn rules on). |
 | `AGENTS.md` | sekali, jika belum ada; lalu milik Anda | AGENTS.md — &lt;repo-name&gt; |
 | `CLAUDE.md` | starter-nya, jika repo belum punya CLAUDE.md | &lt;Project Name&gt; |
@@ -1018,7 +1018,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk pekerjaan yang masuk ke dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
 | `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; sync menjaganya tetap terbaru | An AI review of each pull request by DeepSeek, installed by /agent-be-go:setup when you answer deepseek-review=yes. |
-| `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit: this repo's scripts/check/gates.list again, the coverage floor, a PostgreSQL 18 database migrated from scratch (roles, foreign-key indexes, invalid indexes, timeouts), the migrations against the base branch, squawk, govulncheck, secrets and the build. |
+| `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; sync menjaganya tetap terbaru | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit: this repo's scripts/check/gates.list again, the coverage floor, a PostgreSQL 18 database migrated from scratch (roles, foreign-key indexes, invalid indexes, timeouts), the migrations against the base branch, squawk, govulncheck, secrets and the build. |
 | `.golangci.yml` | sekali; lalu milik Anda | golangci-lint v2 (the version is pinned in scripts/check/tools.env): the linters and formatters scripts/check/lint.sh and the quality gate run. |
 | `.squawk.toml` | jika `migrations=yes`; sekali; lalu milik Anda | squawk, the migration linter (version pinned in scripts/check/tools.env). |
 | `AGENTS.md` | sekali, jika belum ada; lalu milik Anda | AGENTS.md: &lt;Project Name&gt; |
@@ -1559,7 +1559,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk pekerjaan yang masuk ke dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | jika `pr-templates=yes`; sekali; lalu milik Anda | Template pull request untuk promosi dev ke prod |
 | `.github/workflows/deepseek-review.yml` | jika `deepseek-review=yes`; sync menjaganya tetap terbaru | An AI review of each pull request by DeepSeek, installed by /agent-ios-swiftui:setup when you answer deepseek-review=yes. |
-| `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; ditahan sampai sebuah rilis mem-pin reusable workflow ke commit sungguhan | The pull-request quality gate for this iOS app, installed by /agent-ios-swiftui:setup. |
+| `.github/workflows/quality-gate.yml` | jika `ci-gate=yes`; sync menjaganya tetap terbaru | The pull-request quality gate for this iOS app, installed by /agent-ios-swiftui:setup. |
 | `.periphery.yml` | sekali; lalu milik Anda | Periphery's settings for the dead-code check (AGENTS.md Rule 27). |
 | `.swift-format` | sekali; lalu milik Anda | Pengaturan swift-format: indentasi 4 spasi, baris 120 karakter |
 | `.swift-format-ignore` | sekali; lalu milik Anda | Paths swift-format leaves alone, in .gitignore syntax (Xcode's swift-format reads this file). |
