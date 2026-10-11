@@ -10,7 +10,7 @@
 
 [![Self Test](https://github.com/adhibuchori/agent-config-kit/actions/workflows/self-test.yml/badge.svg)](https://github.com/adhibuchori/agent-config-kit/actions/workflows/self-test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-4f46e5)](LICENSE)
-[![Version 1.3.0](https://img.shields.io/badge/version-1.3.0-4f46e5)](CHANGELOG.md)
+[![Version 1.3.1](https://img.shields.io/badge/version-1.3.1-4f46e5)](CHANGELOG.md)
 
 Claude Code plugins that stop an AI agent from doing the things you would regret: force-pushing to
 `main`, deleting `src/`, reading your `.env` into the chat, or writing to the production database.
@@ -881,7 +881,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | with `pr-templates=yes`; once; then yours | The pull-request template for work going into dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | with `pr-templates=yes`; once; then yours | The pull-request template for a dev to prod promotion |
 | `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; sync keeps it current | An AI review of each pull request by DeepSeek, installed by /agent-be-axum:setup when you answer deepseek-review=yes. |
-| `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; held until a release pins the reusable workflow to a real commit | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
+| `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; sync keeps it current | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit. |
 | `.squawk.toml` | with `migrations=yes`; once; then yours | squawk, the migration linter the quality gate runs over migrations/ (an exact release: new releases turn rules on). |
 | `AGENTS.md` | once, if missing; then yours | AGENTS.md — &lt;repo-name&gt; |
 | `CLAUDE.md` | the starter, when the repo has no CLAUDE.md | &lt;Project Name&gt; |
@@ -1008,7 +1008,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | with `pr-templates=yes`; once; then yours | The pull-request template for work going into dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | with `pr-templates=yes`; once; then yours | The pull-request template for a dev to prod promotion |
 | `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; sync keeps it current | An AI review of each pull request by DeepSeek, installed by /agent-be-go:setup when you answer deepseek-review=yes. |
-| `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; held until a release pins the reusable workflow to a real commit | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit: this repo's scripts/check/gates.list again, the coverage floor, a PostgreSQL 18 database migrated from scratch (roles, foreign-key indexes, invalid indexes, timeouts), the migrations against the base branch, squawk, govulncheck, secrets and the build. |
+| `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; sync keeps it current | The gate's steps live in agent-config-kit's reusable workflow, pinned to one commit: this repo's scripts/check/gates.list again, the coverage floor, a PostgreSQL 18 database migrated from scratch (roles, foreign-key indexes, invalid indexes, timeouts), the migrations against the base branch, squawk, govulncheck, secrets and the build. |
 | `.golangci.yml` | once; then yours | golangci-lint v2 (the version is pinned in scripts/check/tools.env): the linters and formatters scripts/check/lint.sh and the quality gate run. |
 | `.squawk.toml` | with `migrations=yes`; once; then yours | squawk, the migration linter (version pinned in scripts/check/tools.env). |
 | `AGENTS.md` | once, if missing; then yours | AGENTS.md: &lt;Project Name&gt; |
@@ -1549,7 +1549,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.github/PULL_REQUEST_TEMPLATE/dev.md` | with `pr-templates=yes`; once; then yours | The pull-request template for work going into dev |
 | `.github/PULL_REQUEST_TEMPLATE/promotion.md` | with `pr-templates=yes`; once; then yours | The pull-request template for a dev to prod promotion |
 | `.github/workflows/deepseek-review.yml` | with `deepseek-review=yes`; sync keeps it current | An AI review of each pull request by DeepSeek, installed by /agent-ios-swiftui:setup when you answer deepseek-review=yes. |
-| `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; held until a release pins the reusable workflow to a real commit | The pull-request quality gate for this iOS app, installed by /agent-ios-swiftui:setup. |
+| `.github/workflows/quality-gate.yml` | with `ci-gate=yes`; sync keeps it current | The pull-request quality gate for this iOS app, installed by /agent-ios-swiftui:setup. |
 | `.periphery.yml` | once; then yours | Periphery's settings for the dead-code check (AGENTS.md Rule 27). |
 | `.swift-format` | once; then yours | swift-format settings: 4-space indentation, 120-character lines |
 | `.swift-format-ignore` | once; then yours | Paths swift-format leaves alone, in .gitignore syntax (Xcode's swift-format reads this file). |
