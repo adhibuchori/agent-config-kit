@@ -10,7 +10,7 @@
 
 [![Self Test](https://github.com/adhibuchori/agent-config-kit/actions/workflows/self-test.yml/badge.svg)](https://github.com/adhibuchori/agent-config-kit/actions/workflows/self-test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-4f46e5)](LICENSE)
-[![Version 1.2.0](https://img.shields.io/badge/version-1.2.0-4f46e5)](CHANGELOG.md)
+[![Version 1.3.0](https://img.shields.io/badge/version-1.3.0-4f46e5)](CHANGELOG.md)
 
 Claude Code plugins that stop an AI agent from doing the things you would regret: force-pushing to
 `main`, deleting `src/`, reading your `.env` into the chat, or writing to the production database.
@@ -2317,7 +2317,7 @@ every existing file. The draft shows each of these before anything is written.
 Planned, in rough order. Each item becomes an issue before work starts; comment there to help.
 
 - **Pinned callers in the first follow-up release**, so setup installs the CI gate on day one.
-- **More stacks** on the same plan: a plain Node or Python library, and a Go service.
+- **More stacks** on the same plan: a plain Node or Python library.
 - **Lifecycle labels** for plugins (experimental, stable, deprecated) in the marketplace listing.
 - **Docs pages for the template repos**, so a template user finds the same per-component pages.
 - **A measured-overhead check in CI**, so a slower hook fails the pull request that made it slower.

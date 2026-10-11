@@ -10,7 +10,7 @@
 
 [![Self Test](https://github.com/adhibuchori/agent-config-kit/actions/workflows/self-test.yml/badge.svg)](https://github.com/adhibuchori/agent-config-kit/actions/workflows/self-test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-4f46e5)](LICENSE)
-[![Version 1.2.0](https://img.shields.io/badge/version-1.2.0-4f46e5)](CHANGELOG.md)
+[![Version 1.3.0](https://img.shields.io/badge/version-1.3.0-4f46e5)](CHANGELOG.md)
 
 Kumpulan plugin Claude Code yang mencegah agen AI melakukan hal yang akan Anda sesali: force-push
 ke `main`, menghapus `src/`, membaca `.env` ke dalam percakapan, atau menulis ke database produksi.
@@ -2348,7 +2348,7 @@ di sana untuk membantu.
 
 - **Pemanggil yang sudah di-pin di rilis lanjutan pertama**, sehingga setup memasang gate CI sejak
   hari pertama.
-- **Lebih banyak stack** dengan pola yang sama: library Node atau Python biasa, dan layanan Go.
+- **Lebih banyak stack** dengan pola yang sama: library Node atau Python biasa.
 - **Label siklus hidup** untuk plugin (experimental, stable, deprecated) di daftar marketplace.
 - **Halaman dokumentasi untuk repo template**, supaya pengguna template menemukan halaman per
   komponen yang sama.
