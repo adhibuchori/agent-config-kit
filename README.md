@@ -204,8 +204,8 @@ for reduced motion, they show a still picture instead.
 - use Claude Code (the CLI or an IDE extension) on real repositories, alone or in a team;
 - build with one of the supported stacks: a Next.js app, a static Next.js site, a Bun + Hono +
   Drizzle API, a FastAPI + LLM service, or a Nextra docs site; or try an experimental one (0.x,
-  names and rules may still change): a Go service or a Rust + Axum API on PostgreSQL, or a SwiftUI
-  iOS app;
+  names and rules may still change): a Go + net/http + sqlc API, a Rust + Axum + sqlx API, or a
+  SwiftUI iOS app;
 - want refusals you can trust, and a setup you can read before it writes anything.
 
 **Not a fit if you:**
@@ -224,15 +224,15 @@ Every repo gets **agent-core** plus **one** stack plugin. The two add-ons are op
 ```mermaid
 flowchart TD
     accTitle: Which plugin to install
-    accDescr: Start from what your repo is. A Next.js web app with an API uses agent-fe-nextjs. A company profile or landing site uses agent-fe-nextjs-static. A Bun and Hono API uses agent-be-hono. A FastAPI service with LLM providers uses agent-ai-fastapi. A Nextra docs site uses agent-docs-nextra. Experimental: a Go service on PostgreSQL uses agent-be-go, a Rust and Axum service on PostgreSQL uses agent-be-axum, and a SwiftUI iOS app uses agent-ios-swiftui. Anything else uses agent-core alone. Add agent-fe-threejs for 3D scenes and agent-deploy for deploy checks.
+    accDescr: Start from what your repo is. A Next.js web app with an API uses agent-fe-nextjs. A company profile or landing site uses agent-fe-nextjs-static. A Bun, Hono and Drizzle API uses agent-be-hono. A FastAPI service with LLM providers uses agent-ai-fastapi. A Nextra docs site uses agent-docs-nextra. Experimental: a Go API on net/http and sqlc uses agent-be-go, a Rust API on Axum and sqlx uses agent-be-axum, and a SwiftUI iOS app uses agent-ios-swiftui. Anything else uses agent-core alone. Add agent-fe-threejs for 3D scenes and agent-deploy for deploy checks.
     Q{What is this repo?}
     Q -->|Next.js web app with an API| FE[agent-fe-nextjs]
     Q -->|Company profile or landing site| ST[agent-fe-nextjs-static]
     Q -->|Bun + Hono + Drizzle API| BE[agent-be-hono]
     Q -->|FastAPI service with LLM providers| AI[agent-ai-fastapi]
     Q -->|Nextra docs site| DOCS[agent-docs-nextra]
-    Q -->|Go service on PostgreSQL, experimental| GO[agent-be-go]
-    Q -->|Rust + Axum service on PostgreSQL, experimental| RS[agent-be-axum]
+    Q -->|Go + net/http + sqlc API, experimental| GO[agent-be-go]
+    Q -->|Rust + Axum + sqlx API, experimental| RS[agent-be-axum]
     Q -->|SwiftUI iOS app, experimental| IOS[agent-ios-swiftui]
     Q -->|Something else| CORE[agent-core alone]
     X([Optional, next to any stack plugin]) -.->|3D scenes| TJ[+ agent-fe-threejs]
@@ -241,14 +241,14 @@ flowchart TD
 
 | Plugin | For | Adds on top of agent-core |
 | --- | --- | --- |
-| [agent-core](plugins/agent-core/README.md) | every repo (required) | 7 hooks and a setup reminder, 16 commands, 3 agents, the setup engine |
+| [agent-core](plugins/agent-core/README.md) | every repo (required) | 7 hooks and a setup reminder, 17 commands, 3 agents, the setup engine |
 | [agent-fe-nextjs](plugins/agent-fe-nextjs/README.md) | Next.js app with a generated API client | generated-guard, 5 commands, 3 agents, 2 skills |
 | [agent-fe-nextjs-static](plugins/agent-fe-nextjs-static/README.md) | company profile, landing page | 6 commands, 3 agents, 11 site checks |
 | [agent-be-hono](plugins/agent-be-hono/README.md) | Bun + Hono + Drizzle API | migration-guard, reviewer, backend gates |
 | [agent-ai-fastapi](plugins/agent-ai-fastapi/README.md) | FastAPI + LLM providers, uv | migration-guard, AI-service reviewer |
 | [agent-docs-nextra](plugins/agent-docs-nextra/README.md) | Nextra documentation site | generated-guard, security and SEO reviewers |
-| [agent-be-go](plugins/agent-be-go/README.md) | experimental: Go HTTP service on PostgreSQL | migration-guard (append-only), generated-guard, reviewer, 2 skills |
-| [agent-be-axum](plugins/agent-be-axum/README.md) | experimental: Rust + Axum service on PostgreSQL | migration-guard (append-only), generated-guard, reviewer, 2 skills |
+| [agent-be-go](plugins/agent-be-go/README.md) | experimental: Go + net/http + sqlc API | migration-guard (append-only), generated-guard, reviewer, 2 skills |
+| [agent-be-axum](plugins/agent-be-axum/README.md) | experimental: Rust + Axum + sqlx API | migration-guard (append-only), generated-guard, reviewer, 2 skills |
 | [agent-ios-swiftui](plugins/agent-ios-swiftui/README.md) | experimental: SwiftUI iOS app | generated-guard, 3 commands, 2 agents, 2 skills |
 | [agent-fe-threejs](plugins/agent-fe-threejs/README.md) | add-on: three.js / React Three Fiber | 3D rule and asset budget check |
 | [agent-deploy](plugins/agent-deploy/README.md) | add-on: any host | outside deploy smoke test, fallback promotion |
