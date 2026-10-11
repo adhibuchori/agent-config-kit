@@ -373,6 +373,11 @@ variants() {
   else
     skip "swift-format is not installed (Xcode or the Swift toolchain)"
   fi
+  # The template's .swift-format targets swift-format 604 (Xcode 27); an older one cannot read it.
+  printf 'let x = 1\n' >"$BATS_TEST_TMPDIR/probe.swift"
+  run "${sf[@]}" lint --configuration "$(tpl_of swift)/.swift-format" "$BATS_TEST_TMPDIR/probe.swift"
+  [[ "$output" != *"Unable to read configuration"* ]] ||
+    skip "this swift-format cannot read the template's .swift-format, written for swift-format 604 (Xcode 27)"
   local file
   for file in $(variants swift); do
     "${sf[@]}" lint --strict --configuration "$(tpl_of swift)/.swift-format" "$file"
