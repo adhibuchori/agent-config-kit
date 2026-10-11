@@ -192,8 +192,9 @@ function whatItDoes(page) {
 }
 
 /**
- * Table cells: one line, pipes escaped, and < > & as entities so a word like <scope> is shown, not
- * swallowed as an HTML tag.
+ * Table cells: one line, backslashes and then pipes escaped (an unescaped backslash would swallow
+ * the pipe's escape), and < > & as entities so a word like <scope> is shown, not swallowed as an
+ * HTML tag.
  */
 const cell = (s) =>
   String(s ?? '')
@@ -201,6 +202,7 @@ const cell = (s) =>
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
+    .replace(/\\/g, '\\\\')
     .replace(/\|/g, '\\|')
     .trim();
 
@@ -603,8 +605,14 @@ function catalogBlock(list, fromDir, lang = 'en') {
       const what = lang === 'id' ? n.id?.what : c.desc;
       const use = lang === 'id' ? n.id?.use : n.use;
       const why = lang === 'id' ? n.id?.why : n.why;
-      /* "How to use" is written as Markdown (it holds `code`): only its pipes are escaped. */
-      const md = (v) => String(v ?? '').replace(/\s+/g, ' ').replace(/\|/g, '\\|').trim();
+      /* "How to use" is written as Markdown (it holds `code`): only its backslashes and pipes are
+         escaped, backslashes first. */
+      const md = (v) =>
+        String(v ?? '')
+          .replace(/\s+/g, ' ')
+          .replace(/\\/g, '\\\\')
+          .replace(/\|/g, '\\|')
+          .trim();
       out.push(`| \`${cell(c.invoke)}\` | ${cell(kindLabel(c))} | ${lang === 'id' ? md(what) : cell(what)} | ${md(use)} | ${md(why)} | ${docs} |`);
     }
     out.push('');

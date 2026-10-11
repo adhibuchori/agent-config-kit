@@ -93,6 +93,10 @@ contract.
 
 - `scripts/catalog.mjs` matches `**` across folders. It matched within one folder, so the README
   called agent-be-hono's payload tests always installed when setup treats them as payload-only.
+- `scripts/catalog.mjs` escapes a backslash before a pipe in a README table cell, so a backslash in
+  a description can no longer undo the pipe's escape, and `scripts/version-sync.mjs` escapes every
+  regular-expression metacharacter in a plugin name and version (CodeQL
+  `js/incomplete-sanitization`). The generated READMEs do not change.
 
 ### agent-core 1.2.0
 

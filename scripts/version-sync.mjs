@@ -39,6 +39,9 @@ const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const CALL = /uses:\s*adhibuchori\/agent-config-kit\/\.github\/workflows\/[A-Za-z0-9._-]+@([0-9a-f]{40})\s*#\s*v(\S+)/g;
 const PLACEHOLDER = '0'.repeat(40);
 
+/** A string matched literally inside a regular expression: every metacharacter escaped. */
+const literal = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 function usage(message) {
   console.error(`version-sync: ${message}`);
   console.error('usage: node scripts/version-sync.mjs [--check] [--base <ref>] [--root DIR]');
@@ -147,7 +150,7 @@ if (!existsSync(changelogPath)) {
   }
   const text = lines.join('\n');
   for (const p of plugins) {
-    const re = new RegExp(`^### ${p.name.replace(/[-]/g, '\\-')} ${p.version.replace(/\./g, '\\.')}\\s*$`, 'm');
+    const re = new RegExp(`^### ${literal(p.name)} ${literal(p.version)}\\s*$`, 'm');
     if (SEMVER.test(p.version) && !re.test(text)) problem(`CHANGELOG.md: no "### ${p.name} ${p.version}" heading for the current version`);
   }
 }

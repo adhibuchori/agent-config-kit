@@ -109,6 +109,19 @@ write_then_check() {
   grep -qF '| `.claude/settings.json` | merged into yours (additive; your values win) |' "$K/README.md"
 }
 
+@test "catalog: a cell escapes a backslash before a pipe, so neither is read as Markdown" {
+  cat >"$K/plugins/agent-demo/skills/tidy/SKILL.md" <<'EOF'
+---
+name: tidy
+description: Use when tidying a\|b paths.
+---
+EOF
+  jq '.components["agent-demo/tidy"].use = "split on \\| here"' "$K/docs/catalog.json" >"$K/c.json"
+  mv "$K/c.json" "$K/docs/catalog.json"
+  write_then_check
+  grep -qF '| `agent-demo:tidy` | Skill | Use when tidying a\\\|b paths. | split on \\\| here |' "$K/README.md"
+}
+
 @test "catalog: ** in a setup glob crosses folders, * stays in one" {
   local t="$K/plugins/agent-demo/templates/demo"
   mkdir -p "$t/src/deep/a/b" "$t/src/flat/a"
