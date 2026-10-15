@@ -23,10 +23,23 @@ their choices live here. Both files are yours to edit: setup creates them once, 
 | `src/lib/errors/problem.ts` | It must narrow a plain number to `ContentfulStatusCode` to hand it to `c.body()`. No `any` here either: AGENTS.md §G Rule 42 has no exemption. |
 | `src/lib/errors/errors.ts` | The pass-through constructors are deliberate; see the class-level comment in `errors.ts` on Bun's coverage attribution for field overrides. |
 | `src/**/__tests__/**` | Tests build mocks by asserting plain objects into Hono and Drizzle types, and await deliberately synchronous fakes. Both are how a mock is written, not the defects these rules exist to catch; §H Rule 37 stays armed everywhere real queries run, and `any` stays an error in tests too (§G Rule 42). |
-| `src/modules/*/*.service.ts` | AGENTS.md §B Rule 7: services are pure business logic and never see a Hono Context. Dependencies arrive as default parameters instead. |
 | `src/modules/*/**` | A module is reached only through its `index.ts` barrel from outside itself. `../*/[!index]*` matches a path two or more levels into another module's internals; a same-module relative import (`../sibling.ts`, `./sibling.ts`) never has that second `/` segment, so it is unaffected. |
-| `src/modules/*/*.handler.ts` | Handlers are thin HTTP glue. Database access belongs in the service (or the repository on escalation), never in a handler. |
+| `src/modules/*/*.service.ts` | AGENTS.md §B Rule 7: services are pure business logic and never see a Hono Context. Dependencies arrive as default parameters instead. Repeats the cross-module pattern (see the order note below). |
+| `src/modules/*/*.handler.ts` | Handlers are thin HTTP glue. Database access belongs in the service (or the repository on escalation), never in a handler. Repeats the cross-module pattern (see the order note below). |
 | `src/lib/**`, `src/middlewares/**` | Infrastructure that modules depend on. The dependency direction never reverses. |
+
+**Order matters.** oxlint applies overrides in order, and a later override that sets a rule replaces
+that rule's options for every file both match; it does not merge them. So the general
+`src/modules/*/**` override comes first, and the service and handler overrides after it repeat its
+cross-module pattern. Placed the other way round, the general override switched the service and
+handler restrictions off without a word. Prove a change with a throwaway file that breaks each
+restriction: `bun run lint` must report it.
+
+## .oxlintignore
+
+oxlint reads `.eslintignore` by itself, not `.oxlintignore`, so the `lint` and `fl:ci` scripts pass
+`--ignore-path=.oxlintignore`. Besides the build output and the generated migrations, it leaves out
+`scripts/check/coverage-policy.mjs` and `scripts/check/folder-shape.mjs`, for the reason below.
 
 ## .oxfmtrc.json
 

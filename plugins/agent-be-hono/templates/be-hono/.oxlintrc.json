@@ -71,6 +71,22 @@
       }
     },
     {
+      "files": ["src/modules/*/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../*/[!index]*"],
+                "message": "Cross-module imports must go through the target module's index.ts barrel — never its internals (*.service.ts, *.repository.ts, etc)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["src/modules/*/*.service.ts"],
       "rules": {
         "no-restricted-imports": [
@@ -80,19 +96,7 @@
               {
                 "group": ["hono", "hono/*", "@hono/*"],
                 "message": "Services must not import Hono — they never touch Context. HTTP concerns belong in the handler (AGENTS.md §B Rule 7)."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "files": ["src/modules/*/**"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
+              },
               {
                 "group": ["../*/[!index]*"],
                 "message": "Cross-module imports must go through the target module's index.ts barrel — never its internals (*.service.ts, *.repository.ts, etc)."
@@ -122,6 +126,10 @@
               {
                 "group": ["**/db/**", "**/db"],
                 "message": "Handlers must not import src/db directly. Call the service — it owns DB access."
+              },
+              {
+                "group": ["../*/[!index]*"],
+                "message": "Cross-module imports must go through the target module's index.ts barrel — never its internals (*.service.ts, *.repository.ts, etc)."
               }
             ]
           }
