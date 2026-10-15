@@ -2011,6 +2011,11 @@ DOTGLOB = [False]
 # The current $( ) / `...` bodies, so a simple command can read what its substitution operand runs.
 CUR_SUBS = [[]]
 NPM_SCRIPTS = {"test": "test", "t": "test", "tst": "test", "start": "start", "stop": "stop", "restart": "restart"}
+# `bun <word>` runs Bun's own command when the word is one of these, never a package.json script of
+# that name (checked against bun 1.3): `"test": "bun test src"` runs the test runner, not itself.
+# install, add, remove, update, link, patch and publish stay out: they may run lifecycle scripts.
+BUN_BUILTINS = {"build", "test", "x", "exec", "info", "pm", "why", "init", "create", "c", "upgrade", "outdated",
+                "audit"}
 PM_VALUES = {"--cwd", "-C", "--dir", "--prefix", "--filter", "-F", "--workspace", "--config"}
 # Commands that may name unlock.sh or scripts/env/: they read the file. Anything else, a wrapper
 # such as timeout or npm exec included, is refused.
@@ -2686,6 +2691,8 @@ def package_script(head, args, cwd):
         return (args[k] if k < len(args) else ""), d
     if head == "npm":
         return NPM_SCRIPTS.get(sub, ""), d
+    if head == "bun" and sub in BUN_BUILTINS:
+        return "", d
     return sub, d
 
 

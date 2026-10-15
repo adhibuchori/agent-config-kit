@@ -77,7 +77,7 @@ echo out >"$P/build/out.txt"
 printf '.env\n.env.local\n.claude/state/\n' >"$P/.gitignore"
 printf 'API_KEY=\n' >"$P/.env.example" && printf 'API_KEY=\n' >"$P/.env.production.example"
 cat >"$P/package.json" <<'EOF'
-{"scripts": {"unlock": "bash scripts/ops/unlock.sh", "u2": "bash scripts/ops/unlock.sh", "dump": "cat .env", "build": "echo build"}}
+{"scripts": {"unlock": "bash scripts/ops/unlock.sh", "u2": "bash scripts/ops/unlock.sh", "dump": "cat .env", "build": "echo build", "test": "bun test src"}}
 EOF
 # Stand-ins for the unlock script and the env helpers, so globs in the table expand to them.
 mkdir -p "$P/scripts/ops" "$P/scripts/env" "$P/scripts/check"
