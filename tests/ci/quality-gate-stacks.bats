@@ -77,12 +77,14 @@ EOF
 
 # ── plan.sh ─────────────────────────────────────────────────────────────────────────────────
 
-@test "plan: phase splits only ios-swiftui; static, build and all set the tools and the PR checks" {
+@test "plan: phase splits only ios-swiftui; static, build and all set the tools, and every job gets gitleaks" {
   QG_STACK=ios-swiftui QG_BASE_REF=dev QG_PHASE=static plan
   [ "$status" -eq 0 ]
-  has_line phase=static && has_line tools=swiftlint && has_line gitleaks=true
+  # No SwiftLint on Linux: swiftlint-static aborts on a custom rule.
+  has_line phase=static && has_line tools= && has_line gitleaks=true
   QG_STACK=ios-swiftui QG_BASE_REF=dev QG_PHASE=build plan
-  has_line 'tools=swiftlint periphery' && has_line gitleaks=false
+  # gates.list runs secrets.sh in the macOS job too, so gitleaks is installed there as well.
+  has_line 'tools=swiftlint periphery' && has_line gitleaks=true
   QG_STACK=ios-swiftui QG_BASE_REF=dev plan
   has_line phase=all && has_line 'tools=swiftlint periphery' && has_line gitleaks=true
   QG_STACK=ios-swiftui QG_BASE_REF=dev QG_PHASE=deploy plan
@@ -510,7 +512,7 @@ code	swiftlint lintx
 code	bash scripts/check/ai-config.sh --verbose
 code	bash scripts/check/ci-env.sh bash scripts/check/coverage.sh
 EOF
-  printf '#!/usr/bin/env bash\necho "secrets.sh ran" >>"$STUB_LOG"\n' >scripts/check/secrets.sh
+  printf '#!/usr/bin/env bash\necho "secrets.sh ran" >>"$STUB_LOG"\nexit "${STUB_SECRETS_EXIT:-0}"\n' >scripts/check/secrets.sh
   printf '#!/usr/bin/env bash\necho "ai-config.sh $*" >>"$STUB_LOG"\n' >scripts/check/ai-config.sh
   printf '#!/usr/bin/env bash\nplutil -convert json -o - App.xcodeproj/project.pbxproj\n' >scripts/check/xcode-settings.sh
   printf 'import { appendFileSync } from "node:fs";\nappendFileSync(process.env.STUB_LOG, "folder-shape ran\\n");\n' \
@@ -545,11 +547,12 @@ EOF
   ios_repo
   QG_STACK=ios-swiftui QG_PHASE=static gate
   [ "$status" -eq 0 ]
-  grep -qx 'swiftlint lint --quiet' "$STUB_LOG"
   grep -qx 'folder-shape ran' "$STUB_LOG"
   grep -qx 'secrets.sh ran' "$STUB_LOG"
   grep -qx 'ai-config.sh --verbose' "$STUB_LOG"
-  [[ "$output" == *"4 gates.list line(s) ran here"* ]] || false
+  [[ "$output" == *"3 gates.list line(s) ran here"* ]] || false
+  # SwiftLint waits for the macOS job: swiftlint-static aborts on a custom rule.
+  [[ "$output" == *"  swiftlint lint --quiet"* ]] || false
   [[ "$output" == *"  xcrun swift-format lint --strict --recursive App Packages UITests"* ]] || false
   [[ "$output" == *"  bash scripts/check/xcode-settings.sh"* ]] || false
   [[ "$output" == *"  swiftlint lintx"* ]] || false
@@ -560,13 +563,14 @@ EOF
   # Nothing that needs a Mac ran, and a line that only looks like an allowed one did not either.
   run ! grep -qE '^(xcrun|plutil|swift|xcodebuild|periphery) ' "$STUB_LOG"
   run ! grep -q 'lintx' "$STUB_LOG"
+  run ! grep -q '^swiftlint ' "$STUB_LOG"
 }
 
 @test "gate: a failing Linux-safe line fails the static phase" {
   ios_repo
-  STUB_SWIFTLINT_EXIT=2 QG_STACK=ios-swiftui QG_PHASE=static gate
+  STUB_SECRETS_EXIT=2 QG_STACK=ios-swiftui QG_PHASE=static gate
   [ "$status" -eq 1 ]
-  [[ "$output" == *"swiftlint lint --quiet failed"* ]] || false
+  [[ "$output" == *"bash scripts/check/secrets.sh failed"* ]] || false
 }
 
 @test "gate: the iOS build phase runs the whole list, builds on the newest iPhone, and never rescans the PR" {

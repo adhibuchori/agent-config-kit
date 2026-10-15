@@ -109,12 +109,13 @@ docker, or no `pooler.sh`, is a check that did not run.
 (ios-swiftui)**:
 
 1. **static**, on Linux (`phase: static`): every `gates.list` line whose command is, or starts
-   with, a Linux-safe entry (`swiftlint lint`, and the `node` and `bash` checks that read files:
+   with, a Linux-safe entry (the `node` and `bash` checks that read files:
    `i18n-catalog.mjs`, `folder-shape.mjs`, `coverage-policy.mjs`, `payload-registry.mjs`,
    `lint-suppressions.sh`, `error-codes.sh`, `privacy-manifest.sh`, `secrets.sh`, `ai-config.sh`),
    exactly as written, then the `.env` check, gitleaks and SkillSpector. Every other line is
-   listed as running in the macOS job. SwiftLint is the pinned `swiftlint-static`, which needs no
-   SourceKit and skips the few rules that do.
+   listed as running in the macOS job, SwiftLint's among them: the pinned `swiftlint-static` aborts
+   ("SourceKit is disabled by configuration") on any custom rule a file triggers, even in
+   `swiftsyntax` mode.
 2. **build**, on macOS, only when static passed (`phase: build`): the Xcode release must be
    `xcode-version`, then the whole `gates.list`, the coverage floor, `xcodebuild test` (unit and UI
    tests, `CODE_SIGNING_ALLOWED=NO`, `-onlyUsePackageVersionsFromResolvedFile`) on the first iPhone
