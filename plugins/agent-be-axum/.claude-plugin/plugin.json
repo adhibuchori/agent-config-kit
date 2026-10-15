@@ -1,7 +1,7 @@
 {
   "name": "agent-be-axum",
   "displayName": "Agent for Rust + Axum APIs",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Experimental (0.x): rules, a reviewer, two skills and checks for Rust + Axum services on PostgreSQL (sqlx, utoipa) in Claude Code, on top of agent-core. Hooks: migration-guard keeps hand-written sqlx migrations append-only once a protected branch has them, and generated-guard refuses hand edits to the sqlx query cache and the exported OpenAPI document (paths in .claude/agent-config.json; a repo without them is unaffected). Commands: setup and sync install and verify the backend and Rust rules, anti-patterns, a service skeleton whose error module and tests hold the gates, clippy, rustfmt, cargo-deny and nextest config, quality-gate check scripts (rustfmt, cargo policy, Rust source checks, migrations, coverage), a pull-request-only CI caller, an optional DeepSeek review of each pull request and a CODEOWNERS starter. Agent: reviewer. Skills: api-endpoint and db-migration. No package.json needed. The hooks run on your machine, open no network connection and stay silent until the project opts in.",
   "author": {
     "name": "Mochammad Adhi Buchori",

@@ -10,6 +10,100 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+Fixes found by setting up a Hono API and a SwiftUI app from the kit, each proven by a test that fails
+without it.
+
+### Reusable workflows and actions
+
+#### Fixed
+
+- The iOS gate's static job no longer runs SwiftLint. `swiftlint-static` 0.65.1 aborts ("SourceKit is
+  disabled by configuration") on any custom rule a file triggers, even in `swiftsyntax` mode, so a
+  project with the template's `.swiftlint.yml` failed there on its first Swift file. SwiftLint runs in
+  the macOS job with the rest of `gates.list`.
+- Every job installs gitleaks, the iOS macOS job included: it runs the whole `gates.list`, whose
+  `secrets.sh` line fails without gitleaks. Only the job that runs the pull-request checks scans the
+  pull request's commits, as before.
+
+### agent-core 1.2.1
+
+#### Fixed
+
+- safety-check reads `bun <word>` as Bun's own command when the word is one of its subcommands
+  (`test`, `build`, `x`, `exec` and a few more), not as the package.json script of that name. A
+  `"test": "bun test src"` script looked like it called itself, so `bun test src`, `bun run test` and
+  `bun run build` were refused as nesting too deep. `install`, `add` and the other commands that run
+  lifecycle scripts are still followed into those scripts. Three new probes cover both sides.
+
+### agent-be-hono 2.0.1
+
+#### Fixed
+
+- The hook library (`scripts/lib.sh`) is agent-core 1.2.1's, with its safety-check fix for Bun's
+  own subcommands.
+- The `lint` and `fl:ci` scripts pass `--ignore-path=.oxlintignore`, as fe-nextjs and docs-nextra
+  do: oxlint reads only `.eslintignore` by itself, so `.oxlintignore` had no effect. It also leaves
+  out the plugins' own `scripts/check/coverage-policy.mjs` and `scripts/check/folder-shape.mjs`, which
+  `.oxfmtrc.json` already leaves out; `folder-shape.mjs` failed `max-lines` on a fresh setup.
+- `.oxlintrc.json` puts the general `src/modules/*/**` override before the service and handler
+  overrides, which now repeat its cross-module pattern. oxlint lets a later override replace a rule's
+  options for the files both match, so services could import Hono and handlers could reach into
+  another module's internals. `.claude/docs/lint-config.md` explains the order. `.oxlintrc.json` and
+  `.oxlintignore` are seeded: an existing project copies both changes by hand.
+- `scripts/check/ci-env.sh` runs the command with no variables when `.env.ci.example` is missing and no
+  workflow names an env file, the way the quality gate reads it, instead of failing. A missing file a
+  workflow names still fails.
+
+### agent-be-go 0.1.2
+
+#### Fixed
+
+- The hook library (`scripts/lib.sh`) is agent-core 1.2.1's, with its safety-check fix for Bun's
+  own subcommands.
+- `scripts/check/ci-env.sh`: a missing `.env.ci.example` that no workflow names means no variables,
+  as in agent-be-hono 2.0.1.
+
+### agent-be-axum 0.1.2
+
+#### Fixed
+
+- The hook library (`scripts/lib.sh`) is agent-core 1.2.1's, with its safety-check fix for Bun's
+  own subcommands.
+- `scripts/check/ci-env.sh`: a missing `.env.ci.example` that no workflow names means no variables,
+  as in agent-be-hono 2.0.1.
+
+### agent-ios-swiftui 0.1.2
+
+#### Fixed
+
+- The hook library (`scripts/lib.sh`) is agent-core 1.2.1's, with its safety-check fix for Bun's
+  own subcommands.
+- `scripts/check/ci-env.sh`: a missing `.env.ci.example` that no workflow names means no variables,
+  as in agent-be-hono 2.0.1.
+- The quality-gate caller's comment says SwiftLint runs in the macOS job (see the reusable workflow
+  fix above).
+
+### agent-ai-fastapi 1.3.1
+
+#### Fixed
+
+- The hook library (`scripts/lib.sh`) is agent-core 1.2.1's, with its safety-check fix for Bun's
+  own subcommands.
+
+### agent-docs-nextra 1.2.1
+
+#### Fixed
+
+- The hook library (`scripts/lib.sh`) is agent-core 1.2.1's, with its safety-check fix for Bun's
+  own subcommands.
+
+### agent-fe-nextjs 1.3.1
+
+#### Fixed
+
+- The hook library (`scripts/lib.sh`) is agent-core 1.2.1's, with its safety-check fix for Bun's
+  own subcommands.
+
 ## [1.3.1] - 2026-10-11
 
 The quality-gate callers of the three stacks added in 1.3.0 are pinned to its release commit, so
