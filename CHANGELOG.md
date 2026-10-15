@@ -10,6 +10,8 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-10-16
+
 Fixes found by setting up a Hono API and a SwiftUI app from the kit, each proven by a test that fails
 without it.
 
@@ -1306,7 +1308,8 @@ First release.
 - Templates: the 3D scene rule, the glTF/GLB asset budget check with its config, and a guide to
   adding 3D skills by reference.
 
-[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.3.2...HEAD
+[1.3.2]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.2
 [1.3.1]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.1
 [1.3.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.0
 [1.2.1]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.2.1
