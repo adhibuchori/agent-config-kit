@@ -121,6 +121,13 @@ ios_build_test() {
     qg_skip "$name" "no available iPhone simulator on this runner"
     return
   fi
+  # Boot the simulator and wait until it is fully up before the build. Left to xcodebuild, a cold
+  # simulator on a busy runner can fail to launch the UI test runner ("Failed to launch", "never
+  # finished bootstrapping"): a runner fault that reads as a failing test.
+  if ! xcrun simctl bootstatus "$udid" -b >/dev/null; then
+    qg_fail "the simulator $udid did not finish booting"
+    return
+  fi
   out="$QG_TMP/ios"
   rm -rf "$out" && mkdir -p "$out"
   # Never -retry-tests-on-failure: a test that passes on the second try is a failing test.

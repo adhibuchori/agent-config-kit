@@ -10,6 +10,18 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.3.4] - 2026-10-16
+
+### Reusable workflows and actions
+
+#### Fixed
+
+- The iOS gate boots the simulator and waits for it (`xcrun simctl bootstatus <udid> -b`) before
+  `xcodebuild test`. Left to xcodebuild, a cold simulator on a busy macOS runner sometimes failed
+  to launch the UI test runner ("Failed to launch", "operation never finished bootstrapping") after
+  ten minutes, a runner fault that read as a failing test. One app hit it in 4 of its first 20 runs.
+  A simulator that does not boot now fails the gate with that message, before the build.
+
 ## [1.3.3] - 2026-10-16
 
 The callers whose reusable workflows 1.3.2 fixed are pinned to its release commit, so setup and
@@ -1334,7 +1346,8 @@ First release.
 - Templates: the 3D scene rule, the glTF/GLB asset budget check with its config, and a guide to
   adding 3D skills by reference.
 
-[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.3.3...HEAD
+[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.3.4...HEAD
+[1.3.4]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.4
 [1.3.3]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.3
 [1.3.2]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.2
 [1.3.1]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.1
