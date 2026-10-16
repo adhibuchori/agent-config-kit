@@ -10,6 +10,19 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.3.5] - 2026-10-16
+
+The ios-swiftui quality-gate caller is pinned to the v1.3.4 release commit, so setup and sync
+install the simulator boot fix.
+
+### agent-ios-swiftui 0.1.4
+
+#### Fixed
+
+- The quality-gate caller is pinned to the v1.3.4 release commit: the macOS job boots the simulator
+  and waits for it before `xcodebuild test`, instead of failing on a cold simulator that cannot
+  launch the UI test runner.
+
 ## [1.3.4] - 2026-10-16
 
 ### Reusable workflows and actions
@@ -1346,7 +1359,8 @@ First release.
 - Templates: the 3D scene rule, the glTF/GLB asset budget check with its config, and a guide to
   adding 3D skills by reference.
 
-[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.3.4...HEAD
+[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.3.5...HEAD
+[1.3.5]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.5
 [1.3.4]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.4
 [1.3.3]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.3
 [1.3.2]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.2
