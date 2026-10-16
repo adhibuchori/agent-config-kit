@@ -26,6 +26,11 @@ without it.
 - Every job installs gitleaks, the iOS macOS job included: it runs the whole `gates.list`, whose
   `secrets.sh` line fails without gitleaks. Only the job that runs the pull-request checks scans the
   pull request's commits, as before.
+- strip-ai's back-merge no longer fails on `index.lock` when the development branch edited a stripped
+  file (`AGENTS.md`, `CLAUDE.md`) since the last strip. It piped `git diff` into a loop of
+  `git checkout`, and `git diff` can still hold the index lock after printing, so on a runner the
+  modify/delete conflicts it exists to settle stopped the job with the strip pushed and no
+  back-merge. It reads each list first.
 
 ### agent-core 1.2.1
 

@@ -23,16 +23,24 @@ fi
 
 git "${GIT_BOT_IDENTITY[@]}" merge -q --no-commit --no-ff "origin/$PROD_BRANCH" || true
 
+# Each list is read whole before its loop, never piped into it: `git diff` can still hold index.lock
+# after printing (its opportunistic index refresh), and a `git checkout` run meanwhile fails on it.
+
 # Put back what the merge would delete: that is the config the strip removed, and the development
 # branch is where it belongs.
-git diff --cached --diff-filter=D --name-only "$BEFORE" | while IFS= read -r f; do
-  [ -n "$f" ] && git checkout -q "$BEFORE" -- "$f"
-done
+deleted=$(git diff --cached --diff-filter=D --name-only "$BEFORE")
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  git checkout -q "$BEFORE" -- "$f"
+done <<<"$deleted"
 
 # modify/delete conflicts on those paths: keep the development branch's copy.
-git diff --name-only --diff-filter=U | while IFS= read -r f; do
-  [ -n "$f" ] && git checkout -q "$BEFORE" -- "$f" && git add -- "$f"
-done
+conflicted=$(git diff --name-only --diff-filter=U)
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  git checkout -q "$BEFORE" -- "$f"
+  git add -- "$f"
+done <<<"$conflicted"
 
 # Anything still conflicted is a real content clash, not strip fallout. Stop rather than push a guess.
 remaining=$(git diff --name-only --diff-filter=U)
