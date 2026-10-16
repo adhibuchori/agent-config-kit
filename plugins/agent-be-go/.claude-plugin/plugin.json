@@ -1,7 +1,7 @@
 {
   "name": "agent-be-go",
   "displayName": "Agent for Go HTTP services on PostgreSQL",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Experimental (0.x): rules, a reviewer, skills and checks for Go HTTP services on PostgreSQL (net/http, oapi-codegen, pgx, sqlc, goose) in Claude Code, on top of agent-core. Hooks: migration-guard refuses edits to migrations a protected branch already has (append-only), and generated-guard refuses hand edits to generated code and the exported contract (both read .claude/agent-config.json; a repo without one is unaffected). Commands: setup and sync install and verify the backend and Go rules, PostgreSQL rules shared with agent-be-axum, anti-patterns, a seeded service skeleton (error-code registry with an RFC 9457 writer, router, pool, tests at 100%), gate scripts, golangci-lint and sqlc config, the database roles, a pull-request-only CI caller, an optional DeepSeek review of each pull request and a CODEOWNERS starter. Agent: reviewer. Skills: api-endpoint, db-migration. The hooks run on your machine, open no network connection and stay silent until the project opts in.",
   "author": {
     "name": "Mochammad Adhi Buchori",

@@ -1,8 +1,8 @@
 # The pull-request quality gate for this iOS app, installed by /agent-ios-swiftui:setup. The checks
 # live in agent-config-kit's reusable ios-swiftui-quality-gate workflow, pinned below to one commit:
-# a Linux job runs the checks that need no Mac (SwiftLint, the String Catalog, error-code,
-# suppression and privacy checks, secrets, the skill scan), and only when it passes does a macOS
-# job with Xcode 27 run the whole of scripts/check/gates.list, the simulator build (no signing, no
+# a Linux job runs the checks that need no Mac (the String Catalog, error-code, suppression and
+# privacy checks, secrets, the skill scan), and only when it passes does a macOS job with Xcode 27
+# run the whole of scripts/check/gates.list (SwiftLint included), the simulator build (no signing, no
 # warning), the tests and the accessibility audit, the catalog against the build, dead code, client
 # drift and the coverage floor. A third job, "Quality Gate (ios-swiftui)", reports both: make that
 # one the required status check.

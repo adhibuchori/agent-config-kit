@@ -84,7 +84,7 @@ probe_fixture() {
   printf '.env\n.env.local\n.claude/state/\n' >"$p/.gitignore"
   printf 'API_KEY=\n' >"$p/.env.example" && printf 'API_KEY=\n' >"$p/.env.production.example"
   cat >"$p/package.json" <<'EOF'
-{"scripts": {"unlock": "bash scripts/ops/unlock.sh", "u2": "bash scripts/ops/unlock.sh", "dump": "cat .env", "build": "echo build"}}
+{"scripts": {"unlock": "bash scripts/ops/unlock.sh", "u2": "bash scripts/ops/unlock.sh", "dump": "cat .env", "build": "echo build", "test": "bun test src"}}
 EOF
   mkdir -p "$p/scripts/ops" "$p/scripts/env" "$p/scripts/check"
   for f in scripts/ops/unlock.sh scripts/env/show.sh scripts/env/set.sh scripts/check/gates.sh; do printf '#!/bin/sh\n' >"$p/$f"; done

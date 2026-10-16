@@ -15,14 +15,16 @@
 #           scheme: MyApp
 #
 # Three jobs (actions/quality-gate/scripts/stacks/ios-swiftui.sh, phases static and build):
-#   static  Linux, about a minute: the gates.list lines that need no Mac (SwiftLint through the
-#           pinned swiftlint-static, the Node and bash checks), a committed .env, gitleaks over the
-#           pull request's commits, SkillSpector when a skill, command, subagent or hook changed.
+#   static  Linux, about a minute: the gates.list lines that need no Mac (the Node and bash
+#           checks), a committed .env, gitleaks over the pull request's commits, SkillSpector when a
+#           skill, command, subagent or hook changed. SwiftLint waits for macOS: swiftlint-static
+#           aborts on a custom rule.
 #   build   macOS, only after static passed (a failure that needs no Mac never pays macOS minutes):
-#           the pinned Xcode, the whole gates.list (swift-format, swift test with coverage, the
-#           project checks), the coverage floor, xcodebuild test on the newest iOS simulator with
-#           zero build warnings (unit and UI tests, the accessibility audits among them), the string
-#           catalog checks that need a build, Periphery, and the API client regenerated with no diff.
+#           the pinned Xcode, the whole gates.list (swift-format, SwiftLint, swift test with
+#           coverage, the project checks), the coverage floor, xcodebuild test on the newest iOS
+#           simulator with zero build warnings (unit and UI tests, the accessibility audits among
+#           them), the string catalog checks that need a build, Periphery, and the API client
+#           regenerated with no diff.
 #   gate    passes only when both did. Require this one check, "Quality Gate (ios-swiftui)": a job
 #           skipped because the one before it failed does not block a merge by itself.
 # A check that cannot run fails the gate unless strict is false.

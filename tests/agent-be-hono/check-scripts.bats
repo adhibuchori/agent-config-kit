@@ -394,12 +394,24 @@ YML
   [[ "$output" != *"STEP_ONLY"* ]] || false
 }
 
-@test "ci-env: a missing env source fails and runs nothing" {
+@test "ci-env: a missing default env file means no variables, as the gate reads it" {
   ci_env_repo
   rm "$REPO/.env.ci.example"
+  run --separate-stderr bash "$REPO/scripts/check/ci-env.sh" env
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CI=true"* ]] || false
+  [[ "$output" != *"DATABASE_URL="* ]] || false
+  [[ "$output" != *"FROM_DOTENV"* ]] || false
+}
+
+@test "ci-env: a missing env source that a workflow names fails and runs nothing" {
+  ci_env_repo
+  rm "$REPO/.env.ci.example"
+  printf 'jobs:\n  gate:\n    uses: o/r/.github/workflows/be-hono-quality-gate.yml@0123\n    with:\n      env-file: .env.ci.custom.example\n' \
+    >"$REPO/.github/workflows/quality-gate.yml"
   run --separate-stderr bash "$REPO/scripts/check/ci-env.sh" touch "$REPO/ran"
   [ "$status" -eq 1 ]
-  [[ "$stderr" == *".env.ci.example is missing"* ]] || false
+  [[ "$stderr" == *".env.ci.custom.example is missing"* ]] || false
   [ ! -e "$REPO/ran" ]
   # A workflow that neither calls the gate nor sets an env: block leaves CI's variables unknown.
   printf 'on:\n  pull_request:\njobs:\n  test:\n    runs-on: ubuntu-latest\n' >"$REPO/.github/workflows/quality-gate.yml"

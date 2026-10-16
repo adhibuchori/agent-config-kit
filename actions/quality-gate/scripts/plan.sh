@@ -98,8 +98,8 @@ be-axum)
   [ "$database" = true ] && tools="$tools squawk sqlx-cli"
   ;;
 ios-swiftui)
-  tools="swiftlint"
-  [ "$phase" = static ] || tools="$tools periphery"
+  # The static job runs no SwiftLint: swiftlint-static aborts on a custom rule (it needs SourceKit).
+  [ "$phase" = static ] || tools="swiftlint periphery"
   ;;
 esac
 
@@ -116,7 +116,9 @@ out="${GITHUB_OUTPUT:-/dev/stdout}"
   echo "corepack=$corepack"
   echo "go=$go"
   echo "rust=$rust"
-  echo "gitleaks=$pr_checks"
+  # Installed in every job: the gates.list line bash scripts/check/secrets.sh needs it wherever the
+  # list runs, the iOS macOS job included. Only the PR-check job scans the pull request's commits.
+  echo "gitleaks=true"
   echo "tools=$tools"
 } >>"$out"
-echo "quality gate plan: stack=$stack phase=$phase base=$base package-manager=$pm bun=$bun uv=$uv corepack=$corepack go=$go rust=$rust gitleaks=$pr_checks tools=${tools:-none}" >&2
+echo "quality gate plan: stack=$stack phase=$phase base=$base package-manager=$pm bun=$bun uv=$uv corepack=$corepack go=$go rust=$rust gitleaks=true tools=${tools:-none}" >&2

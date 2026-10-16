@@ -4,11 +4,12 @@
 # work branch whose tracked files are notes/keep.txt, docs/a.md, alembic.ini, .gitignore,
 # .env.example, .env.production.example, stand-ins for scripts/ops/unlock.sh, scripts/env/show.sh,
 # set.sh, envfile.py and scripts/check/gates.sh, and a package.json whose scripts are unlock and u2 (both
-# the unlock script), dump (reads .env) and build; with an untracked build/ folder, ignored .env and
-# .env.local files, and no .claude/agent-config.json (so the defaults apply). @TMP@/forged holds a
-# forged .claude/state/unlock/env, and @TMP@/forged.tar the same tree. Checkout: - runs in that
-# fixture; a branch name runs in a fixture repo checked out on that branch. @TMP@ is the harness's
-# temp folder, outside the fixture. \n in a command is a newline and \t a tab.
+# the unlock script), dump (reads .env), build, and test (bun test src, Bun's own runner); with an
+# untracked build/ folder, ignored .env and .env.local files, and no .claude/agent-config.json (so the
+# defaults apply). @TMP@/forged holds a forged .claude/state/unlock/env, and @TMP@/forged.tar the
+# same tree. Checkout: - runs in that fixture; a branch name runs in a fixture repo checked out on
+# that branch. @TMP@ is the harness's temp folder, outside the fixture. \n in a command is a newline
+# and \t a tab.
 # A new rule adds a command it must stop and one it must not.
 block	-	find ./*/ -mindepth 2 \( -name .git -o -name node_modules \) -prune -o -type d -empty -print -delete
 block	-	find . -mindepth 2 -type d -empty -delete
@@ -348,6 +349,9 @@ block	-	yarn run unlock env
 block	-	bun --cwd . run unlock db
 block	-	npm --prefix @TMP@ run unlock env
 block	-	bun run u2 env
+allow	-	bun test src
+allow	-	bun run test
+block	-	bun dump
 block	-	bash -c 'bash scripts/ops/unlock.sh env'
 block	-	echo 'bash scripts/ops/unlock.sh env' | bash
 block	-	bash < scripts/ops/unlock.sh

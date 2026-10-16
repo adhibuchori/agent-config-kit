@@ -14,6 +14,8 @@
 #     DEVELOPER_DIR and the like);
 #   - a workflow that runs the tests itself: its env: blocks, the job's over the workflow's;
 #   - no workflow at all: .env.ci.example.
+# A missing .env.ci.example that no workflow names means no variables, as the quality gate reads it:
+# a repository whose tests need none keeps no such file.
 # Bun reads .env, .env.test and .env.local by itself; BUN_OPTIONS=--no-env-file stops every bun
 # process the command starts from doing so (CI has none of those files). Fails, rather than running
 # with a guess, when that source is missing or unreadable. Exit 2 without a command.
@@ -84,6 +86,8 @@ if any(re.match(r"^\s*uses:\s*\S*/[a-z0-9-]+-quality-gate\.ya?ml@", line) for li
     if not env_file.endswith(".example"):
         fail(f"env-file must be a committed *.example file of dummy values, got {env_file} ({where})")
     if not os.path.isfile(env_file):
+        if env_file == ".env.ci.example" and not any(re.match(r"^\s*env-file:", line) for line in lines):
+            sys.exit(0)  # the kit's default, named nowhere: the gate loads no variables either
         fail(f"{env_file} is missing ({where}). Commit it with the dummy KEY=VALUE variables the tests "
              "need (comments alone when they need none)")
     for raw in open(env_file, encoding="utf-8").read().splitlines():

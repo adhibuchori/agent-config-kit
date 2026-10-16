@@ -71,6 +71,40 @@ verify() { run --separate-stderr bash "$STRIP/verify-strip.sh"; }
   [[ "$output" == *"already part of dev"* ]]
 }
 
+@test "strip-ai: back-merge keeps dev's edit of a stripped file while git diff still holds the index lock" {
+  git checkout -q dev
+  printf '# agents, edited on dev\n' >AGENTS.md
+  printf 'rule, edited on dev\n' >.claude/rules/a.md
+  git commit -qam "dev edits stripped files"
+  git push -q origin dev
+  git checkout -q prod
+  strip
+  [ "$status" -eq 0 ]
+  # git's opportunistic index refresh can hold index.lock after `git diff` has printed, and a
+  # `git checkout` run while it does fails. On a busy runner that happens by chance; hold it always.
+  real_git=$(command -v git)
+  mkdir -p "$BATS_TEST_TMPDIR/bin"
+  cat >"$BATS_TEST_TMPDIR/bin/git" <<EOF
+#!/usr/bin/env bash
+[ "\$1" = diff ] || exec "$real_git" "\$@"
+lock="\$("$real_git" rev-parse --git-dir)/index.lock"
+: >"\$lock"
+"$real_git" "\$@"
+code=\$?
+sleep 1
+rm -f "\$lock"
+exit "\$code"
+EOF
+  chmod +x "$BATS_TEST_TMPDIR/bin/git"
+  PATH="$BATS_TEST_TMPDIR/bin:$PATH" back_merge
+  [ "$status" -eq 0 ]
+  git fetch -q origin
+  git merge-base --is-ancestor origin/prod origin/dev
+  [ "$(git show origin/dev:AGENTS.md)" = "# agents, edited on dev" ]
+  [ "$(git show origin/dev:.claude/rules/a.md)" = "rule, edited on dev" ]
+  [ "$(git show origin/dev:src/app.ts)" = "export const app = 2;" ]
+}
+
 @test "strip-ai: verify fails while prod still tracks a stripped path, or dev lost one" {
   printf '.claude/rules/a.md\n' >"$STRIP_AI_LIST"
   verify

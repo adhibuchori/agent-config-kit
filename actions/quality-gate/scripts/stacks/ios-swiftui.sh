@@ -4,9 +4,9 @@
 #
 # The gate runs in two jobs (QG_PHASE), so a failure that needs no Mac costs Linux minutes only:
 #   static  Linux: the gates.list lines whose command starts with an IOS_LINUX_GATES entry, exactly
-#           as written (the pinned swiftlint-static runs SwiftLint), then the pull-request checks: a
-#           committed .env, gitleaks over the PR's commits, a changed skill. Every other gates.list
-#           line is printed as running in the macOS job.
+#           as written, then the pull-request checks: a committed .env, gitleaks over the PR's
+#           commits, a changed skill. Every other gates.list line, SwiftLint's included, is printed
+#           as running in the macOS job.
 #   build   macOS, after the static job passed: Xcode must be the pinned release; the whole
 #           gates.list; the coverage floor from coverage/lcov.info; xcodebuild test on the newest iOS
 #           simulator (unit and UI tests, the accessibility audits among them) with zero build
@@ -14,11 +14,12 @@
 #           regenerated with no diff.
 #   all     both, in that order (a Mac by hand: QG_STACK=ios-swiftui bash gate.sh).
 
-# The gates.list commands that need no Mac: node and bash checks, and swiftlint (swiftlint-static
-# needs no SourceKit). A line runs on Linux only when its command is one of these or starts with one
-# and a space, so flags added to a line still match and an unknown line never runs there.
+# The gates.list commands that need no Mac: node and bash checks. Not swiftlint: swiftlint-static
+# aborts ("SourceKit is disabled by configuration") on any custom rule a file triggers, even in
+# swiftsyntax mode, so SwiftLint runs on macOS with the rest of the list. A line runs on Linux only
+# when its command is one of these or starts with one and a space, so flags added to a line still
+# match and an unknown line never runs there.
 IOS_LINUX_GATES=(
-  'swiftlint lint'
   'node scripts/check/i18n-catalog.mjs'
   'node scripts/check/folder-shape.mjs'
   'node scripts/check/coverage-policy.mjs'
