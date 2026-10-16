@@ -27,7 +27,8 @@ left() { echo $(($(cat "$T/$1") - $(date +%s))); }
 
 @test "unlock env opens .env edits for 20 minutes in private files; db for the minutes given" {
   run -0 --separate-stderr unlock env
-  [[ "$output" =~ ^🔓\ \.env\ unlocked\ until\ [0-9]{2}:[0-9]{2}\ \(20\ min\)\ —\ lock\ now:\ \./scripts/ops/unlock\.sh\ off\ env$ ]]
+  # Past midnight the clock carries the weekday ("until Fri 00:03"), so a run near 23:40 still passes.
+  [[ "$output" =~ ^🔓\ \.env\ unlocked\ until\ ([A-Z][a-z]{2}\ )?[0-9]{2}:[0-9]{2}\ \(20\ min\)\ —\ lock\ now:\ \./scripts/ops/unlock\.sh\ off\ env$ ]]
   [ "$(left env)" -gt 1190 ] && [ "$(left env)" -le 1200 ]
   [ "$(mode_of "$T/env")" = 600 ] && [ "$(mode_of "$T")" = 700 ] && [ "$(mode_of "$P/.claude/state")" = 700 ]
   run -0 --separate-stderr unlock db 5
