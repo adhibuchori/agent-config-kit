@@ -536,6 +536,8 @@ case "$*" in
   echo '{"devices":{"com.apple.CoreSimulator.SimRuntime.iOS-26-2":[{"udid":"OLD-UDID","name":"iPhone 17","isAvailable":true}],
    "com.apple.CoreSimulator.SimRuntime.iOS-27-0":[{"udid":"IPAD-UDID","name":"iPad Pro","isAvailable":true},{"udid":"NEW-UDID","name":"iPhone 18 Pro","isAvailable":true}],
    "com.apple.CoreSimulator.SimRuntime.watchOS-27-0":[{"udid":"WATCH","name":"Apple Watch","isAvailable":true}]}}' ;;
+"simctl bootstatus "*)
+  exit "${STUB_BOOT_EXIT:-0}" ;;
 "xcresulttool get build-results "*)
   printf '{"warningCount":%s,"warnings":[{"issueType":"Swift Compiler Warning","message":"var never mutated","sourceURL":"App/Screens/Home.swift"}]}\n' "${XCODE_WARNINGS:-0}" ;;
 esac
@@ -582,6 +584,9 @@ EOF
   test_line=$(grep '^xcodebuild test ' "$STUB_LOG")
   [[ "$test_line" == "xcodebuild test -project App.xcodeproj -scheme App -destination id=NEW-UDID -derivedDataPath "*"/ios/DerivedData -resultBundlePath "*"/ios/test.xcresult -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=YES" ]] || false
   [[ "$test_line" != *"retry"* ]] || false
+  # The simulator is booted and waited for before the build, never left to xcodebuild.
+  grep -qx 'xcrun simctl bootstatus NEW-UDID -b' "$STUB_LOG"
+  [ "$(line_of '^xcrun simctl bootstatus ')" -lt "$(line_of '^xcodebuild test ')" ]
   grep -q '^xcrun xcresulttool get build-results --path .*/ios/test.xcresult --compact$' "$STUB_LOG"
   grep -q '^i18n-catalog --stringsdata .*/ios/DerivedData$' "$STUB_LOG"
   grep -q '^periphery scan --strict --disable-update-check --index-store-path .*/ios/DerivedData/Index.noindex/DataStore$' "$STUB_LOG"
@@ -615,6 +620,14 @@ EOF
   [[ "$output" == *"xcodebuild test failed (scheme App, simulator NEW-UDID)"* ]] || false
   [[ "$output" == *"String Catalog Check, built (I3, I4): the build did not finish"* ]] || false
   run ! grep -q '^periphery ' "$STUB_LOG"
+}
+
+@test "gate: a simulator that does not finish booting fails the gate before the build" {
+  ios_repo
+  STUB_BOOT_EXIT=1 QG_STRICT=false QG_STACK=ios-swiftui QG_PHASE=build QG_COVERAGE_THRESHOLD=0 gate
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"the simulator NEW-UDID did not finish booting"* ]] || false
+  run ! grep -q '^xcodebuild test' "$STUB_LOG"
 }
 
 @test "gate: the iOS client drift check regenerates the client and fails on a diff" {

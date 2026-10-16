@@ -60,7 +60,7 @@ The Go, Rust and Swift stacks, in the same order. ios-swiftui runs in two jobs (
 | Audit | `go tool govulncheck` (text mode) | `cargo deny --locked check` | |
 | SkillSpector, when a skill, command, subagent or hook changed | yes | yes | static |
 | OpenAPI spec drift | `gates.list` regenerates it | `src/bin/openapi.rs` writes `openapi.json` | API client regenerated, no diff (build) |
-| Build and test | `go build -trimpath ./...` | `cargo build --locked --release` | `xcodebuild test`, newest iPhone simulator, zero warnings (build) |
+| Build and test | `go build -trimpath ./...` | `cargo build --locked --release` | `xcodebuild test`, newest iPhone simulator booted first, zero warnings (build) |
 | String catalog, from the build's `.stringsdata` (I3, I4) | | | `i18n-catalog.mjs --stringsdata` (build) |
 | Dead code | | | `periphery scan --strict` with `.periphery.yml` (build) |
 | Docker build (a `Dockerfile`) | yes | yes | |
@@ -119,7 +119,7 @@ docker, or no `pooler.sh`, is a check that did not run.
 2. **build**, on macOS, only when static passed (`phase: build`): the Xcode release must be
    `xcode-version`, then the whole `gates.list`, the coverage floor, `xcodebuild test` (unit and UI
    tests, `CODE_SIGNING_ALLOWED=NO`, `-onlyUsePackageVersionsFromResolvedFile`) on the first iPhone
-   of the newest iOS runtime, zero build warnings as `xcresulttool` counts them, the string catalog
+   of the newest iOS runtime, booted with `simctl bootstatus -b` before the build, zero build warnings as `xcresulttool` counts them, the string catalog
    checks that need the build, Periphery over the index that build wrote, and the API client
    regenerated with `swift-openapi-generator`'s command plugin with no diff.
 3. **gate** passes only when both did. A job skipped because the one before it failed does not
