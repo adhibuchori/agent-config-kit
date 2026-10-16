@@ -21,6 +21,10 @@ Setup installs it; it runs by itself when a pull request touches `.github/` or `
 ## Prerequisites
 
 - A Linux runner with Docker: actionlint and zizmor run as pinned images.
+- If the organization or repository allows only selected actions, the list must also allow
+  `docker://rhysd/actionlint:*` and `zizmorcore/zizmor-action@*`. GitHub refuses to start a run
+  whose `uses:` the list does not allow, so without them every run ends in **Startup failure** and
+  no check reports.
 
 ## Common questions
 

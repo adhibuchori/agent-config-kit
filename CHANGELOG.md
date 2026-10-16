@@ -10,6 +10,27 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-10-16
+
+The callers whose reusable workflows 1.3.2 fixed are pinned to its release commit, so setup and
+sync install those fixes. The Workflows Lint docs add a prerequisite: an Actions policy that allows
+only selected actions must allow `docker://rhysd/actionlint:*` and `zizmorcore/zizmor-action@*`, or
+every run ends in **Startup failure**.
+
+### agent-ios-swiftui 0.1.3
+
+#### Fixed
+
+- The quality-gate caller is pinned to the v1.3.2 release commit: the static job no longer runs
+  `swiftlint-static`, and the macOS job has gitleaks for `secrets.sh`.
+
+### agent-deploy 1.1.4
+
+#### Fixed
+
+- The strip-ai caller is pinned to the v1.3.2 release commit, whose back-merge no longer stops on
+  `index.lock` when the development branch edited a stripped file since the last strip.
+
 ## [1.3.2] - 2026-10-16
 
 Fixes found by setting up a Hono API and a SwiftUI app from the kit, each proven by a test that fails
@@ -1313,7 +1334,8 @@ First release.
 - Templates: the 3D scene rule, the glTF/GLB asset budget check with its config, and a guide to
   adding 3D skills by reference.
 
-[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.3.2...HEAD
+[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.3.3...HEAD
+[1.3.3]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.3
 [1.3.2]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.2
 [1.3.1]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.1
 [1.3.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.0
