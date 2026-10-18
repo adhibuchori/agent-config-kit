@@ -66,7 +66,7 @@ else
     scanned=$((scanned + 1))
     while IFS= read -r n; do
       [ -n "$n" ] || continue
-      if ! printf '%s\n' "$defined" | grep -qxF "$n"; then
+      if ! grep -qxF "$n" <<<"$defined"; then
         echo "::error file=$f::cites Rule $n, which AGENTS.md does not define"
         stale=1
       fi

@@ -52,6 +52,14 @@ longer hides what the build-dependent checks found.
 
 ### agent-core 1.2.2
 
+#### Fixed
+
+- `scripts/check/ai-config.sh` no longer reports a rule AGENTS.md defines as undefined. It piped
+  `printf` into `grep -q` under `pipefail`: `grep -q` exits at its first match, `printf` dies of
+  SIGPIPE, and the pipeline read as "not found", now and then, on a busy runner.
+  `scripts/sync/workflows.sh` had the same pipe. Both read a here-string now, and a test refuses the
+  pattern in every template script that sets `pipefail`.
+
 #### Changed
 
 - `/agent-core:help` no longer marks agent-ios-swiftui experimental.
