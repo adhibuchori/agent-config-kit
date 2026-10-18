@@ -38,4 +38,6 @@ platform's own list.
 The reusable workflow maps `DEPLOY_WEBHOOK_URL` and `DOCS_DISPATCH_TOKEN` to these, deploys the
 branch the pull request merged into unless you set `ref`, and adds `runs-on` (empty uses the
 repository variable `CI_RUNNER`, then `ubuntu-latest`) and `timeout-minutes` (12, above the retry
-window).
+window). When every retry fails, a second job (`Deploy (fresh runner)`) tries once more on a new
+runner: a runner whose address never reaches the host fails all its retries, while a fresh one gets
+through at once.

@@ -10,6 +10,19 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.5.2] - 2026-10-18
+
+### Reusable workflows and actions
+
+#### Fixed
+
+- deploy-webhook retries from a fresh runner. Twice, one GitHub runner timed out on all four webhook
+  attempts to a VPS that logged no dropped packet, firewall block or load, while a rerun on another
+  runner was accepted at once: the runner's address did not reach the host. The deploy job now
+  reports the webhook's outcome instead of failing, and a second job, `Deploy (fresh runner)`, runs
+  the same step on a new runner when it failed. The docs dispatch goes out from whichever job
+  deployed.
+
 ## [1.5.1] - 2026-10-18
 
 The strip-ai caller is pinned to the v1.5.0 release commit and passes the optional push-key secret.
