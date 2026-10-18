@@ -10,6 +10,23 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-10-18
+
+The strip-ai caller is pinned to the v1.5.0 release commit and passes the optional push-key secret.
+
+### agent-deploy 1.2.0
+
+#### Added
+
+- The strip-ai caller passes `push-key: ${{ secrets.STRIP_AI_PUSH_KEY }}`. Store a write deploy key's
+  private key as `STRIP_AI_PUSH_KEY` and the strip and the back-merge push over SSH, so a ruleset
+  that requires the quality gate on `prod` and `dev` can let deploy keys bypass it. Without the
+  secret nothing changes.
+
+#### Fixed
+
+- The strip-ai caller is pinned to the v1.5.0 release commit.
+
 ## [1.5.0] - 2026-10-18
 
 Two blockers met while syncing an app's repos to 1.4.1. safety-check refused agent-core's own

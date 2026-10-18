@@ -5,7 +5,11 @@
 # /agent-deploy:sync brings a new pin when a plugin release moves it.
 #
 # The job's token pushes to prod and dev, so a branch ruleset on either must let GitHub Actions
-# push. A back-merge that meets a real conflict stops and lists the files. A pull request closed
+# push. To require the quality gate on both branches, add a deploy key with write access, store its
+# private key as the STRIP_AI_PUSH_KEY secret and let deploy keys bypass that ruleset: with the
+# secret the two pushes go over SSH (a repository ruleset cannot list GitHub Actions as a bypass
+# actor). Without it, push-key is empty and the job's token pushes. A back-merge that meets a real
+# conflict stops and lists the files. A pull request closed
 # without merging starts the workflow but runs nothing.
 
 name: Strip AI Config
@@ -29,7 +33,9 @@ jobs:
     if: github.event.pull_request.merged == true
     permissions:
       contents: write # push the strip commit to prod and the back-merge to dev
-    uses: adhibuchori/agent-config-kit/.github/workflows/strip-ai.yml@957143e84769d602a992b8986c0ebf2c218d5e66 # v1.3.2
+    uses: adhibuchori/agent-config-kit/.github/workflows/strip-ai.yml@705195762635daca0345af043f2ebf32da799a38 # v1.5.0
+    secrets:
+      push-key: ${{ secrets.STRIP_AI_PUSH_KEY }}
     # with: # every input is optional
     #   prod-branch: prod
     #   dev-branch: dev
