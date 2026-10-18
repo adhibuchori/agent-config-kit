@@ -10,6 +10,18 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.5.3] - 2026-10-18
+
+The deploy caller is pinned to the v1.5.2 release commit, so setup and sync install the fresh-runner
+retry.
+
+### agent-deploy 1.2.1
+
+#### Fixed
+
+- The deploy caller is pinned to the v1.5.2 release commit: when the webhook fails from one runner,
+  `Deploy (fresh runner)` retries from a new one.
+
 ## [1.5.2] - 2026-10-18
 
 ### Reusable workflows and actions
