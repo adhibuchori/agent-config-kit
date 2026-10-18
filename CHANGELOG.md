@@ -10,6 +10,19 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-10-18
+
+The ios-swiftui quality-gate caller is pinned to the v1.4.0 release commit, so setup and sync
+install the gate that builds first and tests last.
+
+### agent-ios-swiftui 1.0.1
+
+#### Fixed
+
+- The quality-gate caller is pinned to the v1.4.0 release commit: the macOS job runs
+  `build-for-testing`, the String Catalog check, Periphery and the client drift check before
+  `test-without-building`, so a failing or timed-out test no longer hides them.
+
 ## [1.4.0] - 2026-10-18
 
 agent-ios-swiftui leaves 0.x: an app built with it reached production, and the lessons of that run
