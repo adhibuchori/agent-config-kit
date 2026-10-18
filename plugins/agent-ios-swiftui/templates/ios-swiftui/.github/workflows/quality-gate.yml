@@ -29,7 +29,7 @@ jobs:
     permissions:
       contents: read
     # No secrets: the gate reads the checkout and nothing else, and never signs a build.
-    uses: adhibuchori/agent-config-kit/.github/workflows/ios-swiftui-quality-gate.yml@27d281201f852a74984a9c7763130df417655420 # v1.3.4
+    uses: adhibuchori/agent-config-kit/.github/workflows/ios-swiftui-quality-gate.yml@dbb6e8a416b701d6f3669289e5857dfa90492667 # v1.4.0
     # Once the UI tests include an accessibility audit per screen, give CI its own scheme: the same
     # app and UI test target with only the quick, deterministic tests selected. The whole audit
     # outlasts GitHub's macOS runner (90 minutes on a 120-screen app, contrast sampled mid-fade) and
