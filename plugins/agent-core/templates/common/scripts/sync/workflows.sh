@@ -134,7 +134,7 @@ else
   while IFS= read -r name; do
     [ "$name" = "INDEX.md" ] && continue
     cmd=$(command_of "$name")
-    printf '%s\n' "$listed" | grep -qxF "$cmd" || fail "not listed in INDEX.md: $cmd"
+    grep -qxF "$cmd" <<<"$listed" || fail "not listed in INDEX.md: $cmd"
   done < <(md_files "$SOURCE")
 
   while IFS= read -r cmd; do

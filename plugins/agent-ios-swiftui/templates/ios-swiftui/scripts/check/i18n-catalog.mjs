@@ -132,7 +132,13 @@ function check(catalog, locales, used) {
     }
     for (const [key, entry] of Object.entries(strings)) {
       const byName = entry.extractionState === 'manual' || entry.extractionState === 'stale';
-      if (!byName && !keys.has(key)) problems.push(`I4 "${key}" was extracted from code, yet no code uses it now`);
+      if (!byName && !keys.has(key)) {
+        /** A literal inside a ternary or a tuple is never extracted, though the code still uses it. */
+        problems.push(
+          `I4 "${key}" was extracted from code, yet no code uses it now` +
+            ' (still in the code, inside a ternary or a tuple? mark it "extractionState": "manual")',
+        );
+      }
     }
   }
   return { problems, manual };

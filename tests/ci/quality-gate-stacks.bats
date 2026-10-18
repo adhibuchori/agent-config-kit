@@ -528,6 +528,7 @@ EOF
   stub_tools gitleaks uv plutil swift periphery
   stub xcodebuild <<'EOF'
 [ "$1" = -version ] && printf '%s\nBuild version 27A266a\n' "${XCODE_LINE:-Xcode 27.0}"
+[ "$1" = test-without-building ] && exit "${STUB_TEST_EXIT:-0}"
 exit "${STUB_XCODEBUILD_EXIT:-0}"
 EOF
   stub xcrun <<'EOF'
@@ -575,21 +576,26 @@ EOF
   [[ "$output" == *"bash scripts/check/secrets.sh failed"* ]] || false
 }
 
-@test "gate: the iOS build phase runs the whole list, builds on the newest iPhone, and never rescans the PR" {
+@test "gate: the iOS build phase runs the whole list, builds on the newest iPhone, tests last, and never rescans the PR" {
   ios_repo
   QG_STACK=ios-swiftui QG_PHASE=build QG_XCODE_VERSION=27.0 QG_COVERAGE_THRESHOLD=0 gate
   [ "$status" -eq 0 ]
   [[ "$output" == *"gates.sh ran"* ]] || false
-  local test_line
-  test_line=$(grep '^xcodebuild test ' "$STUB_LOG")
-  [[ "$test_line" == "xcodebuild test -project App.xcodeproj -scheme App -destination id=NEW-UDID -derivedDataPath "*"/ios/DerivedData -resultBundlePath "*"/ios/test.xcresult -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=YES" ]] || false
+  local build_line test_line
+  build_line=$(grep '^xcodebuild build-for-testing ' "$STUB_LOG")
+  [[ "$build_line" == "xcodebuild build-for-testing -project App.xcodeproj -scheme App -destination id=NEW-UDID -derivedDataPath "*"/ios/DerivedData -resultBundlePath "*"/ios/build.xcresult -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=YES" ]] || false
+  test_line=$(grep '^xcodebuild test-without-building ' "$STUB_LOG")
+  [[ "$test_line" == "xcodebuild test-without-building -project App.xcodeproj -scheme App -destination id=NEW-UDID -derivedDataPath "*"/ios/DerivedData -resultBundlePath "*"/ios/test.xcresult" ]] || false
   [[ "$test_line" != *"retry"* ]] || false
   # The simulator is booted and waited for before the build, never left to xcodebuild.
   grep -qx 'xcrun simctl bootstatus NEW-UDID -b' "$STUB_LOG"
-  [ "$(line_of '^xcrun simctl bootstatus ')" -lt "$(line_of '^xcodebuild test ')" ]
-  grep -q '^xcrun xcresulttool get build-results --path .*/ios/test.xcresult --compact$' "$STUB_LOG"
+  [ "$(line_of '^xcrun simctl bootstatus ')" -lt "$(line_of '^xcodebuild build-for-testing ')" ]
+  grep -q '^xcrun xcresulttool get build-results --path .*/ios/build.xcresult --compact$' "$STUB_LOG"
   grep -q '^i18n-catalog --stringsdata .*/ios/DerivedData$' "$STUB_LOG"
   grep -q '^periphery scan --strict --disable-update-check --index-store-path .*/ios/DerivedData/Index.noindex/DataStore$' "$STUB_LOG"
+  # The tests run after every check that needs the build.
+  [ "$(line_of '^periphery ')" -lt "$(line_of '^xcodebuild test-without-building ')" ]
+  [ "$(line_of '^i18n-catalog --stringsdata')" -lt "$(line_of '^xcodebuild test-without-building ')" ]
   [[ "$output" == *"0 build warning(s)"* ]] || false
   run ! grep -q '^gitleaks ' "$STUB_LOG"
   run ! grep -q '^swiftlint ' "$STUB_LOG" # it runs through gates.sh, which the toy replaces
@@ -601,7 +607,8 @@ EOF
   [ "$status" -eq 1 ]
   [[ "$output" == *"App/Screens/Home.swift: var never mutated"* ]] || false
   [[ "$output" == *"the build has warnings; the gate allows none"* ]] || false
-  grep -q '^xcodebuild test -project App.xcodeproj -scheme AppCI ' "$STUB_LOG"
+  grep -q '^xcodebuild build-for-testing -project App.xcodeproj -scheme AppCI ' "$STUB_LOG"
+  grep -q '^xcodebuild test-without-building -project App.xcodeproj -scheme AppCI ' "$STUB_LOG"
 }
 
 @test "gate: another Xcode stops the build phase before any gate runs" {
@@ -610,16 +617,27 @@ EOF
   [ "$status" -eq 1 ]
   [[ "$output" == *"the runner's Xcode is 'Xcode 26.6', not the pinned Xcode 27.0"* ]] || false
   [[ "$output" != *"gates.sh ran"* ]] || false
-  run ! grep -q '^xcodebuild test' "$STUB_LOG"
+  run ! grep -q '^xcodebuild build-for-testing' "$STUB_LOG"
 }
 
-@test "gate: a failed xcodebuild test fails the gate, and the checks that need the build did not run" {
+@test "gate: a failed build fails the gate, and the checks that need the build and the tests did not run" {
   ios_repo
   STUB_XCODEBUILD_EXIT=65 QG_STRICT=false QG_STACK=ios-swiftui QG_PHASE=build QG_COVERAGE_THRESHOLD=0 gate
   [ "$status" -eq 1 ]
-  [[ "$output" == *"xcodebuild test failed (scheme App, simulator NEW-UDID)"* ]] || false
+  [[ "$output" == *"xcodebuild build-for-testing failed (scheme App, simulator NEW-UDID)"* ]] || false
   [[ "$output" == *"String Catalog Check, built (I3, I4): the build did not finish"* ]] || false
   run ! grep -q '^periphery ' "$STUB_LOG"
+  run ! grep -q '^xcodebuild test-without-building' "$STUB_LOG"
+}
+
+@test "gate: a failing test fails the gate, after the checks that need the build have run" {
+  ios_repo
+  STUB_TEST_EXIT=65 QG_STACK=ios-swiftui QG_PHASE=build QG_COVERAGE_THRESHOLD=0 gate
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"xcodebuild test-without-building failed (scheme App, simulator NEW-UDID)"* ]] || false
+  grep -q '^i18n-catalog --stringsdata .*/ios/DerivedData$' "$STUB_LOG"
+  grep -q '^periphery scan ' "$STUB_LOG"
+  [[ "$output" == *"0 build warning(s)"* ]] || false
 }
 
 @test "gate: a simulator that does not finish booting fails the gate before the build" {
@@ -627,7 +645,7 @@ EOF
   STUB_BOOT_EXIT=1 QG_STRICT=false QG_STACK=ios-swiftui QG_PHASE=build QG_COVERAGE_THRESHOLD=0 gate
   [ "$status" -eq 1 ]
   [[ "$output" == *"the simulator NEW-UDID did not finish booting"* ]] || false
-  run ! grep -q '^xcodebuild test' "$STUB_LOG"
+  run ! grep -q '^xcodebuild build-for-testing' "$STUB_LOG"
 }
 
 @test "gate: the iOS client drift check regenerates the client and fails on a diff" {
@@ -652,7 +670,7 @@ EOF
   QG_STACK=ios-swiftui QG_COVERAGE_THRESHOLD=0 gate
   [ "$status" -eq 0 ]
   [ "$(line_of '^gitleaks ')" -gt 0 ]
-  [ "$(line_of '^xcodebuild test ')" -gt "$(line_of '^gitleaks ')" ]
+  [ "$(line_of '^xcodebuild build-for-testing ')" -gt "$(line_of '^gitleaks ')" ]
 }
 
 @test "gate: every IOS_LINUX_GATES entry is a line of the ios-swiftui template's gates.list" {

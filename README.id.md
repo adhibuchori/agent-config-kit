@@ -205,9 +205,9 @@ gerakan dikurangi (reduced motion), yang tampil adalah gambar diam.
 
 - memakai Claude Code (CLI atau ekstensi IDE) di repositori sungguhan, sendiri atau bersama tim;
 - membangun dengan salah satu stack yang didukung: aplikasi Next.js, situs Next.js statis, API Bun +
-  Hono + Drizzle, layanan FastAPI + LLM, atau situs dokumentasi Nextra; atau mencoba stack
-  eksperimental (0.x, nama dan aturannya masih bisa berubah): API Go + net/http + sqlc, API Rust +
-  Axum + sqlx, atau aplikasi iOS SwiftUI;
+  Hono + Drizzle, layanan FastAPI + LLM, situs dokumentasi Nextra, atau aplikasi iOS SwiftUI; atau
+  mencoba stack eksperimental (0.x, nama dan aturannya masih bisa berubah): API Go + net/http + sqlc
+  atau API Rust + Axum + sqlx;
 - menginginkan penolakan yang bisa dipercaya, dan setup yang bisa Anda baca sebelum ia menulis apa pun.
 
 **Tidak cocok jika Anda:**
@@ -227,7 +227,7 @@ Setiap repo mendapat **agent-core** ditambah **satu** plugin stack. Dua add-on b
 ```mermaid
 flowchart TD
     accTitle: Plugin mana yang dipasang
-    accDescr: Mulai dari jenis repo Anda. Aplikasi web Next.js dengan API memakai agent-fe-nextjs. Situs company profile atau landing page memakai agent-fe-nextjs-static. API Bun, Hono, dan Drizzle memakai agent-be-hono. Layanan FastAPI dengan penyedia LLM memakai agent-ai-fastapi. Situs dokumentasi Nextra memakai agent-docs-nextra. Eksperimental: API Go dengan net/http dan sqlc memakai agent-be-go, API Rust dengan Axum dan sqlx memakai agent-be-axum, dan aplikasi iOS SwiftUI memakai agent-ios-swiftui. Selain itu cukup agent-core. Tambahkan agent-fe-threejs untuk scene 3D dan agent-deploy untuk pemeriksaan deploy.
+    accDescr: Mulai dari jenis repo Anda. Aplikasi web Next.js dengan API memakai agent-fe-nextjs. Situs company profile atau landing page memakai agent-fe-nextjs-static. API Bun, Hono, dan Drizzle memakai agent-be-hono. Layanan FastAPI dengan penyedia LLM memakai agent-ai-fastapi. Situs dokumentasi Nextra memakai agent-docs-nextra. Aplikasi iOS SwiftUI memakai agent-ios-swiftui. Eksperimental: API Go dengan net/http dan sqlc memakai agent-be-go, dan API Rust dengan Axum dan sqlx memakai agent-be-axum. Selain itu cukup agent-core. Tambahkan agent-fe-threejs untuk scene 3D dan agent-deploy untuk pemeriksaan deploy.
     Q{Repo ini apa?}
     Q -->|Aplikasi web Next.js dengan API| FE[agent-fe-nextjs]
     Q -->|Company profile atau landing page| ST[agent-fe-nextjs-static]
@@ -236,7 +236,7 @@ flowchart TD
     Q -->|Situs dokumentasi Nextra| DOCS[agent-docs-nextra]
     Q -->|API Go + net/http + sqlc, eksperimental| GO[agent-be-go]
     Q -->|API Rust + Axum + sqlx, eksperimental| RS[agent-be-axum]
-    Q -->|Aplikasi iOS SwiftUI, eksperimental| IOS[agent-ios-swiftui]
+    Q -->|Aplikasi iOS SwiftUI| IOS[agent-ios-swiftui]
     Q -->|Yang lain| CORE[agent-core saja]
     X([Opsional, di samping plugin stack mana pun]) -.->|scene 3D| TJ[+ agent-fe-threejs]
     X -.->|cek deploy| DEP[+ agent-deploy]
@@ -252,7 +252,7 @@ flowchart TD
 | [agent-docs-nextra](plugins/agent-docs-nextra/README.md) | situs dokumentasi Nextra | generated-guard, reviewer keamanan dan SEO |
 | [agent-be-go](plugins/agent-be-go/README.md) | eksperimental: API Go + net/http + sqlc | migration-guard (append-only), generated-guard, reviewer, 2 skill |
 | [agent-be-axum](plugins/agent-be-axum/README.md) | eksperimental: API Rust + Axum + sqlx | migration-guard (append-only), generated-guard, reviewer, 2 skill |
-| [agent-ios-swiftui](plugins/agent-ios-swiftui/README.md) | eksperimental: aplikasi iOS SwiftUI | generated-guard, 3 perintah, 2 agen, 2 skill |
+| [agent-ios-swiftui](plugins/agent-ios-swiftui/README.md) | aplikasi iOS SwiftUI | generated-guard, 3 perintah, 2 agen, 2 skill |
 | [agent-fe-threejs](plugins/agent-fe-threejs/README.md) | add-on: three.js / React Three Fiber | aturan 3D dan pemeriksaan anggaran aset |
 | [agent-deploy](plugins/agent-deploy/README.md) | add-on: host mana pun | smoke test deploy dari luar, promosi cadangan |
 
@@ -1530,7 +1530,7 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 </details>
 
 <details>
-<summary><strong>agent-ios-swiftui</strong>: 95 berkas</summary>
+<summary><strong>agent-ios-swiftui</strong>: 98 berkas</summary>
 
 | Berkas | Kapan setup memasangnya | Isinya (judul berkasnya) |
 | --- | --- | --- |
@@ -1542,11 +1542,14 @@ membuatnya sekali dan sync tidak pernah membandingkannya lagi.
 | `.claude/anti-patterns/closed-openapi-enum-throws-on-new-code.md` | selalu; sync menjaganya tetap terbaru | A closed OpenAPI enum turns a new error code into a decoding failure |
 | `.claude/anti-patterns/file-length-counts-comments-by-default.md` | selalu; sync menjaganya tetap terbaru | `file_length` counts blank and comment lines unless told not to |
 | `.claude/anti-patterns/formatted-ignores-environment-locale.md` | selalu; sync menjaganya tetap terbaru | `value.formatted()` and `String(format:)` ignore the screen's locale |
+| `.claude/anti-patterns/full-accessibility-audit-outlasts-hosted-runner.md` | selalu; sync menjaganya tetap terbaru | A full accessibility audit outlasts a hosted macOS runner |
 | `.claude/anti-patterns/macos-latest-is-a-different-xcode.md` | selalu; sync menjaganya tetap terbaru | `macos-latest` builds with a different Xcode than yours |
 | `.claude/anti-patterns/nested-swiftlint-config-replaces-root.md` | selalu; sync menjaganya tetap terbaru | A nested `.swiftlint.yml` silently replaces the root rules for its folder |
 | `.claude/anti-patterns/package-text-reads-main-bundle.md` | selalu; sync menjaganya tetap terbaru | Text inside a Swift package reads the app's catalog |
+| `.claude/anti-patterns/periphery-reads-a-stale-index.md` | selalu; sync menjaganya tetap terbaru | Periphery reads a stale index on a developer's Mac |
 | `.claude/anti-patterns/preconcurrency-warnings-escape-werror.md` | selalu; sync menjaganya tetap terbaru | Some concurrency warnings stay warnings with warnings as errors |
 | `.claude/anti-patterns/state-macro-changes-init-semantics.md` | selalu; sync menjaganya tetap terbaru | `@State` builds its initial value once with Xcode 27, on every view init before |
+| `.claude/anti-patterns/string-literal-in-ternary-is-not-extracted.md` | selalu; sync menjaganya tetap terbaru | A string literal in a ternary or a tuple is not extracted |
 | `.claude/anti-patterns/swiftlint-analyze-sees-zero-files.md` | selalu; sync menjaganya tetap terbaru | `swiftlint analyze` passes because it analyzed nothing |
 | `.claude/anti-patterns/text-string-is-never-localized.md` | selalu; sync menjaganya tetap terbaru | `Text(someString)` is never localized |
 | `.claude/anti-patterns/xccov-omits-package-files.md` | selalu; sync menjaganya tetap terbaru | Xcode's coverage report leaves Swift package files out |

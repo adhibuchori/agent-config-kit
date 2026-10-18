@@ -8,10 +8,11 @@
 #           commits, a changed skill. Every other gates.list line, SwiftLint's included, is printed
 #           as running in the macOS job.
 #   build   macOS, after the static job passed: Xcode must be the pinned release; the whole
-#           gates.list; the coverage floor from coverage/lcov.info; xcodebuild test on the newest iOS
-#           simulator (unit and UI tests, the accessibility audits among them) with zero build
-#           warnings; the string-catalog checks that need a build (I3, I4); Periphery; the API client
-#           regenerated with no diff.
+#           gates.list; the coverage floor from coverage/lcov.info; xcodebuild build-for-testing for
+#           the newest iOS simulator with zero build warnings; the string-catalog checks that need a
+#           build (I3, I4); Periphery; the API client regenerated with no diff; then xcodebuild
+#           test-without-building (the scheme's tests). The tests run last, so a failing or
+#           timed-out test never hides what the build-dependent checks found.
 #   all     both, in that order (a Mac by hand: QG_STACK=ios-swiftui bash gate.sh).
 
 # The gates.list commands that need no Mac: node and bash checks. Not swiftlint: swiftlint-static
@@ -104,8 +105,8 @@ ios_simulator() {
     });'
 }
 
-ios_build_test() {
-  local name="Build and Test (xcodebuild test, zero warnings)" projs=() p proj scheme udid out
+ios_build_for_testing() {
+  local name="Build for Testing (xcodebuild build-for-testing, zero warnings)" projs=() p proj scheme udid out
   IOS_BUILT=0
   qg_step "$name"
   for p in *.xcodeproj; do
@@ -130,16 +131,16 @@ ios_build_test() {
   fi
   out="$QG_TMP/ios"
   rm -rf "$out" && mkdir -p "$out"
-  # Never -retry-tests-on-failure: a test that passes on the second try is a failing test.
-  if ! xcodebuild test -project "$proj" -scheme "$scheme" -destination "id=$udid" \
-    -derivedDataPath "$out/DerivedData" -resultBundlePath "$out/test.xcresult" \
+  IOS_PROJECT=$proj IOS_SCHEME=$scheme IOS_UDID=$udid
+  if ! xcodebuild build-for-testing -project "$proj" -scheme "$scheme" -destination "id=$udid" \
+    -derivedDataPath "$out/DerivedData" -resultBundlePath "$out/build.xcresult" \
     -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=YES; then
-    qg_fail "xcodebuild test failed (scheme $scheme, simulator $udid)"
+    qg_fail "xcodebuild build-for-testing failed (scheme $scheme, simulator $udid)"
     return
   fi
   IOS_BUILT=1
   # The warning count of the build, read from the result bundle: one warning fails the gate.
-  if ! xcrun xcresulttool get build-results --path "$out/test.xcresult" --compact >"$out/build.json"; then
+  if ! xcrun xcresulttool get build-results --path "$out/build.xcresult" --compact >"$out/build.json"; then
     qg_fail "xcresulttool could not read the build results"
     return
   fi
@@ -152,6 +153,20 @@ ios_build_test() {
     process.exit(n > 0 ? 1 : 0);
   ' "$out/build.json" | qg_quote
   [ "${PIPESTATUS[0]}" -eq 0 ] || qg_fail "the build has warnings; the gate allows none"
+}
+
+# The scheme's tests on the build above, last: the checks that need the build have already reported.
+ios_test() {
+  local name="Test (xcodebuild test-without-building)"
+  qg_step "$name"
+  if [ "${IOS_BUILT:-0}" -ne 1 ]; then
+    qg_skip "$name" "the build did not finish"
+    return
+  fi
+  # Never -retry-tests-on-failure: a test that passes on the second try is a failing test.
+  xcodebuild test-without-building -project "$IOS_PROJECT" -scheme "$IOS_SCHEME" -destination "id=$IOS_UDID" \
+    -derivedDataPath "$QG_TMP/ios/DerivedData" -resultBundlePath "$QG_TMP/ios/test.xcresult" ||
+    qg_fail "xcodebuild test-without-building failed (scheme $IOS_SCHEME, simulator $IOS_UDID)"
 }
 
 # I3 and I4: every key the code uses is in the catalog and no key is stale. They need the
@@ -224,10 +239,11 @@ ios_build() {
   ios_xcode || return 0
   qg_gates
   qg_coverage_floor
-  ios_build_test
+  ios_build_for_testing
   ios_strings_built
   ios_periphery
   ios_client_drift
+  ios_test
 }
 
 stack_gate() {

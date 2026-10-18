@@ -57,7 +57,7 @@ Follow-up work, in order, each naming the rules it unblocks:
 | 21 | Remote packages are pinned with `exact:` and `Package.resolved` is committed; a build-tool plugin or a macro needs a written decision | `package-graph.sh` P4, P5; CI resolves only from `Package.resolved` | `.claude/rules/ios/packages.md` |
 | 22 | Every file of the logic targets is covered to 100% of its lines and functions, and every library target has its test target | `coverage.sh` + `coverage-per-file.mjs`; `package-graph.sh` P3; the coverage floor in CI | `.claude/rules/swift/coverage.md` |
 | 23 | Tests use Swift Testing, share no mutable state, give `.serialized` a reason, and never retry | reviewer; the gate never passes `-retry-tests-on-failure` | `.claude/rules/ios/testing.md` |
-| 24 | Every primary screen has a UI test that runs `performAccessibilityAudit` | `/agent-ios-swiftui:a11y-audit`; reviewer; the UI tests in CI | `.claude/rules/ios/testing.md` |
+| 24 | Every primary screen has a UI test that runs `performAccessibilityAudit` | `/agent-ios-swiftui:a11y-audit`; reviewer; `scripts/ios/app.sh ui-test` (CI runs the quick UI tests of `<App>CI` once the audits outgrow its runner) | `.claude/rules/ios/testing.md` |
 | 25 | The privacy manifest declares every required-reason API category the code uses, with its reason | `privacy-manifest.sh` | `.claude/rules/ios/swiftui.md` |
 | 26 | Logs go through `os.Logger` | SwiftLint `no_print` | `.claude/rules/ios/packages.md` |
 | 27 | Code nothing uses is deleted | Periphery `--strict` in CI | `.claude/rules/swift/dead-code.md` |

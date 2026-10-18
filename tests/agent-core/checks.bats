@@ -153,3 +153,17 @@ ai_config() {
   [[ "$output" == *"::error file=.claude/CLAUDE.md::On-demand references points at docs/runbook.md"* ]]
   [[ "$output" != *"file=CLAUDE.md::"* ]]
 }
+
+# --- pipefail: a pipe into grep -q ---------------------------------------------------------------
+
+@test "no template script under pipefail pipes printf or echo into grep -q" {
+  # grep -q exits at its first match; the writer then dies of SIGPIPE, and pipefail turns a found
+  # line into a failed test. ai-config.sh reported a defined rule as missing this way on macOS CI.
+  local hits
+  hits=$(grep -rlE --include='*.sh' 'pipefail' "$KIT_ROOT/plugins" |
+    xargs grep -nE "(printf|echo) [^|]*\| *grep -[a-zA-Z]*q" || true)
+  [ -z "$hits" ] || {
+    echo "$hits" >&2
+    false
+  }
+}

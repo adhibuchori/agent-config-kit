@@ -2,10 +2,10 @@
 # live in agent-config-kit's reusable ios-swiftui-quality-gate workflow, pinned below to one commit:
 # a Linux job runs the checks that need no Mac (the String Catalog, error-code, suppression and
 # privacy checks, secrets, the skill scan), and only when it passes does a macOS job with Xcode 27
-# run the whole of scripts/check/gates.list (SwiftLint included), the simulator build (no signing, no
-# warning), the tests and the accessibility audit, the catalog against the build, dead code, client
-# drift and the coverage floor. A third job, "Quality Gate (ios-swiftui)", reports both: make that
-# one the required status check.
+# run the whole of scripts/check/gates.list (SwiftLint included), the coverage floor, the simulator
+# build (no signing, no warning), the catalog against the build, dead code, client drift and, last,
+# the scheme's tests. A third job, "Quality Gate (ios-swiftui)", reports both: make that one a
+# required status check of the branches you merge into, or a red gate still merges.
 #
 # /agent-ios-swiftui:sync brings a new pin when a plugin release moves it; nothing moves on its own.
 # The macOS job runs on the repository variable CI_RUNNER_MACOS, else GitHub's xcode-27 runner.
@@ -30,3 +30,10 @@ jobs:
       contents: read
     # No secrets: the gate reads the checkout and nothing else, and never signs a build.
     uses: adhibuchori/agent-config-kit/.github/workflows/ios-swiftui-quality-gate.yml@27d281201f852a74984a9c7763130df417655420 # v1.3.4
+    # Once the UI tests include an accessibility audit per screen, give CI its own scheme: the same
+    # app and UI test target with only the quick, deterministic tests selected. The whole audit
+    # outlasts GitHub's macOS runner (90 minutes on a 120-screen app, contrast sampled mid-fade) and
+    # runs on a developer's simulator with `bash scripts/ios/app.sh ui-test`.
+    # with:
+    #   scheme: <App>CI
+    #   timeout-minutes: 30
