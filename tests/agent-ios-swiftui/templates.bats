@@ -192,7 +192,7 @@ PY
 
 @test "the anti-pattern index lists every file, and every file is listed" {
   local f name
-  [ "$(find "$TPL/.claude/anti-patterns" -name '*.md' ! -name INDEX.md | wc -l | tr -d ' ')" -eq 12 ]
+  [ "$(find "$TPL/.claude/anti-patterns" -name '*.md' ! -name INDEX.md | wc -l | tr -d ' ')" -eq 15 ]
   for f in "$TPL"/.claude/anti-patterns/*.md; do
     name="$(basename "$f")"
     [ "$name" = INDEX.md ] && continue

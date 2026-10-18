@@ -9,11 +9,11 @@ setup() {
   ios_setup_env
 }
 
-@test "the manifest: version 0.x, experimental, depends on agent-core, no component paths" {
+@test "the manifest: stable (1.x or later, not marked experimental), depends on agent-core, no component paths" {
   run jq -r '.version' "$PLUGIN/.claude-plugin/plugin.json"
-  [[ "$output" == 0.* ]] || false
+  [[ "$output" != 0.* ]] || false
   run jq -r '.description' "$PLUGIN/.claude-plugin/plugin.json"
-  [[ "$output" == Experimental* ]] || false
+  [[ "$output" != *xperimental* ]] || false
   run jq -r '.dependencies | join(",")' "$PLUGIN/.claude-plugin/plugin.json"
   [ "$output" = "agent-core" ]
   run jq -r 'keys[]' "$PLUGIN/.claude-plugin/plugin.json"
