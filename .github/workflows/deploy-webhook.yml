@@ -87,6 +87,33 @@ jobs:
     timeout-minutes: ${{ inputs.timeout-minutes }}
     permissions:
       contents: read
+    # A runner whose address never reaches the host fails every retry, while a fresh runner gets
+    # through at once (seen twice on one VPS that logged no drop, block or load). This job reports
+    # how the webhook went instead of failing, and deploy-retry tries again on a new runner.
+    outputs:
+      accepted: ${{ steps.deploy.outcome }}
+
+    steps:
+      - name: Deploy
+        id: deploy
+        continue-on-error: true
+        uses: $/actions/deploy-webhook
+        with:
+          webhook-url: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          ref: ${{ inputs.ref || format('refs/heads/{0}', github.event.pull_request.base.ref) }}
+          retry-delays: ${{ inputs.retry-delays }}
+          webhook-timeout: ${{ inputs.webhook-timeout }}
+          docs-repository: ${{ inputs.docs-repository }}
+          docs-token: ${{ secrets.DOCS_DISPATCH_TOKEN }}
+
+  deploy-retry:
+    name: Deploy (fresh runner)
+    needs: deploy
+    if: needs.deploy.outputs.accepted == 'failure'
+    runs-on: ${{ inputs.runs-on || vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    permissions:
+      contents: read
 
     steps:
       - name: Deploy
