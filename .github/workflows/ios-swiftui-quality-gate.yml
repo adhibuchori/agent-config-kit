@@ -21,10 +21,12 @@
 #           aborts on a custom rule.
 #   build   macOS, only after static passed (a failure that needs no Mac never pays macOS minutes):
 #           the pinned Xcode, the whole gates.list (swift-format, SwiftLint, swift test with
-#           coverage, the project checks), the coverage floor, xcodebuild test on the newest iOS
-#           simulator with zero build warnings (unit and UI tests, the accessibility audits among
-#           them), the string catalog checks that need a build, Periphery, and the API client
-#           regenerated with no diff.
+#           coverage, the project checks), the coverage floor, xcodebuild build-for-testing for the
+#           newest iOS simulator with zero build warnings, the string catalog checks that need a
+#           build, Periphery, the API client regenerated with no diff, and last the scheme's tests
+#           (xcodebuild test-without-building), so a failing or timed-out test hides nothing. Name a
+#           scheme that selects the quick UI tests (`scheme:`); a full accessibility audit of every
+#           screen outlasts a hosted macOS runner and belongs on a developer's simulator.
 #   gate    passes only when both did. Require this one check, "Quality Gate (ios-swiftui)": a job
 #           skipped because the one before it failed does not block a merge by itself.
 # A check that cannot run fails the gate unless strict is false.

@@ -359,7 +359,7 @@ EOF
   stub xcrun <<EOF
 case "\$*" in
 "simctl list devices available -j")
-  echo '{"devices": {"com.apple.CoreSimulator.SimRuntime.iOS-26-0": [{"name": "iPhone 16", "udid": "OLD-UDID"}], "com.apple.CoreSimulator.SimRuntime.iOS-27-0": [{"name": "iPad Air", "udid": "IPAD"}, {"name": "iPhone 17", "udid": "NEW-UDID"}]}}' ;;
+  echo '{"devices": {"com.apple.CoreSimulator.SimRuntime.iOS-26-0": [{"name": "iPhone 16", "udid": "OLD-UDID"}], "com.apple.CoreSimulator.SimRuntime.iOS-27-0": [{"name": "iPad Air", "udid": "IPAD"}, {"name": "iPhone 17 Pro", "udid": "BOOTED-UDID", "state": "Booted"}, {"name": "iPhone 17", "udid": "NEW-UDID", "state": "Shutdown"}]}}' ;;
 *build-results*) echo '{"errorCount": 0, "warningCount": $1, "warnings": [{"message": "var never mutated", "sourceURL": "App/OrdersApp.swift"}]}' ;;
 *test-results*) echo '{"result": "Passed", "passedTests": 1, "failedTests": 0, "skippedTests": 0, "testFailures": []}' ;;
 esac
@@ -373,6 +373,18 @@ EOF
   run cat "$BATS_TEST_TMPDIR/xcodebuild.log"
   [[ "$output" == "xcodebuild test -project Orders.xcodeproj -scheme Orders -derivedDataPath .build/xcode -resultBundlePath .build/xcode/results/ui-test-"*".xcresult -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO -destination id=NEW-UDID -only-testing:OrdersUITests -quiet" ]] || false
   [[ "$output" != *"retry"* ]] || false
+}
+
+@test "app.sh test: a booted iPhone is skipped for one not in use; IOS_SIMULATOR_ID wins over both" {
+  app_stubs 0
+  in_repo bash scripts/ios/app.sh test
+  [ "$status" -eq 0 ]
+  grep -q -- '-destination id=NEW-UDID' "$BATS_TEST_TMPDIR/xcodebuild.log"
+  run ! grep -q 'BOOTED-UDID' "$BATS_TEST_TMPDIR/xcodebuild.log"
+  : >"$BATS_TEST_TMPDIR/xcodebuild.log"
+  IOS_SIMULATOR_ID=PICKED-UDID in_repo bash scripts/ios/app.sh test
+  [ "$status" -eq 0 ]
+  grep -q -- '-destination id=PICKED-UDID' "$BATS_TEST_TMPDIR/xcodebuild.log"
 }
 
 @test "app.sh build: one warning in the result bundle fails the build" {

@@ -43,6 +43,19 @@ An issue the team accepts goes through the audit's issue handler with a comment 
 and the reason; the handler never returns `true` for a whole category. `/agent-ios-swiftui:a11y-audit`
 runs these tests and reports each issue by screen.
 
+On a slow CI runner the audit itself can run out of time on a long page ("Audit failed to complete
+in time", XCTest's code -56). That is the tool timing out, not a finding: the test may make that one
+audit once more, for that error only. Any finding fails at once, and so does a second timeout.
+
+### What CI runs
+
+Once the audits cover the app, the whole set outlasts a hosted macOS runner
+(`.claude/anti-patterns/full-accessibility-audit-outlasts-hosted-runner.md`). The pull-request gate
+then tests a CI scheme, `<App>CI`: the same app and UI test target with only the quick,
+deterministic UI tests selected. The audits run on a developer's simulator,
+`bash scripts/ios/app.sh ui-test` (or the test IDs of the screens a change touches), on the commit
+that ships. A new UI test that is quick and deterministic joins `<App>CI`'s selected tests too.
+
 ## Coverage
 
 `bash scripts/check/coverage.sh` runs `swift test` with coverage and fails on any file below 100%

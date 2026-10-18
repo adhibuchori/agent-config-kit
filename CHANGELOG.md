@@ -10,6 +10,52 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-18
+
+agent-ios-swiftui leaves 0.x: an app built with it reached production, and the lessons of that run
+are in this release. The iOS gate builds first and tests last, so a failing or timed-out test no
+longer hides what the build-dependent checks found.
+
+### Reusable workflows and actions
+
+#### Changed
+
+- The iOS gate's macOS job runs `xcodebuild build-for-testing` (zero warnings, read from its own
+  result bundle), then the String Catalog check against the build, Periphery and the API client
+  drift check, and only then `xcodebuild test-without-building`. Before, a failing test skipped
+  those checks, and a timeout cancelled the job before they ran: one app carried a stale catalog key
+  and four unused properties for days behind a gate that never reached them.
+
+### agent-ios-swiftui 1.0.0
+
+#### Changed
+
+- Stable: the plugin is no longer marked experimental. A rename, or a removed rule, check or
+  setting, is now a major release.
+- `scripts/ios/app.sh` takes `IOS_SIMULATOR_ID`, and otherwise picks an iPhone of the newest runtime
+  that is not booted. A booted simulator is usually the one a developer is using: the unsigned test
+  build replaced their signed app, whose Keychain then refused every write
+  (`errSecMissingEntitlement`, -34018).
+- The I4 finding for an extracted key no code uses says what usually causes it: a key written
+  inside a ternary or a tuple, which the build does not extract. Mark it manual.
+- The quality-gate caller and `.claude/rules/ios/testing.md` explain the CI scheme (`<App>CI`): the
+  same app and UI test target with only the quick UI tests, once the accessibility audits outgrow
+  the hosted macOS runner. The audits run on a developer's simulator. AGENTS.md Rule 24's row says
+  so.
+
+#### Added
+
+- Anti-patterns: `full-accessibility-audit-outlasts-hosted-runner.md` (90 minutes on about 120
+  screens, contrast sampled mid-fade), `periphery-reads-a-stale-index.md` (an incremental build
+  keeps old index records; never cache `DerivedData` in CI) and
+  `string-literal-in-ternary-is-not-extracted.md`.
+
+### agent-core 1.2.2
+
+#### Changed
+
+- `/agent-core:help` no longer marks agent-ios-swiftui experimental.
+
 ## [1.3.5] - 2026-10-16
 
 The ios-swiftui quality-gate caller is pinned to the v1.3.4 release commit, so setup and sync

@@ -203,9 +203,9 @@ for reduced motion, they show a still picture instead.
 
 - use Claude Code (the CLI or an IDE extension) on real repositories, alone or in a team;
 - build with one of the supported stacks: a Next.js app, a static Next.js site, a Bun + Hono +
-  Drizzle API, a FastAPI + LLM service, or a Nextra docs site; or try an experimental one (0.x,
-  names and rules may still change): a Go + net/http + sqlc API, a Rust + Axum + sqlx API, or a
-  SwiftUI iOS app;
+  Drizzle API, a FastAPI + LLM service, a Nextra docs site, or a SwiftUI iOS app; or try an
+  experimental one (0.x, names and rules may still change): a Go + net/http + sqlc API or a Rust +
+  Axum + sqlx API;
 - want refusals you can trust, and a setup you can read before it writes anything.
 
 **Not a fit if you:**
@@ -224,7 +224,7 @@ Every repo gets **agent-core** plus **one** stack plugin. The two add-ons are op
 ```mermaid
 flowchart TD
     accTitle: Which plugin to install
-    accDescr: Start from what your repo is. A Next.js web app with an API uses agent-fe-nextjs. A company profile or landing site uses agent-fe-nextjs-static. A Bun, Hono and Drizzle API uses agent-be-hono. A FastAPI service with LLM providers uses agent-ai-fastapi. A Nextra docs site uses agent-docs-nextra. Experimental: a Go API on net/http and sqlc uses agent-be-go, a Rust API on Axum and sqlx uses agent-be-axum, and a SwiftUI iOS app uses agent-ios-swiftui. Anything else uses agent-core alone. Add agent-fe-threejs for 3D scenes and agent-deploy for deploy checks.
+    accDescr: Start from what your repo is. A Next.js web app with an API uses agent-fe-nextjs. A company profile or landing site uses agent-fe-nextjs-static. A Bun, Hono and Drizzle API uses agent-be-hono. A FastAPI service with LLM providers uses agent-ai-fastapi. A Nextra docs site uses agent-docs-nextra. A SwiftUI iOS app uses agent-ios-swiftui. Experimental: a Go API on net/http and sqlc uses agent-be-go, and a Rust API on Axum and sqlx uses agent-be-axum. Anything else uses agent-core alone. Add agent-fe-threejs for 3D scenes and agent-deploy for deploy checks.
     Q{What is this repo?}
     Q -->|Next.js web app with an API| FE[agent-fe-nextjs]
     Q -->|Company profile or landing site| ST[agent-fe-nextjs-static]
@@ -233,7 +233,7 @@ flowchart TD
     Q -->|Nextra docs site| DOCS[agent-docs-nextra]
     Q -->|Go + net/http + sqlc API, experimental| GO[agent-be-go]
     Q -->|Rust + Axum + sqlx API, experimental| RS[agent-be-axum]
-    Q -->|SwiftUI iOS app, experimental| IOS[agent-ios-swiftui]
+    Q -->|SwiftUI iOS app| IOS[agent-ios-swiftui]
     Q -->|Something else| CORE[agent-core alone]
     X([Optional, next to any stack plugin]) -.->|3D scenes| TJ[+ agent-fe-threejs]
     X -.->|deploy checks| DEP[+ agent-deploy]
@@ -249,7 +249,7 @@ flowchart TD
 | [agent-docs-nextra](plugins/agent-docs-nextra/README.md) | Nextra documentation site | generated-guard, security and SEO reviewers |
 | [agent-be-go](plugins/agent-be-go/README.md) | experimental: Go + net/http + sqlc API | migration-guard (append-only), generated-guard, reviewer, 2 skills |
 | [agent-be-axum](plugins/agent-be-axum/README.md) | experimental: Rust + Axum + sqlx API | migration-guard (append-only), generated-guard, reviewer, 2 skills |
-| [agent-ios-swiftui](plugins/agent-ios-swiftui/README.md) | experimental: SwiftUI iOS app | generated-guard, 3 commands, 2 agents, 2 skills |
+| [agent-ios-swiftui](plugins/agent-ios-swiftui/README.md) | SwiftUI iOS app | generated-guard, 3 commands, 2 agents, 2 skills |
 | [agent-fe-threejs](plugins/agent-fe-threejs/README.md) | add-on: three.js / React Three Fiber | 3D rule and asset budget check |
 | [agent-deploy](plugins/agent-deploy/README.md) | add-on: any host | outside deploy smoke test, fallback promotion |
 
@@ -1520,7 +1520,7 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 </details>
 
 <details>
-<summary><strong>agent-ios-swiftui</strong>: 95 files</summary>
+<summary><strong>agent-ios-swiftui</strong>: 98 files</summary>
 
 | File | When setup installs it | What it is |
 | --- | --- | --- |
@@ -1532,11 +1532,14 @@ writes it, and what it is. "Yours" means setup creates it once and sync never co
 | `.claude/anti-patterns/closed-openapi-enum-throws-on-new-code.md` | always; sync keeps it current | A closed OpenAPI enum turns a new error code into a decoding failure |
 | `.claude/anti-patterns/file-length-counts-comments-by-default.md` | always; sync keeps it current | `file_length` counts blank and comment lines unless told not to |
 | `.claude/anti-patterns/formatted-ignores-environment-locale.md` | always; sync keeps it current | `value.formatted()` and `String(format:)` ignore the screen's locale |
+| `.claude/anti-patterns/full-accessibility-audit-outlasts-hosted-runner.md` | always; sync keeps it current | A full accessibility audit outlasts a hosted macOS runner |
 | `.claude/anti-patterns/macos-latest-is-a-different-xcode.md` | always; sync keeps it current | `macos-latest` builds with a different Xcode than yours |
 | `.claude/anti-patterns/nested-swiftlint-config-replaces-root.md` | always; sync keeps it current | A nested `.swiftlint.yml` silently replaces the root rules for its folder |
 | `.claude/anti-patterns/package-text-reads-main-bundle.md` | always; sync keeps it current | Text inside a Swift package reads the app's catalog |
+| `.claude/anti-patterns/periphery-reads-a-stale-index.md` | always; sync keeps it current | Periphery reads a stale index on a developer's Mac |
 | `.claude/anti-patterns/preconcurrency-warnings-escape-werror.md` | always; sync keeps it current | Some concurrency warnings stay warnings with warnings as errors |
 | `.claude/anti-patterns/state-macro-changes-init-semantics.md` | always; sync keeps it current | `@State` builds its initial value once with Xcode 27, on every view init before |
+| `.claude/anti-patterns/string-literal-in-ternary-is-not-extracted.md` | always; sync keeps it current | A string literal in a ternary or a tuple is not extracted |
 | `.claude/anti-patterns/swiftlint-analyze-sees-zero-files.md` | always; sync keeps it current | `swiftlint analyze` passes because it analyzed nothing |
 | `.claude/anti-patterns/text-string-is-never-localized.md` | always; sync keeps it current | `Text(someString)` is never localized |
 | `.claude/anti-patterns/xccov-omits-package-files.md` | always; sync keeps it current | Xcode's coverage report leaves Swift package files out |

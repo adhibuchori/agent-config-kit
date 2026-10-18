@@ -19,6 +19,9 @@
 | Reading coverage from Xcode or an `.xcresult` | xccov-omits-package-files.md |
 | A key used in code is missing from `Localizable.xcstrings` after a command-line build | xcodebuild-never-syncs-string-catalog.md |
 | Picking a CI runner, or CI compiles differently from your Mac | macos-latest-is-a-different-xcode.md |
+| The gate's macOS job times out, or audit tests fail in CI only | full-accessibility-audit-outlasts-hosted-runner.md |
+| Periphery names a line the file no longer has | periphery-reads-a-stale-index.md |
+| I4 calls a key unused that the code still uses | string-literal-in-ternary-is-not-extracted.md |
 
 ## When to add a new entry
 

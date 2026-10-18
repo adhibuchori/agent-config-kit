@@ -2,7 +2,8 @@
 
 Guardrails and gates for a SwiftUI iOS app: the generated-guard hook, a standards reviewer and a
 localization reviewer, two procedure skills, an accessibility audit command, and the rules, checks
-and pull-request CI setup installs. **Experimental** (0.x): names, rules and checks may still change.
+and pull-request CI setup installs. Stable since 1.0.0: a rename or a removed rule, check or setting
+is a major release.
 
 **Why it helps.** Most app regressions are structural: a view that fetches and decides, a string
 that never reaches the String Catalog, an error code the app was never told about, a build setting
