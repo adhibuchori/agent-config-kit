@@ -20,7 +20,7 @@ When production must not carry agent instructions:
 
 ## Prerequisites
 
-- `prod` and `dev` branches, and a branch ruleset that lets the workflow's token push to both (or no ruleset on them).
+- `prod` and `dev` branches, and a branch ruleset that lets the workflow's token push to both (or no ruleset on them). To require status checks on both branches, give the caller a `push-key` secret (a deploy key with write access) and let deploy keys bypass that ruleset: a repository ruleset cannot list GitHub Actions as a bypass actor.
 - A caller pinned to a released commit (setup holds a placeholder-pinned one back).
 
 ## Common questions

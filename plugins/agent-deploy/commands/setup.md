@@ -93,6 +93,9 @@ agent-setup apply --templates "${CLAUDE_PLUGIN_ROOT}/templates" --stack deploy -
 `apply` is left out of this command's allowed tools on purpose, so the user's permission prompt is a
 second, independent confirmation. Any reply other than **go** writes nothing. If `apply` exits 3, the
 repo changed since the draft: go back to step 3 and show the new plan.
+Where the project already has `.claude/agent-config-kit.lock`, agent-core's safety-check refuses
+`apply` and `own` from the agent: they rewrite that lock and the settings that turn the guards on.
+Hand the user the exact line, digest filled in, to run with `!`, then go on.
 
 ## 5. Verify and hand over
 

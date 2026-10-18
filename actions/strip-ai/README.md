@@ -13,7 +13,10 @@ agent-deploy's setup installs a caller when you answer `strip-ai=yes`
 (`/agent-deploy:setup --answer strip-ai=yes`). The caller runs the reusable workflow
 [`.github/workflows/strip-ai.yml`](../../.github/workflows/strip-ai.yml), which checks out the
 production branch without storing a token and hands git the job's token through a credential helper
-for the pushes.
+for the pushes. With the optional `push-key` secret (the private key of a deploy key with write
+access), the two pushes go over SSH with that key instead. A repository ruleset cannot name GitHub
+Actions as a bypass actor, but it can name deploy keys: that is how a ruleset requiring the quality
+gate on both branches still lets the strip and the back-merge through.
 
 ## What it strips
 

@@ -1535,12 +1535,42 @@ def near_guard(cwd):
     return ""
 
 
-def config_reader(head, args):
+# agent-core's own setup engine. Its check, plan and questions read the plugin's templates (in
+# ~/.claude/plugins/) and the project and write nothing; apply and own rewrite the lock and the
+# settings that turn the guards on, so they stay the user's (`!`).
+KIT_ENGINES = {"agent-setup", "agent-sync"}
+KIT_ENGINE_READS = {"check", "plan", "questions"}
+
+
+def kit_engine_reads(word, args):
+    """Whether this is a plugin's own agent-setup or agent-sync, from a bin/ folder under
+    .claude/plugins/ (or the running plugin's bin/), in a mode that only reads. A program of that
+    name anywhere else, a project's ./agent-sync for one, is not the engine."""
+    name = os.path.basename(word)
+    if name not in KIT_ENGINES or not args or args[0] not in KIT_ENGINE_READS:
+        return False
+    if "/" in word:
+        exe = resolve(word, os.getcwd())
+    else:
+        found = next((os.path.join(d, name) for d in os.environ.get("PATH", "").split(os.pathsep)
+                      if d and os.path.isfile(os.path.join(d, name)) and os.access(os.path.join(d, name), os.X_OK)), "")
+        own = os.path.join(PLUGIN_ROOT, "bin", name) if PLUGIN_ROOT else ""
+        exe = found or (own if own and os.path.isfile(own) else "")
+    real = physical(exe)
+    if not real or os.path.basename(os.path.dirname(real)) != "bin":
+        return False
+    return "/.claude/plugins/" in real or bool(PLUGIN_ROOT and inside(real, os.path.join(PLUGIN_ROOT, "bin")))
+
+
+def config_reader(head, args, raw=""):
     """Whether a command only reads the guard files it names, beyond the lookers: jq; sed with no
     in-place flag and no script file (a script naming a guard file is refused apart, since its w
-    and e commands write and run); and the git forms that change only the index (rm --cached,
-    restore --staged)."""
+    and e commands write and run); the git forms that change only the index (rm --cached,
+    restore --staged); and the setup engine's read-only modes (kit_engine_reads, judged by the
+    command word as written, raw, since ./agent-sync and agent-sync are not the same program)."""
     if head == "jq":
+        return True
+    if raw and kit_engine_reads(raw, args):
         return True
     if head == "git":
         sub, k = git_sub(args)
@@ -3087,7 +3117,9 @@ def secrets(words, ws, raw, env, redirects, fed, prev, before, xargs, cwd, depth
     # decided below.
     looks = (head in LOOKERS or (head == "git" and git_sub(args)[0] in GIT_LOOKS)
              or (head == "find" and not FIND_ACTIONS & set(args)))
-    config_reads = looks or config_reader(head, args) or only_reads
+    # A PATH set on the line or exported before it could put another agent-sync first.
+    engine_word = "" if "PATH" in env or "PATH" in EXPORTED else raw
+    config_reads = looks or config_reader(head, args, engine_word) or only_reads
     # git -C moves the folder its path operands are read from.
     wd = git_cwd(args, cwd) if head == "git" else cwd
     if not looks:

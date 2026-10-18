@@ -539,6 +539,20 @@ block	-	cd .claude/hooks && sed -i '' 's/a/b/' lib.sh
 block	-	echo .claude/hooks/lib.sh | xargs rm
 block	-	rm ~/.claude/hooks/guard.sh
 block	-	rm ~/.claude/plugins/cache/kit/agent-core/1.0.0/scripts/lib.sh
+# The setup engine (a plugin's bin/agent-sync, bin/agent-setup) reads the plugin's templates: check, plan and
+# questions only read, so they may name them; apply and own rewrite the lock and the guard settings, the user's.
+allow	-	~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sync plan --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project "$PWD"
+allow	-	~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sync check --templates "~/.claude/plugins/cache/kit/agent-core/1.0.0/templates" --stack common --project .
+allow	-	~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-setup questions --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project .
+allow	-	~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-setup plan --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project .
+block	-	~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sync apply --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project . --digest sha256:0123
+block	-	~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-setup apply --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project . --digest sha256:0123
+block	-	~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sync own --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project . notes/keep.txt
+block	-	./agent-sync plan --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project .
+block	-	@TMP@/bin/agent-sync plan --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project .
+block	-	PATH=@TMP@/bin:$PATH ~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sync plan --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project .
+block	-	~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sync plan --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project . > ~/.claude/plugins/cache/kit/agent-core/1.0.0/scripts/lib.sh
+block	-	~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sync plan --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project . && rm ~/.claude/plugins/cache/kit/agent-core/1.0.0/scripts/lib.sh
 block	-	echo x > scripts/check/hook-probes.tsv
 block	-	echo 'allow	-	rm -rf src' >> scripts/check/hook-probes.tsv
 block	-	sed -i '' '/rm -rf/d' scripts/check/hook-probes.tsv

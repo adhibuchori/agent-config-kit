@@ -57,5 +57,8 @@ Stop there: `--check` never writes.
    `agent-sync apply --templates "${CLAUDE_PLUGIN_ROOT}/templates" --stack be-go --digest sha256:<hex>`
    with the digest from step 1. `apply` is left out of this command's allowed tools, so the permission
    prompt confirms it a second time. Exit 3 means the repo changed since the draft: show a new plan.
+   Where the project already has `.claude/agent-config-kit.lock`, agent-core's safety-check refuses
+   `apply` and `own` from the agent: they rewrite that lock and the settings that turn the guards
+   on. Hand the user the exact line, digest filled in, to run with `!`, then go on.
 3. Run the `--check` command above and report the result. Remind the user to commit the changed files
    with `.claude/agent-config-kit.lock`.

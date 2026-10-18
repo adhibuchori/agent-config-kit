@@ -2115,8 +2115,8 @@ the strip checks out the production branch without keeping the token.
 - **Guards fail closed.** Only exit 2 blocks in Claude Code; a crash or timeout would let a call
   through. So each guard refuses what it cannot check (bad input, missing python3, a hang), and
   each feedback hook stays silent on failure.
-- **Every rule is proven both ways.** 848 probe rows say what safety-check must block (570) and let
-  through (278); the kit's own probe harness runs 2,294 probes against the plugin's scripts; 2,006
+- **Every rule is proven both ways.** 860 probe rows say what safety-check must block (578) and let
+  through (282); the kit's own probe harness runs 2,318 probes against the plugin's scripts; 2,006
   bats tests cover the hooks, the setup engine, the stack checks and the CI scripts, on macOS
   (bash 3.2) and Ubuntu. Audit them: [tests/hooks/](tests/hooks/safety-probes.bats),
   [tests/setup/](tests/setup/check.bats).

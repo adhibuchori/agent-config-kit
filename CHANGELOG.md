@@ -10,6 +10,128 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-18
+
+Two blockers met while syncing an app's repos to 1.4.1. safety-check refused agent-core's own
+`agent-sync plan` and `check` in every repo already set up, since the engine reads its templates from
+`~/.claude/plugins/`, a guard area; every plugin's `/sync` failed at its first step. And a repository
+ruleset could not require the quality gate on `prod` and `dev` without stopping strip-ai's pushes,
+because GitHub Actions cannot be a bypass actor there; deploy keys can.
+
+### Reusable workflows and actions
+
+#### Added
+
+- strip-ai takes an optional `push-key` secret, the private key of a deploy key with write access.
+  With it, the strip commit and the back-merge are pushed over SSH, trusting only the host keys
+  GitHub publishes in its meta API, so a ruleset that requires status checks on both branches and
+  lets deploy keys bypass it accepts them. The key lives in a private file for the one job and is
+  removed afterwards. Without it nothing changes.
+
+### agent-core 1.2.3
+
+#### Fixed
+
+- safety-check lets the setup engine read: `agent-sync check` and `plan`, `agent-setup questions`
+  and `plan`, run from a plugin's `bin/` (under `.claude/plugins/`, or the running plugin's own), may
+  name the plugin's templates. `apply` and `own` still refuse, since they rewrite the lock and the
+  guard settings. A `./agent-sync` of the project's, one found through a `PATH` set or exported on
+  the line, or a function or alias of that name, is not the engine. Twelve new probe rows cover both
+  sides; the four that must pass fail on 1.2.2's library.
+- setup and sync say what to do when safety-check refuses `apply` or `own` in a repo that is
+  already set up: hand the user the exact line to run with `!`.
+
+### agent-deploy 1.1.5
+
+#### Fixed
+
+- setup and sync say what to do when safety-check refuses `apply` or `own` in a repo that is
+  already set up: hand the user the exact line to run with `!`.
+
+### agent-be-hono 2.0.2
+
+#### Fixed
+
+- The hook library (`scripts/lib.sh`) is agent-core 1.2.3's: safety-check lets the setup engine's
+  read-only modes name the plugin's templates, so this plugin's `/sync` drafts again in a repo that
+  is already set up.
+- setup and sync say what to do when safety-check refuses `apply` or `own` in a repo that is
+  already set up: hand the user the exact line to run with `!`.
+
+### agent-be-go 0.1.3
+
+#### Fixed
+
+- The hook library (`scripts/lib.sh`) is agent-core 1.2.3's: safety-check lets the setup engine's
+  read-only modes name the plugin's templates, so this plugin's `/sync` drafts again in a repo that
+  is already set up.
+- setup and sync say what to do when safety-check refuses `apply` or `own` in a repo that is
+  already set up: hand the user the exact line to run with `!`.
+
+### agent-be-axum 0.1.3
+
+#### Fixed
+
+- The hook library (`scripts/lib.sh`) is agent-core 1.2.3's: safety-check lets the setup engine's
+  read-only modes name the plugin's templates, so this plugin's `/sync` drafts again in a repo that
+  is already set up.
+- setup and sync say what to do when safety-check refuses `apply` or `own` in a repo that is
+  already set up: hand the user the exact line to run with `!`.
+
+### agent-ios-swiftui 1.0.2
+
+#### Fixed
+
+- The hook library (`scripts/lib.sh`) is agent-core 1.2.3's: safety-check lets the setup engine's
+  read-only modes name the plugin's templates, so this plugin's `/sync` drafts again in a repo that
+  is already set up.
+- setup and sync say what to do when safety-check refuses `apply` or `own` in a repo that is
+  already set up: hand the user the exact line to run with `!`.
+
+### agent-ai-fastapi 1.3.2
+
+#### Fixed
+
+- The hook library (`scripts/lib.sh`) is agent-core 1.2.3's: safety-check lets the setup engine's
+  read-only modes name the plugin's templates, so this plugin's `/sync` drafts again in a repo that
+  is already set up.
+- setup and sync say what to do when safety-check refuses `apply` or `own` in a repo that is
+  already set up: hand the user the exact line to run with `!`.
+
+### agent-docs-nextra 1.2.2
+
+#### Fixed
+
+- The hook library (`scripts/lib.sh`) is agent-core 1.2.3's: safety-check lets the setup engine's
+  read-only modes name the plugin's templates, so this plugin's `/sync` drafts again in a repo that
+  is already set up.
+- setup and sync say what to do when safety-check refuses `apply` or `own` in a repo that is
+  already set up: hand the user the exact line to run with `!`.
+
+### agent-fe-nextjs 1.3.2
+
+#### Fixed
+
+- The hook library (`scripts/lib.sh`) is agent-core 1.2.3's: safety-check lets the setup engine's
+  read-only modes name the plugin's templates, so this plugin's `/sync` drafts again in a repo that
+  is already set up.
+- setup and sync say what to do when safety-check refuses `apply` or `own` in a repo that is
+  already set up: hand the user the exact line to run with `!`.
+
+### agent-fe-nextjs-static 1.1.4
+
+#### Fixed
+
+- setup and sync say what to do when safety-check refuses `apply` or `own` in a repo that is
+  already set up: hand the user the exact line to run with `!`.
+
+### agent-fe-threejs 1.0.4
+
+#### Fixed
+
+- setup and sync say what to do when safety-check refuses `apply` or `own` in a repo that is
+  already set up: hand the user the exact line to run with `!`.
+
 ## [1.4.1] - 2026-10-18
 
 The ios-swiftui quality-gate caller is pinned to the v1.4.0 release commit, so setup and sync

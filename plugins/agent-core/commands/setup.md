@@ -75,6 +75,9 @@ agent-setup apply --templates "${CLAUDE_PLUGIN_ROOT}/templates" --stack common -
 Use the same answers as Step 3. `apply` is deliberately left out of `allowed-tools`, so the user's
 permission prompt is a second, independent confirmation. Any other reply means nothing is written.
 Exit 3 means the project changed since the draft: show a new plan and ask again.
+Where the project already has `.claude/agent-config-kit.lock`, agent-core's safety-check refuses
+`apply` and `own` from the agent: they rewrite that lock and the settings that turn the guards on.
+Hand the user the exact line, digest filled in, to run with `!`, then go on.
 
 ## Step 5: Verify
 

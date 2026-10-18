@@ -25,7 +25,10 @@
 #
 # The checkout keeps no token. git gets the job's token for its fetches and pushes from a credential
 # helper that reads it from the environment of that one step, so nothing writes it to .git/config.
-# The job's token may push (contents: write) and do nothing else. Give the strip its own concurrency
+# The job's token may push (contents: write) and do nothing else. With the optional push-key secret
+# (a deploy key with write access), the two pushes go over SSH with that key instead: a repository
+# ruleset cannot name GitHub Actions as a bypass actor, but it can name deploy keys, so a ruleset
+# that requires the quality gate on both branches can still let the strip through. Give the strip its own concurrency
 # group in the caller: a strip queued in the deploy's group can be cancelled silently. Runner:
 # CI_RUNNER, then ubuntu-latest (post-merge, nobody waits on it).
 name: Strip AI Config
@@ -68,6 +71,10 @@ on:
         type: number
         required: false
         default: 15
+    secrets:
+      push-key:
+        description: Optional. The private key of a deploy key with write access. When set, the strip commit and the back-merge are pushed over SSH with it, not with the job's token, so a ruleset that lets deploy keys bypass it (required status checks on both branches) accepts them.
+        required: false
 
 permissions:
   contents: read
@@ -94,16 +101,46 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # Without push-key nothing happens here. With it, the key goes to a private file and git's ssh
+      # trusts only the host keys GitHub publishes in its meta API.
+      - name: Deploy Key
+        env:
+          PUSH_KEY: ${{ secrets.push-key }}
+        run: |
+          if [ -z "$PUSH_KEY" ]; then
+            echo "No push-key: the job's token pushes."
+            exit 0
+          fi
+          dir="$RUNNER_TEMP/strip-ai-push-key"
+          umask 077
+          mkdir -p "$dir"
+          printf '%s\n' "$PUSH_KEY" >"$dir/id"
+          curl -fsSL https://api.github.com/meta | jq -r '.ssh_keys[] | "github.com " + .' >"$dir/known_hosts"
+          if [ ! -s "$dir/known_hosts" ]; then
+            echo "::error::could not read GitHub's SSH host keys from its meta API" >&2
+            exit 1
+          fi
+          echo "GIT_SSH_COMMAND=ssh -i $dir/id -o IdentitiesOnly=yes -o UserKnownHostsFile=$dir/known_hosts -o StrictHostKeyChecking=yes" >>"$GITHUB_ENV"
+          echo "push-key set: the strip and the back-merge push over SSH."
+
       - name: Strip AI Config
         uses: $/actions/strip-ai
         env:
           GH_TOKEN: ${{ github.token }}
-          GIT_CONFIG_COUNT: '1'
+          # With push-key, a second setting sends pushes (never fetches) to the SSH remote.
+          GIT_CONFIG_COUNT: ${{ secrets.push-key != '' && '2' || '1' }}
           GIT_CONFIG_KEY_0: credential.helper
           GIT_CONFIG_VALUE_0: '!f() { test "$1" = get || return 0; printf "username=x-access-token\npassword=%s\n" "$GH_TOKEN"; }; f'
+          GIT_CONFIG_KEY_1: url.git@github.com:.pushInsteadOf
+          GIT_CONFIG_VALUE_1: https://github.com/
         with:
           prod-branch: ${{ inputs.prod-branch }}
           dev-branch: ${{ inputs.dev-branch }}
           paths: ${{ inputs.paths }}
           extra-paths: ${{ inputs.extra-paths }}
           back-merge: ${{ inputs.back-merge }}
+
+      # A self-hosted runner keeps its temp folder between jobs: the key never outlives this one.
+      - name: Remove Deploy Key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/strip-ai-push-key"

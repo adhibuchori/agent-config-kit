@@ -2138,8 +2138,8 @@ checkout sama sekali, dan strip melakukan checkout branch produksi tanpa menyimp
   crash atau timeout akan meloloskan panggilan. Karena itu setiap guard menolak apa yang tidak bisa
   diperiksanya (input rusak, python3 tidak ada, proses menggantung), dan setiap hook umpan balik
   diam saat gagal.
-- **Setiap aturan dibuktikan dua arah.** 848 baris probe menyatakan apa yang wajib diblokir
-  safety-check (570) dan apa yang wajib diloloskan (278); harness probe milik kit menjalankan 2.294
+- **Setiap aturan dibuktikan dua arah.** 860 baris probe menyatakan apa yang wajib diblokir
+  safety-check (578) dan apa yang wajib diloloskan (282); harness probe milik kit menjalankan 2.318
   probe terhadap skrip plugin; 2.006 tes bats mencakup hook, mesin setup, pemeriksa stack, dan skrip
   CI, di macOS (bash 3.2) dan Ubuntu. Silakan audit: [tests/hooks/](tests/hooks/safety-probes.bats),
   [tests/setup/](tests/setup/check.bats).
