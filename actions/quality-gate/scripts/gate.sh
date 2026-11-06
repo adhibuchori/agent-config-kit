@@ -9,7 +9,8 @@
 # QG_ENV_FILE (default .env.ci.example), QG_IGNORE_SCRIPTS (default true), QG_INTEGRATION_TESTS
 # (default false), QG_STRICT (default true), QG_PHASE (ios-swiftui: static, build or all; default
 # all), QG_DATABASE (be-go, be-axum: default true), QG_PGBOUNCER_TESTS (default false),
-# QG_PGBOUNCER_MAX_PREPARED (default 200), QG_XCODE_VERSION and QG_IOS_SCHEME (ios-swiftui build).
+# QG_PGBOUNCER_MAX_PREPARED (default 200), QG_XCODE_VERSION and QG_IOS_SCHEME (ios-swiftui build),
+# QG_HEAD_REF and QG_PROMOTION (default empty: nothing stands down).
 # Exit 0 the full gate passed, 1 a check failed (or, with strict, did not run), 2 a bad input.
 set -uo pipefail
 
@@ -39,6 +40,10 @@ ios-swiftui:static | ios-swiftui:build | *:all) ;;
   exit 2
   ;;
 esac
+if ! qg_valid_promotion; then
+  echo "::error::QG_PROMOTION must be one <head>:<base> pair such as dev:prod (got '${QG_PROMOTION}')" >&2
+  exit 2
+fi
 if ! QG_BASE=$(qg_resolve_base "${QG_BASE:-}"); then
   echo "::error::base ref '${QG_BASE:-}' not found; fetch it (git fetch origin) or check out with fetch-depth: 0" >&2
   exit 2

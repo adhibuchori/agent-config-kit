@@ -15,5 +15,6 @@ code	bash scripts/check/double-assertion.sh
 code	node scripts/check/static-export.mjs
 code	node scripts/check/image-budget.mjs --source-only
 code	node scripts/check/font-budget.mjs --source
+all	node scripts/check/terms.mjs
 all	bash scripts/check/ai-config.sh
 commands,hooks	bash scripts/check/skills.sh --staged

@@ -197,5 +197,5 @@ EOF
   setup_now
   after="$(for f in "${mine[@]}"; do printf '%s %s %s\n' "$f" "$(sha_of "$P/$f")" "$(mode_of "$P/$f")"; done)"
   [ "$after" = "$before" ]
-  [ "$(json_q "$P/.claude/agent-config-kit.lock" 'd["plugins"]["agent-core"]["kept"] + d["plugins"]["agent-core"]["seeded"]')" = '[".claude/rules/common/working-agreements.md", "scripts/check/gates.sh", ".gitleaks.toml", ".mcp.json", ".skillspector-baseline.yaml"]' ]
+  [ "$(json_q "$P/.claude/agent-config-kit.lock" 'd["plugins"]["agent-core"]["kept"] + d["plugins"]["agent-core"]["seeded"]')" = '[".claude/rules/common/working-agreements.md", "scripts/check/gates.sh", ".gitleaks.toml", ".mcp.json", ".skillspector-baseline.yaml", "scripts/check/terms.config.json"]' ]
 }

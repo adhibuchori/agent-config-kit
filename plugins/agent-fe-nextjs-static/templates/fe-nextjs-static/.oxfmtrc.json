@@ -18,6 +18,7 @@
     "out/",
     ".lighthouseci/",
     "coverage/",
-    "scripts/check/folder-shape.mjs"
+    "scripts/check/folder-shape.mjs",
+    "scripts/check/terms.mjs"
   ]
 }

@@ -436,3 +436,13 @@ PY
   [ "$status" -eq 1 ]
   [[ "$output" == *"X1 the project's Debug configuration has no base xcconfig"* ]] || false
 }
+
+@test "i18n-catalog: a tracked catalog gone from the worktree is skipped, not a failure" {
+  printf '{"locales": ["en", "id"]}\n' >"$REPO/scripts/check/i18n-catalog.json"
+  printf '{"sourceLanguage": "en", "strings": {}, "version": "1.0"}\n' >"$REPO/Gone.xcstrings"
+  git -C "$REPO" add -A
+  rm "$REPO/Gone.xcstrings"
+  in_repo node scripts/check/i18n-catalog.mjs
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"1 catalog(s) clean"* ]] || false
+}

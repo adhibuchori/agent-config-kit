@@ -24,5 +24,6 @@ code	bash scripts/check/ci-env.sh bun run check:openapi
 # package scripts print a skip line and pass; delete these lines if you never want it.
 code	bun run check:endpoints
 code	bun run check:crypto-interop
+all	bun run check:terms
 all	bash scripts/check/ai-config.sh
 commands,hooks	bash scripts/check/skills.sh --staged

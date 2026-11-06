@@ -118,6 +118,7 @@
     "check:coverage-policy": "node scripts/check/coverage-policy.mjs",
     "check:dead-code": "knip",
     "check:folder-shape": "node scripts/check/folder-shape.mjs",
+    "check:terms": "node scripts/check/terms.mjs",
     "check:mocks": "bun scripts/check/module-mocks.ts",
     "db:generate": "drizzle-kit generate",
     "fl":"bun run format && bun run lint",

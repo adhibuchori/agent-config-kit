@@ -1153,6 +1153,10 @@
       "en": "Where each kind of identifier lives, for the constants check",
       "id": "Tempat tiap jenis identifier berada, untuk pemeriksa konstanta"
     },
+    "scripts/check/terms.config.json": {
+      "en": "The words this repo refuses, with a reason each, and the exact phrases allowed",
+      "id": "Kata yang ditolak repo ini beserta alasannya, dan frasa persis yang diizinkan"
+    },
     "scripts/check/i18n-catalog.json": {
       "en": "The locales every String Catalog key needs, read by i18n-catalog.mjs",
       "id": "Locale yang wajib dimiliki setiap key String Catalog, dibaca i18n-catalog.mjs"

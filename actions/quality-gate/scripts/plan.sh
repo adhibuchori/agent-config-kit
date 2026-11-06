@@ -6,7 +6,7 @@
 # nothing.
 #
 # Reads: QG_STACK, QG_BASE_REF, QG_PACKAGE_MANAGER, QG_COVERAGE_THRESHOLD, QG_STRICT, QG_PHASE,
-# QG_DATABASE, QG_PGBOUNCER_TESTS, QG_PGBOUNCER_MAX_PREPARED.
+# QG_DATABASE, QG_PGBOUNCER_TESTS, QG_PGBOUNCER_MAX_PREPARED, QG_HEAD_REF, QG_PROMOTION.
 set -uo pipefail
 
 QG_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -45,6 +45,7 @@ if [ "$pgbouncer" = true ]; then
   case "$stack" in be-go | be-axum) ;; *) bad "pgbouncer-tests is for be-go and be-axum, whose gate runs PostgreSQL ($stack does not)" ;; esac
   [ "$database" = true ] || bad "pgbouncer-tests needs database: true (PgBouncer sits in front of the gate's PostgreSQL)"
 fi
+qg_valid_promotion || bad "promotion must be one <head>:<base> pair such as dev:prod (got '${QG_PROMOTION}')"
 
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   bad "the working directory is not a git checkout; check out the repository first"
@@ -72,10 +73,10 @@ pr_checks=true
 [ "$stack" = ios-swiftui ] && [ "$phase" = build ] && pr_checks=false
 
 # uv: the Python stack, and any pull request that changes a skill, command, subagent or hook (the
-# SkillSpector build installs with uv).
+# SkillSpector build installs with uv), unless the scan stands down on this promotion.
 uv=false
 [ "$stack" = ai-fastapi ] && uv=true
-if [ "$pr_checks" = true ] && [ -f scripts/check/skills.sh ] &&
+if [ "$pr_checks" = true ] && [ -f scripts/check/skills.sh ] && ! qg_promoting "$base" &&
   ! git diff --quiet "${base}...HEAD" -- "${QG_SKILL_PATHS[@]}" 2>/dev/null; then
   uv=true
 fi

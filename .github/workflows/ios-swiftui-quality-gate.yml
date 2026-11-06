@@ -79,6 +79,11 @@ on:
         type: string
         required: false
         default: ''
+      promotion:
+        description: One exact <head>:<base> pair, such as dev:prod, whose pull requests carry what the pull request into <head> already scanned; the Skill Security Scan stands down on that pair alone. Empty runs everything.
+        type: string
+        required: false
+        default: ''
       runs-on:
         description: macOS runner label for the build job; empty uses the caller repository's CI_RUNNER_MACOS, then xcode-27.
         type: string
@@ -126,6 +131,8 @@ jobs:
           stack: ios-swiftui
           phase: static
           base-ref: ${{ inputs.base-ref || github.base_ref }}
+          head-ref: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref || '' }}
+          promotion: ${{ inputs.promotion }}
           coverage-threshold: ${{ inputs.coverage-threshold }}
           env-file: ${{ inputs.env-file }}
           node-version: ${{ inputs.node-version }}
@@ -154,6 +161,8 @@ jobs:
           stack: ios-swiftui
           phase: build
           base-ref: ${{ inputs.base-ref || github.base_ref }}
+          head-ref: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref || '' }}
+          promotion: ${{ inputs.promotion }}
           coverage-threshold: ${{ inputs.coverage-threshold }}
           env-file: ${{ inputs.env-file }}
           xcode-version: ${{ inputs.xcode-version }}

@@ -121,6 +121,26 @@ EOF
   done
 }
 
+@test "db-guard judges every SQL field: a read in one does not vouch for a write in another" {
+  run -2 --separate-stderr hook db-guard.sh "$(tool_payload mcp__db-prod__execute_sql '{"sql": "SELECT 1", "query": "DELETE FROM t"}')" "${CP[@]}"
+  run -2 --separate-stderr hook db-guard.sh "$(tool_payload mcp__db-prod__execute_sql '{"statement": "DROP TABLE t", "sql": "SELECT 1"}')" "${CP[@]}"
+  run -0 --separate-stderr hook db-guard.sh "$(tool_payload mcp__db-prod__execute_sql '{"sql": "SELECT 1", "query": "SELECT 2"}')" "${CP[@]}"
+}
+
+@test "db-guard covers the EXPLAIN tools by default: they run the SQL they are handed" {
+  run -2 --separate-stderr hook db-guard.sh "$(tool_payload mcp__db-prod__explain_query '{"sql": "DELETE FROM t", "analyze": true}')" "${CP[@]}"
+  run -0 --separate-stderr hook db-guard.sh "$(tool_payload mcp__db-prod__explain_query '{"sql": "SELECT 1", "analyze": true}')" "${CP[@]}"
+  run -2 --separate-stderr hook db-guard.sh "$(tool_payload mcp__db-prod__analyze_query_indexes '{"queries": ["SELECT 1", "UPDATE t SET a = 1"]}')" "${CP[@]}"
+  run -2 --separate-stderr hook db-guard.sh "$(tool_payload mcp__db-prod__analyze_query_indexes '{"queries": []}')" "${CP[@]}"
+  run -0 --separate-stderr hook db-guard.sh "$(tool_payload mcp__db-prod__analyze_query_indexes '{"queries": ["SELECT 1", "SELECT 2"]}')" "${CP[@]}"
+}
+
+@test "db-guard treats a trailing semicolon as where a second statement would start" {
+  run -2 --separate-stderr hook db-guard.sh "$(sql_payload mcp__db-prod__execute_sql "SELECT 1;")" "${CP[@]}"
+  [[ "$stderr" == *"send one statement without a trailing ;"* ]] || false
+  run -0 --separate-stderr hook db-guard.sh "$(sql_payload mcp__db-prod__execute_sql "SELECT 1")" "${CP[@]}"
+}
+
 @test "db-guard lets a write through while db is unlocked, and tells Claude; an expired or env unlock opens nothing" {
   unlock_file db 600
   run -0 --separate-stderr hook db-guard.sh "$(sql_payload mcp__db-prod__execute_sql "DELETE FROM sessions")" "${CP[@]}"

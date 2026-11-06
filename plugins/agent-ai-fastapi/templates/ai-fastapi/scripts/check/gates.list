@@ -14,5 +14,6 @@ code	node scripts/check/folder-shape.mjs
 code	node scripts/check/coverage-policy.mjs
 code	env -u PYTHONPATH uv run pytest tests -q --cov
 all	bash scripts/check/secrets.sh
+all	node scripts/check/terms.mjs
 all	bash scripts/check/ai-config.sh
 commands,hooks	bash scripts/check/skills.sh

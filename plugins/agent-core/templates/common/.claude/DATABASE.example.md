@@ -96,9 +96,8 @@ holds production read-only. MCP permissions live in `.claude/settings.json`; `.m
 permission field Claude Code reads.
 
 - `explain_query` and `analyze_query_indexes` also run the SQL they are handed: `EXPLAIN ANALYZE` of
-  a write, or a stacked statement, is a real run. A repo that makes `db-prod` writable for incidents
-  widens `dbWriteGuard.toolPattern` in `.claude/agent-config.json` to those tools too, so `db-guard`
-  judges them like `execute_sql`.
+  a write, or a stacked statement, is a real run. `dbWriteGuard.toolPattern` covers both by default,
+  so `db-guard` judges them like `execute_sql`. A repo that narrows the pattern keeps them in it.
 - A function of the app's own that writes reads like a query (`SELECT archive_old_rows()`), so no
   guard can tell it apart. Call one only while `unlock db` is open; otherwise hand the statement to
   the user.

@@ -74,8 +74,9 @@ The reusable workflow takes the action's inputs (`prod-branch`, `dev-branch`, `p
 
 - Branch protection on either branch rejects the bot's push unless the workflow's token may bypass
   it.
-- A back-merge that meets a real content conflict (outside the stripped paths) stops and lists the
-  files; resolve it by hand.
+- A back-merge that meets a conflict or a deletion outside the stripped paths (a revert on the
+  production branch, say) stops, lists the files and leaves the development branch as it was; resolve
+  it by hand.
 - Each push retries three times, since anything else pushing to the branch makes a rejected push
   expected.
 - No skip-CI marker is written: nothing runs on a push, and a marker on the head of the next

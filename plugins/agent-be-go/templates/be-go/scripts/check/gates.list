@@ -20,5 +20,6 @@ code	node scripts/check/payload-registry.mjs
 code	node scripts/check/folder-shape.mjs
 code	node scripts/check/coverage-policy.mjs
 code	bash scripts/check/ci-env.sh bash scripts/check/coverage.sh
+all	node scripts/check/terms.mjs
 all	bash scripts/check/ai-config.sh
 commands,hooks	bash scripts/check/skills.sh --staged

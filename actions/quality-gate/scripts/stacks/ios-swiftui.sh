@@ -23,6 +23,7 @@
 IOS_LINUX_GATES=(
   'node scripts/check/i18n-catalog.mjs'
   'node scripts/check/folder-shape.mjs'
+  'node scripts/check/terms.mjs'
   'node scripts/check/coverage-policy.mjs'
   'node scripts/check/payload-registry.mjs'
   'bash scripts/check/lint-suppressions.sh'

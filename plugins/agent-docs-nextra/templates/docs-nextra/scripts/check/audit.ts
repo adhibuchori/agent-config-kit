@@ -34,8 +34,13 @@ function readReport(): Report {
   const proc = Bun.spawnSync(['bun', 'audit', '--json'], { stdout: 'pipe', stderr: 'pipe' });
   const raw = new Uint8Array(proc.stdout);
 
-  /* No advisories at all — bun writes nothing. */
-  if (raw.length === 0) return {};
+  /* No advisories at all — bun writes nothing and exits 0. Nothing on stdout with any other exit
+     code is a run that never got a report: an unreachable registry exits 1 that way. */
+  if (raw.length === 0) {
+    if (proc.exitCode === 0) return {};
+    const reason = new TextDecoder().decode(proc.stderr).trim().split('\n').at(-1);
+    throw new Error(`bun audit exited ${proc.exitCode} without a report: ${reason || 'no output'}`);
+  }
 
   const isGzipped = raw[0] === 0x1f && raw[1] === 0x8b;
   let text: string;
@@ -118,6 +123,55 @@ function findBlocking(report: Report, installed: Map<string, Set<string>>): Find
   return findings;
 }
 
+/* ── Accepted advisories ────────────────────────────────────────────────────── */
+
+/* An advisory listed here is reported but does not fail the gate while npm has no release of the
+   package past the installed one and outside the advisory's range. Each entry names the exact
+   advisory and package and says why it cannot reach a user. The day a patched release is published
+   the gate fails on it again, because from then on it is fixed with a bump or "overrides", which is
+   the only moment there is something to decide; a calendar date failed the gate with nothing to do.
+   A registry that cannot be read fails it too: an unchecked acceptance is never a pass. The list is
+   per repo: an entry goes only where its package is installed and its reason is true. */
+interface Accepted {
+  url: string;
+  name: string;
+  reason: string;
+}
+
+const ACCEPTED: Accepted[] = [];
+
+function acceptanceFor(finding: Finding): Accepted | undefined {
+  return ACCEPTED.find(
+    (entry) => entry.name === finding.name && entry.url === finding.advisory.url,
+  );
+}
+
+/* The newest stable release newer than every installed copy and outside the vulnerable range, or
+   undefined while each such release is still vulnerable. Throws when the registry cannot be read. */
+async function patchedRelease({ name, versions, advisory }: Finding): Promise<string | undefined> {
+  const response = await fetch(`https://registry.npmjs.org/${name}`, {
+    headers: { accept: 'application/vnd.npm.install-v1+json' },
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) throw new Error(`the registry answered ${response.status} for ${name}`);
+  const body: unknown = await response.json();
+  const published =
+    typeof body === 'object' &&
+    body !== null &&
+    'versions' in body &&
+    typeof body.versions === 'object'
+      ? Object.keys(body.versions ?? {})
+      : [];
+  if (published.length === 0) throw new Error(`the registry listed no versions of ${name}`);
+  return published
+    .filter((v) => !v.includes('-') && !Bun.semver.satisfies(v, advisory.vulnerable_versions))
+    .filter((v) => versions.every((copy) => Bun.semver.order(v, copy) > 0))
+    .reduce<string | undefined>(
+      (top, v) => (top && Bun.semver.order(top, v) > 0 ? top : v),
+      undefined,
+    );
+}
+
 /* ── Output ─────────────────────────────────────────────────────────────────── */
 
 function out(line: string): void {
@@ -144,18 +198,59 @@ collectInstalled(join(process.cwd(), 'node_modules'), installed);
 const findings = findBlocking(report, installed);
 const advisoryCount = Object.values(report).reduce((n, list) => n + list.length, 0);
 
+/* Each accepted finding is checked against the registry once, all at the same time. */
+const checks = await Promise.all(
+  findings.map(async (finding) => {
+    const entry = acceptanceFor(finding);
+    if (entry === undefined) return { finding };
+    try {
+      return { finding, entry, patched: await patchedRelease(finding) };
+    } catch (error: unknown) {
+      return { finding, entry, unchecked: getMessage(error) };
+    }
+  }),
+);
+const accepted = checks.flatMap(({ finding, entry, patched, unchecked }) =>
+  entry !== undefined && patched === undefined && unchecked === undefined
+    ? [{ finding, entry }]
+    : [],
+);
+const blocking = checks.filter((check) => !accepted.some((item) => item.finding === check.finding));
+
 out(`[audit] ${advisoryCount} advisories reported, ${installed.size} packages installed`);
 
-if (findings.length === 0) {
-  out('[audit] ✓ No high or critical advisories affect installed versions.');
+for (const { finding, entry } of accepted) {
+  out(
+    `[audit] ⚠ accepted while no patched release exists: ${finding.name}@${finding.versions.join(', ')} — ${finding.advisory.severity}`,
+  );
+  out(`    ${finding.advisory.url}`);
+  out(`    ${entry.reason}`);
+}
+
+if (blocking.length === 0) {
+  out(
+    accepted.length === 0
+      ? '[audit] ✓ No high or critical advisories affect installed versions.'
+      : '[audit] ✓ No other high or critical advisories affect installed versions.',
+  );
   process.exit(0);
 }
 
-fail(`\n[audit] ✗ ${findings.length} blocking advisories:\n`);
-for (const { name, versions, advisory } of findings) {
+fail(`\n[audit] ✗ ${blocking.length} blocking advisories:\n`);
+for (const { finding, patched, unchecked } of blocking) {
+  const { name, versions, advisory } = finding;
   fail(`  ${name}@${versions.join(', ')} — ${advisory.severity}`);
   fail(`    ${advisory.title}`);
-  fail(`    affects ${advisory.vulnerable_versions} · ${advisory.url}\n`);
+  fail(`    affects ${advisory.vulnerable_versions} · ${advisory.url}`);
+  if (patched !== undefined)
+    fail(
+      `    accepted until a patched release existed: ${name}@${patched} is out, so take it and drop the entry`,
+    );
+  if (unchecked !== undefined)
+    fail(
+      `    accepted, but the registry check failed (${unchecked}): an unchecked acceptance is never a pass`,
+    );
+  fail('');
 }
 fail('[audit] Fix with a dependency bump, or pin a patched version via "overrides".');
 process.exit(1);

@@ -426,3 +426,13 @@ lcov_stub() {
   [ "$status" -eq 1 ]
   [[ "$stderr" == *"'src/platform/db.rs' is not a closed category"* ]] || false
 }
+
+@test "rust-source: a tracked file gone from the worktree is skipped, not a crash" {
+  rs src/kept.rs 'pub(crate) fn kept() {}'
+  rs src/gone.rs 'pub(crate) fn gone() {}'
+  commit_all two
+  rm "$REPO/src/gone.rs"
+  source_check
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"rust-source: 1 file(s)"* ]] || false
+}

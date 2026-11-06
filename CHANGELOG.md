@@ -10,6 +10,115 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+Lessons from running the kit's rules in a multi-repo setup: db-guard read only the first SQL field of
+a call, the audit read an unreachable registry as a clean report, a promotion had no way to skip a
+scan the pull request before it already ran, and checks crashed on a path another session deleted
+from a shared checkout.
+
+### Reusable workflows and actions
+
+#### Added
+
+- The quality gate takes `promotion`, one exact `<head>:<base>` pair such as `dev:prod`. On that pair
+  alone the Skill Security Scan stands down, uv is not installed for it, and the summary names what
+  stood down. The pair keys on both ends, and the workflows pass no head for a fork, so a skip can
+  never follow the base alone. Empty, the default, changes nothing.
+- The iOS static job runs `terms.mjs`.
+
+#### Fixed
+
+- strip-ai's back-merge re-instates only the strip set. It restored every path the merge deleted, so a
+  revert on the production branch half-applied to the development branch, and it kept the development
+  copy of every conflict, so the stop for a conflict outside the stripped paths could never fire. Any
+  such deletion or conflict now stops the run with the development branch as it was.
+
+### agent-core 1.3.0
+
+#### Added
+
+- `scripts/check/terms.mjs`, the words a repo has decided not to use about itself. The vocabulary is
+  the repo's own, in `scripts/check/terms.config.json`, and starts empty, so the check passes and says
+  so until you list a word. An allow entry names the exact phrase, its one file and a reason; an entry
+  whose phrase left its file fails. It reads the index, not the worktree. A repo set up before this
+  version adds the line `node scripts/check/terms.mjs` (kind `all`) to `scripts/check/gates.list`.
+
+#### Fixed
+
+- db-guard judges every SQL field of a call (`sql`, `query`, `statement`, each of `queries`). It read
+  only the first, so a read in `sql` let a write in `query` through.
+- db-guard's default `dbWriteGuard.toolPattern` covers `explain_query` and `analyze_query_indexes`,
+  which run the SQL they are handed. A repo that sets its own pattern keeps it.
+- db-guard treats a semicolon, even a trailing one, as a write: it is where a second statement would
+  start. The refusal says to send one statement without it.
+
+### agent-fe-nextjs 1.4.0
+
+#### Added
+
+- `gates.list` runs `terms.mjs`.
+
+#### Fixed
+
+- `scripts/check/audit.ts` refuses a run with no report. `bun audit` writes nothing and exits 1 on an
+  unreachable registry, which read as no advisories.
+- `audit.ts` holds an `ACCEPTED` list: an advisory stays accepted only while npm has no patched
+  release, and an unreadable registry fails it.
+- `check-comment-style.ts` skips a tracked path gone from the worktree instead of crashing.
+
+### agent-docs-nextra 1.3.0
+
+#### Added
+
+- `gates.list` runs `terms.mjs`.
+
+#### Fixed
+
+- The `audit.ts` and `check-comment-style.ts` fixes in agent-fe-nextjs 1.4.0.
+
+### agent-be-axum 0.2.0
+
+#### Added
+
+- `gates.list` runs `terms.mjs`.
+
+#### Fixed
+
+- `rust-source.mjs` skips a tracked path gone from the worktree instead of crashing.
+
+### agent-ios-swiftui 1.1.0
+
+#### Added
+
+- `gates.list` runs `terms.mjs`.
+
+#### Fixed
+
+- `i18n-catalog.mjs` skips a tracked catalog gone from the worktree instead of failing.
+
+### agent-fe-nextjs-static 1.2.0
+
+#### Added
+
+- `gates.list` runs `terms.mjs`.
+
+### agent-be-go 0.2.0
+
+#### Added
+
+- `gates.list` runs `terms.mjs`.
+
+### agent-be-hono 2.1.0
+
+#### Added
+
+- `gates.list` runs `terms.mjs`.
+
+### agent-ai-fastapi 1.4.0
+
+#### Added
+
+- `gates.list` runs `terms.mjs`.
+
 ## [1.5.3] - 2026-10-18
 
 The deploy caller is pinned to the v1.5.2 release commit, so setup and sync install the fresh-runner

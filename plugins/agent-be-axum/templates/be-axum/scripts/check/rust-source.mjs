@@ -246,7 +246,8 @@ function listFiles() {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     });
-    return [...new Set(out.split('\0').filter(Boolean))];
+    /* A tracked path gone from the worktree is a deletion in progress: nothing left to read. */
+    return [...new Set(out.split('\0').filter((p) => p && existsSync(join(ROOT, p))))];
   } catch {
     const found = [];
     const walk = (dir) => {

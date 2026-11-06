@@ -23,12 +23,35 @@ fi
 
 git "${GIT_BOT_IDENTITY[@]}" merge -q --no-commit --no-ff "origin/$PROD_BRANCH" || true
 
+# rev-parse, not a test for .git/MERGE_HEAD: in a worktree .git is a file.
+if ! git rev-parse -q --verify MERGE_HEAD >/dev/null; then
+  echo "::error::merging origin/$PROD_BRANCH left no MERGE_HEAD, so the back-merge never ran; see the merge output above" >&2
+  exit 1
+fi
+
+# Only the strip set may be re-instated. Restoring everything the merge deletes would half-apply a
+# revert on the production branch, and keeping the development copy of every conflict would drop the
+# production change without a word. Either stops the run with the development branch as it was.
+outside=(.)
+# shellcheck disable=SC2086 # one pathspec per word
+for p in $STRIP_PATHS; do outside+=(":(exclude)$p"); done
+unstripped=$({
+  git diff --cached --no-renames --diff-filter=D --name-only "$BEFORE" -- "${outside[@]}"
+  git diff --name-only --diff-filter=U -- "${outside[@]}"
+} | sort -u)
+if [ -n "$unstripped" ]; then
+  echo "::error::$PROD_BRANCH deletes or conflicts on paths outside the strip (a revert?), so a person decides how $DEV_BRANCH takes them. $DEV_BRANCH is untouched:" >&2
+  printf '%s\n' "$unstripped" >&2
+  git merge --abort || true
+  exit 1
+fi
+
 # Each list is read whole before its loop, never piped into it: `git diff` can still hold index.lock
 # after printing (its opportunistic index refresh), and a `git checkout` run meanwhile fails on it.
 
 # Put back what the merge would delete: that is the config the strip removed, and the development
 # branch is where it belongs.
-deleted=$(git diff --cached --diff-filter=D --name-only "$BEFORE")
+deleted=$(git diff --cached --no-renames --diff-filter=D --name-only "$BEFORE")
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   git checkout -q "$BEFORE" -- "$f"
@@ -41,20 +64,6 @@ while IFS= read -r f; do
   git checkout -q "$BEFORE" -- "$f"
   git add -- "$f"
 done <<<"$conflicted"
-
-# Anything still conflicted is a real content clash, not strip fallout. Stop rather than push a guess.
-remaining=$(git diff --name-only --diff-filter=U)
-if [ -n "$remaining" ]; then
-  echo "::error::the back-merge hit conflicts outside the stripped paths; resolve them by hand:" >&2
-  printf '%s\n' "$remaining" >&2
-  git merge --abort || true
-  exit 1
-fi
-
-if [ ! -f "$(git rev-parse --git-dir)/MERGE_HEAD" ]; then
-  echo "::error::merging origin/$PROD_BRANCH left no MERGE_HEAD, so the back-merge never ran; see the merge output above" >&2
-  exit 1
-fi
 
 git "${GIT_BOT_IDENTITY[@]}" commit -q -m "chore: back-merge ${PROD_BRANCH} into ${DEV_BRANCH} after the AI config strip"
 

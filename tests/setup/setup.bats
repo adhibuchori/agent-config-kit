@@ -89,7 +89,7 @@ PY
   [ "$(json_q "$lock" 'd["plugins"]["agent-core"]["version"]')" = "$(json_q "$CORE/.claude-plugin/plugin.json" 'd["version"]')" ]
   [ "$(json_q "$lock" 'd["plugins"]["agent-core"]["answers"]')" = '{"language": "typescript", "mcp": "yes", "sandbox": "yes", "team-plugins": "yes"}' ]
   [ "$(json_q "$lock" 'd["plugins"]["agent-core"]["files"]["scripts/ops/unlock.sh"]')" = "$(sha_of "$COMMON/scripts/ops/unlock.sh")" ]
-  [ "$(json_q "$lock" 'sorted(d["plugins"]["agent-core"]["seeded"])')" = '[".claude/rules/common/working-agreements.md", ".gitleaks.toml", ".mcp.json", ".skillspector-baseline.yaml"]' ]
+  [ "$(json_q "$lock" 'sorted(d["plugins"]["agent-core"]["seeded"])')" = '[".claude/rules/common/working-agreements.md", ".gitleaks.toml", ".mcp.json", ".skillspector-baseline.yaml", "scripts/check/terms.config.json"]' ]
   run ! grep -q "$BATS_TEST_TMPDIR" "$lock"
   run ! grep -q "$KIT_ROOT" "$lock"
   # Deterministic JSON: sorted keys, two-space indent, one trailing newline.

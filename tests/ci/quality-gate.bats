@@ -357,3 +357,59 @@ EOF
   [ "$status" -eq 1 ]
   [[ "$output" == *"coverage is below the 100% floor"* ]]
 }
+
+# ── promotion: one exact pair stands down, nothing else does ────────────────────────────────────
+
+# A repo whose branch changed a skill against origin/prod, with skills.sh installed.
+skill_change() {
+  printf 'process.exit(0)\n' >scripts/check/site-audit.mjs
+  printf 'PINNED_REF="%s"\necho scan ran\n' "$(printf '0%.0s' {1..40})" >scripts/check/skills.sh
+  toy_commit "$REPO" "skills.sh"
+  git update-ref refs/remotes/origin/prod HEAD
+  mkdir -p .claude/skills/tidy && printf -- '---\nname: tidy\n---\n' >.claude/skills/tidy/SKILL.md
+  toy_commit "$REPO" skill
+  stub_tools npm bun uv gitleaks skillspector
+}
+
+@test "promotion: a bad pair exits 2 in the plan and in the gate" {
+  QG_STACK=fe-nextjs QG_BASE_REF=dev QG_PROMOTION=dev plan
+  [ "$status" -eq 2 ]
+  [[ "$stderr" == *"promotion must be one <head>:<base> pair"* ]] || false
+  QG_STACK=fe-nextjs QG_BASE_REF=dev QG_PROMOTION='dev:prod:x' plan
+  [ "$status" -eq 2 ]
+  QG_PROMOTION=':prod' gate
+  [ "$status" -eq 2 ]
+  [[ "$stderr" == *"QG_PROMOTION must be one"* ]] || false
+}
+
+@test "promotion: the declared pair needs no uv; any other head into the same base still does" {
+  skill_change
+  QG_STACK=fe-nextjs QG_BASE_REF=prod QG_HEAD_REF=dev QG_PROMOTION=dev:prod plan
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"uv=false"* ]] || false
+  QG_STACK=fe-nextjs QG_BASE_REF=prod QG_HEAD_REF=hotfix QG_PROMOTION=dev:prod plan
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"uv=true"* ]] || false
+}
+
+@test "promotion: the declared pair stands the scan down, strict passes, and the summary names it" {
+  skill_change
+  QG_BASE=prod QG_HEAD_REF=dev QG_PROMOTION=dev:prod gate
+  [[ "$output" == *"Skill Security Scan stands down on dev:prod"* ]] || false
+  [[ "$output" == *"Checks that stood down on this promotion:"* ]] || false
+  [[ "$output" != *"scan ran"* ]] || false
+  [[ "$output" != *"did NOT run"* ]] || false
+  [ "$status" -eq 0 ]
+}
+
+@test "promotion: another head, an empty head (a fork), another base or no pair all run the scan" {
+  skill_change
+  QG_BASE=prod QG_HEAD_REF=hotfix QG_PROMOTION=dev:prod gate
+  [[ "$output" == *"scan ran"* ]] || false
+  QG_BASE=prod QG_HEAD_REF='' QG_PROMOTION=dev:prod gate
+  [[ "$output" == *"scan ran"* ]] || false
+  QG_BASE=prod QG_HEAD_REF=dev QG_PROMOTION=dev:main gate
+  [[ "$output" == *"scan ran"* ]] || false
+  QG_BASE=prod QG_HEAD_REF=dev gate
+  [[ "$output" == *"scan ran"* ]] || false
+}

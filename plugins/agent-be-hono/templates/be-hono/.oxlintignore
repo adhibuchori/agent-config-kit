@@ -4,3 +4,4 @@ src/db/migrations/
 # The plugins install these and sync --check compares them with the plugins' copies.
 scripts/check/coverage-policy.mjs
 scripts/check/folder-shape.mjs
+scripts/check/terms.mjs

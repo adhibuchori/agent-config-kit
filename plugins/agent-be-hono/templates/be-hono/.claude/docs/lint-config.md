@@ -43,6 +43,7 @@ oxlint reads `.eslintignore` by itself, not `.oxlintignore`, so the `lint` and `
 
 ## .oxfmtrc.json
 
-`scripts/check/coverage-policy.mjs` and `scripts/check/folder-shape.mjs` are in `ignorePatterns`:
+`scripts/check/coverage-policy.mjs`, `scripts/check/folder-shape.mjs` and `scripts/check/terms.mjs`
+are in `ignorePatterns`:
 the plugins install them and `sync --check` compares them with the plugins' copies, so a format
 pass here would show as drift.

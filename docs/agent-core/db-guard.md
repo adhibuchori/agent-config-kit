@@ -7,11 +7,12 @@ Hook · agent-core · PreToolUse on `mcp__.*` · blocks with exit 2 · timeout 1
 db-guard lets one read-only SQL statement reach the production database and holds every write
 until you unlock `db`.
 
-It checks only the tool named by `dbWriteGuard.toolPattern` in `.claude/agent-config.json` (default
-`mcp__db-prod__execute_sql`); any other MCP tool passes. Reads are one `SELECT`, `SHOW`, `VALUES`,
-`TABLE`, `DESCRIBE`, `EXPLAIN` or `WITH … SELECT`. Everything else counts as a write: several
-statements, a comment that could hide one, quoting that databases read differently, and SQL it
-cannot parse.
+It checks only the tools named by `dbWriteGuard.toolPattern` in `.claude/agent-config.json` (default
+`mcp__db-prod__(execute_sql|explain_query|analyze_query_indexes)`); any other MCP tool passes. Every
+SQL field of a call is judged (`sql`, `query`, `statement`, each of `queries`). Reads are one
+`SELECT`, `SHOW`, `VALUES`, `TABLE`, `DESCRIBE`, `EXPLAIN` or `WITH … SELECT`, sent without a
+semicolon. Everything else counts as a write: a semicolon, several statements, a comment that could
+hide one, quoting that databases read differently, and SQL it cannot parse.
 
 ## When to reach for it
 

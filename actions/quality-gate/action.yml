@@ -20,6 +20,14 @@ inputs:
   base-ref:
     description: The branch (or commit) the pull request merges into. The diff checks compare against it; a branch name resolves to origin/<name>.
     required: true
+  head-ref:
+    description: The branch the pull request comes from, read by promotion; empty for a fork's. The reusable workflows pass it.
+    required: false
+    default: ''
+  promotion:
+    description: One exact <head>:<base> pair, such as dev:prod, whose pull requests carry skills, commands and hooks that the pull request into <head> already scanned. On that pair alone the Skill Security Scan stands down, and the summary names it. Empty runs everything on every pull request.
+    required: false
+    default: ''
   package-manager:
     description: auto (from the lockfile), bun, pnpm, npm or yarn. ai-fastapi always uses uv; be-go, be-axum and ios-swiftui take auto only.
     required: false
@@ -94,6 +102,8 @@ runs:
       env:
         QG_STACK: ${{ inputs.stack }}
         QG_BASE_REF: ${{ inputs.base-ref }}
+        QG_HEAD_REF: ${{ inputs.head-ref }}
+        QG_PROMOTION: ${{ inputs.promotion }}
         QG_PACKAGE_MANAGER: ${{ inputs.package-manager }}
         QG_COVERAGE_THRESHOLD: ${{ inputs.coverage-threshold }}
         QG_STRICT: ${{ inputs.strict }}
@@ -174,6 +184,8 @@ runs:
       env:
         QG_STACK: ${{ steps.plan.outputs.stack }}
         QG_BASE: ${{ steps.plan.outputs.base }}
+        QG_HEAD_REF: ${{ inputs.head-ref }}
+        QG_PROMOTION: ${{ inputs.promotion }}
         QG_PM: ${{ steps.plan.outputs.pm }}
         QG_COVERAGE_THRESHOLD: ${{ steps.plan.outputs.coverage-threshold }}
         QG_PHASE: ${{ steps.plan.outputs.phase }}
