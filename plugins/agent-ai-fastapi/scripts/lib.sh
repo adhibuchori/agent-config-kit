@@ -2311,7 +2311,7 @@ def env_name(base):
 
 # ENV_NAME as a state machine, for globs: state -> {char: next state}; ANY_STATE takes every char.
 # ENV_ACCEPT holds the states where a whole name ends; past a separator ([._-]) any tail fits.
-ENV_STEPS ={0: {".": 1}, 1: {"e": 2}, 2: {"n": 3}, 3: {"v": 4}, 4: {"r": 5, ".": 7, "_": 7, "-": 7},
+ENV_STEPS = {0: {".": 1}, 1: {"e": 2}, 2: {"n": 3}, 3: {"v": 4}, 4: {"r": 5, ".": 7, "_": 7, "-": 7},
              5: {"c": 6}, 6: {".": 7, "_": 7, "-": 7}}
 ANY_STATE, ENV_ACCEPT = 7, {4, 6, 7}
 # One char of each kind ENV_STEPS tells apart (both cases), and one it never names.
