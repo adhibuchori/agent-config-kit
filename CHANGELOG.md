@@ -10,6 +10,8 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-11-07
+
 Lessons from running the kit's rules in a multi-repo setup: db-guard read only the first SQL field of
 a call, the audit read an unreachable registry as a clean report, a promotion had no way to skip a
 scan the pull request before it already ran, and checks crashed on a path another session deleted
@@ -44,6 +46,11 @@ first migration that is guarded wherever it lands.
   inside a repo keeps to its own unlock, and without the setting nothing changes.
 - `generatedPaths` takes `**/name`, a file or folder at any depth. A folder-wide `replace_in_files`
   finds those files through git, so an ignored folder such as `node_modules` is never walked.
+- `scripts/check/terms.mjs`, the words a repo has decided not to use about itself. The vocabulary is
+  the repo's own, in `scripts/check/terms.config.json`, and starts empty, so the check passes and says
+  so until you list a word. An allow entry names the exact phrase, its one file and a reason; an entry
+  whose phrase left its file fails. It reads the index, not the worktree. A repo set up before this
+  version adds the line `node scripts/check/terms.mjs` (kind `all`) to `scripts/check/gates.list`.
 
 #### Changed
 
@@ -59,6 +66,12 @@ first migration that is guarded wherever it lands.
 
 #### Fixed
 
+- db-guard judges every SQL field of a call (`sql`, `query`, `statement`, each of `queries`). It read
+  only the first, so a read in `sql` let a write in `query` through.
+- db-guard's default `dbWriteGuard.toolPattern` covers `explain_query` and `analyze_query_indexes`,
+  which run the SQL they are handed. A repo that sets its own pattern keeps it.
+- db-guard treats a semicolon, even a trailing one, as a write: it is where a second statement would
+  start. The refusal says to send one statement without it.
 - safety-check no longer reads a `$` that expands nothing as an unresolved word, so a pattern that
   only looks for a `.env` name (`grep -E "(^|/)\.env(\.|$)"`) passes. zsh's `$=x`, `$~x`, `$^x`, `$+x`
   and `$#x` still count.
@@ -68,7 +81,46 @@ first migration that is guarded wherever it lands.
   They knew six of them, so `app`, `components`, `content`, `tests`, `.agent`, `.agents` and the
   top-level instruction files could be deleted.
 
+### agent-fe-nextjs 1.5.0
+
+#### Added
+
+- `gates.list` runs `terms.mjs`.
+
+#### Changed
+
+- **Breaking:** generated-guard follows the new `generatedPaths` default of agent-core 1.4.0: a repo
+  with no list of its own that writes a spec below its root by hand sets one.
+- generated-guard takes `**/name` in `generatedPaths`. `lib.sh` follows agent-core 1.4.0.
+
+#### Fixed
+
+- `scripts/check/audit.ts` refuses a run with no report. `bun audit` writes nothing and exits 1 on an
+  unreachable registry, which read as no advisories.
+- `audit.ts` holds an `ACCEPTED` list: an advisory stays accepted only while npm has no patched
+  release, and an unreadable registry fails it.
+- `check-comment-style.ts` skips a tracked path gone from the worktree instead of crashing.
+
+### agent-docs-nextra 1.4.0
+
+#### Added
+
+- `gates.list` runs `terms.mjs`.
+
+#### Changed
+
+- generated-guard as in agent-fe-nextjs 1.5.0. The list setup seeds is unchanged. `lib.sh` follows
+  agent-core 1.4.0.
+
+#### Fixed
+
+- The `audit.ts` and `check-comment-style.ts` fixes in agent-fe-nextjs 1.5.0.
+
 ### agent-ai-fastapi 1.5.0
+
+#### Added
+
+- `gates.list` runs `terms.mjs`.
 
 #### Changed
 
@@ -79,6 +131,10 @@ first migration that is guarded wherever it lands.
 
 ### agent-be-hono 2.2.0
 
+#### Added
+
+- `gates.list` runs `terms.mjs`.
+
 #### Changed
 
 - **Breaking:** migration-guard judges a path whether or not its folder exists yet, as in
@@ -87,119 +143,49 @@ first migration that is guarded wherever it lands.
 
 ### agent-be-axum 0.3.0
 
+#### Added
+
+- `gates.list` runs `terms.mjs`.
+
 #### Changed
 
 - migration-guard judges a path whether or not its folder exists yet. For
   `appendOnlyMigrationsDirs` that means a file a protected branch has stays refused on a branch that
   lost the folder.
-- generated-guard takes `**/name` in `generatedPaths`. `lib.sh` follows agent-core 1.4.0.
-
-### agent-be-go 0.3.0
-
-#### Changed
-
-- migration-guard and generated-guard as in agent-be-axum 0.3.0. `lib.sh` follows agent-core 1.4.0.
-
-### agent-docs-nextra 1.4.0
-
-#### Changed
-
-- generated-guard takes `**/name` in `generatedPaths`. `lib.sh` follows agent-core 1.4.0.
-
-### agent-fe-nextjs 1.5.0
-
-#### Changed
-
-- generated-guard takes `**/name` in `generatedPaths`. `lib.sh` follows agent-core 1.4.0.
-
-### agent-ios-swiftui 1.2.0
-
-#### Changed
-
-- generated-guard takes `**/name` in `generatedPaths`. `lib.sh` follows agent-core 1.4.0.
-
-### agent-core 1.3.0
-
-#### Added
-
-- `scripts/check/terms.mjs`, the words a repo has decided not to use about itself. The vocabulary is
-  the repo's own, in `scripts/check/terms.config.json`, and starts empty, so the check passes and says
-  so until you list a word. An allow entry names the exact phrase, its one file and a reason; an entry
-  whose phrase left its file fails. It reads the index, not the worktree. A repo set up before this
-  version adds the line `node scripts/check/terms.mjs` (kind `all`) to `scripts/check/gates.list`.
-
-#### Fixed
-
-- db-guard judges every SQL field of a call (`sql`, `query`, `statement`, each of `queries`). It read
-  only the first, so a read in `sql` let a write in `query` through.
-- db-guard's default `dbWriteGuard.toolPattern` covers `explain_query` and `analyze_query_indexes`,
-  which run the SQL they are handed. A repo that sets its own pattern keeps it.
-- db-guard treats a semicolon, even a trailing one, as a write: it is where a second statement would
-  start. The refusal says to send one statement without it.
-
-### agent-fe-nextjs 1.4.0
-
-#### Added
-
-- `gates.list` runs `terms.mjs`.
-
-#### Fixed
-
-- `scripts/check/audit.ts` refuses a run with no report. `bun audit` writes nothing and exits 1 on an
-  unreachable registry, which read as no advisories.
-- `audit.ts` holds an `ACCEPTED` list: an advisory stays accepted only while npm has no patched
-  release, and an unreadable registry fails it.
-- `check-comment-style.ts` skips a tracked path gone from the worktree instead of crashing.
-
-### agent-docs-nextra 1.3.0
-
-#### Added
-
-- `gates.list` runs `terms.mjs`.
-
-#### Fixed
-
-- The `audit.ts` and `check-comment-style.ts` fixes in agent-fe-nextjs 1.4.0.
-
-### agent-be-axum 0.2.0
-
-#### Added
-
-- `gates.list` runs `terms.mjs`.
+- generated-guard as in agent-fe-nextjs 1.5.0. The list setup seeds is unchanged. `lib.sh` follows
+  agent-core 1.4.0.
 
 #### Fixed
 
 - `rust-source.mjs` skips a tracked path gone from the worktree instead of crashing.
 
-### agent-ios-swiftui 1.1.0
+### agent-be-go 0.3.0
 
 #### Added
 
 - `gates.list` runs `terms.mjs`.
+
+#### Changed
+
+- migration-guard as in agent-be-axum 0.3.0, generated-guard as in agent-fe-nextjs 1.5.0. The list
+  setup seeds is unchanged. `lib.sh` follows agent-core 1.4.0.
+
+### agent-ios-swiftui 1.2.0
+
+#### Added
+
+- `gates.list` runs `terms.mjs`.
+
+#### Changed
+
+- generated-guard as in agent-fe-nextjs 1.5.0. The list setup seeds is unchanged. `lib.sh` follows
+  agent-core 1.4.0.
 
 #### Fixed
 
 - `i18n-catalog.mjs` skips a tracked catalog gone from the worktree instead of failing.
 
 ### agent-fe-nextjs-static 1.2.0
-
-#### Added
-
-- `gates.list` runs `terms.mjs`.
-
-### agent-be-go 0.2.0
-
-#### Added
-
-- `gates.list` runs `terms.mjs`.
-
-### agent-be-hono 2.1.0
-
-#### Added
-
-- `gates.list` runs `terms.mjs`.
-
-### agent-ai-fastapi 1.4.0
 
 #### Added
 
@@ -1785,7 +1771,14 @@ First release.
 - Templates: the 3D scene rule, the glTF/GLB asset budget check with its config, and a guide to
   adding 3D skills by reference.
 
-[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.3.5...HEAD
+[Unreleased]: https://github.com/adhibuchori/agent-config-kit/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.6.0
+[1.5.3]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.5.3
+[1.5.2]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.5.2
+[1.5.1]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.5.1
+[1.5.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.5.0
+[1.4.1]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.4.1
+[1.4.0]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.4.0
 [1.3.5]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.5
 [1.3.4]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.4
 [1.3.3]: https://github.com/adhibuchori/agent-config-kit/releases/tag/v1.3.3
