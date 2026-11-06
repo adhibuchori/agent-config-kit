@@ -29,7 +29,8 @@ When production must not carry agent instructions:
 No. It runs in its own queue, `prod-strip-ai`, so a queued strip is never cancelled by a deploy.
 
 **What if the back-merge conflicts?**
-A conflict outside the stripped paths stops the job and lists the files; resolve it by hand.
+A conflict or a deletion outside the stripped paths stops the job, lists the files and leaves the
+development branch as it was; resolve it by hand.
 
 ## It's working if
 

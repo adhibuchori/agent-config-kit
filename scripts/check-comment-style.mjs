@@ -21,7 +21,7 @@
  * file found.
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const DIRECTIVE =
@@ -240,7 +240,10 @@ for (let i = 0; i < argv.length; i++) {
 let files = named;
 if (files.length === 0) {
   try {
-    files = execFileSync('git', ['-C', root, 'ls-files', '--', ...PATTERNS], { encoding: 'utf8' }).split('\n').filter(Boolean);
+    /* A tracked path gone from the worktree is a deletion in progress: no style left to check. */
+    files = execFileSync('git', ['-C', root, 'ls-files', '--', ...PATTERNS], { encoding: 'utf8' })
+      .split('\n')
+      .filter((f) => f && existsSync(join(root, f)));
   } catch {
     usage(`${root} is not a git checkout`);
   }

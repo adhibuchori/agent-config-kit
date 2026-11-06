@@ -10,6 +10,7 @@
 
 QG_FAILED=0
 QG_SKIPPED=""
+QG_STOOD_DOWN=""
 QG_STACKS="fe-nextjs fe-nextjs-static be-hono ai-fastapi docs-nextra be-go be-axum ios-swiftui"
 
 # The names an env file may not set, because they change how the runner, git or a toolchain behaves
@@ -46,6 +47,35 @@ qg_fail() {
 qg_skip() {
   echo "::warning::$1 did not run: $2"
   QG_SKIPPED="${QG_SKIPPED}"$'\n'"  $1: $2"
+}
+
+# QG_PROMOTION is empty, or one <head>:<base> pair.
+qg_valid_promotion() {
+  case "${QG_PROMOTION:-}" in
+  '') return 0 ;;
+  :* | *: | *:*:* | *' '*) return 1 ;;
+  *:*) return 0 ;;
+  *) return 1 ;;
+  esac
+}
+
+# qg_promoting <resolved base>: this pull request is exactly the declared promotion. The pair keys on
+# both ends: a gate keyed on the base alone lets any branch into the release branch skip what the
+# promotion skips. QG_HEAD_REF is empty for a fork, whose branch may carry the same name.
+qg_promoting() {
+  [ -n "${QG_PROMOTION:-}" ] && [ -n "${QG_HEAD_REF:-}" ] || return 1
+  [ "$QG_HEAD_REF" = "${QG_PROMOTION%%:*}" ] || return 1
+  case "$1" in
+  "${QG_PROMOTION#*:}" | "origin/${QG_PROMOTION#*:}") return 0 ;;
+  *) return 1 ;;
+  esac
+}
+
+# Not qg_skip: strict fails a check that could not run, and this one stands down by design. The
+# summary still names it, so the gate never reads as more than it did.
+qg_stand_down() {
+  echo "$1 stands down on $QG_PROMOTION: $2"
+  QG_STOOD_DOWN="${QG_STOOD_DOWN}"$'\n'"  $1: $2"
 }
 
 # qg_run <name> <command...>: one named check; a non-zero exit fails it.
@@ -331,6 +361,10 @@ qg_skill_scan() {
     echo "scripts/check/skills.sh is not installed; agent-core's setup adds it"
     return
   fi
+  if qg_promoting "$QG_BASE"; then
+    qg_stand_down "Skill Security Scan" "the pull request into ${QG_PROMOTION%%:*} already scanned what this one carries"
+    return
+  fi
   if git diff --quiet "${QG_BASE}...HEAD" -- "${QG_SKILL_PATHS[@]}"; then
     echo "No skill, command, subagent or hook changed - nothing to scan"
     return
@@ -608,6 +642,9 @@ qg_summary() {
   printf '\n\033[1m── Summary\033[0m\n'
   if [ -n "$QG_SKIPPED" ]; then
     printf 'Checks that did NOT run:%s\n\n' "$QG_SKIPPED"
+  fi
+  if [ -n "$QG_STOOD_DOWN" ]; then
+    printf 'Checks that stood down on this promotion:%s\n\n' "$QG_STOOD_DOWN"
   fi
   if [ "$QG_FAILED" -gt 0 ]; then
     echo "::error::$QG_FAILED check(s) failed."

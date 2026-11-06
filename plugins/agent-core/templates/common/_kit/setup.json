@@ -51,7 +51,7 @@
       }
     }
   ],
-  "seed": [".mcp.json", ".gitleaks.toml", ".skillspector-baseline.yaml", ".claude/rules/common/working-agreements.md"],
+  "seed": [".mcp.json", ".gitleaks.toml", ".skillspector-baseline.yaml", ".claude/rules/common/working-agreements.md", "scripts/check/terms.config.json"],
   "snippets": {},
   "gitignore": [".claude/state/", ".claude/settings.local.json", ".claude/session-logs/"],
   "packageScripts": { "unlock": "bash scripts/ops/unlock.sh" }

@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
-# PreToolUse(the production database's SQL tool): read-only SQL passes; SQL that may write runs only
-# while the user has unlocked db (scripts/ops/unlock.sh db; docs/unlock.md). The tool is
+# PreToolUse(the production database's SQL tools): read-only SQL passes; SQL that may write runs only
+# while the user has unlocked db (scripts/ops/unlock.sh db; docs/unlock.md). The tools are
 # dbWriteGuard.toolPattern in .claude/agent-config.json (a regex matched against the whole tool
-# name; default mcp__db-prod__execute_sql). Wire this hook with a matcher that covers it.
+# name; default mcp__db-prod__(execute_sql|explain_query|analyze_query_indexes)). Wire this hook with
+# a matcher that covers it. explain_query and analyze_query_indexes run the SQL they are given inside
+# EXPLAIN over the same connection (explain_query with analyze executes it, and a stacked statement
+# runs either way), so they are judged like execute_sql: every SQL field (sql, query, statement, and
+# each of queries) must be a read.
 #
 # Read-only is one statement of SELECT, SHOW, VALUES, TABLE, DESCRIBE, WITH ... SELECT with no
 # data-modifying part, or EXPLAIN (EXPLAIN ANALYZE runs its statement, so only of a read). A
-# SELECT with INTO, FOR UPDATE or FOR SHARE, or a call to a built-in function that changes state
-# or reaches outside the tables (setval, pg_terminate_backend, dblink, pg_read_file, ...) is a write. So is anything else: more than one
+# SELECT with INTO, FOR UPDATE or FOR SHARE, a semicolon (even a trailing one), or a call to a
+# built-in function that changes state or reaches outside the tables (setval, pg_terminate_backend,
+# dblink, pg_read_file, ...) is a write. So is anything else: more than one
 # statement, a comment holding a semicolon or another comment, quoting that databases read
 # differently (dollar quotes, backticks, #, a backslash that splits a string differently where it
 # escapes), and SQL that does not parse. A SELECT calling a
@@ -155,8 +160,9 @@ def statements(sql, backslash=False):
         elif c == "\\":
             raise Unsure("a backslash outside a string")
         elif c == ";":
-            if cur:
-                out.append(cur)
+            # Kept as a token, so a statement that ends in one is told apart from one that does not.
+            cur.append(("op", ";"))
+            out.append(cur)
             cur = []
             i += 1
         else:
@@ -226,10 +232,14 @@ def verdict(sql):
             return "a backslash in a string, which databases read differently"
     except Unsure as why:
         return str(why)
+    found = [s for s in found if s != [("op", ";")]] or found
     if not found:
         return "no statement"
     if len(found) > 1:
         return f"{len(found)} statements in one call"
+    if ("op", ";") in found[0]:
+        # Where a second statement would start. A read is sent as one statement without it.
+        return "a semicolon; send one statement without a trailing ;"
     return writes(found[0])
 
 
@@ -241,8 +251,12 @@ if not re.fullmatch(cfg["dbWriteGuard"]["toolPattern"], tool):
     print("SKIP")
     sys.exit(0)
 given = data.get("tool_input") if isinstance(data.get("tool_input"), dict) else {}
-sql = next((given[k] for k in ("sql", "query", "statement") if isinstance(given.get(k), str)), None)
-why = verdict(sql)
+# Every field that can carry SQL is judged, and one that may write holds the call: explain_query sends
+# sql, analyze_query_indexes a list, queries. A call with none of them carries no SQL this check reads.
+texts = [given[k] for k in ("sql", "query", "statement") if k in given]
+if "queries" in given:
+    texts += given["queries"] if isinstance(given["queries"], list) and given["queries"] else [None]
+why = next((w for w in map(verdict, texts or [None]) if w), "")
 if not why:
     print("READ")
     sys.exit(0)

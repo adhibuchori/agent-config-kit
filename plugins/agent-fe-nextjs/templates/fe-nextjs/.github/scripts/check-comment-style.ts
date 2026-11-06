@@ -13,7 +13,7 @@
    keeps the gate working whichever TypeScript version the repo pins. */
 
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const ALLOWLIST =
   /^\/\/\/?\s*(@ts-expect-error|@ts-ignore|oxlint-disable|eslint-disable|biome-ignore|v8 ignore|<reference\s)/;
@@ -176,7 +176,9 @@ const files = execSync(`git ls-files '*.ts' '*.tsx' '*.mts' '*.cts'`, { encoding
   .split('\n')
   .filter(Boolean)
   .filter((file) => !EXCLUDED.some((prefix) => file.startsWith(prefix)))
-  .filter((file) => !EXCLUDED_FILES.includes(file));
+  .filter((file) => !EXCLUDED_FILES.includes(file))
+  /* A tracked path gone from the worktree is a deletion in progress: no style left to check. */
+  .filter((file) => existsSync(file));
 
 /* A shallow clone or misconfigured checkout can make `git ls-files` return nothing —
    fail loudly instead of reporting a silent, meaningless pass. */

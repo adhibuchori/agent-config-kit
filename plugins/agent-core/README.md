@@ -129,7 +129,8 @@ is older than the installed plugin. Neither is a component, so neither has a doc
 **What setup installs** (`/agent-core:setup`): permissions and the Bash sandbox in
 `.claude/settings.json`; type and dead-code rules for TypeScript and/or Python; the working
 agreements; `scripts/check/gates.sh`, `ai-config.sh`, `skills.sh`, `double-assertion.sh`,
-`folder-shape.mjs`; `scripts/ops/pr-ready.sh` and `unlock.sh`; `scripts/env/show.sh` and `set.sh`;
+`folder-shape.mjs`, `terms.mjs` with its config (the words this repo refuses, none until you list
+some); `scripts/ops/pr-ready.sh` and `unlock.sh`; `scripts/env/show.sh` and `set.sh`;
 `docs/unlock.md`; example ops docs under `.claude/`; and, if you want it, the kit's `.mcp.json`.
 
 ## Configuration
@@ -143,7 +144,7 @@ want). A malformed key falls back to its default and Claude is warned. The templ
 | `protectedBranches` | safety-check, mcp-guard | `["dev", "prod", "main", "master"]` | Branches Claude never pushes to, deletes or writes to through GitHub MCP |
 | `protectedPaths` | safety-check | `src`, `app`, `components`, `content`, `tests`, `scripts`, `.claude`, `.github`, `.git`, `CLAUDE.md`, `AGENTS.md`, … | What `rm -r` and `git clean -f -- <path>` may never take |
 | `commandWrappers` | safety-check | `[]` (plus built-in `sudo`, `env`, `timeout`, `npx`, `rtk`, …) | Extra wrappers to peel before judging, e.g. `"dotenvx run -f= --env-file="` |
-| `dbWriteGuard.toolPattern` | db-guard | `"mcp__db-prod__execute_sql"` | Regex naming your production SQL tool |
+| `dbWriteGuard.toolPattern` | db-guard | `"mcp__db-prod__(execute_sql\|explain_query\|analyze_query_indexes)"` | Regex naming your production SQL tools |
 | `localePairs` | post-edit | `[]` (off) | Files that change together, e.g. `[["messages/en.json", "messages/id.json"]]` |
 | `generatedPaths` | generated-guard (stack plugins) | `src/lib/api/generated`, `src/generated`, `openapi.json`, `openapi.yaml`, `openapi.yml` | Generated output Claude may not hand-edit (a Go or Rust file whose header marks it generated is refused besides) |
 | `migrationsDirs` | migration-guard (stack plugins) | `src/db/migrations`, `drizzle`, `src/app/db/migrations/versions`, `alembic/versions`, `migrations/versions` | Generated migrations Claude may not hand-edit |

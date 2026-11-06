@@ -110,7 +110,7 @@ docker, or no `pooler.sh`, is a check that did not run.
 
 1. **static**, on Linux (`phase: static`): every `gates.list` line whose command is, or starts
    with, a Linux-safe entry (the `node` and `bash` checks that read files:
-   `i18n-catalog.mjs`, `folder-shape.mjs`, `coverage-policy.mjs`, `payload-registry.mjs`,
+   `i18n-catalog.mjs`, `folder-shape.mjs`, `terms.mjs`, `coverage-policy.mjs`, `payload-registry.mjs`,
    `lint-suppressions.sh`, `error-codes.sh`, `privacy-manifest.sh`, `secrets.sh`, `ai-config.sh`),
    exactly as written, then the `.env` check, gitleaks and SkillSpector. Every other line is
    listed as running in the macOS job, SwiftLint's among them: the pinned `swiftlint-static` aborts
@@ -146,6 +146,8 @@ its platform installs nothing, and the check that needs the tool records that it
 | --- | --- | --- |
 | `stack` | (required) | `fe-nextjs`, `fe-nextjs-static`, `be-hono`, `be-go`, `be-axum`, `ai-fastapi`, `ios-swiftui` or `docs-nextra` |
 | `base-ref` | (required) | The branch the pull request merges into; `dev` resolves to `origin/dev`. The reusable workflows pass `github.base_ref` |
+| `head-ref` | empty | The branch the pull request comes from, read by `promotion`. The reusable workflows pass `github.head_ref`, and nothing for a fork |
+| `promotion` | empty | One exact `<head>:<base>` pair, such as `dev:prod`. See [A promotion](#a-promotion) |
 | `package-manager` | `auto` | `auto` reads the lockfile (`bun.lock`, `pnpm-lock.yaml`, `yarn.lock`, `package-lock.json`); or `bun`, `pnpm`, `npm`, `yarn`. ai-fastapi always uses uv; be-go, be-axum and ios-swiftui take `auto` only |
 | `coverage-threshold` | stack default | The floor, 0 to 100 (empty: 100, or 0 for fe-nextjs-static and docs-nextra), read from the report your tests wrote: `lcov.info`, `coverage-summary.json`, `coverage-final.json` or Go's `coverage.out` under `coverage/` (or where `gates.sh` put it), or `.coverage` for Python. Lines, statements, functions and branches each count when the report measured them. `0` turns it off; your test runner's own thresholds still apply |
 | `env-file` | `.env.ci.example` | See [Build and test variables](#build-and-test-variables) |
@@ -168,6 +170,17 @@ The reusable workflows add `runs-on` (empty: the caller repository's `CI_RUNNER_
 secrets, `DATABASE_URL` and `REDIS_URL`, for the integration tests. ios-swiftui's `runs-on` picks
 the macOS runner (empty: `CI_RUNNER_MACOS`, then `xcode-27`), `static-runs-on` the Linux one, and
 `xcode-version` defaults to `27.0`.
+
+## A promotion
+
+When a release branch has its AI config stripped, a pull request from the working branch into it
+shows every skill, command and hook as changed, so the Skill Security Scan installs SkillSpector and
+rescans what the pull request into the working branch already scanned.
+
+Set `promotion: dev:prod` and that one pair stands the scan down. Every other check still runs, and
+the summary names what stood down. The pair keys on both ends on purpose: a skip keyed on the base
+alone lets any branch into `prod` skip the scan. The reusable workflows pass no head for a fork, so a
+fork's branch named `dev` runs everything. Empty, the default, runs everything on every pull request.
 
 ## Build and test variables
 

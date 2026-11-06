@@ -26,6 +26,7 @@ their choices live here. Both files are yours to edit: setup creates them once, 
 
 ## .oxfmtrc.json
 
-`scripts/check/coverage-policy.mjs` and `scripts/check/folder-shape.mjs` are in `ignorePatterns`:
+`scripts/check/coverage-policy.mjs`, `scripts/check/folder-shape.mjs` and `scripts/check/terms.mjs`
+are in `ignorePatterns`:
 the plugins install them and `sync --check` compares them with the plugins' copies, so a format
 pass here would show as drift.

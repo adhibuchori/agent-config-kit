@@ -14,6 +14,7 @@
     "dist/",
     "src/db/migrations/",
     "scripts/check/coverage-policy.mjs",
-    "scripts/check/folder-shape.mjs"
+    "scripts/check/folder-shape.mjs",
+    "scripts/check/terms.mjs"
   ]
 }

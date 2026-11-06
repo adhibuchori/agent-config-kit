@@ -50,7 +50,7 @@
   "commandWrappers": [],
 
   "//dbWriteGuard": "db-guard.sh: toolPattern is a regex matched against the whole name of the production database's SQL tool. SQL that may write runs through it only while the user has unlocked db (docs/unlock.md). Wire db-guard.sh in settings.json with a matcher that covers the same tool. A malformed value falls back to the default.",
-  "dbWriteGuard": { "toolPattern": "mcp__db-prod__execute_sql" },
+  "dbWriteGuard": { "toolPattern": "mcp__db-prod__(execute_sql|explain_query|analyze_query_indexes)" },
 
   "//localePairs": "Groups of files that change together, such as translation catalogues: when post-edit.sh sees one member edited while another has no change in the working tree or index, it tells the agent. Off by default. Example: [[\"messages/en.json\", \"messages/fr.json\"]].",
   "localePairs": []

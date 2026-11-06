@@ -21,6 +21,7 @@
     ".claude/skills/",
     ".agents/skills/",
     "scripts/check/coverage-policy.mjs",
-    "scripts/check/folder-shape.mjs"
+    "scripts/check/folder-shape.mjs",
+    "scripts/check/terms.mjs"
   ]
 }

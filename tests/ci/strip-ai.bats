@@ -149,3 +149,36 @@ EOF
   [ "$status" -eq 0 ]
   [ -n "$(git ls-tree -r --name-only origin/prod -- .claude)" ]
 }
+
+@test "strip-ai: a deletion outside the strip stops the back-merge and leaves dev as it was" {
+  git checkout -q prod
+  git rm -q debug-panel.config.ts
+  git commit -qm "revert a feature"
+  git push -q origin prod
+  strip
+  [ "$status" -eq 0 ]
+  before=$(git rev-parse origin/dev)
+  back_merge
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"outside the strip"* ]] || false
+  [[ "$stderr" == *"debug-panel.config.ts"* ]] || false
+  git fetch -q origin
+  [ "$(git rev-parse origin/dev)" = "$before" ]
+  git cat-file -e origin/dev:debug-panel.config.ts
+}
+
+@test "strip-ai: a content conflict outside the strip stops the back-merge; dev's copy never wins silently" {
+  git checkout -q dev
+  printf 'export const app = 3;\n' >src/app.ts
+  git commit -qam "dev moved the same line"
+  git push -q origin dev
+  git checkout -q prod
+  strip
+  [ "$status" -eq 0 ]
+  before=$(git rev-parse origin/dev)
+  back_merge
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"src/app.ts"* ]] || false
+  git fetch -q origin
+  [ "$(git rev-parse origin/dev)" = "$before" ]
+}

@@ -30,5 +30,6 @@ code	bun run check:skeleton-switch
 code	bun run check:skeleton-pairs
 code	bun run check:endpoints
 code	bun run check:crypto-interop
+all	node scripts/check/terms.mjs
 all	bash scripts/check/ai-config.sh
 commands,hooks	bash scripts/check/skills.sh --staged

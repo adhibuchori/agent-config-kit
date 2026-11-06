@@ -52,7 +52,8 @@ function catalogs() {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     });
-    return out.split('\0').filter(Boolean).sort();
+    /* A tracked path gone from the worktree is a deletion in progress: nothing left to read. */
+    return out.split('\0').filter((p) => p && existsSync(join(ROOT, p))).sort();
   } catch {
     return walk(ROOT, (p) => p.endsWith('.xcstrings')).map((p) => relative(ROOT, p).split(sep).join('/'));
   }

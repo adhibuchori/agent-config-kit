@@ -35,7 +35,7 @@ HOOK_DEFAULTS='{
   "migrationsDirs": ["src/db/migrations", "drizzle", "src/app/db/migrations/versions", "alembic/versions",
                      "migrations/versions"],
   "appendOnlyMigrationsDirs": [],
-  "dbWriteGuard": {"toolPattern": "mcp__db-prod__execute_sql"}
+  "dbWriteGuard": {"toolPattern": "mcp__db-prod__(execute_sql|explain_query|analyze_query_indexes)"}
 }'
 
 # Every git a hook starts reads only, so core.fsmonitor, the one setting a read such as rev-parse or

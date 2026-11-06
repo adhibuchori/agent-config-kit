@@ -1103,9 +1103,9 @@ if has db-guard.sh; then
     sql "$expect" "$q"
   done <<'EOF'
 allow	SELECT * FROM users WHERE id = 1
-allow	select count(*) from orders;
-allow	  SELECT 1  ;
-allow	SELECT * FROM users;
+block	select count(*) from orders;
+block	  SELECT 1  ;
+block	SELECT * FROM users;
 allow	WITH recent AS (SELECT * FROM orders WHERE created_at > now() - interval '1 day') SELECT count(*) FROM recent
 allow	WITH RECURSIVE t(n) AS (VALUES (1) UNION ALL SELECT n + 1 FROM t WHERE n < 5) SELECT sum(n) FROM t
 allow	EXPLAIN SELECT * FROM users
@@ -1200,6 +1200,15 @@ EOF
   run_hook block db-guard.sh "SQL in query" "$(sql_json mcp__db-prod__execute_sql query 'DROP TABLE t')" CLAUDE_PROJECT_DIR="$DBP"
   run_hook block db-guard.sh "SQL in statement" "$(sql_json mcp__db-prod__execute_sql statement 'DROP TABLE t')" CLAUDE_PROJECT_DIR="$DBP"
   run_hook block db-guard.sh "no SQL text" "$(tool_json mcp__db-prod__execute_sql '{"other": 1}')" CLAUDE_PROJECT_DIR="$DBP"
+  # Every SQL field is judged: a read in one must not vouch for a write in another. The EXPLAIN tools
+  # run what they are handed on the same connection, so the default pattern covers them.
+  run_hook block db-guard.sh "a read in sql, a write in query" "$(tool_json mcp__db-prod__execute_sql '{"sql": "SELECT 1", "query": "DELETE FROM t"}')" CLAUDE_PROJECT_DIR="$DBP"
+  run_hook block db-guard.sh "explain_query, EXPLAIN ANALYZE of a write" "$(tool_json mcp__db-prod__explain_query '{"sql": "DELETE FROM t", "analyze": true}')" CLAUDE_PROJECT_DIR="$DBP"
+  run_hook block db-guard.sh "explain_query, a stacked write" "$(sql_json mcp__db-prod__explain_query sql 'SELECT 1; DELETE FROM t')" CLAUDE_PROJECT_DIR="$DBP"
+  run_hook allow db-guard.sh "explain_query of a read, analyzed" "$(tool_json mcp__db-prod__explain_query '{"sql": "SELECT * FROM t", "analyze": true}')" CLAUDE_PROJECT_DIR="$DBP"
+  run_hook block db-guard.sh "analyze_query_indexes, a write among its queries" "$(tool_json mcp__db-prod__analyze_query_indexes '{"queries": ["SELECT 1", "UPDATE t SET a = 1"]}')" CLAUDE_PROJECT_DIR="$DBP"
+  run_hook block db-guard.sh "analyze_query_indexes, no queries" "$(tool_json mcp__db-prod__analyze_query_indexes '{"queries": []}')" CLAUDE_PROJECT_DIR="$DBP"
+  run_hook allow db-guard.sh "analyze_query_indexes of reads" "$(tool_json mcp__db-prod__analyze_query_indexes '{"queries": ["SELECT * FROM t WHERE a = 1", "SELECT 2"]}')" CLAUDE_PROJECT_DIR="$DBP"
   mkdir -p "$DBP/.claude" && echo '{"dbWriteGuard": {"toolPattern": "mcp__pg__(query|execute)"}}' >"$DBP/.claude/agent-config.json"
   run_hook block db-guard.sh "configured tool, write" "$(sql_json mcp__pg__query query 'DELETE FROM t')" CLAUDE_PROJECT_DIR="$DBP"
   run_hook allow db-guard.sh "configured tool, read" "$(sql_json mcp__pg__query query 'SELECT 1')" CLAUDE_PROJECT_DIR="$DBP"

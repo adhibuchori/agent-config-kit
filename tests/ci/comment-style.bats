@@ -88,3 +88,13 @@ EOF
   run -2 style
   [[ "$output" == *"no JavaScript or TypeScript file found"* ]] || false
 }
+
+@test "a tracked file gone from the worktree is skipped, not a crash; the rest are still read" {
+  printf 'export const a = 1;\n' >"$R/gone.mjs"
+  printf 'const b = 2;\n// a note\nexport { b };\n' >"$R/kept.mjs"
+  track
+  rm "$R/gone.mjs"
+  run -1 style
+  [[ "$output" == *'kept.mjs:2'* ]] || false
+  [[ "$output" != *'ENOENT'* ]] || false
+}
