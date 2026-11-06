@@ -24,7 +24,7 @@ purpose because the generators write that way; review generated files in the pul
 
 `/agent-be-axum:setup` writes `"generatedPaths": [".sqlx", "openapi.json"]` when the service owns
 its schema; without that file the defaults apply (`src/lib/api/generated`, `src/generated`,
-`openapi.json`, `openapi.yaml`, `openapi.yml`). A key you set replaces the defaults whole. A path
+`**/openapi.json`, `**/openapi.yaml`, `**/openapi.yml`). A key you set replaces the defaults whole. A path
 your repo does not have guards nothing.
 
 | What | Why it is blocked | Do this instead |

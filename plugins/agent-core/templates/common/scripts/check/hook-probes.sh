@@ -480,6 +480,7 @@ fixture() {
   echo 'export const probeNeedle = 1;' >"$1/src/lib/api/generated/api.ts"
   echo 'export const other = 2;' >"$1/src/lib/api/client/mutator.ts"
   echo '{"openapi": "3.1.0"}' >"$1/openapi.json"
+  mkdir -p "$1/docs/api" && echo 'openapi: 3.1.0' >"$1/docs/api/openapi.yaml"
   echo 'CREATE TABLE probe ();' >"$1/src/db/migrations/0001_probe.sql"
   echo "revision = 'probe'" >"$1/src/app/db/migrations/versions/0001_probe.py"
   printf '[alembic]\n' >"$1/alembic.ini"
@@ -497,6 +498,13 @@ guard block generated-guard.sh "$F" Edit "{\"file_path\": \"$F/src/lib/api/gener
 guard block generated-guard.sh "$F" Write '{"file_path": "src/lib/api/generated/new.ts"}'
 guard block generated-guard.sh "$F" mcp__serena__replace_content '{"relative_path": "src/lib/api/generated/x.ts"}'
 guard block generated-guard.sh "$F" Edit "{\"file_path\": \"$F/openapi.json\"}"
+# The contract at any depth, even in a folder that does not exist yet; a near name is not it.
+for ext in json yaml yml; do
+  guard block generated-guard.sh "$F" Write "{\"file_path\": \"$F/docs/api/openapi.$ext\"}"
+done
+guard block generated-guard.sh "$F" mcp__serena__replace_content '{"relative_path": "services/a/openapi.yaml"}'
+guard allow generated-guard.sh "$F" Write "{\"file_path\": \"$F/docs/my-openapi.json\"}"
+guard allow generated-guard.sh "$F" Write "{\"file_path\": \"$F/docs/openapi.md\"}"
 guard allow generated-guard.sh "$F" mcp__serena__replace_content '{"relative_path": "src/lib/a.ts"}'
 guard allow generated-guard.sh "$F" Edit "{\"file_path\": \"$F/src/lib/api/generated-notes.md\"}"
 G="$TMP/generated-config"
@@ -504,6 +512,12 @@ repo "$G" feature/probe
 mkdir -p "$G/.claude" && echo '{"generatedPaths": ["content/generated"]}' >"$G/.claude/agent-config.json"
 guard block generated-guard.sh "$G" Write "{\"file_path\": \"$G/content/generated/page.mdx\"}"
 guard allow generated-guard.sh "$G" Write "{\"file_path\": \"$G/src/lib/api/generated/x.ts\"}"
+# A list of the project's own leaves a hand-written spec open; **/name also names a folder.
+guard allow generated-guard.sh "$G" Write "{\"file_path\": \"$G/docs/openapi.yaml\"}"
+echo '{"generatedPaths": ["**/gen"]}' >"$G/.claude/agent-config.json"
+guard block generated-guard.sh "$G" Write "{\"file_path\": \"$G/gen/x.ts\"}"
+guard block generated-guard.sh "$G" Write "{\"file_path\": \"$G/packages/a/gen/x.ts\"}"
+guard allow generated-guard.sh "$G" Write "{\"file_path\": \"$G/packages/a/gen-notes/x.ts\"}"
 # A Go or Rust file whose own header says it is generated, wherever it lives: Go's marker counts
 # before the package clause only, Rust's @generated within the first five lines.
 GM="$TMP/generated-markers"
@@ -521,6 +535,11 @@ guard allow generated-guard.sh "$GM" Write "{\"file_path\": \"$GM/internal/db/ne
 guard block migration-guard.sh "$F" mcp__serena__replace_content '{"relative_path": "src/db/migrations/0001_x.sql"}'
 guard block migration-guard.sh "$F" Write "{\"file_path\": \"$F/src/app/db/migrations/versions/0002_x.py\"}"
 guard allow migration-guard.sh "$F" Write "{\"file_path\": \"$F/src/db/schema/x.ts\"}"
+# A folder that does not exist yet is judged like one that does; an empty list guards nothing.
+guard block migration-guard.sh "$E" Write "{\"file_path\": \"$E/src/db/migrations/0001_x.sql\"}"
+guard block migration-guard.sh "$E" Write "{\"file_path\": \"$E/src/app/db/migrations/versions/0001_x.py\"}"
+guard allow migration-guard.sh "$E" Write "{\"file_path\": \"$E/src/db/migrations-notes/0001.md\"}"
+mkdir -p "$E/.claude" && echo '{"migrationsDirs": []}' >"$E/.claude/agent-config.json"
 guard allow migration-guard.sh "$E" Write "{\"file_path\": \"$E/src/db/migrations/0001_x.sql\"}"
 mkdir -p "$E/.claude" "$E/db/sql" && echo '{"migrationsDirs": ["db/sql"]}' >"$E/.claude/agent-config.json"
 guard block migration-guard.sh "$E" Write "{\"file_path\": \"$E/db/sql/0002.sql\"}"
@@ -546,6 +565,11 @@ guard block migration-guard.sh "$AO" Edit "{\"file_path\": \"$AO/notes/merged-li
 guard allow migration-guard.sh "$AO" Edit "{\"file_path\": \"$AO/db/migrations/0002_work.sql\"}"
 guard allow migration-guard.sh "$AO" Write "{\"file_path\": \"$AO/db/migrations/0004_new.sql\"}"
 guard allow migration-guard.sh "$AO" Write "{\"file_path\": \"$AO/db/schema.sql\"}"
+# A branch without the folder still may not rewrite what a protected branch has.
+git -C "$AO" checkout -q -b feature/no-folder && git -C "$AO" rm -rq db/migrations && git -C "$AO" commit -q -m gone
+guard block migration-guard.sh "$AO" Write "{\"file_path\": \"$AO/db/migrations/0001_merged.sql\"}"
+guard allow migration-guard.sh "$AO" Write "{\"file_path\": \"$AO/db/migrations/0005_new.sql\"}"
+git -C "$AO" checkout -q feature/probe
 rm "$AO/.claude/agent-config.json"
 guard allow migration-guard.sh "$AO" Edit "{\"file_path\": \"$AO/db/migrations/0001_merged.sql\"}"
 # Workspace mode: relative_path against the workspace root, from the repo or from the root itself.
@@ -565,6 +589,14 @@ scope generated-guard.sh "\"relative_path\": \"src/lib/api\", \"needle\": \"prob
 scope generated-guard.sh "\"needle\": \"probeNeedle\", $lit" block
 scope generated-guard.sh "\"paths_include_glob\": \"src/lib/api/generated/**\", \"needle\": \"probe\\\\w+\", \"mode\": \"regex\"" block
 scope generated-guard.sh "\"paths_include_glob\": \"**/*.json\", \"needle\": \"openapi\", $lit" block
+# The contract at any depth, also outside git; an ignored copy is out of Serena's reach.
+scope generated-guard.sh "\"relative_path\": \"docs\", \"needle\": \"openapi\", $lit" block
+mkdir -p "$Q/vendor" && echo 'vendor/' >>"$Q/.gitignore" && echo 'openapi: 3.1.0' >"$Q/vendor/openapi.yaml"
+scope generated-guard.sh "\"relative_path\": \"vendor\", \"needle\": \"openapi\", $lit" allow "$Q"
+NG="$TMP/scope-no-git"
+mkdir -p "$NG/docs/api" && echo 'openapi: 3.1.0' >"$NG/docs/api/openapi.yaml"
+scope generated-guard.sh "\"relative_path\": \"docs\", \"needle\": \"openapi\", $lit" block "$NG"
+scope generated-guard.sh "\"relative_path\": \"docs\", \"needle\": \"absentNeedle\", $lit" allow "$NG"
 scope generated-guard.sh "\"relative_path\": \"src/lib/api\", \"needle\": \"probeNeedle\", \"dry_run\": true, $lit" allow
 scope generated-guard.sh "\"relative_path\": \"src/lib/api\", \"paths_exclude_glob\": \"src/lib/api/generated/**\", \"needle\": \"probeNeedle\", $lit" allow
 scope generated-guard.sh "\"relative_path\": \"src/lib/api\", \"needle\": \"absentNeedle\", $lit" allow
@@ -1090,6 +1122,37 @@ token() {
 sql_json() {
   python3 -c 'import json, sys; print(json.dumps({"session_id": "probe-session", "hook_event_name": "PreToolUse", "tool_name": sys.argv[1], "tool_input": {sys.argv[2]: sys.argv[3].replace("\\n", "\n")}}))' "$@"
 }
+# A session at the workspace root, which is no repo: each repo's env helpers run, set.sh answers to
+# the unlock of the repo that owns it, and any repo's db unlock opens db-guard. All of it only with
+# workspace mode on, and a session inside a repo keeps to that repo's own unlock.
+WR="$TMP/ws-root" && WA="$WR/group/a" && WB="$WR/group/b"
+for r in "$WA" "$WB"; do
+  repo "$r" feature/probe
+  mkdir -p "$r/scripts/env" && printf '#!/bin/sh\n' >"$r/scripts/env/show.sh" && printf '#!/bin/sh\n' >"$r/scripts/env/set.sh"
+  printf '.env\n.claude/state/\n' >"$r/.gitignore" && printf 'API_KEY=probe-workspace-value\n' >"$r/.env"
+done
+WM=(CLAUDE_PROJECT_DIR="$WR" AGENT_WORKSPACE_ROOT="$WR")
+SET_A="printf x | bash group/a/scripts/env/set.sh group/a/.env API_KEY"
+SET_B="printf x | bash group/b/scripts/env/set.sh group/b/.env API_KEY"
+sc block "$WR" "cat group/a/.env" "${WM[@]}"
+sc allow "$WR" "bash group/a/scripts/env/show.sh group/a/.env" "${WM[@]}"
+sc block "$WR" "bash group/a/scripts/env/show.sh group/a/.env" CLAUDE_PROJECT_DIR="$WR"
+sc allow "$WA" "bash ../b/scripts/env/show.sh ../b/.env" CLAUDE_PROJECT_DIR="$WA" AGENT_WORKSPACE_ROOT="$WR"
+sc block "$WR" "$SET_A" "${WM[@]}"
+token "$WA" env
+sc allow "$WR" "$SET_A" "${WM[@]}"
+sc block "$WR" "$SET_B" "${WM[@]}"
+sc block "$WR" "$SET_A" CLAUDE_PROJECT_DIR="$WR"
+if has db-guard.sh; then
+  WQ="$(sql_json mcp__db-prod__execute_sql sql 'DELETE FROM t')"
+  run_hook block db-guard.sh "workspace root, a write and no unlock" "$WQ" "${WM[@]}"
+  token "$WA" db
+  run_hook warn db-guard.sh "workspace root, a write with a repo's db unlock" "$WQ" "${WM[@]}"
+  run_hook block db-guard.sh "the same root with workspace mode off" "$WQ" CLAUDE_PROJECT_DIR="$WR"
+  run_hook block db-guard.sh "a sibling repo keeps to its own unlock" "$WQ" CLAUDE_PROJECT_DIR="$WB" AGENT_WORKSPACE_ROOT="$WR"
+  run_hook warn db-guard.sh "the repo that holds the unlock" "$WQ" CLAUDE_PROJECT_DIR="$WA" AGENT_WORKSPACE_ROOT="$WR"
+fi
+
 if has db-guard.sh; then
   DBP="$TMP/db-proj"
   repo "$DBP" feature/probe

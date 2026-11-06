@@ -24,7 +24,7 @@ your generator writes that way; review generated files in the pull request inste
 
 ## What it blocks
 
-Defaults for `generatedPaths`: `src/lib/api/generated`, `src/generated`, `openapi.json`, `openapi.yaml`, `openapi.yml`. A key you set replaces the defaults whole. A
+Defaults for `generatedPaths`: `src/lib/api/generated`, `src/generated`, `**/openapi.json`, `**/openapi.yaml`, `**/openapi.yml`. A key you set replaces the defaults whole. A
 path your repo does not have guards nothing.
 
 | What | Why it is blocked | Do this instead |
@@ -66,7 +66,7 @@ printf '%s' '{"tool_name":"Edit","tool_input":{"file_path":"src/lib/api/generate
 Yes. A redirect, `sed -i` or `cp` is not refused by this guard or by safety-check, on purpose: your generator itself writes those files through the shell.
 
 **My generator writes somewhere else.**
-List your paths in `generatedPaths`, for example `["src/gen", "openapi.json"]`. Include every default you still want.
+List your paths in `generatedPaths`, for example `["src/gen", "openapi.json"]`. Include every default you still want. `**/name` names a file or folder at any depth; a plain entry is relative to the repo root, so a spec you write by hand stays open once your list leaves it out.
 
 **Does it need python3?**
 No: jq is enough for Write and Edit. Without python3, Serena's `replace_in_files` is refused, because its scope cannot be checked.

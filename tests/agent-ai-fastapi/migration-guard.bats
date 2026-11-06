@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # migration-guard.sh as agent-ai-fastapi runs it: the plugin-mode project gate, the Alembic block, what
-# it lets through, the pipeline shape switching it on, its configuration, and its fail modes (bad
+# it lets through, a service without migrations yet, its configuration, and its fail modes (bad
 # payload, no python3, no JSON reader).
 
 load helpers
@@ -72,14 +72,15 @@ setup() {
   done
 }
 
-@test "service shape: a repo with no migrations folder is not affected" {
+@test "service shape: the first revision comes from its tool too; other code is not affected" {
   rm -rf "$PROJ"
   make_project service
   run_guard "$(edit_payload Write "$PROJ/alembic/versions/0001_initial.py")"
-  [ "$status" -eq 0 ]
-  [ -z "$stderr" ]
+  [ "$status" -eq 2 ]
+  [[ "$stderr" == *"alembic/versions/0001_initial.py is a generated migration"* ]] || false
   run_guard "$(edit_payload Edit "$PROJ/src/app/modules/chat/service.py")"
   [ "$status" -eq 0 ]
+  [ -z "$stderr" ]
 }
 
 @test "without alembic.ini the folder is still guarded, with the generic reason" {

@@ -177,3 +177,49 @@ setup() {
   opt_in_lock "$P"
   run -2 guard_plugin "$P" "$(tool_json Edit "{\"file_path\": \"$P/internal/db/models.go\"}")"
 }
+
+@test "the OpenAPI contract is guarded at any depth, even before its folder exists; a near name is not" {
+  opt_in_lock "$P"
+  for f in docs/api/openapi.json docs/openapi.yaml services/a/b/openapi.yml; do
+    run -2 --separate-stderr guard_plugin "$P" "$(tool_json Write "{\"file_path\": \"$P/$f\"}")"
+    [[ "$stderr" == *"$f is the API contract"* ]] || false
+  done
+  for f in docs/my-openapi.json docs/openapi.md openapi.json.bak; do
+    run -0 guard_plugin "$P" "$(tool_json Write "{\"file_path\": \"$P/$f\"}")"
+  done
+}
+
+@test "a project's own list leaves a hand-written spec open; a plain entry stays at the repo root" {
+  opt_in_config "$P" '{"generatedPaths": ["openapi.json"]}'
+  run -2 guard_plugin "$P" "$(tool_json Edit "{\"file_path\": \"$P/openapi.json\"}")"
+  run -0 guard_plugin "$P" "$(tool_json Write "{\"file_path\": \"$P/docs/openapi.json\"}")"
+  run -0 guard_plugin "$P" "$(tool_json Write "{\"file_path\": \"$P/docs/openapi.yaml\"}")"
+}
+
+@test "**/name also names a folder, and a near name is not it" {
+  opt_in_config "$P" '{"generatedPaths": ["**/gen"]}'
+  run -2 guard_plugin "$P" "$(tool_json Write "{\"file_path\": \"$P/gen/x.ts\"}")"
+  run -2 guard_plugin "$P" "$(tool_json Write "{\"file_path\": \"$P/packages/a/gen/x.ts\"}")"
+  run -0 guard_plugin "$P" "$(tool_json Write "{\"file_path\": \"$P/packages/a/gen-notes/x.ts\"}")"
+}
+
+@test "a folder-wide replace_in_files reaches a contract at any depth, but not an ignored copy" {
+  opt_in_lock "$P"
+  mkdir -p "$P/docs/api" "$P/vendor" && echo 'openapi: 3.1.0' >"$P/docs/api/openapi.yaml"
+  echo 'openapi: 3.1.0' >"$P/vendor/openapi.yaml" && echo 'vendor/' >"$P/.gitignore"
+  run -2 --separate-stderr guard_plugin "$P" \
+    "$(tool_json mcp__serena__replace_in_files '{"relative_path": "docs", "needle": "openapi", "repl": "x", "mode": "literal"}')"
+  [[ "$stderr" == *"replace_in_files reaches generated output"* ]] || false
+  run -0 guard_plugin "$P" \
+    "$(tool_json mcp__serena__replace_in_files '{"relative_path": "vendor", "needle": "openapi", "repl": "x", "mode": "literal"}')"
+  run -0 guard_plugin "$P" \
+    "$(tool_json mcp__serena__replace_in_files '{"relative_path": "docs", "needle": "absentNeedle", "repl": "x", "mode": "literal"}')"
+}
+
+@test "outside git, a folder-wide replace_in_files still finds a contract at any depth" {
+  rm -rf "$P/.git"
+  opt_in_lock "$P"
+  mkdir -p "$P/docs/api" && echo 'openapi: 3.1.0' >"$P/docs/api/openapi.yaml"
+  run -2 guard_plugin "$P" \
+    "$(tool_json mcp__serena__replace_in_files '{"relative_path": "docs", "needle": "openapi", "repl": "x", "mode": "literal"}')"
+}

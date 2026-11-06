@@ -74,8 +74,8 @@ session) outside the sandbox, so it is the one way in. Asking in the chat does n
 
 The same holds for the guards themselves. A hook the agent could rewrite would guard nothing: one
 instruction hidden in a file Claude reads could delete the check that would have stopped it. So
-Claude's shell never changes a hook, the probes that prove them, the unlock script, `scripts/env/`
-or the files that turn the guards on. When such a change is meant, Claude makes it with the Edit
+Claude's shell never changes a hook, the probes that prove them, the unlock script, the helpers in
+`scripts/env/` or the files that turn the guards on. When such a change is meant, Claude makes it with the Edit
 tool, where you see the diff, or you run the command yourself with `!`
 (`! git checkout -- .claude/settings.json`).
 
@@ -118,8 +118,10 @@ tool, where you see the diff, or you run the command yourself with `!`
 - **The two helper scripts** are the exceptions: `show.sh` always, and `set.sh` only while `env` is
   open. `set.sh` keeps every other line and comment, backs the old file up to
   `.claude/state/env-backups/` (the backups are locked like the files) and logs the key name,
-  never the value. Claude's shell may read `scripts/env/` but not change it; a change to it goes
-  through the Edit tool, which asks you first.
+  never the value. Claude's shell may read `show.sh`, `set.sh` and `envfile.py` but not change them;
+  a change to them goes through the Edit tool, which asks you first. A project's own tool beside them
+  in `scripts/env/` is ordinary code: `show.sh` and `set.sh` start `envfile.py` with `python3 -I`,
+  which imports nothing from that folder.
 - **The guard scripts.** agent-core's hooks (the plugin's own `scripts/` and `hooks/`, and the
   plugins in `~/.claude/plugins/`), any `.claude/hooks/`, `scripts/check/hook-probes.*`, which
   prove them, and `scripts/ops/unlock.sh`. Claude's shell may read them, and run and copy out the
@@ -147,6 +149,21 @@ way: an expired file, one that is readable by others, a link, or one git tracks 
 
 Add `.claude/state/` to `.gitignore`. It holds the unlock files, the backups (which contain
 secrets) and the audit log. `set.sh` refuses to run until it is ignored.
+
+## Several repos in one workspace
+
+An unlock is made inside a repo. With `AGENT_WORKSPACE_ROOT` set, a session opened at that folder,
+which is no repo itself, works like this:
+
+- It can run each repo's `show.sh` and `set.sh`. `set.sh` answers to the `env` unlock of the repo
+  that owns it, and its refusal names that repo in the command to run.
+- Any repo's `db` unlock opens database writes there, since the session has no repo of its own.
+- A session inside a repo keeps to that repo's own `db` unlock.
+
+Without the setting none of this applies: another repo's helpers stay refused, and an unlock counts
+only in its own repo. As a plugin, the workspace folder opts in like any project, with
+`.claude/agent-config.json` or `.claude/agent-config-kit.lock` there; without one the hooks stay
+silent in a session opened at that folder.
 
 ## What the lock does not stop
 

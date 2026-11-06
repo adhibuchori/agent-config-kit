@@ -1378,2038 +1378,2186 @@ setup() {
   probe block '-' 'bun dump'
 }
 
-@test "L355 block (-): bash -c bash scripts/ops/unlock.sh env " {
+@test "L358 allow (-): gh pr list --state open --json headRefName --jq . .headRe..." {
+  probe allow '-' 'gh pr list --state open --json headRefName --jq '\''.[].headRefName'\'''
+}
+
+@test "L359 allow (-): jq . .name notes/keep.txt" {
+  probe allow '-' 'jq '\''.[].name'\'' notes/keep.txt'
+}
+
+@test "L360 allow (-): git diff --cached --name-only grep -E / .env . " {
+  probe allow '-' 'git diff --cached --name-only | grep -E "(^|/)\\.env(\\.|$)"'
+}
+
+@test "L361 allow (-): grep -n keep notes/keep.txt" {
+  probe allow '-' 'grep -n '\''keep$'\'' notes/keep.txt'
+}
+
+@test "L362 allow (-): git log --format= h -1 notes/keep.txt" {
+  probe allow '-' 'git log --format='\''%h$'\'' -1 notes/keep.txt'
+}
+
+@test "L363 block (-): jq . .name .env" {
+  probe block '-' 'jq '\''.[].name'\'' .env'
+}
+
+@test "L364 block (-): cat . x nv" {
+  probe block '-' 'cat .[!x]nv'
+}
+
+@test "L365 block (-): cat . a-f nv" {
+  probe block '-' 'cat .[a-f]nv'
+}
+
+@test "L366 block (-): cat . e nv" {
+  probe block '-' 'cat .[e]nv'
+}
+
+@test "L367 block (-): cat .e " {
+  probe block '-' 'cat .e*'
+}
+
+@test "L368 block (-): cat .en " {
+  probe block '-' 'cat .en?'
+}
+
+@test "L369 block (-): cat .env.stag " {
+  probe block '-' 'cat .env.stag*'
+}
+
+@test "L370 block (-): cat .env. s taging" {
+  probe block '-' 'cat .env.[s]taging'
+}
+
+@test "L371 block (-): grep -E / x .env.production" {
+  probe block '-' 'grep -E "(^|/)x$" .env.production'
+}
+
+@test "L372 block (-): F=.env cat =F" {
+  probe block '-' 'F=.env; cat $=F'
+}
+
+@test "L373 block (-): F=.env cat F" {
+  probe block '-' 'F=.env; cat $~F'
+}
+
+@test "L374 block (-): bash -c bash scripts/ops/unlock.sh env " {
   probe block '-' 'bash -c '\''bash scripts/ops/unlock.sh env'\'''
 }
 
-@test "L356 block (-): echo bash scripts/ops/unlock.sh env bash" {
+@test "L375 block (-): echo bash scripts/ops/unlock.sh env bash" {
   probe block '-' 'echo '\''bash scripts/ops/unlock.sh env'\'' | bash'
 }
 
-@test "L357 block (-): bash scripts/ops/unlock.sh" {
+@test "L376 block (-): bash scripts/ops/unlock.sh" {
   probe block '-' 'bash < scripts/ops/unlock.sh'
 }
 
-@test "L358 block (-): cat scripts/ops/unlock.sh bash -s env" {
+@test "L377 block (-): cat scripts/ops/unlock.sh bash -s env" {
   probe block '-' 'cat scripts/ops/unlock.sh | bash -s env'
 }
 
-@test "L359 block (-): sh -c cat scripts/ops/unlock.sh _ env" {
+@test "L378 block (-): sh -c cat scripts/ops/unlock.sh _ env" {
   probe block '-' 'sh -c "$(cat scripts/ops/unlock.sh)" _ env'
 }
 
-@test "L360 block (-): cp scripts/ops/unlock.sh notes/u.sh bash notes/u.sh env" {
+@test "L379 block (-): cp scripts/ops/unlock.sh notes/u.sh bash notes/u.sh env" {
   probe block '-' 'cp scripts/ops/unlock.sh notes/u.sh && bash notes/u.sh env'
 }
 
-@test "L361 block (-): ln -s ../scripts/ops/unlock.sh notes/u" {
+@test "L380 block (-): ln -s ../scripts/ops/unlock.sh notes/u" {
   probe block '-' 'ln -s ../scripts/ops/unlock.sh notes/u'
 }
 
-@test "L362 block (-): touch .claude/state/unlock/env" {
+@test "L381 block (-): touch .claude/state/unlock/env" {
   probe block '-' 'touch .claude/state/unlock/env'
 }
 
-@test "L363 block (-): mkdir -p .claude/state/unlock" {
+@test "L382 block (-): mkdir -p .claude/state/unlock" {
   probe block '-' 'mkdir -p .claude/state/unlock'
 }
 
-@test "L364 block (-): echo 9999999999 .claude/state/unlock/env" {
+@test "L383 block (-): echo 9999999999 .claude/state/unlock/env" {
   probe block '-' 'echo 9999999999 > .claude/state/unlock/env'
 }
 
-@test "L365 block (-): printf s n 4102444800 .claude/state/unlock/db" {
+@test "L384 block (-): printf s n 4102444800 .claude/state/unlock/db" {
   probe block '-' 'printf '\''%s\n'\'' 4102444800 >> .claude/state/unlock/db'
 }
 
-@test "L366 block (-): cp TMP /token .claude/state/unlock/env" {
+@test "L385 block (-): cp TMP /token .claude/state/unlock/env" {
   probe block '-' 'cp @TMP@/token .claude/state/unlock/env'
 }
 
-@test "L367 block (-): mv TMP /token .claude/state/unlock/db" {
+@test "L386 block (-): mv TMP /token .claude/state/unlock/db" {
   probe block '-' 'mv @TMP@/token .claude/state/unlock/db'
 }
 
-@test "L368 block (-): install -m 600 TMP /token .claude/state/unlock/env" {
+@test "L387 block (-): install -m 600 TMP /token .claude/state/unlock/env" {
   probe block '-' 'install -m 600 @TMP@/token .claude/state/unlock/env'
 }
 
-@test "L369 block (-): cp TMP /token -t .claude/state/unlock" {
+@test "L388 block (-): cp TMP /token -t .claude/state/unlock" {
   probe block '-' 'cp @TMP@/token -t .claude/state/unlock'
 }
 
-@test "L370 block (-): dd if= TMP /token of=.claude/state/unlock/env" {
+@test "L389 block (-): dd if= TMP /token of=.claude/state/unlock/env" {
   probe block '-' 'dd if=@TMP@/token of=.claude/state/unlock/env'
 }
 
-@test "L371 block (-): date + s tee .claude/state/unlock/env" {
+@test "L390 block (-): date + s tee .claude/state/unlock/env" {
   probe block '-' 'date +%s | tee .claude/state/unlock/env'
 }
 
-@test "L372 block (-): chmod 600 .claude/state/unlock/env" {
+@test "L391 block (-): chmod 600 .claude/state/unlock/env" {
   probe block '-' 'chmod 600 .claude/state/unlock/env'
 }
 
-@test "L373 block (-): rm -f .claude/state/unlock/env" {
+@test "L392 block (-): rm -f .claude/state/unlock/env" {
   probe block '-' 'rm -f .claude/state/unlock/env'
 }
 
-@test "L374 block (-): rm -f .claude/state/unlock/ " {
+@test "L393 block (-): rm -f .claude/state/unlock/ " {
   probe block '-' 'rm -f .claude/state/unlock/*'
 }
 
-@test "L375 block (-): ln -s TMP /forged/.claude/state/unlock .claude/state/unlock" {
+@test "L394 block (-): ln -s TMP /forged/.claude/state/unlock .claude/state/unlock" {
   probe block '-' 'ln -s @TMP@/forged/.claude/state/unlock .claude/state/unlock'
 }
 
-@test "L376 block (-): ln -s TMP /forged/.claude/state .claude/state" {
+@test "L395 block (-): ln -s TMP /forged/.claude/state .claude/state" {
   probe block '-' 'ln -s @TMP@/forged/.claude/state .claude/state'
 }
 
-@test "L377 block (-): mv .claude/state TMP /old-state" {
+@test "L396 block (-): mv .claude/state TMP /old-state" {
   probe block '-' 'mv .claude/state @TMP@/old-state'
 }
 
-@test "L378 block (-): touch .CLAUDE/State/UNLOCK/env" {
+@test "L397 block (-): touch .CLAUDE/State/UNLOCK/env" {
   probe block '-' 'touch .CLAUDE/State/UNLOCK/env'
 }
 
-@test "L379 block (-): touch ./.claude//state/./unlock/env" {
+@test "L398 block (-): touch ./.claude//state/./unlock/env" {
   probe block '-' 'touch ./.claude//state/./unlock/env'
 }
 
-@test "L380 block (-): touch .claude/state/x/../unlock/env" {
+@test "L399 block (-): touch .claude/state/x/../unlock/env" {
   probe block '-' 'touch .claude/state/x/../unlock/env'
 }
 
-@test "L381 block (-): cd .claude/state/unlock touch env" {
+@test "L400 block (-): cd .claude/state/unlock touch env" {
   probe block '-' 'cd .claude/state/unlock && touch env'
 }
 
-@test "L382 block (-): cd .claude/state echo 1 unlock/env" {
+@test "L401 block (-): cd .claude/state echo 1 unlock/env" {
   probe block '-' 'cd .claude/state && echo 1 > unlock/env'
 }
 
-@test "L383 block (-): cd .claude mkdir -p state/unlock" {
+@test "L402 block (-): cd .claude mkdir -p state/unlock" {
   probe block '-' 'cd .claude && mkdir -p state/unlock'
 }
 
-@test "L384 block (-): pushd .claude/state /dev/null touch unlock/db" {
+@test "L403 block (-): pushd .claude/state /dev/null touch unlock/db" {
   probe block '-' 'pushd .claude/state >/dev/null && touch unlock/db'
 }
 
-@test "L385 block (-): D=.claude/state/unlock touch D/env " {
+@test "L404 block (-): D=.claude/state/unlock touch D/env " {
   probe block '-' 'D=.claude/state/unlock; touch "$D/env"'
 }
 
-@test "L386 block (-): export D=.claude/state/unlock touch D/db " {
+@test "L405 block (-): export D=.claude/state/unlock touch D/db " {
   probe block '-' 'export D=.claude/state/unlock; touch "$D/db"'
 }
 
-@test "L387 block (-): a=unl b=ock touch .claude/state/ a b/env" {
+@test "L406 block (-): a=unl b=ock touch .claude/state/ a b/env" {
   probe block '-' 'a=unl; b=ock; touch .claude/state/$a$b/env'
 }
 
-@test "L388 block (-): touch .claude/state/ printf unlock /env" {
+@test "L407 block (-): touch .claude/state/ printf unlock /env" {
   probe block '-' 'touch .claude/state/$(printf unlock)/env'
 }
 
-@test "L389 block (-): D= printf s .claude/state/unlock touch D/env " {
+@test "L408 block (-): D= printf s .claude/state/unlock touch D/env " {
   probe block '-' 'D=$(printf %s .claude/state/unlock); touch "$D/env"'
 }
 
-@test "L390 block (-): cd printf s .claude/state/unlock touch env" {
+@test "L409 block (-): cd printf s .claude/state/unlock touch env" {
   probe block '-' 'cd "$(printf %s .claude/state/unlock)" && touch env'
 }
 
-@test "L391 block (-): echo .claude/state/unlock/env xargs touch" {
+@test "L410 block (-): echo .claude/state/unlock/env xargs touch" {
   probe block '-' 'echo .claude/state/unlock/env | xargs touch'
 }
 
-@test "L392 block (-): find .claude/state -name env -delete" {
+@test "L411 block (-): find .claude/state -name env -delete" {
   probe block '-' 'find .claude/state -name env -delete'
 }
 
-@test "L393 block (-): find .claude/state -type f -exec touch +" {
+@test "L412 block (-): find .claude/state -type f -exec touch +" {
   probe block '-' 'find .claude/state -type f -exec touch {} +'
 }
 
-@test "L394 block (-): cp -r TMP /forged/.claude ." {
+@test "L413 block (-): cp -r TMP /forged/.claude ." {
   probe block '-' 'cp -r @TMP@/forged/.claude .'
 }
 
-@test "L395 block (-): cp -R TMP /forged/. ." {
+@test "L414 block (-): cp -R TMP /forged/. ." {
   probe block '-' 'cp -R @TMP@/forged/. .'
 }
 
-@test "L396 block (-): rsync -a TMP /forged/ ." {
+@test "L415 block (-): rsync -a TMP /forged/ ." {
   probe block '-' 'rsync -a @TMP@/forged/ .'
 }
 
-@test "L397 block (-): tar -xf TMP /forged.tar" {
+@test "L416 block (-): tar -xf TMP /forged.tar" {
   probe block '-' 'tar -xf @TMP@/forged.tar'
 }
 
-@test "L398 block (-): tar -C . -xf TMP /forged.tar" {
+@test "L417 block (-): tar -C . -xf TMP /forged.tar" {
   probe block '-' 'tar -C . -xf @TMP@/forged.tar'
 }
 
-@test "L399 block (-): python3 -c open .claude/state/unlock/env w .write 9999999..." {
+@test "L418 block (-): python3 -c open .claude/state/unlock/env w .write 9999999..." {
   probe block '-' 'python3 -c "open('\''.claude/state/unlock/env'\'', '\''w'\'').write('\''9999999999'\'')"'
 }
 
-@test "L400 block (-): python3 -c import os os.makedirs os.path.join .claude sta..." {
+@test "L419 block (-): python3 -c import os os.makedirs os.path.join .claude sta..." {
   probe block '-' 'python3 -c "import os; os.makedirs(os.path.join('\''.claude'\'', '\''state'\'', '\''unlock'\''), exist_ok=True)"'
 }
 
-@test "L401 block (-): python3 -c p = .claude/sta + te/unl + ock/env open p w .w..." {
+@test "L420 block (-): python3 -c p = .claude/sta + te/unl + ock/env open p w .w..." {
   probe block '-' 'python3 -c "p = '\''.claude/sta'\'' + '\''te/unl'\'' + '\''ock/env'\''; open(p, '\''w'\'').write('\''1'\'')"'
 }
 
-@test "L402 block (-): python3 - EOF nfrom pathlib import Path nPath .claude / s..." {
+@test "L421 block (-): python3 - EOF nfrom pathlib import Path nPath .claude / s..." {
   probe block '-' 'python3 - <<'\''EOF'\''\nfrom pathlib import Path\nPath('\''.claude'\'') / '\''state'\'' / '\''unlock'\'' / '\''env'\''\nEOF'
 }
 
-@test "L403 block (-): node -e require fs .writeFileSync .claude/state/unlock/en..." {
+@test "L422 block (-): node -e require fs .writeFileSync .claude/state/unlock/en..." {
   probe block '-' 'node -e "require('\''fs'\'').writeFileSync('\''.claude/state/unlock/env'\'', '\''1'\'')"'
 }
 
-@test "L404 block (-): perl -e open my f .claude/state/unlock/env " {
+@test "L423 block (-): perl -e open my f .claude/state/unlock/env " {
   probe block '-' 'perl -e '\''open(my $f, ">", ".claude/state/unlock/env")'\'''
 }
 
-@test "L405 block (-): ruby -e File.write .claude/state/unlock/env 1 " {
+@test "L424 block (-): ruby -e File.write .claude/state/unlock/env 1 " {
   probe block '-' 'ruby -e '\''File.write(".claude/state/unlock/env", "1")'\'''
 }
 
-@test "L406 block (-): bash -c echo 1 .claude/state/unlock/env " {
+@test "L425 block (-): bash -c echo 1 .claude/state/unlock/env " {
   probe block '-' 'bash -c '\''echo 1 > .claude/state/unlock/env'\'''
 }
 
-@test "L407 block (-): eval touch .claude/state/unlock/env " {
+@test "L426 block (-): eval touch .claude/state/unlock/env " {
   probe block '-' 'eval '\''touch .claude/state/unlock/env'\'''
 }
 
-@test "L408 block (-): git checkout HEAD -- .claude/state/unlock/env" {
+@test "L427 block (-): git checkout HEAD -- .claude/state/unlock/env" {
   probe block '-' 'git checkout HEAD -- .claude/state/unlock/env'
 }
 
-@test "L409 allow (-): ls -la .claude/state/unlock" {
+@test "L428 allow (-): ls -la .claude/state/unlock" {
   probe allow '-' 'ls -la .claude/state/unlock'
 }
 
-@test "L410 allow (-): cat .claude/state/unlock/env" {
+@test "L429 allow (-): cat .claude/state/unlock/env" {
   probe allow '-' 'cat .claude/state/unlock/env'
 }
 
-@test "L411 allow (-): stat .claude/state/unlock/env" {
+@test "L430 allow (-): stat .claude/state/unlock/env" {
   probe allow '-' 'stat .claude/state/unlock/env'
 }
 
-@test "L412 allow (-): cat scripts/ops/unlock.sh" {
+@test "L431 allow (-): cat scripts/ops/unlock.sh" {
   probe allow '-' 'cat scripts/ops/unlock.sh'
 }
 
-@test "L413 allow (-): grep -n unlock docs/a.md" {
+@test "L432 allow (-): grep -n unlock docs/a.md" {
   probe allow '-' 'grep -n unlock docs/a.md'
 }
 
-@test "L414 allow (-): git add .claude" {
+@test "L433 allow (-): git add .claude" {
   probe allow '-' 'git add .claude'
 }
 
-@test "L415 allow (-): cp -r TMP /plain-tree ." {
+@test "L434 allow (-): cp -r TMP /plain-tree ." {
   probe allow '-' 'cp -r @TMP@/plain-tree .'
 }
 
-@test "L416 allow (-): tar -xf TMP /plain.tar" {
+@test "L435 allow (-): tar -xf TMP /plain.tar" {
   probe allow '-' 'tar -xf @TMP@/plain.tar'
 }
 
-@test "L417 allow (-): git commit -m docs: explain when the user unlocks env " {
+@test "L436 allow (-): git commit -m docs: explain when the user unlocks env " {
   probe allow '-' 'git commit -m '\''docs: explain when the user unlocks env'\'''
 }
 
-@test "L418 allow (-): npm run build" {
+@test "L437 allow (-): npm run build" {
   probe allow '-' 'npm run build'
 }
 
-@test "L419 allow (-): bun run build" {
+@test "L438 allow (-): bun run build" {
   probe allow '-' 'bun run build'
 }
 
-@test "L422 block (-): sed -i s/a/b/ scripts/env/show.sh" {
+@test "L441 block (-): sed -i s/a/b/ scripts/env/show.sh" {
   probe block '-' 'sed -i '\'''\'' '\''s/a/b/'\'' scripts/env/show.sh'
 }
 
-@test "L423 block (-): echo cat 1 scripts/env/show.sh" {
+@test "L442 block (-): echo cat 1 scripts/env/show.sh" {
   probe block '-' 'echo '\''cat "$1"'\'' > scripts/env/show.sh'
 }
 
-@test "L424 block (-): cd scripts/env echo x show.sh" {
+@test "L443 block (-): cd scripts/env echo x show.sh" {
   probe block '-' 'cd scripts/env && echo x > show.sh'
 }
 
-@test "L425 block (-): cp notes/keep.txt scripts/env/envfile.py" {
+@test "L444 block (-): cp notes/keep.txt scripts/env/envfile.py" {
   probe block '-' 'cp notes/keep.txt scripts/env/envfile.py'
 }
 
-@test "L426 block (-): cp -t scripts/env notes/keep.txt" {
+@test "L445 block (-): cp -t scripts/env notes/keep.txt" {
   probe block '-' 'cp -t scripts/env notes/keep.txt'
 }
 
-@test "L427 block (-): D=scripts/env tee D/set.sh notes/keep.txt" {
+@test "L446 block (-): D=scripts/env tee D/set.sh notes/keep.txt" {
   probe block '-' 'D=scripts/env; tee $D/set.sh < notes/keep.txt'
 }
 
-@test "L428 block (-): python3 -c open scripts/env/show.sh a .write x " {
+@test "L447 block (-): python3 -c open scripts/env/show.sh a .write x " {
   probe block '-' 'python3 -c "open('\''scripts/env/show.sh'\'', '\''a'\'').write('\''x'\'')"'
 }
 
-@test "L429 block (-): mv scripts/env/show.sh notes/" {
+@test "L448 block (-): mv scripts/env/show.sh notes/" {
   probe block '-' 'mv scripts/env/show.sh notes/'
 }
 
-@test "L430 block (-): chmod -R 777 scripts/env" {
+@test "L449 block (-): chmod -R 777 scripts/env" {
   probe block '-' 'chmod -R 777 scripts/env'
 }
 
-@test "L431 block (-): rm scripts/env/show.sh" {
+@test "L450 block (-): rm scripts/env/show.sh" {
   probe block '-' 'rm scripts/env/show.sh'
 }
 
-@test "L432 block (-): ln -s scripts/env notes/e" {
+@test "L451 block (-): ln -s scripts/env notes/e" {
   probe block '-' 'ln -s scripts/env notes/e'
 }
 
-@test "L433 block (-): git checkout HEAD -- scripts/env/show.sh" {
+@test "L452 block (-): git checkout HEAD -- scripts/env/show.sh" {
   probe block '-' 'git checkout HEAD -- scripts/env/show.sh'
 }
 
-@test "L434 block (-): rsync -a TMP /helpers/ scripts/env/" {
+@test "L453 block (-): rsync -a TMP /helpers/ scripts/env/" {
   probe block '-' 'rsync -a @TMP@/helpers/ scripts/env/'
 }
 
-@test "L435 block (-): cp -r TMP /forged-helpers/scripts ." {
+@test "L454 block (-): cp -r TMP /forged-helpers/scripts ." {
   probe block '-' 'cp -r @TMP@/forged-helpers/scripts .'
 }
 
-@test "L436 block (-): cp -r TMP /forged-helpers/scripts DEST " {
+@test "L455 block (-): cp -r TMP /forged-helpers/scripts DEST " {
   probe block '-' 'cp -r @TMP@/forged-helpers/scripts "$DEST"'
 }
 
-@test "L437 allow (-): cp -r scripts/env DEST " {
+@test "L456 allow (-): cp -r scripts/env DEST " {
   probe allow '-' 'cp -r scripts/env "$DEST"'
 }
 
-@test "L438 block (-): timeout 5 bash scripts/ops/unlock.sh env" {
+@test "L460 allow (-): oxfmt scripts/ / .ts " {
+  probe allow '-' 'oxfmt '\''scripts/**/*.ts'\'''
+}
+
+@test "L461 allow (-): touch scripts/env/init.ts" {
+  probe allow '-' 'touch scripts/env/init.ts'
+}
+
+@test "L462 allow (-): sed -i s/a/b/ scripts/env/init.ts" {
+  probe allow '-' 'sed -i '\'''\'' '\''s/a/b/'\'' scripts/env/init.ts'
+}
+
+@test "L463 allow (-): rm scripts/env/init.ts" {
+  probe allow '-' 'rm scripts/env/init.ts'
+}
+
+@test "L464 block (-): sed -i s/a/b/ scripts/env/ " {
+  probe block '-' 'sed -i '\'''\'' '\''s/a/b/'\'' scripts/env/*'
+}
+
+@test "L465 block (-): sed -i s/a/b/ scripts/env/ s et.sh" {
+  probe block '-' 'sed -i '\'''\'' '\''s/a/b/'\'' scripts/env/[s]et.sh'
+}
+
+@test "L466 block (-): touch scripts/env/set.sh" {
+  probe block '-' 'touch scripts/env/set.sh'
+}
+
+@test "L467 block (-): rm scripts/env/envfile.py" {
+  probe block '-' 'rm scripts/env/envfile.py'
+}
+
+@test "L468 block (-): mv scripts/env TMP /moved" {
+  probe block '-' 'mv scripts/env @TMP@/moved'
+}
+
+@test "L469 block (-): timeout 5 bash scripts/ops/unlock.sh env" {
   probe block '-' 'timeout 5 bash scripts/ops/unlock.sh env'
 }
 
-@test "L439 block (-): npm exec -- bash scripts/ops/unlock.sh env" {
+@test "L470 block (-): npm exec -- bash scripts/ops/unlock.sh env" {
   probe block '-' 'npm exec -- bash scripts/ops/unlock.sh env'
 }
 
-@test "L440 block (-): git -c alias.u= bash scripts/ops/unlock.sh u env" {
+@test "L471 block (-): git -c alias.u= bash scripts/ops/unlock.sh u env" {
   probe block '-' 'git -c alias.u='\''!bash scripts/ops/unlock.sh'\'' u env'
 }
 
-@test "L441 block (-): git config alias.u bash scripts/ops/unlock.sh " {
+@test "L472 block (-): git config alias.u bash scripts/ops/unlock.sh " {
   probe block '-' 'git config alias.u '\''!bash scripts/ops/unlock.sh'\'''
 }
 
-@test "L442 block (-): bash scripts/ops/unl .sh env" {
+@test "L473 block (-): bash scripts/ops/unl .sh env" {
   probe block '-' 'bash scripts/ops/unl*.sh env'
 }
 
-@test "L443 block (-): bash scripts/ops/unlock.s env" {
+@test "L474 block (-): bash scripts/ops/unlock.s env" {
   probe block '-' 'bash scripts/ops/unlock.s? env'
 }
 
-@test "L444 block (-): bash ls scripts/ops/u env" {
+@test "L475 block (-): bash ls scripts/ops/u env" {
   probe block '-' 'bash $(ls scripts/ops/u*) env'
 }
 
-@test "L445 block (-): bash -x ls scripts/ops/u env" {
+@test "L476 block (-): bash -x ls scripts/ops/u env" {
   probe block '-' 'bash -x $(ls scripts/ops/u*) env'
 }
 
-@test "L446 allow (-): bash -n ls scripts/ops/u " {
+@test "L477 allow (-): bash -n ls scripts/ops/u " {
   probe allow '-' 'bash -n $(ls scripts/ops/u*)'
 }
 
-@test "L447 block (-): find scripts/ops -name u -exec bash env " {
+@test "L478 block (-): find scripts/ops -name u -exec bash env " {
   probe block '-' 'find scripts/ops -name '\''u*'\'' -exec bash {} env \;'
 }
 
-@test "L448 block (-): ls scripts/ops/ xargs -n1 bash" {
+@test "L479 block (-): ls scripts/ops/ xargs -n1 bash" {
   probe block '-' 'ls scripts/ops/* | xargs -n1 bash'
 }
 
-@test "L449 block (-): for f in scripts/ops/ .sh do bash f done" {
+@test "L480 block (-): for f in scripts/ops/ .sh do bash f done" {
   probe block '-' 'for f in scripts/ops/*.sh; do bash "$f"; done'
 }
 
-@test "L450 block (-): HOME=.claude/state touch /unlock/env" {
+@test "L481 block (-): HOME=.claude/state touch /unlock/env" {
   probe block '-' 'HOME=.claude/state; touch ~/unlock/env'
 }
 
-@test "L451 block (-): HOME=.claude/state cd touch unlock/env" {
+@test "L482 block (-): HOME=.claude/state cd touch unlock/env" {
   probe block '-' 'HOME=.claude/state; cd; touch unlock/env'
 }
 
-@test "L452 block (-): find notes -exec sh -c cat .env " {
+@test "L483 block (-): find notes -exec sh -c cat .env " {
   probe block '-' 'find notes -exec sh -c '\''cat .env'\'' \;'
 }
 
-@test "L453 allow (-): cat scripts/env/show.sh" {
+@test "L484 allow (-): cat scripts/env/show.sh" {
   probe allow '-' 'cat scripts/env/show.sh'
 }
 
-@test "L454 allow (-): shellcheck -x scripts/env/show.sh scripts/env/set.sh scri..." {
+@test "L485 allow (-): shellcheck -x scripts/env/show.sh scripts/env/set.sh scri..." {
   probe allow '-' 'shellcheck -x scripts/env/show.sh scripts/env/set.sh scripts/ops/unlock.sh'
 }
 
-@test "L455 allow (-): git add scripts/env scripts/ops/unlock.sh" {
+@test "L486 allow (-): git add scripts/env scripts/ops/unlock.sh" {
   probe allow '-' 'git add scripts/env scripts/ops/unlock.sh'
 }
 
-@test "L456 allow (-): git diff scripts/env" {
+@test "L487 allow (-): git diff scripts/env" {
   probe allow '-' 'git diff scripts/env'
 }
 
-@test "L457 allow (-): git log -p -- scripts/ops/unlock.sh" {
+@test "L488 allow (-): git log -p -- scripts/ops/unlock.sh" {
   probe allow '-' 'git log -p -- scripts/ops/unlock.sh'
 }
 
-@test "L458 allow (-): git commit -m fix: scripts/ops/unlock.sh prints the time " {
+@test "L489 allow (-): git commit -m fix: scripts/ops/unlock.sh prints the time " {
   probe allow '-' 'git commit -m '\''fix: scripts/ops/unlock.sh prints the time'\'''
 }
 
-@test "L459 allow (-): cp -r scripts/env TMP /helpers-copy" {
+@test "L490 allow (-): cp -r scripts/env TMP /helpers-copy" {
   probe allow '-' 'cp -r scripts/env @TMP@/helpers-copy'
 }
 
-@test "L460 allow (-): gh pr create --title unlock --body adds scripts/ops/unloc..." {
+@test "L491 allow (-): gh pr create --title unlock --body adds scripts/ops/unloc..." {
   probe allow '-' 'gh pr create --title unlock --body '\''adds scripts/ops/unlock.sh'\'''
 }
 
-@test "L461 allow (-): for f in scripts/check/ .sh do bash f done" {
+@test "L492 allow (-): for f in scripts/check/ .sh do bash f done" {
   probe allow '-' 'for f in scripts/check/*.sh; do bash "$f"; done'
 }
 
-@test "L462 allow (-): bash git rev-parse --show-toplevel /scripts/check/gates.sh " {
+@test "L493 allow (-): bash git rev-parse --show-toplevel /scripts/check/gates.sh " {
   probe allow '-' 'bash "$(git rev-parse --show-toplevel)/scripts/check/gates.sh"'
 }
 
-@test "L463 allow (-): find . -name .sh -exec shellcheck +" {
+@test "L494 allow (-): find . -name .sh -exec shellcheck +" {
   probe allow '-' 'find . -name '\''*.sh'\'' -exec shellcheck {} +'
 }
 
-@test "L464 allow (-): find . -name .sh -exec bash -n " {
+@test "L495 allow (-): find . -name .sh -exec bash -n " {
   probe allow '-' 'find . -name '\''*.sh'\'' -exec bash -n {} \;'
 }
 
-@test "L465 allow (-): cd ls" {
+@test "L496 allow (-): cd ls" {
   probe allow '-' 'cd ~ && ls'
 }
 
-@test "L469 block (-): rm .claude/settings.json" {
+@test "L500 block (-): rm .claude/settings.json" {
   probe block '-' 'rm .claude/settings.json'
 }
 
-@test "L470 block (-): rm -f .claude/agent-config-kit.lock" {
+@test "L501 block (-): rm -f .claude/agent-config-kit.lock" {
   probe block '-' 'rm -f .claude/agent-config-kit.lock'
 }
 
-@test "L471 block (-): mv .claude/agent-config.json notes/" {
+@test "L502 block (-): mv .claude/agent-config.json notes/" {
   probe block '-' 'mv .claude/agent-config.json notes/'
 }
 
-@test "L472 block (-): ln -sf /dev/null .claude/settings.local.json" {
+@test "L503 block (-): ln -sf /dev/null .claude/settings.local.json" {
   probe block '-' 'ln -sf /dev/null .claude/settings.local.json'
 }
 
-@test "L473 block (-): cp notes/keep.txt .claude/settings.json" {
+@test "L504 block (-): cp notes/keep.txt .claude/settings.json" {
   probe block '-' 'cp notes/keep.txt .claude/settings.json'
 }
 
-@test "L474 block (-): echo .claude/settings.local.json" {
+@test "L505 block (-): echo .claude/settings.local.json" {
   probe block '-' 'echo '\''{}'\'' > .claude/settings.local.json'
 }
 
-@test "L475 block (-): : .claude/agent-config.json" {
+@test "L506 block (-): : .claude/agent-config.json" {
   probe block '-' ': > .claude/agent-config.json'
 }
 
-@test "L476 block (-): truncate -s 0 .claude/settings.json" {
+@test "L507 block (-): truncate -s 0 .claude/settings.json" {
   probe block '-' 'truncate -s 0 .claude/settings.json'
 }
 
-@test "L477 block (-): sed -i s/a/b/ .claude/settings.json" {
+@test "L508 block (-): sed -i s/a/b/ .claude/settings.json" {
   probe block '-' 'sed -i '\'''\'' '\''s/a/b/'\'' .claude/settings.json'
 }
 
-@test "L478 block (-): sed -i.bak s/a/b/ .claude/settings.json" {
+@test "L509 block (-): sed -i.bak s/a/b/ .claude/settings.json" {
   probe block '-' 'sed -i.bak '\''s/a/b/'\'' .claude/settings.json'
 }
 
-@test "L479 block (-): tee .claude/agent-config.json notes/keep.txt" {
+@test "L510 block (-): tee .claude/agent-config.json notes/keep.txt" {
   probe block '-' 'tee .claude/agent-config.json < notes/keep.txt'
 }
 
-@test "L480 block (-): chmod 000 .claude/agent-config-kit.lock" {
+@test "L511 block (-): chmod 000 .claude/agent-config-kit.lock" {
   probe block '-' 'chmod 000 .claude/agent-config-kit.lock'
 }
 
-@test "L481 block (-): git rm .claude/agent-config-kit.lock" {
+@test "L512 block (-): git rm .claude/agent-config-kit.lock" {
   probe block '-' 'git rm .claude/agent-config-kit.lock'
 }
 
-@test "L482 block (-): git checkout HEAD -- .claude/settings.json" {
+@test "L513 block (-): git checkout HEAD -- .claude/settings.json" {
   probe block '-' 'git checkout HEAD -- .claude/settings.json'
 }
 
-@test "L483 block (-): git restore .claude/agent-config.json" {
+@test "L514 block (-): git restore .claude/agent-config.json" {
   probe block '-' 'git restore .claude/agent-config.json'
 }
 
-@test "L484 block (-): git -C .claude rm settings.json" {
+@test "L515 block (-): git -C .claude rm settings.json" {
   probe block '-' 'git -C .claude rm settings.json'
 }
 
-@test "L485 block (-): cd .claude rm settings.local.json" {
+@test "L516 block (-): cd .claude rm settings.local.json" {
   probe block '-' 'cd .claude && rm settings.local.json'
 }
 
-@test "L486 block (-): echo .claude/settings.json xargs rm" {
+@test "L517 block (-): echo .claude/settings.json xargs rm" {
   probe block '-' 'echo .claude/settings.json | xargs rm'
 }
 
-@test "L487 block (-): sed -n w .claude/settings.json notes/keep.txt" {
+@test "L518 block (-): sed -n w .claude/settings.json notes/keep.txt" {
   probe block '-' 'sed -n '\''w .claude/settings.json'\'' notes/keep.txt'
 }
 
-@test "L488 block (-): python3 -c import os os.remove .claude/settings.json " {
+@test "L519 block (-): python3 -c import os os.remove .claude/settings.json " {
   probe block '-' 'python3 -c "import os; os.remove('\''.claude/settings.json'\'')"'
 }
 
-@test "L489 block (-): rm /.claude/settings.json" {
+@test "L520 block (-): rm /.claude/settings.json" {
   probe block '-' 'rm ~/.claude/settings.json'
 }
 
-@test "L490 allow (-): cat .claude/settings.json" {
+@test "L521 allow (-): cat .claude/settings.json" {
   probe allow '-' 'cat .claude/settings.json'
 }
 
-@test "L491 allow (-): jq . .claude/agent-config.json" {
+@test "L522 allow (-): jq . .claude/agent-config.json" {
   probe allow '-' 'jq . .claude/agent-config.json'
 }
 
-@test "L492 allow (-): sed -n 1 20p .claude/settings.json" {
+@test "L523 allow (-): sed -n 1 20p .claude/settings.json" {
   probe allow '-' 'sed -n 1,20p .claude/settings.json'
 }
 
-@test "L493 allow (-): grep -n hooks .claude/settings.json" {
+@test "L524 allow (-): grep -n hooks .claude/settings.json" {
   probe allow '-' 'grep -n hooks .claude/settings.json'
 }
 
-@test "L494 allow (-): git diff .claude/settings.json" {
+@test "L525 allow (-): git diff .claude/settings.json" {
   probe allow '-' 'git diff .claude/settings.json'
 }
 
-@test "L495 allow (-): cp .claude/settings.json notes/settings.backup.json" {
+@test "L526 allow (-): cp .claude/settings.json notes/settings.backup.json" {
   probe allow '-' 'cp .claude/settings.json notes/settings.backup.json'
 }
 
-@test "L496 allow (-): git add .claude/agent-config-kit.lock" {
+@test "L527 allow (-): git add .claude/agent-config-kit.lock" {
   probe allow '-' 'git add .claude/agent-config-kit.lock'
 }
 
-@test "L497 allow (-): git rm --cached .claude/settings.local.json" {
+@test "L528 allow (-): git rm --cached .claude/settings.local.json" {
   probe allow '-' 'git rm --cached .claude/settings.local.json'
 }
 
-@test "L498 allow (-): git restore --staged .claude/settings.json" {
+@test "L529 allow (-): git restore --staged .claude/settings.json" {
   probe allow '-' 'git restore --staged .claude/settings.json'
 }
 
-@test "L499 allow (-): echo .vscode/settings.json" {
+@test "L530 allow (-): echo .vscode/settings.json" {
   probe allow '-' 'echo '\''{}'\'' > .vscode/settings.json'
 }
 
-@test "L500 allow (-): mkdir -p TMP /fixture-x/.claude echo TMP /fixture-x/.clau..." {
+@test "L531 allow (-): mkdir -p TMP /fixture-x/.claude echo TMP /fixture-x/.clau..." {
   probe allow '-' 'mkdir -p @TMP@/fixture-x/.claude && echo '\''{}'\'' > @TMP@/fixture-x/.claude/settings.json'
 }
 
-@test "L501 allow (-): git commit -m docs: explain .claude/settings.json " {
+@test "L532 allow (-): git commit -m docs: explain .claude/settings.json " {
   probe allow '-' 'git commit -m '\''docs: explain .claude/settings.json'\'''
 }
 
-@test "L506 block (-): rm .claude/hooks/safety-check.sh" {
+@test "L537 block (-): rm .claude/hooks/safety-check.sh" {
   probe block '-' 'rm .claude/hooks/safety-check.sh'
 }
 
-@test "L507 block (-): rm -f .claude/hooks/lib.sh" {
+@test "L538 block (-): rm -f .claude/hooks/lib.sh" {
   probe block '-' 'rm -f .claude/hooks/lib.sh'
 }
 
-@test "L508 block (-): mv .claude/hooks/lib.sh notes/" {
+@test "L539 block (-): mv .claude/hooks/lib.sh notes/" {
   probe block '-' 'mv .claude/hooks/lib.sh notes/'
 }
 
-@test "L509 block (-): mv .claude/hooks .claude/hooks-off" {
+@test "L540 block (-): mv .claude/hooks .claude/hooks-off" {
   probe block '-' 'mv .claude/hooks .claude/hooks-off'
 }
 
-@test "L510 block (-): ln -sf /dev/null .claude/hooks/safety-check.sh" {
+@test "L541 block (-): ln -sf /dev/null .claude/hooks/safety-check.sh" {
   probe block '-' 'ln -sf /dev/null .claude/hooks/safety-check.sh'
 }
 
-@test "L511 block (-): ln -s .claude/hooks notes/h" {
+@test "L542 block (-): ln -s .claude/hooks notes/h" {
   probe block '-' 'ln -s .claude/hooks notes/h'
 }
 
-@test "L512 block (-): cp notes/keep.txt .claude/hooks/lib.sh" {
+@test "L543 block (-): cp notes/keep.txt .claude/hooks/lib.sh" {
   probe block '-' 'cp notes/keep.txt .claude/hooks/lib.sh'
 }
 
-@test "L513 block (-): cp notes/keep.txt .claude/hooks/" {
+@test "L544 block (-): cp notes/keep.txt .claude/hooks/" {
   probe block '-' 'cp notes/keep.txt .claude/hooks/'
 }
 
-@test "L514 block (-): install -m 755 notes/keep.txt .claude/hooks/safety-check.sh" {
+@test "L545 block (-): install -m 755 notes/keep.txt .claude/hooks/safety-check.sh" {
   probe block '-' 'install -m 755 notes/keep.txt .claude/hooks/safety-check.sh'
 }
 
-@test "L515 block (-): echo exit 0 .claude/hooks/safety-check.sh" {
+@test "L546 block (-): echo exit 0 .claude/hooks/safety-check.sh" {
   probe block '-' 'echo '\''exit 0'\'' > .claude/hooks/safety-check.sh'
 }
 
-@test "L516 block (-): printf exit 0 n .claude/hooks/lib.sh" {
+@test "L547 block (-): printf exit 0 n .claude/hooks/lib.sh" {
   probe block '-' 'printf '\''exit 0\n'\'' >> .claude/hooks/lib.sh'
 }
 
-@test "L517 block (-): : .claude/hooks/lib.sh" {
+@test "L548 block (-): : .claude/hooks/lib.sh" {
   probe block '-' ': > .claude/hooks/lib.sh'
 }
 
-@test "L518 block (-): truncate -s 0 .claude/hooks/lib.sh" {
+@test "L549 block (-): truncate -s 0 .claude/hooks/lib.sh" {
   probe block '-' 'truncate -s 0 .claude/hooks/lib.sh'
 }
 
-@test "L519 block (-): dd if=/dev/null of=.claude/hooks/lib.sh" {
+@test "L550 block (-): dd if=/dev/null of=.claude/hooks/lib.sh" {
   probe block '-' 'dd if=/dev/null of=.claude/hooks/lib.sh'
 }
 
-@test "L520 block (-): tee .claude/hooks/lib.sh notes/keep.txt" {
+@test "L551 block (-): tee .claude/hooks/lib.sh notes/keep.txt" {
   probe block '-' 'tee .claude/hooks/lib.sh < notes/keep.txt'
 }
 
-@test "L521 block (-): echo x tee -a .claude/hooks/lib.sh" {
+@test "L552 block (-): echo x tee -a .claude/hooks/lib.sh" {
   probe block '-' 'echo x | tee -a .claude/hooks/lib.sh'
 }
 
-@test "L522 block (-): sed -i s/exit 2/exit 0/ .claude/hooks/lib.sh" {
+@test "L553 block (-): sed -i s/exit 2/exit 0/ .claude/hooks/lib.sh" {
   probe block '-' 'sed -i '\'''\'' '\''s/exit 2/exit 0/'\'' .claude/hooks/lib.sh'
 }
 
-@test "L523 block (-): sed -i.bak s/exit 2/exit 0/ .claude/hooks/lib.sh" {
+@test "L554 block (-): sed -i.bak s/exit 2/exit 0/ .claude/hooks/lib.sh" {
   probe block '-' 'sed -i.bak '\''s/exit 2/exit 0/'\'' .claude/hooks/lib.sh'
 }
 
-@test "L524 block (-): perl -pi -e s/exit 2/exit 0/ .claude/hooks/lib.sh" {
+@test "L555 block (-): perl -pi -e s/exit 2/exit 0/ .claude/hooks/lib.sh" {
   probe block '-' 'perl -pi -e '\''s/exit 2/exit 0/'\'' .claude/hooks/lib.sh'
 }
 
-@test "L525 block (-): chmod 000 .claude/hooks/safety-check.sh" {
+@test "L556 block (-): chmod 000 .claude/hooks/safety-check.sh" {
   probe block '-' 'chmod 000 .claude/hooks/safety-check.sh'
 }
 
-@test "L526 block (-): chmod -x .claude/hooks/ .sh" {
+@test "L557 block (-): chmod -x .claude/hooks/ .sh" {
   probe block '-' 'chmod -x .claude/hooks/*.sh'
 }
 
-@test "L527 block (-): chmod -R 000 .claude" {
+@test "L558 block (-): chmod -R 000 .claude" {
   probe block '-' 'chmod -R 000 .claude'
 }
 
-@test "L528 block (-): git rm .claude/hooks/lib.sh" {
+@test "L559 block (-): git rm .claude/hooks/lib.sh" {
   probe block '-' 'git rm .claude/hooks/lib.sh'
 }
 
-@test "L529 block (-): git rm -r .claude/hooks" {
+@test "L560 block (-): git rm -r .claude/hooks" {
   probe block '-' 'git rm -r .claude/hooks'
 }
 
-@test "L530 block (-): git mv .claude/hooks/lib.sh notes/lib.sh" {
+@test "L561 block (-): git mv .claude/hooks/lib.sh notes/lib.sh" {
   probe block '-' 'git mv .claude/hooks/lib.sh notes/lib.sh'
 }
 
-@test "L531 block (-): git checkout HEAD -- .claude/hooks/lib.sh" {
+@test "L562 block (-): git checkout HEAD -- .claude/hooks/lib.sh" {
   probe block '-' 'git checkout HEAD -- .claude/hooks/lib.sh'
 }
 
-@test "L532 block (-): git checkout HEAD 1 .claude/hooks" {
+@test "L563 block (-): git checkout HEAD 1 .claude/hooks" {
   probe block '-' 'git checkout HEAD~1 .claude/hooks'
 }
 
-@test "L533 block (-): git checkout HEAD -- .claude" {
+@test "L564 block (-): git checkout HEAD -- .claude" {
   probe block '-' 'git checkout HEAD -- .claude'
 }
 
-@test "L534 block (-): git restore .claude/hooks/lib.sh" {
+@test "L565 block (-): git restore .claude/hooks/lib.sh" {
   probe block '-' 'git restore .claude/hooks/lib.sh'
 }
 
-@test "L535 block (-): git restore --source HEAD 1 -- .claude" {
+@test "L566 block (-): git restore --source HEAD 1 -- .claude" {
   probe block '-' 'git restore --source HEAD~1 -- .claude'
 }
 
-@test "L536 block (-): git stash push -- .claude/hooks" {
+@test "L567 block (-): git stash push -- .claude/hooks" {
   probe block '-' 'git stash push -- .claude/hooks'
 }
 
-@test "L537 block (-): cd .claude/hooks rm lib.sh" {
+@test "L568 block (-): cd .claude/hooks rm lib.sh" {
   probe block '-' 'cd .claude/hooks && rm lib.sh'
 }
 
-@test "L538 block (-): cd .claude/hooks sed -i s/a/b/ lib.sh" {
+@test "L569 block (-): cd .claude/hooks sed -i s/a/b/ lib.sh" {
   probe block '-' 'cd .claude/hooks && sed -i '\'''\'' '\''s/a/b/'\'' lib.sh'
 }
 
-@test "L539 block (-): echo .claude/hooks/lib.sh xargs rm" {
+@test "L570 block (-): echo .claude/hooks/lib.sh xargs rm" {
   probe block '-' 'echo .claude/hooks/lib.sh | xargs rm'
 }
 
-@test "L540 block (-): rm /.claude/hooks/guard.sh" {
+@test "L571 block (-): rm /.claude/hooks/guard.sh" {
   probe block '-' 'rm ~/.claude/hooks/guard.sh'
 }
 
-@test "L541 block (-): rm /.claude/plugins/cache/kit/agent-core/1.0.0/scripts/li..." {
+@test "L572 block (-): rm /.claude/plugins/cache/kit/agent-core/1.0.0/scripts/li..." {
   probe block '-' 'rm ~/.claude/plugins/cache/kit/agent-core/1.0.0/scripts/lib.sh'
 }
 
-@test "L542 block (-): echo x scripts/check/hook-probes.tsv" {
+@test "L575 allow (-):  /.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sy..." {
+  probe allow '-' '~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sync plan --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project "$PWD"'
+}
+
+@test "L576 allow (-):  /.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sy..." {
+  probe allow '-' '~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sync check --templates "~/.claude/plugins/cache/kit/agent-core/1.0.0/templates" --stack common --project .'
+}
+
+@test "L577 allow (-):  /.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-se..." {
+  probe allow '-' '~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-setup questions --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project .'
+}
+
+@test "L578 allow (-):  /.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-se..." {
+  probe allow '-' '~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-setup plan --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project .'
+}
+
+@test "L579 block (-):  /.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sy..." {
+  probe block '-' '~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sync apply --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project . --digest sha256:0123'
+}
+
+@test "L580 block (-):  /.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-se..." {
+  probe block '-' '~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-setup apply --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project . --digest sha256:0123'
+}
+
+@test "L581 block (-):  /.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sy..." {
+  probe block '-' '~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sync own --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project . notes/keep.txt'
+}
+
+@test "L582 block (-): ./agent-sync plan --templates /.claude/plugins/cache/kit/..." {
+  probe block '-' './agent-sync plan --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project .'
+}
+
+@test "L583 block (-):  TMP /bin/agent-sync plan --templates /.claude/plugins/ca..." {
+  probe block '-' '@TMP@/bin/agent-sync plan --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project .'
+}
+
+@test "L584 block (-): PATH= TMP /bin: PATH /.claude/plugins/cache/kit/agent-cor..." {
+  probe block '-' 'PATH=@TMP@/bin:$PATH ~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sync plan --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project .'
+}
+
+@test "L585 block (-):  /.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sy..." {
+  probe block '-' '~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sync plan --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project . > ~/.claude/plugins/cache/kit/agent-core/1.0.0/scripts/lib.sh'
+}
+
+@test "L586 block (-):  /.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sy..." {
+  probe block '-' '~/.claude/plugins/cache/kit/agent-core/1.0.0/bin/agent-sync plan --templates ~/.claude/plugins/cache/kit/agent-core/1.0.0/templates --stack common --project . && rm ~/.claude/plugins/cache/kit/agent-core/1.0.0/scripts/lib.sh'
+}
+
+@test "L587 block (-): echo x scripts/check/hook-probes.tsv" {
   probe block '-' 'echo x > scripts/check/hook-probes.tsv'
 }
 
-@test "L543 block (-): echo allow - rm -rf src scripts/check/hook-probes.tsv" {
+@test "L588 block (-): echo allow - rm -rf src scripts/check/hook-probes.tsv" {
   probe block '-' 'echo '\''allow	-	rm -rf src'\'' >> scripts/check/hook-probes.tsv'
 }
 
-@test "L544 block (-): sed -i /rm -rf/d scripts/check/hook-probes.tsv" {
+@test "L589 block (-): sed -i /rm -rf/d scripts/check/hook-probes.tsv" {
   probe block '-' 'sed -i '\'''\'' '\''/rm -rf/d'\'' scripts/check/hook-probes.tsv'
 }
 
-@test "L545 block (-): rm scripts/check/hook-probes.sh" {
+@test "L590 block (-): rm scripts/check/hook-probes.sh" {
   probe block '-' 'rm scripts/check/hook-probes.sh'
 }
 
-@test "L546 block (-): cp notes/keep.txt scripts/check/hook-probes.sh" {
+@test "L591 block (-): cp notes/keep.txt scripts/check/hook-probes.sh" {
   probe block '-' 'cp notes/keep.txt scripts/check/hook-probes.sh'
 }
 
-@test "L547 block (-): git checkout HEAD -- scripts/check/hook-probes.sh" {
+@test "L592 block (-): git checkout HEAD -- scripts/check/hook-probes.sh" {
   probe block '-' 'git checkout HEAD -- scripts/check/hook-probes.sh'
 }
 
-@test "L548 block (-): mv scripts/check notes/check" {
+@test "L593 block (-): mv scripts/check notes/check" {
   probe block '-' 'mv scripts/check notes/check'
 }
 
-@test "L549 block (-): cp -r TMP /plain-tree .claude/hooks" {
+@test "L594 block (-): cp -r TMP /plain-tree .claude/hooks" {
   probe block '-' 'cp -r @TMP@/plain-tree .claude/hooks'
 }
 
-@test "L550 block (-): echo x .claude/hooks/new hook.sh " {
+@test "L595 block (-): echo x .claude/hooks/new hook.sh " {
   probe block '-' 'echo x > ".claude/hooks/new hook.sh"'
 }
 
-@test "L551 block (-): rm -f D/.claude/hooks/lib.sh " {
+@test "L596 block (-): rm -f D/.claude/hooks/lib.sh " {
   probe block '-' 'rm -f "$D/.claude/hooks/lib.sh"'
 }
 
-@test "L552 block (-): python3 -c getattr __import__ o + s remo + ve .claude/hoo..." {
+@test "L597 block (-): python3 -c getattr __import__ o + s remo + ve .claude/hoo..." {
   probe block '-' 'python3 -c "getattr(__import__('\''o'\'' + '\''s'\''), '\''remo'\'' + '\''ve'\'')('\''.claude/hooks/lib.sh'\'')"'
 }
 
-@test "L553 block (-): cd .claude python3 -c getattr __import__ o + s remo + ve ..." {
+@test "L598 block (-): cd .claude python3 -c getattr __import__ o + s remo + ve ..." {
   probe block '-' 'cd .claude && python3 -c "getattr(__import__('\''o'\'' + '\''s'\''), '\''remo'\'' + '\''ve'\'')('\''settings.json'\'')"'
 }
 
-@test "L554 allow (-): cd .claude/hooks bash -n lib.sh" {
+@test "L599 allow (-): cd .claude/hooks bash -n lib.sh" {
   probe allow '-' 'cd .claude/hooks && bash -n lib.sh'
 }
 
-@test "L555 allow (-): cat .claude/hooks/lib.sh" {
+@test "L600 allow (-): cat .claude/hooks/lib.sh" {
   probe allow '-' 'cat .claude/hooks/lib.sh'
 }
 
-@test "L556 allow (-): sed -n 1 40p .claude/hooks/safety-check.sh" {
+@test "L601 allow (-): sed -n 1 40p .claude/hooks/safety-check.sh" {
   probe allow '-' 'sed -n 1,40p .claude/hooks/safety-check.sh'
 }
 
-@test "L557 allow (-): awk NR = 3 .claude/hooks/lib.sh" {
+@test "L602 allow (-): awk NR = 3 .claude/hooks/lib.sh" {
   probe allow '-' 'awk '\''NR <= 3'\'' .claude/hooks/lib.sh'
 }
 
-@test "L558 allow (-): grep -n hook_start .claude/hooks/ .sh" {
+@test "L603 allow (-): grep -n hook_start .claude/hooks/ .sh" {
   probe allow '-' 'grep -n hook_start .claude/hooks/*.sh'
 }
 
-@test "L559 allow (-): head -5 scripts/check/hook-probes.tsv" {
+@test "L604 allow (-): head -5 scripts/check/hook-probes.tsv" {
   probe allow '-' 'head -5 scripts/check/hook-probes.tsv'
 }
 
-@test "L560 allow (-): wc -l .claude/hooks/ .sh scripts/check/hook-probes.tsv" {
+@test "L605 allow (-): wc -l .claude/hooks/ .sh scripts/check/hook-probes.tsv" {
   probe allow '-' 'wc -l .claude/hooks/*.sh scripts/check/hook-probes.tsv'
 }
 
-@test "L561 allow (-): shellcheck -x .claude/hooks/ .sh scripts/check/hook-probe..." {
+@test "L606 allow (-): shellcheck -x .claude/hooks/ .sh scripts/check/hook-probe..." {
   probe allow '-' 'shellcheck -x .claude/hooks/*.sh scripts/check/hook-probes.sh'
 }
 
-@test "L562 allow (-): bash -n .claude/hooks/lib.sh" {
+@test "L607 allow (-): bash -n .claude/hooks/lib.sh" {
   probe allow '-' 'bash -n .claude/hooks/lib.sh'
 }
 
-@test "L563 allow (-): for f in .claude/hooks/ .sh do bash -n f done" {
+@test "L608 allow (-): for f in .claude/hooks/ .sh do bash -n f done" {
   probe allow '-' 'for f in .claude/hooks/*.sh; do bash -n "$f"; done'
 }
 
-@test "L564 allow (-): echo bash .claude/hooks/safety-check.sh" {
+@test "L609 allow (-): echo bash .claude/hooks/safety-check.sh" {
   probe allow '-' 'echo '\''{}'\'' | bash .claude/hooks/safety-check.sh'
 }
 
-@test "L565 allow (-): bash scripts/check/hook-probes.sh" {
+@test "L610 allow (-): bash scripts/check/hook-probes.sh" {
   probe allow '-' 'bash scripts/check/hook-probes.sh'
 }
 
-@test "L566 allow (-): HOOKS_DIR=.claude/hooks bash scripts/check/hook-probes.sh" {
+@test "L611 allow (-): HOOKS_DIR=.claude/hooks bash scripts/check/hook-probes.sh" {
   probe allow '-' 'HOOKS_DIR=.claude/hooks bash scripts/check/hook-probes.sh'
 }
 
-@test "L567 allow (-): ls -la .claude/hooks" {
+@test "L612 allow (-): ls -la .claude/hooks" {
   probe allow '-' 'ls -la .claude/hooks'
 }
 
-@test "L568 allow (-): find .claude/hooks -name .sh " {
+@test "L613 allow (-): find .claude/hooks -name .sh " {
   probe allow '-' 'find .claude/hooks -name '\''*.sh'\'''
 }
 
-@test "L569 allow (-): diff .claude/hooks/lib.sh TMP /lib.sh" {
+@test "L614 allow (-): diff .claude/hooks/lib.sh TMP /lib.sh" {
   probe allow '-' 'diff .claude/hooks/lib.sh @TMP@/lib.sh'
 }
 
-@test "L570 allow (-): git diff .claude/hooks" {
+@test "L615 allow (-): git diff .claude/hooks" {
   probe allow '-' 'git diff .claude/hooks'
 }
 
-@test "L571 allow (-): git log -p -- .claude/hooks/lib.sh scripts/check/hook-pro..." {
+@test "L616 allow (-): git log -p -- .claude/hooks/lib.sh scripts/check/hook-pro..." {
   probe allow '-' 'git log -p -- .claude/hooks/lib.sh scripts/check/hook-probes.tsv'
 }
 
-@test "L572 allow (-): git add .claude/hooks scripts/check/hook-probes.tsv" {
+@test "L617 allow (-): git add .claude/hooks scripts/check/hook-probes.tsv" {
   probe allow '-' 'git add .claude/hooks scripts/check/hook-probes.tsv'
 }
 
-@test "L573 allow (-): git commit -m fix hooks : .claude/hooks/lib.sh reads the ..." {
+@test "L618 allow (-): git commit -m fix hooks : .claude/hooks/lib.sh reads the ..." {
   probe allow '-' 'git commit -m '\''fix(hooks): .claude/hooks/lib.sh reads the payload once'\'''
 }
 
-@test "L574 allow (-): git rm --cached .claude/hooks/lib.sh" {
+@test "L619 allow (-): git rm --cached .claude/hooks/lib.sh" {
   probe allow '-' 'git rm --cached .claude/hooks/lib.sh'
 }
 
-@test "L575 allow (-): git restore --staged .claude/hooks/lib.sh" {
+@test "L620 allow (-): git restore --staged .claude/hooks/lib.sh" {
   probe allow '-' 'git restore --staged .claude/hooks/lib.sh'
 }
 
-@test "L576 allow (-): cp .claude/hooks/lib.sh notes/lib.backup.sh" {
+@test "L621 allow (-): cp .claude/hooks/lib.sh notes/lib.backup.sh" {
   probe allow '-' 'cp .claude/hooks/lib.sh notes/lib.backup.sh'
 }
 
-@test "L577 allow (-): cp -r .claude/hooks TMP /hooks-copy" {
+@test "L622 allow (-): cp -r .claude/hooks TMP /hooks-copy" {
   probe allow '-' 'cp -r .claude/hooks @TMP@/hooks-copy'
 }
 
-@test "L578 allow (-): rsync -a .claude/hooks/ TMP /hooks-rsync/" {
+@test "L623 allow (-): rsync -a .claude/hooks/ TMP /hooks-rsync/" {
   probe allow '-' 'rsync -a .claude/hooks/ @TMP@/hooks-rsync/'
 }
 
-@test "L579 allow (-): git show HEAD:.claude/hooks/lib.sh TMP /lib-head.sh" {
+@test "L624 allow (-): git show HEAD:.claude/hooks/lib.sh TMP /lib-head.sh" {
   probe allow '-' 'git show HEAD:.claude/hooks/lib.sh > @TMP@/lib-head.sh'
 }
 
-@test "L580 allow (-): mkdir -p TMP /fixture-h/.claude/hooks echo x TMP /fixture..." {
+@test "L625 allow (-): mkdir -p TMP /fixture-h/.claude/hooks echo x TMP /fixture..." {
   probe allow '-' 'mkdir -p @TMP@/fixture-h/.claude/hooks && echo x > @TMP@/fixture-h/.claude/hooks/x.sh'
 }
 
-@test "L581 allow (-): chmod +x scripts/check/gates.sh" {
+@test "L626 allow (-): chmod +x scripts/check/gates.sh" {
   probe allow '-' 'chmod +x scripts/check/gates.sh'
 }
 
-@test "L582 allow (-): cd scripts/check ls" {
+@test "L627 allow (-): cd scripts/check ls" {
   probe allow '-' 'cd scripts/check && ls'
 }
 
-@test "L587 block (-): sed -n w scripts/env/show.sh notes/keep.txt" {
+@test "L632 block (-): sed -n w scripts/env/show.sh notes/keep.txt" {
   probe block '-' 'sed -n '\''w scripts/env/show.sh'\'' notes/keep.txt'
 }
 
-@test "L588 block (-): sed -n 1w scripts/env/set.sh notes/keep.txt" {
+@test "L633 block (-): sed -n 1w scripts/env/set.sh notes/keep.txt" {
   probe block '-' 'sed -n '\''1w scripts/env/set.sh'\'' notes/keep.txt'
 }
 
-@test "L589 block (-): sed s/a/b/w scripts/env/show.sh notes/keep.txt" {
+@test "L634 block (-): sed s/a/b/w scripts/env/show.sh notes/keep.txt" {
   probe block '-' 'sed '\''s/a/b/w scripts/env/show.sh'\'' notes/keep.txt'
 }
 
-@test "L590 block (-): sed -e p -e W scripts/env/set.sh notes/keep.txt" {
+@test "L635 block (-): sed -e p -e W scripts/env/set.sh notes/keep.txt" {
   probe block '-' 'sed -e p -e '\''W scripts/env/set.sh'\'' notes/keep.txt'
 }
 
-@test "L591 block (-): sed -n -e w scripts/env/envfile.py notes/keep.txt" {
+@test "L636 block (-): sed -n -e w scripts/env/envfile.py notes/keep.txt" {
   probe block '-' 'sed -n -e '\''$w scripts/env/envfile.py'\'' notes/keep.txt'
 }
 
-@test "L592 block (-): cd scripts/env sed -n w show.sh ../../notes/keep.txt" {
+@test "L637 block (-): cd scripts/env sed -n w show.sh ../../notes/keep.txt" {
   probe block '-' 'cd scripts/env && sed -n '\''w show.sh'\'' ../../notes/keep.txt'
 }
 
-@test "L593 block (-): sed -n w .claude/hooks/lib.sh notes/keep.txt" {
+@test "L638 block (-): sed -n w .claude/hooks/lib.sh notes/keep.txt" {
   probe block '-' 'sed -n '\''w .claude/hooks/lib.sh'\'' notes/keep.txt'
 }
 
-@test "L594 block (-): sed -n w scripts/check/hook-probes.tsv notes/keep.txt" {
+@test "L639 block (-): sed -n w scripts/check/hook-probes.tsv notes/keep.txt" {
   probe block '-' 'sed -n '\''w scripts/check/hook-probes.tsv'\'' notes/keep.txt'
 }
 
-@test "L595 block (-): sed -n w scripts/ops/unlock.sh notes/keep.txt" {
+@test "L640 block (-): sed -n w scripts/ops/unlock.sh notes/keep.txt" {
   probe block '-' 'sed -n '\''w scripts/ops/unlock.sh'\'' notes/keep.txt'
 }
 
-@test "L596 block (-): cd .claude sed -n w settings.json ../notes/keep.txt" {
+@test "L641 block (-): cd .claude sed -n w settings.json ../notes/keep.txt" {
   probe block '-' 'cd .claude && sed -n '\''w settings.json'\'' ../notes/keep.txt'
 }
 
-@test "L597 block (-): sed -n w .env notes/keep.txt" {
+@test "L642 block (-): sed -n w .env notes/keep.txt" {
   probe block '-' 'sed -n '\''w .env'\'' notes/keep.txt'
 }
 
-@test "L598 block (-): sed -i -e 1w scripts/env/show.sh notes/keep.txt" {
+@test "L643 block (-): sed -i -e 1w scripts/env/show.sh notes/keep.txt" {
   probe block '-' 'sed -i '\'''\'' -e '\''1w scripts/env/show.sh'\'' notes/keep.txt'
 }
 
-@test "L599 block (-): sed r .env notes/keep.txt" {
+@test "L644 block (-): sed r .env notes/keep.txt" {
   probe block '-' 'sed '\''r .env'\'' notes/keep.txt'
 }
 
-@test "L600 block (-): sed 1R .env.local notes/keep.txt" {
+@test "L645 block (-): sed 1R .env.local notes/keep.txt" {
   probe block '-' 'sed '\''1R .env.local'\'' notes/keep.txt'
 }
 
-@test "L601 block (-): sed s/. /rm -rf src/e notes/keep.txt" {
+@test "L646 block (-): sed s/. /rm -rf src/e notes/keep.txt" {
   probe block '-' 'sed '\''s/.*/rm -rf src/e'\'' notes/keep.txt'
 }
 
-@test "L602 block (-): sed 1e rm scripts/env/show.sh notes/keep.txt" {
+@test "L647 block (-): sed 1e rm scripts/env/show.sh notes/keep.txt" {
   probe block '-' 'sed '\''1e rm scripts/env/show.sh'\'' notes/keep.txt'
 }
 
-@test "L603 block (-): sed -n w printf scripts/env/show.sh notes/keep.txt" {
+@test "L648 block (-): sed -n w printf scripts/env/show.sh notes/keep.txt" {
   probe block '-' 'sed -n "w $(printf scripts/env/show.sh)" notes/keep.txt'
 }
 
-@test "L604 block (-): printf w scripts/env/show.sh n TMP /w.sed sed -f TMP /w.s..." {
+@test "L649 block (-): printf w scripts/env/show.sh n TMP /w.sed sed -f TMP /w.s..." {
   probe block '-' 'printf '\''w scripts/env/show.sh\n'\'' > @TMP@/w.sed && sed -f @TMP@/w.sed notes/keep.txt'
 }
 
-@test "L605 block (-): sed -f /dev/stdin notes/keep.txt EOF nw scripts/env/show...." {
+@test "L650 block (-): sed -f /dev/stdin notes/keep.txt EOF nw scripts/env/show...." {
   probe block '-' 'sed -f /dev/stdin notes/keep.txt <<'\''EOF'\''\nw scripts/env/show.sh\nEOF'
 }
 
-@test "L606 block (-): sed k notes/keep.txt" {
+@test "L651 block (-): sed k notes/keep.txt" {
   probe block '-' 'sed '\''k'\'' notes/keep.txt'
 }
 
-@test "L607 block (-): awk print scripts/env/show.sh notes/keep.txt" {
+@test "L652 block (-): awk print scripts/env/show.sh notes/keep.txt" {
   probe block '-' 'awk '\''{print > "scripts/env/show.sh"}'\'' notes/keep.txt'
 }
 
-@test "L608 block (-): awk print scripts/env/set.sh notes/keep.txt" {
+@test "L653 block (-): awk print scripts/env/set.sh notes/keep.txt" {
   probe block '-' 'awk '\''{print >> "scripts/env/set.sh"}'\'' notes/keep.txt'
 }
 
-@test "L609 block (-): cd scripts/env awk print show.sh ../../notes/keep.txt" {
+@test "L654 block (-): cd scripts/env awk print show.sh ../../notes/keep.txt" {
   probe block '-' 'cd scripts/env && awk '\''{print > "show.sh"}'\'' ../../notes/keep.txt'
 }
 
-@test "L610 block (-): awk printf s n 0 .claude/hooks/lib.sh notes/keep.txt" {
+@test "L655 block (-): awk printf s n 0 .claude/hooks/lib.sh notes/keep.txt" {
   probe block '-' 'awk '\''{printf "%s\n", $0 > ".claude/hooks/lib.sh"}'\'' notes/keep.txt'
 }
 
-@test "L611 block (-): awk print scripts/ops/unlock.sh notes/keep.txt" {
+@test "L656 block (-): awk print scripts/ops/unlock.sh notes/keep.txt" {
   probe block '-' 'awk '\''{print > "scripts/ops/unlock.sh"}'\'' notes/keep.txt'
 }
 
-@test "L612 block (-): cd .claude awk print agent-config.json ../notes/keep.txt" {
+@test "L657 block (-): cd .claude awk print agent-config.json ../notes/keep.txt" {
   probe block '-' 'cd .claude && awk '\''{print > "agent-config.json"}'\'' ../notes/keep.txt'
 }
 
-@test "L613 block (-): awk print .env notes/keep.txt" {
+@test "L658 block (-): awk print .env notes/keep.txt" {
   probe block '-' 'awk '\''{print > ".env"}'\'' notes/keep.txt'
 }
 
-@test "L614 block (-): awk -v f=scripts/env/show.sh print f notes/keep.txt" {
+@test "L659 block (-): awk -v f=scripts/env/show.sh print f notes/keep.txt" {
   probe block '-' 'awk -v f=scripts/env/show.sh '\''{print > f}'\'' notes/keep.txt'
 }
 
-@test "L615 block (-): awk print 1 notes/keep.txt" {
+@test "L660 block (-): awk print 1 notes/keep.txt" {
   probe block '-' 'awk '\''{print > $1}'\'' notes/keep.txt'
 }
 
-@test "L616 block (-): awk BEGIN system rm scripts/env/show.sh " {
+@test "L661 block (-): awk BEGIN system rm scripts/env/show.sh " {
   probe block '-' 'awk '\''BEGIN { system("rm scripts/env/show.sh") }'\'''
 }
 
-@test "L617 block (-): awk BEGIN system cd .claude rm settings.json " {
+@test "L662 block (-): awk BEGIN system cd .claude rm settings.json " {
   probe block '-' 'awk '\''BEGIN { system("cd .claude && rm settings.json") }'\'''
 }
 
-@test "L618 block (-): awk -v c=date BEGIN system c " {
+@test "L663 block (-): awk -v c=date BEGIN system c " {
   probe block '-' 'awk -v c=date '\''BEGIN { system(c) }'\'''
 }
 
-@test "L619 block (-): awk print sh notes/keep.txt" {
+@test "L664 block (-): awk print sh notes/keep.txt" {
   probe block '-' 'awk '\''{print | "sh"}'\'' notes/keep.txt'
 }
 
-@test "L620 block (-): awk BEGIN cat .env getline line print line " {
+@test "L665 block (-): awk BEGIN cat .env getline line print line " {
   probe block '-' 'awk '\''BEGIN { "cat .env" | getline line; print line }'\'''
 }
 
-@test "L621 block (-): awk -v f=.env BEGIN getline line f print line " {
+@test "L666 block (-): awk -v f=.env BEGIN getline line f print line " {
   probe block '-' 'awk -v f=.env '\''BEGIN { getline line < f; print line }'\'''
 }
 
-@test "L622 block (-): awk BEGIN f = .e nv getline line f print line " {
+@test "L667 block (-): awk BEGIN f = .e nv getline line f print line " {
   probe block '-' 'awk '\''BEGIN { f = ".e" "nv"; getline line < f; print line }'\'''
 }
 
-@test "L623 block (-): awk -f TMP /missing.awk notes/keep.txt" {
+@test "L668 block (-): awk -f TMP /missing.awk notes/keep.txt" {
   probe block '-' 'awk -f @TMP@/missing.awk notes/keep.txt'
 }
 
-@test "L624 block (-): perl -i -pe s/a/b/ scripts/env/show.sh" {
+@test "L669 block (-): perl -i -pe s/a/b/ scripts/env/show.sh" {
   probe block '-' 'perl -i -pe '\''s/a/b/'\'' scripts/env/show.sh'
 }
 
-@test "L625 block (-): perl -pi.bak -e s/a/b/ .claude/settings.json" {
+@test "L670 block (-): perl -pi.bak -e s/a/b/ .claude/settings.json" {
   probe block '-' 'perl -pi.bak -e '\''s/a/b/'\'' .claude/settings.json'
 }
 
-@test "L626 block (-): perl -i -pe s/a/b/ scripts/ops/unlock.sh" {
+@test "L671 block (-): perl -i -pe s/a/b/ scripts/ops/unlock.sh" {
   probe block '-' 'perl -i -pe '\''s/a/b/'\'' scripts/ops/unlock.sh'
 }
 
-@test "L627 block (-): perl -e unlink scripts/ops/unlock.sh " {
+@test "L672 block (-): perl -e unlink scripts/ops/unlock.sh " {
   probe block '-' 'perl -e '\''unlink "scripts/ops/unlock.sh"'\'''
 }
 
-@test "L628 block (-): ruby -i -pe sub /a/ b scripts/check/hook-probes.tsv" {
+@test "L673 block (-): ruby -i -pe sub /a/ b scripts/check/hook-probes.tsv" {
   probe block '-' 'ruby -i -pe '\''sub(/a/, "b")'\'' scripts/check/hook-probes.tsv'
 }
 
-@test "L629 block (-): python3 -c import os os.remove .claude/hooks/lib.sh " {
+@test "L674 block (-): python3 -c import os os.remove .claude/hooks/lib.sh " {
   probe block '-' 'python3 -c "import os; os.remove('\''.claude/hooks/lib.sh'\'')"'
 }
 
-@test "L630 block (-): python3 -c import shutil shutil.copy notes/keep.txt scrip..." {
+@test "L675 block (-): python3 -c import shutil shutil.copy notes/keep.txt scrip..." {
   probe block '-' 'python3 -c "import shutil; shutil.copy('\''notes/keep.txt'\'', '\''scripts/env/show.sh'\'')"'
 }
 
-@test "L631 block (-): python3 -c import os os.rename notes/keep.txt .e + nv " {
+@test "L676 block (-): python3 -c import os os.rename notes/keep.txt .e + nv " {
   probe block '-' 'python3 -c "import os; os.rename('\''notes/keep.txt'\'', '\''.e'\'' + '\''nv'\'')"'
 }
 
-@test "L632 block (-): python3 -c import subprocess subprocess.run rm settings.j..." {
+@test "L677 block (-): python3 -c import subprocess subprocess.run rm settings.j..." {
   probe block '-' 'python3 -c "import subprocess; subprocess.run(['\''rm'\'', '\''settings.json'\''], cwd='\''.claude'\'')"'
 }
 
-@test "L633 block (-): cd .claude python3 -c import os os.remove settings.json " {
+@test "L678 block (-): cd .claude python3 -c import os os.remove settings.json " {
   probe block '-' 'cd .claude && python3 -c "import os; os.remove('\''settings.json'\'')"'
 }
 
-@test "L634 block (-): cd .claude/hooks python3 -c print 1 " {
+@test "L679 block (-): cd .claude/hooks python3 -c print 1 " {
   probe block '-' 'cd .claude/hooks && python3 -c '\''print(1)'\'''
 }
 
-@test "L635 block (-): python3 - PY nimport os nos.remove .cl + aude/hooks/lib.s..." {
+@test "L680 block (-): python3 - PY nimport os nos.remove .cl + aude/hooks/lib.s..." {
   probe block '-' 'python3 - <<'\''PY'\''\nimport os\nos.remove('\''.cl'\'' + '\''aude/hooks/lib.sh'\'')\nPY'
 }
 
-@test "L636 block (-): node -e require fs .unlinkSync .claude/hooks/lib.sh " {
+@test "L681 block (-): node -e require fs .unlinkSync .claude/hooks/lib.sh " {
   probe block '-' 'node -e "require('\''fs'\'').unlinkSync('\''.claude/hooks/lib.sh'\'')"'
 }
 
-@test "L637 block (-): node -e require child_process .execSync rm .claude/settin..." {
+@test "L682 block (-): node -e require child_process .execSync rm .claude/settin..." {
   probe block '-' 'node -e "require('\''child_process'\'').execSync('\''rm .claude/settings.json'\'')"'
 }
 
-@test "L638 block (-): bun -e await Bun.write scripts/ops/unlock.sh " {
+@test "L683 block (-): bun -e await Bun.write scripts/ops/unlock.sh " {
   probe block '-' 'bun -e "await Bun.write('\''scripts/ops/unlock.sh'\'', '\'''\'')"'
 }
 
-@test "L639 block (-): ruby -e File.delete .claude/settings.json " {
+@test "L684 block (-): ruby -e File.delete .claude/settings.json " {
   probe block '-' 'ruby -e '\''File.delete(".claude/settings.json")'\'''
 }
 
-@test "L640 block (-): perl -e print rm notes/keep.txt " {
+@test "L685 block (-): perl -e print rm notes/keep.txt " {
   probe block '-' 'perl -e '\''print `rm notes/keep.txt`'\'''
 }
 
-@test "L641 allow (-): sed -n w notes/out.txt notes/keep.txt" {
+@test "L686 allow (-): sed -n w notes/out.txt notes/keep.txt" {
   probe allow '-' 'sed -n '\''w notes/out.txt'\'' notes/keep.txt'
 }
 
-@test "L642 allow (-): sed s/a/b/w /dev/stdout notes/keep.txt" {
+@test "L687 allow (-): sed s/a/b/w /dev/stdout notes/keep.txt" {
   probe allow '-' 'sed '\''s/a/b/w /dev/stdout'\'' notes/keep.txt'
 }
 
-@test "L643 allow (-): sed r notes/keep.txt docs/a.md" {
+@test "L688 allow (-): sed r notes/keep.txt docs/a.md" {
   probe allow '-' 'sed '\''r notes/keep.txt'\'' docs/a.md'
 }
 
-@test "L644 allow (-): sed -e :a -e N ta notes/keep.txt" {
+@test "L689 allow (-): sed -e :a -e N ta notes/keep.txt" {
   probe allow '-' 'sed -e :a -e '\''$!N;ta'\'' notes/keep.txt'
 }
 
-@test "L645 allow (-): sed -n /start/ /end/ p docs/a.md" {
+@test "L690 allow (-): sed -n /start/ /end/ p docs/a.md" {
   probe allow '-' 'sed -n '\''/start/,/end/{p;}'\'' docs/a.md'
 }
 
-@test "L646 allow (-): sed -i s/a/b/ notes/keep.txt" {
+@test "L691 allow (-): sed -i s/a/b/ notes/keep.txt" {
   probe allow '-' 'sed -i '\'''\'' '\''s/a/b/'\'' notes/keep.txt'
 }
 
-@test "L647 allow (-): sed -E s/ x / 1/g 1 G h d notes/keep.txt" {
+@test "L692 allow (-): sed -E s/ x / 1/g 1 G h d notes/keep.txt" {
   probe allow '-' 'sed -E '\''s/(x)/\1/g; 1!G; h; $!d'\'' notes/keep.txt'
 }
 
-@test "L648 allow (-): awk print notes/out.txt notes/keep.txt" {
+@test "L693 allow (-): awk print notes/out.txt notes/keep.txt" {
   probe allow '-' 'awk '\''{print > "notes/out.txt"}'\'' notes/keep.txt'
 }
 
-@test "L649 allow (-): awk print 1 /dev/stderr notes/keep.txt" {
+@test "L694 allow (-): awk print 1 /dev/stderr notes/keep.txt" {
   probe allow '-' 'awk '\''{print $1 > "/dev/stderr"}'\'' notes/keep.txt'
 }
 
-@test "L650 allow (-): awk print 1 sort notes/keep.txt" {
+@test "L695 allow (-): awk print 1 sort notes/keep.txt" {
   probe allow '-' 'awk '\''{print $1 | "sort"}'\'' notes/keep.txt'
 }
 
-@test "L651 allow (-): awk BEGIN system date " {
+@test "L696 allow (-): awk BEGIN system date " {
   probe allow '-' 'awk '\''BEGIN { system("date") }'\'''
 }
 
-@test "L652 allow (-): awk BEGIN date getline d print d " {
+@test "L697 allow (-): awk BEGIN date getline d print d " {
   probe allow '-' 'awk '\''BEGIN { "date" | getline d; print d }'\'''
 }
 
-@test "L653 allow (-): awk 1 5 print 1 notes/keep.txt" {
+@test "L698 allow (-): awk 1 5 print 1 notes/keep.txt" {
   probe allow '-' 'awk '\''$1 > 5 { print $1 }'\'' notes/keep.txt'
 }
 
-@test "L654 allow (-): awk -F: if 2 0 print 1 2 notes/keep.txt" {
+@test "L699 allow (-): awk -F: if 2 0 print 1 2 notes/keep.txt" {
   probe allow '-' 'awk -F: '\''{ if ($2 > 0) print ($1 > $2) }'\'' notes/keep.txt'
 }
 
-@test "L655 allow (-): perl -pi -e s/a/b/ notes/keep.txt" {
+@test "L700 allow (-): perl -pi -e s/a/b/ notes/keep.txt" {
   probe allow '-' 'perl -pi -e '\''s/a/b/'\'' notes/keep.txt'
 }
 
-@test "L656 allow (-): python3 -c print sum range 10 " {
+@test "L701 allow (-): python3 -c print sum range 10 " {
   probe allow '-' 'python3 -c '\''print(sum(range(10)))'\'''
 }
 
-@test "L657 allow (-): node -e console.log JSON.stringify a: 1 " {
+@test "L702 allow (-): node -e console.log JSON.stringify a: 1 " {
   probe allow '-' 'node -e '\''console.log(JSON.stringify({a: 1}))'\'''
 }
 
-@test "L658 allow (-): node -e console.log /b/.exec abc " {
+@test "L703 allow (-): node -e console.log /b/.exec abc " {
   probe allow '-' 'node -e "console.log(/b/.exec('\''abc'\''))"'
 }
 
-@test "L659 allow (-): cd notes python3 -c print 1 " {
+@test "L704 allow (-): cd notes python3 -c print 1 " {
   probe allow '-' 'cd notes && python3 -c '\''print(1)'\'''
 }
 
-@test "L663 block (-): find . -name lib.sh xargs rm" {
+@test "L708 block (-): find . -name lib.sh xargs rm" {
   probe block '-' 'find . -name lib.sh | xargs rm'
 }
 
-@test "L664 block (-): git ls-files scripts xargs chmod 000" {
+@test "L709 block (-): git ls-files scripts xargs chmod 000" {
   probe block '-' 'git ls-files scripts | xargs chmod 000'
 }
 
-@test "L665 block (-): echo scripts/ops/unlock.sh xargs -I cp notes/keep.txt " {
+@test "L710 block (-): echo scripts/ops/unlock.sh xargs -I cp notes/keep.txt " {
   probe block '-' 'echo scripts/ops/unlock.sh | xargs -I{} cp notes/keep.txt {}'
 }
 
-@test "L666 block (-): ls .claude/hooks/ .sh xargs -n1 sed -i s/a/b/ " {
+@test "L711 block (-): ls .claude/hooks/ .sh xargs -n1 sed -i s/a/b/ " {
   probe block '-' 'ls .claude/hooks/*.sh | xargs -n1 sed -i '\'''\'' '\''s/a/b/'\'''
 }
 
-@test "L667 block (-): chmod 000 find . -name .sh " {
+@test "L712 block (-): chmod 000 find . -name .sh " {
   probe block '-' 'chmod 000 $(find . -name '\''*.sh'\'')'
 }
 
-@test "L668 block (-): rm git ls-files scripts " {
+@test "L713 block (-): rm git ls-files scripts " {
   probe block '-' 'rm $(git ls-files scripts)'
 }
 
-@test "L669 block (-): rm git ls-files notes sed s/notes/docs/ " {
+@test "L714 block (-): rm git ls-files notes sed s/notes/docs/ " {
   probe block '-' 'rm $(git ls-files notes | sed s/notes/docs/)'
 }
 
-@test "L670 block (-): f= find . -name show.sh rm f " {
+@test "L715 block (-): f= find . -name show.sh rm f " {
   probe block '-' 'f=$(find . -name show.sh); rm "$f"'
 }
 
-@test "L671 block (-): for f in git ls-files scripts do chmod 000 f done" {
+@test "L716 block (-): for f in git ls-files scripts do chmod 000 f done" {
   probe block '-' 'for f in $(git ls-files scripts); do chmod 000 "$f"; done'
 }
 
-@test "L672 block (-): echo x git ls-files scripts/check head -1 " {
+@test "L717 block (-): echo x git ls-files scripts/check head -1 " {
   probe block '-' 'echo x > "$(git ls-files scripts/check | head -1)"'
 }
 
-@test "L673 block (-): find . -name .sh -exec chmod 000 +" {
+@test "L718 block (-): find . -name .sh -exec chmod 000 +" {
   probe block '-' 'find . -name '\''*.sh'\'' -exec chmod 000 {} +'
 }
 
-@test "L674 block (-): find scripts -type f -exec sed -i s/a/b/ +" {
+@test "L719 block (-): find scripts -type f -exec sed -i s/a/b/ +" {
   probe block '-' 'find scripts -type f -exec sed -i '\'''\'' '\''s/a/b/'\'' {} +'
 }
 
-@test "L675 block (-): find . -name .json -execdir cp TMP /token " {
+@test "L720 block (-): find . -name .json -execdir cp TMP /token " {
   probe block '-' 'find . -name '\''*.json'\'' -execdir cp @TMP@/token {} \;'
 }
 
-@test "L676 block (-): git ls-files notes xargs -I cp notes/keep.txt TMP /bk- " {
+@test "L721 block (-): git ls-files notes xargs -I cp notes/keep.txt TMP /bk- " {
   probe block '-' 'git ls-files notes | xargs -I{} cp notes/keep.txt @TMP@/bk-{}'
 }
 
-@test "L677 block (-): git ls-files notes xargs -I cp notes/keep.txt TMP /bk- " {
+@test "L722 block (-): git ls-files notes xargs -I cp notes/keep.txt TMP /bk- " {
   probe block '-' 'git ls-files notes | xargs -I% cp notes/keep.txt @TMP@/bk-%'
 }
 
-@test "L678 allow (-): find notes -name .txt xargs cp -t TMP /" {
+@test "L723 allow (-): find notes -name .txt xargs cp -t TMP /" {
   probe allow '-' 'find notes -name '\''*.txt'\'' | xargs cp -t @TMP@/'
 }
 
-@test "L679 allow (-): rm git ls-files notes " {
+@test "L724 allow (-): rm git ls-files notes " {
   probe allow '-' 'rm $(git ls-files notes)'
 }
 
-@test "L680 allow (-): tmp= mktemp echo x tmp rm -f tmp " {
+@test "L725 allow (-): tmp= mktemp echo x tmp rm -f tmp " {
   probe allow '-' 'tmp=$(mktemp); echo x > "$tmp"; rm -f "$tmp"'
 }
 
-@test "L681 allow (-): find notes -name .txt -exec chmod 644 +" {
+@test "L726 allow (-): find notes -name .txt -exec chmod 644 +" {
   probe allow '-' 'find notes -name '\''*.txt'\'' -exec chmod 644 {} +'
 }
 
-@test "L682 allow (-): find docs -name .md -exec sed -i s/a/b/ +" {
+@test "L727 allow (-): find docs -name .md -exec sed -i s/a/b/ +" {
   probe allow '-' 'find docs -name '\''*.md'\'' -exec sed -i '\'''\'' '\''s/a/b/'\'' {} +'
 }
 
-@test "L683 allow (-): git ls-files .md xargs grep -l keep" {
+@test "L728 allow (-): git ls-files .md xargs grep -l keep" {
   probe allow '-' 'git ls-files '\''*.md'\'' | xargs grep -l keep'
 }
 
-@test "L684 allow (-): chmod 644 notes/keep.txt" {
+@test "L729 allow (-): chmod 644 notes/keep.txt" {
   probe allow '-' 'chmod 644 notes/keep.txt'
 }
 
-@test "L685 allow (-): mv notes docs/notes" {
+@test "L730 allow (-): mv notes docs/notes" {
   probe allow '-' 'mv notes docs/notes'
 }
 
-@test "L686 allow (-): ln -s ../docs/a.md notes/a.md" {
+@test "L731 allow (-): ln -s ../docs/a.md notes/a.md" {
   probe allow '-' 'ln -s ../docs/a.md notes/a.md'
 }
 
-@test "L687 allow (-): git checkout -- notes/keep.txt" {
+@test "L732 allow (-): git checkout -- notes/keep.txt" {
   probe allow '-' 'git checkout -- notes/keep.txt'
 }
 
-@test "L688 allow (-): git stash push -- notes/keep.txt" {
+@test "L733 allow (-): git stash push -- notes/keep.txt" {
   probe allow '-' 'git stash push -- notes/keep.txt'
 }
 
-@test "L689 allow (-): git restore notes/keep.txt" {
+@test "L734 allow (-): git restore notes/keep.txt" {
   probe allow '-' 'git restore notes/keep.txt'
 }
 
-@test "L691 block (-): bun -e console.log process.env " {
+@test "L736 block (-): bun -e console.log process.env " {
   probe block '-' 'bun -e '\''console.log(process.env)'\'''
 }
 
-@test "L692 block (-): bun -p process.env.API_KEY" {
+@test "L737 block (-): bun -p process.env.API_KEY" {
   probe block '-' 'bun -p process.env.API_KEY'
 }
 
-@test "L693 block (-): node --env-file=.env -e console.log process.env.API_KEY " {
+@test "L738 block (-): node --env-file=.env -e console.log process.env.API_KEY " {
   probe block '-' 'node --env-file=.env -e '\''console.log(process.env.API_KEY)'\'''
 }
 
-@test "L694 block (-): node -r dotenv/config -e console.log process.env.API_KEY " {
+@test "L739 block (-): node -r dotenv/config -e console.log process.env.API_KEY " {
   probe block '-' 'node -r dotenv/config -e '\''console.log(process.env.API_KEY)'\'''
 }
 
-@test "L695 block (-): python3 -c import dotenv os dotenv.load_dotenv print os.e..." {
+@test "L740 block (-): python3 -c import dotenv os dotenv.load_dotenv print os.e..." {
   probe block '-' 'python3 -c '\''import dotenv, os; dotenv.load_dotenv(); print(os.environ["API_KEY"])'\'''
 }
 
-@test "L696 block (-): dotenv list" {
+@test "L741 block (-): dotenv list" {
   probe block '-' 'dotenv list'
 }
 
-@test "L697 block (-): npx dotenvx get API_KEY" {
+@test "L742 block (-): npx dotenvx get API_KEY" {
   probe block '-' 'npx dotenvx get API_KEY'
 }
 
-@test "L698 allow (-): bun -e console.log 1 + 1 " {
+@test "L743 allow (-): bun -e console.log 1 + 1 " {
   probe allow '-' 'bun -e '\''console.log(1 + 1)'\'''
 }
 
-@test "L699 allow (-): dotenvx run -- bun run build" {
+@test "L744 allow (-): dotenvx run -- bun run build" {
   probe allow '-' 'dotenvx run -- bun run build'
 }
 
-@test "L700 allow (-): echo API_KEY= .env.example" {
+@test "L745 allow (-): echo API_KEY= .env.example" {
   probe allow '-' 'echo API_KEY= >> .env.example'
 }
 
-@test "L702 block (-): cat .claude/state/env-backups/apps/web/.env.20260101T000000" {
+@test "L747 block (-): cat .claude/state/env-backups/apps/web/.env.20260101T000000" {
   probe block '-' 'cat .claude/state/env-backups/apps/web/.env.20260101T000000'
 }
 
-@test "L703 block (-): head .claude/state/env-backups/x" {
+@test "L748 block (-): head .claude/state/env-backups/x" {
   probe block '-' 'head .claude/state/env-backups/x'
 }
 
-@test "L704 block (-): python3 -c print open .claude/state/env-backups/x .read " {
+@test "L749 block (-): python3 -c print open .claude/state/env-backups/x .read " {
   probe block '-' 'python3 -c "print(open('\''.claude/state/env-backups/x'\'').read())"'
 }
 
-@test "L705 block (-): echo x TMP /other-checkout/scripts/env/show.sh" {
+@test "L750 block (-): echo x TMP /other-checkout/scripts/env/show.sh" {
   probe block '-' 'echo x > @TMP@/other-checkout/scripts/env/show.sh'
 }
 
-@test "L706 allow (-): ls -la .claude/state/env-backups" {
+@test "L751 allow (-): ls -la .claude/state/env-backups" {
   probe allow '-' 'ls -la .claude/state/env-backups'
 }
 
-@test "L713 block (-): cat EOF n cat .env nEOF" {
+@test "L758 block (-): cat EOF n cat .env nEOF" {
   probe block '-' 'cat <<EOF\n$(cat .env)\nEOF'
 }
 
-@test "L714 block (-): python3 -c print open . + env .read " {
+@test "L759 block (-): python3 -c print open . + env .read " {
   probe block '-' 'python3 -c "print(open('\''.'\''+'\''env'\'').read())"'
 }
 
-@test "L715 block (-): python3 -c import glob print open f .read for f in glob.g..." {
+@test "L760 block (-): python3 -c import glob print open f .read for f in glob.g..." {
   probe block '-' 'python3 -c "import glob;[print(open(f).read()) for f in glob.glob('\''.e*'\'')]"'
 }
 
-@test "L716 block (-): ls -a grep .en xargs cat" {
+@test "L761 block (-): ls -a grep .en xargs cat" {
   probe block '-' 'ls -a | grep '\''^.en'\'' | xargs cat'
 }
 
-@test "L717 block (-): cat echo LmVudg== base64 -d " {
+@test "L762 block (-): cat echo LmVudg== base64 -d " {
   probe block '-' 'cat $(echo LmVudg== | base64 -d)'
 }
 
-@test "L718 block (-): echo Y2F0IC5lbnY= base64 -d bash" {
+@test "L763 block (-): echo Y2F0IC5lbnY= base64 -d bash" {
   probe block '-' 'echo Y2F0IC5lbnY= | base64 -d | bash'
 }
 
-@test "L719 block (-): eval echo Y2F0IC5lbnY= base64 --decode " {
+@test "L764 block (-): eval echo Y2F0IC5lbnY= base64 --decode " {
   probe block '-' 'eval $(echo Y2F0IC5lbnY= | base64 --decode)'
 }
 
-@test "L720 block (-): shopt -s dotglob cat nv" {
+@test "L765 block (-): shopt -s dotglob cat nv" {
   probe block '-' 'shopt -s dotglob; cat *nv'
 }
 
-@test "L721 block (-): IFS=_ c=cat_.env c" {
+@test "L766 block (-): IFS=_ c=cat_.env c" {
   probe block '-' 'IFS=_; c=cat_.env; $c'
 }
 
-@test "L722 block (-): cat printf . s env " {
+@test "L767 block (-): cat printf . s env " {
   probe block '-' 'cat "$(printf '\''.%s'\'' env)"'
 }
 
-@test "L723 block (-): cat echo vne. rev " {
+@test "L768 block (-): cat echo vne. rev " {
   probe block '-' 'cat $(echo vne. | rev)'
 }
 
-@test "L724 block (-): a= .e nv cat a 0 a 1 " {
+@test "L769 block (-): a= .e nv cat a 0 a 1 " {
   probe block '-' 'a=(.e nv); cat "${a[0]}${a[1]}"'
 }
 
-@test "L725 block (-): cat ls -a grep env head -1 " {
+@test "L770 block (-): cat ls -a grep env head -1 " {
   probe block '-' 'cat $(ls -a | grep env | head -1)'
 }
 
-@test "L726 block (-): python3 -c import os print open f .read for f in os.listd..." {
+@test "L771 block (-): python3 -c import os print open f .read for f in os.listd..." {
   probe block '-' 'python3 -c "import os;[print(open(f).read()) for f in os.listdir('\''.'\'') if f.startswith('\''.e'\'') and '\''ex'\'' not in f]"'
 }
 
-@test "L727 block (-): sqlite3 :memory: .read .env " {
+@test "L772 block (-): sqlite3 :memory: .read .env " {
   probe block '-' 'sqlite3 :memory: '\''.read .env'\'''
 }
 
-@test "L728 block (-): docker compose --env-file .env config" {
+@test "L773 block (-): docker compose --env-file .env config" {
   probe block '-' 'docker compose --env-file .env config'
 }
 
-@test "L729 block (-): python3 -c open .en + v a .write X=1 " {
+@test "L774 block (-): python3 -c open .en + v a .write X=1 " {
   probe block '-' 'python3 -c "open('\''.en'\''+'\''v'\'','\''a'\'').write('\''X=1'\'')"'
 }
 
-@test "L730 block (-): printf X .en echo v " {
+@test "L775 block (-): printf X .en echo v " {
   probe block '-' 'printf '\''X'\'' > .en$(echo v)'
 }
 
-@test "L731 block (-): HOME= PWD/.claude/state mkdir -p /unlock date -v+5M + s /..." {
+@test "L776 block (-): HOME= PWD/.claude/state mkdir -p /unlock date -v+5M + s /..." {
   probe block '-' 'HOME=$PWD/.claude/state; mkdir -p ~/unlock && date -v+5M +%s > ~/unlock/env'
 }
 
-@test "L732 block (-): echo LmNsYXVkZS9zdGF0ZS91bmxvY2s= base64 -d xargs mkdir -p" {
+@test "L777 block (-): echo LmNsYXVkZS9zdGF0ZS91bmxvY2s= base64 -d xargs mkdir -p" {
   probe block '-' 'echo LmNsYXVkZS9zdGF0ZS91bmxvY2s= | base64 -d | xargs mkdir -p'
 }
 
-@test "L733 block (-): cp -r /tmp/fake-state .claude/state" {
+@test "L778 block (-): cp -r /tmp/fake-state .claude/state" {
   probe block '-' 'cp -r /tmp/fake-state .claude/state'
 }
 
-@test "L734 block (-): S= printf .claude/ s/unlock state mkdir -p S date -v+5M +..." {
+@test "L779 block (-): S= printf .claude/ s/unlock state mkdir -p S date -v+5M +..." {
   probe block '-' 'S=$(printf '\''.claude/%s/unlock'\'' state); mkdir -p "$S"; date -v+5M +%s > "$S/env"'
 }
 
-@test "L735 block (-): npx --yes -c bash scripts/ops/unlock.sh env " {
+@test "L780 block (-): npx --yes -c bash scripts/ops/unlock.sh env " {
   probe block '-' 'npx --yes -c '\''bash scripts/ops/unlock.sh env'\'''
 }
 
-@test "L736 block (-): make -f /dev/stdin EOF nall: n tbash scripts/ops/unlock.s..." {
+@test "L781 block (-): make -f /dev/stdin EOF nall: n tbash scripts/ops/unlock.s..." {
   probe block '-' 'make -f /dev/stdin <<'\''EOF'\''\nall:\n\tbash scripts/ops/unlock.sh env\nEOF'
 }
 
-@test "L737 allow (-): grep -r --exclude= .env API ." {
+@test "L782 allow (-): grep -r --exclude= .env API ." {
   probe allow '-' 'grep -r --exclude='\''.env*'\'' API .'
 }
 
-@test "L738 allow (-): cat .claude/state/unlock/env 2 /dev/null true" {
+@test "L783 allow (-): cat .claude/state/unlock/env 2 /dev/null true" {
   probe allow '-' 'cat .claude/state/unlock/env 2>/dev/null; true'
 }
 
-@test "L739 allow (-): cat git ls-files .md head -2 " {
+@test "L784 allow (-): cat git ls-files .md head -2 " {
   probe allow '-' 'cat $(git ls-files '\''*.md'\'' | head -2)'
 }
 
-@test "L744 block (-): git -c core.pager= bash scripts/ops/unlock.sh env log -1" {
+@test "L789 block (-): git -c core.pager= bash scripts/ops/unlock.sh env log -1" {
   probe block '-' 'git -c core.pager='\''bash scripts/ops/unlock.sh env'\'' log -1'
 }
 
-@test "L745 block (-): git -c core.fsmonitor= bash scripts/ops/unlock.sh env status" {
+@test "L790 block (-): git -c core.fsmonitor= bash scripts/ops/unlock.sh env status" {
   probe block '-' 'git -c core.fsmonitor='\''bash scripts/ops/unlock.sh env'\'' status'
 }
 
-@test "L746 block (-): git -c diff.external= bash scripts/ops/unlock.sh diff" {
+@test "L791 block (-): git -c diff.external= bash scripts/ops/unlock.sh diff" {
   probe block '-' 'git -c diff.external='\''bash scripts/ops/unlock.sh'\'' diff'
 }
 
-@test "L747 block (-): git -c core.pager= cat .env log -1" {
+@test "L792 block (-): git -c core.pager= cat .env log -1" {
   probe block '-' 'git -c core.pager='\''cat .env'\'' log -1'
 }
 
-@test "L748 block (-): git config core.pager bash scripts/ops/unlock.sh env " {
+@test "L793 block (-): git config core.pager bash scripts/ops/unlock.sh env " {
   probe block '-' 'git config core.pager '\''bash scripts/ops/unlock.sh env'\'''
 }
 
-@test "L749 block (-): git config set core.sshCommand bash scripts/ops/unlock.sh..." {
+@test "L794 block (-): git config set core.sshCommand bash scripts/ops/unlock.sh..." {
   probe block '-' 'git config set core.sshCommand '\''bash scripts/ops/unlock.sh env'\'''
 }
 
-@test "L750 block (-): GIT_PAGER= bash scripts/ops/unlock.sh env git log -1" {
+@test "L795 block (-): GIT_PAGER= bash scripts/ops/unlock.sh env git log -1" {
   probe block '-' 'GIT_PAGER='\''bash scripts/ops/unlock.sh env'\'' git log -1'
 }
 
-@test "L751 block (-): GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.pager GIT_CONFIG..." {
+@test "L796 block (-): GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.pager GIT_CONFIG..." {
   probe block '-' 'GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.pager GIT_CONFIG_VALUE_0='\''bash scripts/ops/unlock.sh env'\'' git log -1'
 }
 
-@test "L752 block (-): export EDITOR= bash scripts/ops/unlock.sh env git commit" {
+@test "L797 block (-): export EDITOR= bash scripts/ops/unlock.sh env git commit" {
   probe block '-' 'export EDITOR='\''bash scripts/ops/unlock.sh env'\''; git commit'
 }
 
-@test "L753 block (-): GIT_PAGER= UNKNOWN git log -1" {
+@test "L798 block (-): GIT_PAGER= UNKNOWN git log -1" {
   probe block '-' 'GIT_PAGER=$UNKNOWN git log -1'
 }
 
-@test "L754 allow (-): git -c core.pager=less log -1" {
+@test "L799 allow (-): git -c core.pager=less log -1" {
   probe allow '-' 'git -c core.pager=less log -1'
 }
 
-@test "L755 allow (-): git config --global core.pager less -R " {
+@test "L800 allow (-): git config --global core.pager less -R " {
   probe allow '-' 'git config --global core.pager "less -R"'
 }
 
-@test "L756 allow (-): GIT_SSH_COMMAND= ssh -i /.ssh/id_ed25519 git fetch" {
+@test "L801 allow (-): GIT_SSH_COMMAND= ssh -i /.ssh/id_ed25519 git fetch" {
   probe allow '-' 'GIT_SSH_COMMAND='\''ssh -i ~/.ssh/id_ed25519'\'' git fetch'
 }
 
-@test "L757 allow (-): EDITOR=vim git commit" {
+@test "L802 allow (-): EDITOR=vim git commit" {
   probe allow '-' 'EDITOR=vim git commit'
 }
 
-@test "L758 allow (-): git -c color.ui=always log -1" {
+@test "L803 allow (-): git -c color.ui=always log -1" {
   probe allow '-' 'git -c color.ui=always log -1'
 }
 
-@test "L761 block (-): cat git -c core.quotepath=off ls-files .md " {
+@test "L806 block (-): cat git -c core.quotepath=off ls-files .md " {
   probe block '-' 'cat $(git -c core.quotepath=off ls-files '\''*.md'\'')'
 }
 
-@test "L762 block (-): cat git -C docs ls-files " {
+@test "L807 block (-): cat git -C docs ls-files " {
   probe block '-' 'cat $(git -C docs ls-files)'
 }
 
-@test "L765 block (-): cat notes/keep.txt sh" {
+@test "L810 block (-): cat notes/keep.txt sh" {
   probe block '-' 'cat notes/keep.txt | sh'
 }
 
-@test "L766 block (-): cat notes/keep.txt python3" {
+@test "L811 block (-): cat notes/keep.txt python3" {
   probe block '-' 'cat notes/keep.txt | python3'
 }
 
-@test "L767 block (-): cat notes/keep.txt node" {
+@test "L812 block (-): cat notes/keep.txt node" {
   probe block '-' 'cat notes/keep.txt | node'
 }
 
-@test "L768 block (-): cat notes/keep.txt python3 -" {
+@test "L813 block (-): cat notes/keep.txt python3 -" {
   probe block '-' 'cat notes/keep.txt | python3 -'
 }
 
-@test "L769 block (-): python3 cat notes/keep.txt " {
+@test "L814 block (-): python3 cat notes/keep.txt " {
   probe block '-' 'python3 < <(cat notes/keep.txt)'
 }
 
-@test "L770 block (-): bash cat notes/keep.txt " {
+@test "L815 block (-): bash cat notes/keep.txt " {
   probe block '-' 'bash < <(cat notes/keep.txt)'
 }
 
-@test "L771 allow (-): cat package.json python3 -m json.tool" {
+@test "L816 allow (-): cat package.json python3 -m json.tool" {
   probe allow '-' 'cat package.json | python3 -m json.tool'
 }
 
-@test "L772 allow (-): echo python3 -c import json sys print json.load sys.stdin " {
+@test "L817 allow (-): echo python3 -c import json sys print json.load sys.stdin " {
   probe allow '-' 'echo '\''{}'\'' | python3 -c '\''import json,sys; print(json.load(sys.stdin))'\'''
 }
 
-@test "L773 allow (-): cat notes/keep.txt python3 scripts/x.py" {
+@test "L818 allow (-): cat notes/keep.txt python3 scripts/x.py" {
   probe allow '-' 'cat notes/keep.txt | python3 scripts/x.py'
 }
 
-@test "L774 allow (-): python3 EOF nprint 1 nEOF" {
+@test "L819 allow (-): python3 EOF nprint 1 nEOF" {
   probe allow '-' 'python3 <<'\''EOF'\''\nprint(1)\nEOF'
 }
 
-@test "L775 allow (-): cat notes/keep.txt awk print 1 " {
+@test "L820 allow (-): cat notes/keep.txt awk print 1 " {
   probe allow '-' 'cat notes/keep.txt | awk '\''{print $1}'\'''
 }
 
-@test "L776 allow (-): python3 notes/keep.txt" {
+@test "L821 allow (-): python3 notes/keep.txt" {
   probe allow '-' 'python3 < notes/keep.txt'
 }
 
-@test "L777 block (-): cat notes/keep.txt source /dev/stdin" {
+@test "L822 block (-): cat notes/keep.txt source /dev/stdin" {
   probe block '-' 'cat notes/keep.txt | source /dev/stdin'
 }
 
-@test "L778 block (-): cat notes/keep.txt bash /dev/stdin" {
+@test "L823 block (-): cat notes/keep.txt bash /dev/stdin" {
   probe block '-' 'cat notes/keep.txt | bash /dev/stdin'
 }
 
-@test "L779 allow (-): echo echo hi bash /dev/stdin" {
+@test "L824 allow (-): echo echo hi bash /dev/stdin" {
   probe allow '-' 'echo '\''echo hi'\'' | bash /dev/stdin'
 }
 
-@test "L780 allow (-): source /dev/stdin notes/keep.txt" {
+@test "L825 allow (-): source /dev/stdin notes/keep.txt" {
   probe allow '-' 'source /dev/stdin < notes/keep.txt'
 }
 
-@test "L783 block (-): source cat notes/keep.txt " {
+@test "L828 block (-): source cat notes/keep.txt " {
   probe block '-' 'source <(cat notes/keep.txt)'
 }
 
-@test "L784 block (-): . cat notes/keep.txt " {
+@test "L829 block (-): . cat notes/keep.txt " {
   probe block '-' '. <(cat notes/keep.txt)'
 }
 
-@test "L785 block (-):  echo ls -la" {
+@test "L830 block (-):  echo ls -la" {
   probe block '-' '`echo ls` -la'
 }
 
-@test "L786 block (-): cat echo notes/keep.txt " {
+@test "L831 block (-): cat echo notes/keep.txt " {
   probe block '-' 'cat `echo notes/keep.txt`'
 }
 
-@test "L787 block (-): echo bash scripts/ops/unlock.sh env " {
+@test "L832 block (-): echo bash scripts/ops/unlock.sh env " {
   probe block '-' 'echo `bash scripts/ops/unlock.sh env`'
 }
 
-@test "L788 allow (-): echo date + F " {
+@test "L833 allow (-): echo date + F " {
   probe allow '-' 'echo `date +%F`'
 }
 
-@test "L789 allow (-): git commit -m fix: handle null ids " {
+@test "L834 allow (-): git commit -m fix: handle null ids " {
   probe allow '-' 'git commit -m "fix: handle `null` ids"'
 }
 
-@test "L791 block (-): just --justfile /dev/stdin EOF nall: n techo hi nEOF" {
+@test "L836 block (-): just --justfile /dev/stdin EOF nall: n techo hi nEOF" {
   probe block '-' 'just --justfile /dev/stdin <<'\''EOF'\''\nall:\n\techo hi\nEOF'
 }
 
-@test "L792 block (-): task --taskfile - EOF nversion: 3 nEOF" {
+@test "L837 block (-): task --taskfile - EOF nversion: 3 nEOF" {
   probe block '-' 'task --taskfile - <<'\''EOF'\''\nversion: 3\nEOF'
 }
 
-@test "L793 block (-): printf all: n techo hi n make -f -" {
+@test "L838 block (-): printf all: n techo hi n make -f -" {
   probe block '-' 'printf '\''all:\n\techo hi\n'\'' | make -f -'
 }
 
-@test "L794 allow (-): just test" {
+@test "L839 allow (-): just test" {
   probe allow '-' 'just test'
 }
 
-@test "L795 allow (-): make -f Makefile test" {
+@test "L840 allow (-): make -f Makefile test" {
   probe allow '-' 'make -f Makefile test'
 }
 
-@test "L799 block (-): bun exec git reset --hard " {
+@test "L844 block (-): bun exec git reset --hard " {
   probe block '-' 'bun exec '\''git reset --hard'\'''
 }
 
-@test "L800 block (-): bun exec cat .env " {
+@test "L845 block (-): bun exec cat .env " {
   probe block '-' 'bun exec '\''cat .env'\'''
 }
 
-@test "L801 block (-): bun exec bash scripts/ops/unlock.sh env " {
+@test "L846 block (-): bun exec bash scripts/ops/unlock.sh env " {
   probe block '-' 'bun exec '\''bash scripts/ops/unlock.sh env'\'''
 }
 
-@test "L802 block (-): bun exec echo hi git reset --hard" {
+@test "L847 block (-): bun exec echo hi git reset --hard" {
   probe block '-' 'bun exec echo hi '\''&&'\'' git reset --hard'
 }
 
-@test "L803 block (-): yarn exec git reset --hard " {
+@test "L848 block (-): yarn exec git reset --hard " {
   probe block '-' 'yarn exec '\''git reset --hard'\'''
 }
 
-@test "L804 block (-): yarn exec git clean -fdx" {
+@test "L849 block (-): yarn exec git clean -fdx" {
   probe block '-' 'yarn exec git clean -fdx'
 }
 
-@test "L805 block (-): pnpm exec git reset --hard " {
+@test "L850 block (-): pnpm exec git reset --hard " {
   probe block '-' 'pnpm exec '\''git reset --hard'\'''
 }
 
-@test "L806 block (-): pnpm exec git reset --hard" {
+@test "L851 block (-): pnpm exec git reset --hard" {
   probe block '-' 'pnpm exec git reset --hard'
 }
 
-@test "L807 block (-): pnpm exec --shell-mode cat .env.local " {
+@test "L852 block (-): pnpm exec --shell-mode cat .env.local " {
   probe block '-' 'pnpm exec --shell-mode '\''cat .env.local'\'''
 }
 
-@test "L808 block (-): pnpm dlx -c git reset --hard " {
+@test "L853 block (-): pnpm dlx -c git reset --hard " {
   probe block '-' 'pnpm dlx -c '\''git reset --hard'\'''
 }
 
-@test "L809 block (-): npm exec --call git reset --hard " {
+@test "L854 block (-): npm exec --call git reset --hard " {
   probe block '-' 'npm exec --call '\''git reset --hard'\'''
 }
 
-@test "L810 block (-): npm exec --call= cat .env " {
+@test "L855 block (-): npm exec --call= cat .env " {
   probe block '-' 'npm exec --call='\''cat .env'\'''
 }
 
-@test "L811 block (-): npm exec -- git push origin dev" {
+@test "L856 block (-): npm exec -- git push origin dev" {
   probe block '-' 'npm exec -- git push origin dev'
 }
 
-@test "L812 block (-): npx --yes -- git reset --hard" {
+@test "L857 block (-): npx --yes -- git reset --hard" {
   probe block '-' 'npx --yes -- git reset --hard'
 }
 
-@test "L813 block (-): bunx git reset --hard" {
+@test "L858 block (-): bunx git reset --hard" {
   probe block '-' 'bunx git reset --hard'
 }
 
-@test "L814 block (-): npx printf git reset --hard" {
+@test "L859 block (-): npx printf git reset --hard" {
   probe block '-' 'npx $(printf git) reset --hard'
 }
 
-@test "L815 block (-): bun exec echo cat notes/keep.txt " {
+@test "L860 block (-): bun exec echo cat notes/keep.txt " {
   probe block '-' 'bun exec "echo $(cat notes/keep.txt)"'
 }
 
-@test "L816 block (-): yarn exec UNKNOWN " {
+@test "L861 block (-): yarn exec UNKNOWN " {
   probe block '-' 'yarn exec "$UNKNOWN"'
 }
 
-@test "L817 allow (-): bun exec echo hi " {
+@test "L862 allow (-): bun exec echo hi " {
   probe allow '-' 'bun exec '\''echo hi'\'''
 }
 
-@test "L818 allow (-): yarn exec eslint ." {
+@test "L863 allow (-): yarn exec eslint ." {
   probe allow '-' 'yarn exec eslint .'
 }
 
-@test "L819 allow (-): pnpm exec vitest run" {
+@test "L864 allow (-): pnpm exec vitest run" {
   probe allow '-' 'pnpm exec vitest run'
 }
 
-@test "L820 allow (-): npm exec -- eslint docs" {
+@test "L865 allow (-): npm exec -- eslint docs" {
   probe allow '-' 'npm exec -- eslint docs'
 }
 
-@test "L821 allow (-): npx --yes prettier --check docs" {
+@test "L866 allow (-): npx --yes prettier --check docs" {
   probe allow '-' 'npx --yes prettier --check docs'
 }
 
-@test "L822 allow (-): bunx tsc --noEmit" {
+@test "L867 allow (-): bunx tsc --noEmit" {
   probe allow '-' 'bunx tsc --noEmit'
 }
 
-@test "L823 allow (-): npx -p cowsay cowsay hi" {
+@test "L868 allow (-): npx -p cowsay cowsay hi" {
   probe allow '-' 'npx -p cowsay cowsay hi'
 }
 
-@test "L826 block (-): timeout 5 git reset --hard" {
+@test "L871 block (-): timeout 5 git reset --hard" {
   probe block '-' 'timeout 5 git reset --hard'
 }
 
-@test "L827 block (-): timeout -s KILL 5 git push origin dev" {
+@test "L872 block (-): timeout -s KILL 5 git push origin dev" {
   probe block '-' 'timeout -s KILL 5 git push origin dev'
 }
 
-@test "L828 block (-): gtimeout --kill-after=2 5 cat .env" {
+@test "L873 block (-): gtimeout --kill-after=2 5 cat .env" {
   probe block '-' 'gtimeout --kill-after=2 5 cat .env'
 }
 
-@test "L829 block (-): stdbuf -o0 git reset --hard" {
+@test "L874 block (-): stdbuf -o0 git reset --hard" {
   probe block '-' 'stdbuf -o0 git reset --hard'
 }
 
-@test "L830 block (-): setsid git clean -fdx" {
+@test "L875 block (-): setsid git clean -fdx" {
   probe block '-' 'setsid git clean -fdx'
 }
 
-@test "L831 block (-): doas -u root git reset --hard" {
+@test "L876 block (-): doas -u root git reset --hard" {
   probe block '-' 'doas -u root git reset --hard'
 }
 
-@test "L832 block (-): arch -arm64 git reset --hard" {
+@test "L877 block (-): arch -arm64 git reset --hard" {
   probe block '-' 'arch -arm64 git reset --hard'
 }
 
-@test "L833 block (-): xcrun --sdk macosx git reset --hard" {
+@test "L878 block (-): xcrun --sdk macosx git reset --hard" {
   probe block '-' 'xcrun --sdk macosx git reset --hard'
 }
 
-@test "L834 allow (-): timeout 60 git status" {
+@test "L879 allow (-): timeout 60 git status" {
   probe allow '-' 'timeout 60 git status'
 }
 
-@test "L835 allow (-): stdbuf -oL git log -1" {
+@test "L880 allow (-): stdbuf -oL git log -1" {
   probe allow '-' 'stdbuf -oL git log -1'
 }
 
-@test "L839 block (-): rtk git push --force origin main" {
+@test "L884 block (-): rtk git push --force origin main" {
   probe block '-' 'rtk git push --force origin main'
 }
 
-@test "L840 block (-): rtk proxy git push origin main" {
+@test "L885 block (-): rtk proxy git push origin main" {
   probe block '-' 'rtk proxy git push origin main'
 }
 
-@test "L841 block (-): rtk git reset --hard HEAD 3" {
+@test "L886 block (-): rtk git reset --hard HEAD 3" {
   probe block '-' 'rtk git reset --hard HEAD~3'
 }
 
-@test "L842 block (-): rtk git commit --no-verify -m x" {
+@test "L887 block (-): rtk git commit --no-verify -m x" {
   probe block '-' 'rtk git commit --no-verify -m x'
 }
 
-@test "L843 block (-): rtk -u git push origin dev" {
+@test "L888 block (-): rtk -u git push origin dev" {
   probe block '-' 'rtk -u git push origin dev'
 }
 
-@test "L844 block (-): rtk proxy -v git clean -fdx" {
+@test "L889 block (-): rtk proxy -v git clean -fdx" {
   probe block '-' 'rtk proxy -v git clean -fdx'
 }
 
-@test "L845 block (-): rtk err git checkout -- ." {
+@test "L890 block (-): rtk err git checkout -- ." {
   probe block '-' 'rtk err git checkout -- .'
 }
 
-@test "L846 block (-): rtk summary git stash push -u" {
+@test "L891 block (-): rtk summary git stash push -u" {
   probe block '-' 'rtk summary git stash push -u'
 }
 
-@test "L847 block (-): rtk git push origin --delete dev" {
+@test "L892 block (-): rtk git push origin --delete dev" {
   probe block '-' 'rtk git push origin --delete dev'
 }
 
-@test "L848 block (-): HUSKY=0 rtk git commit -m x" {
+@test "L893 block (-): HUSKY=0 rtk git commit -m x" {
   probe block '-' 'HUSKY=0 rtk git commit -m x'
 }
 
-@test "L849 block (-): rtk gh pr merge 12 --merge --delete-branch" {
+@test "L894 block (-): rtk gh pr merge 12 --merge --delete-branch" {
   probe block '-' 'rtk gh pr merge 12 --merge --delete-branch'
 }
 
-@test "L850 block (-): rtk rm -rf src" {
+@test "L895 block (-): rtk rm -rf src" {
   probe block '-' 'rtk rm -rf src'
 }
 
-@test "L851 block (-): rtk proxy rm -r notes" {
+@test "L896 block (-): rtk proxy rm -r notes" {
   probe block '-' 'rtk proxy rm -r notes'
 }
 
-@test "L852 block (-): rtk find . -delete" {
+@test "L897 block (-): rtk find . -delete" {
   probe block '-' 'rtk find . -delete'
 }
 
-@test "L853 block (-): rtk read .env" {
+@test "L898 block (-): rtk read .env" {
   probe block '-' 'rtk read .env'
 }
 
-@test "L854 block (-): rtk smart .env.local" {
+@test "L899 block (-): rtk smart .env.local" {
   probe block '-' 'rtk smart .env.local'
 }
 
-@test "L855 block (-): rtk read printf s .en v " {
+@test "L900 block (-): rtk read printf s .en v " {
   probe block '-' 'rtk read "$(printf %s .en)v"'
 }
 
-@test "L856 block (-): rtk json ls -a grep en " {
+@test "L901 block (-): rtk json ls -a grep en " {
   probe block '-' 'rtk json $(ls -a | grep en)'
 }
 
-@test "L857 block (-): rtk grep API_KEY .env" {
+@test "L902 block (-): rtk grep API_KEY .env" {
   probe block '-' 'rtk grep API_KEY .env'
 }
 
-@test "L858 block (-): rtk proxy cat .env.local" {
+@test "L903 block (-): rtk proxy cat .env.local" {
   probe block '-' 'rtk proxy cat .env.local'
 }
 
-@test "L859 block (-): rtk proxy bash scripts/ops/unlock.sh env" {
+@test "L904 block (-): rtk proxy bash scripts/ops/unlock.sh env" {
   probe block '-' 'rtk proxy bash scripts/ops/unlock.sh env'
 }
 
-@test "L860 block (-): rtk proxy touch .claude/state/unlock/env" {
+@test "L905 block (-): rtk proxy touch .claude/state/unlock/env" {
   probe block '-' 'rtk proxy touch .claude/state/unlock/env'
 }
 
-@test "L861 block (-): rtk proxy sed -i.bak s/exit 2/exit 0/ .claude/hooks/lib.sh" {
+@test "L906 block (-): rtk proxy sed -i.bak s/exit 2/exit 0/ .claude/hooks/lib.sh" {
   probe block '-' 'rtk proxy sed -i.bak '\''s/exit 2/exit 0/'\'' .claude/hooks/lib.sh'
 }
 
-@test "L862 block (-): rtk proxy cp notes/keep.txt .claude/settings.json" {
+@test "L907 block (-): rtk proxy cp notes/keep.txt .claude/settings.json" {
   probe block '-' 'rtk proxy cp notes/keep.txt .claude/settings.json'
 }
 
-@test "L863 block (-): rtk proxy -- git reset --hard" {
+@test "L908 block (-): rtk proxy -- git reset --hard" {
   probe block '-' 'rtk proxy -- git reset --hard'
 }
 
-@test "L864 block (-): rtk test bash -c git reset --hard " {
+@test "L909 block (-): rtk test bash -c git reset --hard " {
   probe block '-' 'rtk test bash -c '\''git reset --hard'\'''
 }
 
-@test "L865 block (-): bash -c rtk git reset --hard " {
+@test "L910 block (-): bash -c rtk git reset --hard " {
   probe block '-' 'bash -c '\''rtk git reset --hard'\'''
 }
 
-@test "L866 block (-): timeout 5 rtk proxy git reset --hard" {
+@test "L911 block (-): timeout 5 rtk proxy git reset --hard" {
   probe block '-' 'timeout 5 rtk proxy git reset --hard'
 }
 
-@test "L867 block (-): /usr/local/bin/rtk proxy git push origin main" {
+@test "L912 block (-): /usr/local/bin/rtk proxy git push origin main" {
   probe block '-' '/usr/local/bin/rtk proxy git push origin main'
 }
 
-@test "L868 allow (-): rtk git status" {
+@test "L913 allow (-): rtk git status" {
   probe allow '-' 'rtk git status'
 }
 
-@test "L869 allow (-): rtk git diff" {
+@test "L914 allow (-): rtk git diff" {
   probe allow '-' 'rtk git diff'
 }
 
-@test "L870 allow (-): rtk grep foo src" {
+@test "L915 allow (-): rtk grep foo src" {
   probe allow '-' 'rtk grep foo src'
 }
 
-@test "L871 allow (-): rtk proxy git log -1" {
+@test "L916 allow (-): rtk proxy git log -1" {
   probe allow '-' 'rtk proxy git log -1'
 }
 
-@test "L872 allow (-): rtk git push origin feature/x" {
+@test "L917 allow (-): rtk git push origin feature/x" {
   probe allow '-' 'rtk git push origin feature/x'
 }
 
-@test "L873 allow (-): rtk read notes/keep.txt" {
+@test "L918 allow (-): rtk read notes/keep.txt" {
   probe allow '-' 'rtk read notes/keep.txt'
 }
 
-@test "L874 allow (-): rtk proxy cat .env.example" {
+@test "L919 allow (-): rtk proxy cat .env.example" {
   probe allow '-' 'rtk proxy cat .env.example'
 }
 
-@test "L875 allow (-): rtk gain" {
+@test "L920 allow (-): rtk gain" {
   probe allow '-' 'rtk gain'
 }
 
-@test "L881 block (-): git -c alias.st=status st" {
+@test "L926 block (-): git -c alias.st=status st" {
   probe block '-' 'git -c alias.st=status st'
 }
 
-@test "L882 block (-): git -c alias.nuke= reset --hard nuke" {
+@test "L927 block (-): git -c alias.nuke= reset --hard nuke" {
   probe block '-' 'git -c alias.nuke='\''reset --hard'\'' nuke'
 }
 
-@test "L883 block (-): git -c include.path= TMP /extra.gitconfig log -1" {
+@test "L928 block (-): git -c include.path= TMP /extra.gitconfig log -1" {
   probe block '-' 'git -c include.path=@TMP@/extra.gitconfig log -1'
 }
 
-@test "L884 block (-): git -c includeIf.onbranch:feature/probe.path= TMP /extra...." {
+@test "L929 block (-): git -c includeIf.onbranch:feature/probe.path= TMP /extra...." {
   probe block '-' 'git -c includeIf.onbranch:feature/probe.path=@TMP@/extra.gitconfig log -1'
 }
 
-@test "L885 block (-): git -c core.sshCommand=ssh fetch" {
+@test "L930 block (-): git -c core.sshCommand=ssh fetch" {
   probe block '-' 'git -c core.sshCommand=ssh fetch'
 }
 
-@test "L886 block (-): git -c core.fsmonitor=true status" {
+@test "L931 block (-): git -c core.fsmonitor=true status" {
   probe block '-' 'git -c core.fsmonitor=true status'
 }
 
-@test "L887 block (-): git -c core.editor= vim -c wq commit" {
+@test "L932 block (-): git -c core.editor= vim -c wq commit" {
   probe block '-' 'git -c core.editor='\''vim -c wq'\'' commit'
 }
 
-@test "L888 block (-): git -c credential.helper=store fetch" {
+@test "L933 block (-): git -c credential.helper=store fetch" {
   probe block '-' 'git -c credential.helper=store fetch'
 }
 
-@test "L889 block (-): git -c protocol.ext.allow=always fetch" {
+@test "L934 block (-): git -c protocol.ext.allow=always fetch" {
   probe block '-' 'git -c protocol.ext.allow=always fetch'
 }
 
-@test "L890 block (-): git -c http.proxy=http://proxy.example.invalid:8080 fetch" {
+@test "L935 block (-): git -c http.proxy=http://proxy.example.invalid:8080 fetch" {
   probe block '-' 'git -c http.proxy=http://proxy.example.invalid:8080 fetch'
 }
 
-@test "L891 block (-): git -c https.https://github.com.proxy=http://proxy.exampl..." {
+@test "L936 block (-): git -c https.https://github.com.proxy=http://proxy.exampl..." {
   probe block '-' 'git -c https.https://github.com.proxy=http://proxy.example.invalid fetch'
 }
 
-@test "L892 block (-): git -c url.https://example.invalid/.insteadOf=https://git..." {
+@test "L937 block (-): git -c url.https://example.invalid/.insteadOf=https://git..." {
   probe block '-' 'git -c url.https://example.invalid/.insteadOf=https://github.com/ fetch'
 }
 
-@test "L893 block (-): git -c safe.directory= status" {
+@test "L938 block (-): git -c safe.directory= status" {
   probe block '-' 'git -c safe.directory=* status'
 }
 
-@test "L894 block (-): git -c core.worktree= TMP status" {
+@test "L939 block (-): git -c core.worktree= TMP status" {
   probe block '-' 'git -c core.worktree=@TMP@ status'
 }
 
-@test "L895 block (-): git --config-env=alias.x=SOME_VAR x" {
+@test "L940 block (-): git --config-env=alias.x=SOME_VAR x" {
   probe block '-' 'git --config-env=alias.x=SOME_VAR x'
 }
 
-@test "L896 block (-): GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.x GIT_CONFIG_VA..." {
+@test "L941 block (-): GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.x GIT_CONFIG_VA..." {
   probe block '-' 'GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.x GIT_CONFIG_VALUE_0=status git x'
 }
 
-@test "L897 block (-): GIT_CONFIG_PARAMETERS= alias.x = status git x" {
+@test "L942 block (-): GIT_CONFIG_PARAMETERS= alias.x = status git x" {
   probe block '-' 'GIT_CONFIG_PARAMETERS="'\''alias.x'\''='\''status'\''" git x'
 }
 
-@test "L898 block (-): git config alias.nuke reset --hard " {
+@test "L943 block (-): git config alias.nuke reset --hard " {
   probe block '-' 'git config alias.nuke '\''reset --hard'\'''
 }
 
-@test "L899 block (-): git config --add include.path TMP /extra.gitconfig" {
+@test "L944 block (-): git config --add include.path TMP /extra.gitconfig" {
   probe block '-' 'git config --add include.path @TMP@/extra.gitconfig'
 }
 
-@test "L900 block (-): git config set url.https://example.invalid/.insteadOf htt..." {
+@test "L945 block (-): git config set url.https://example.invalid/.insteadOf htt..." {
   probe block '-' 'git config set url.https://example.invalid/.insteadOf https://github.com/'
 }
 
-@test "L901 block (-): git config --rename-section probe alias" {
+@test "L946 block (-): git config --rename-section probe alias" {
   probe block '-' 'git config --rename-section probe alias'
 }
 
-@test "L902 allow (-): git -c user.name=probe -c user.email=probe example.invali..." {
+@test "L947 allow (-): git -c user.name=probe -c user.email=probe example.invali..." {
   probe allow '-' 'git -c user.name=probe -c user.email=probe@example.invalid log -1'
 }
 
-@test "L903 allow (-): git -c core.quotepath=off status" {
+@test "L948 allow (-): git -c core.quotepath=off status" {
   probe allow '-' 'git -c core.quotepath=off status'
 }
 
-@test "L904 allow (-): git -c core.pager=cat log -1" {
+@test "L949 allow (-): git -c core.pager=cat log -1" {
   probe allow '-' 'git -c core.pager=cat log -1'
 }
 
-@test "L905 allow (-): git -c pager.log=false log -1" {
+@test "L950 allow (-): git -c pager.log=false log -1" {
   probe allow '-' 'git -c pager.log=false log -1'
 }
 
-@test "L906 allow (-): git -c core.fsmonitor=false status" {
+@test "L951 allow (-): git -c core.fsmonitor=false status" {
   probe allow '-' 'git -c core.fsmonitor=false status'
 }
 
-@test "L907 allow (-): git -c core.editor=true status" {
+@test "L952 allow (-): git -c core.editor=true status" {
   probe allow '-' 'git -c core.editor=true status'
 }
 
-@test "L908 allow (-): git config user.name probe" {
+@test "L953 allow (-): git config user.name probe" {
   probe allow '-' 'git config user.name probe'
 }
 
-@test "L909 allow (-): git config --get alias.x" {
+@test "L954 allow (-): git config --get alias.x" {
   probe allow '-' 'git config --get alias.x'
 }
 
-@test "L910 allow (-): git config --list" {
+@test "L955 allow (-): git config --list" {
   probe allow '-' 'git config --list'
 }
 
-@test "L911 allow (-): git config --unset alias.x" {
+@test "L956 allow (-): git config --unset alias.x" {
   probe allow '-' 'git config --unset alias.x'
 }

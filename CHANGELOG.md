@@ -13,7 +13,9 @@ tagged `<plugin>--v<version>`. A change you must act on starts with **Breaking:*
 Lessons from running the kit's rules in a multi-repo setup: db-guard read only the first SQL field of
 a call, the audit read an unreachable registry as a clean report, a promotion had no way to skip a
 scan the pull request before it already ran, and checks crashed on a path another session deleted
-from a shared checkout.
+from a shared checkout. The guards then gained what running them from a workspace root asked for:
+unlocks and env helpers that work across repos, fewer false refusals, and an OpenAPI contract or a
+first migration that is guarded wherever it lands.
 
 ### Reusable workflows and actions
 
@@ -31,6 +33,90 @@ from a shared checkout.
   revert on the production branch half-applied to the development branch, and it kept the development
   copy of every conflict, so the stop for a conflict outside the stripped paths could never fire. Any
   such deletion or conflict now stops the run with the development branch as it was.
+
+### agent-core 1.4.0
+
+#### Added
+
+- Workspace mode reaches a session at the workspace root. With `AGENT_WORKSPACE_ROOT` set, that
+  session can run each repo's `scripts/env/` helpers, `set.sh` answers to the unlock of the repo that
+  owns it and its refusal names that repo, and any repo's `db` unlock opens db-guard there. A session
+  inside a repo keeps to its own unlock, and without the setting nothing changes.
+- `generatedPaths` takes `**/name`, a file or folder at any depth. A folder-wide `replace_in_files`
+  finds those files through git, so an ignored folder such as `node_modules` is never walked.
+
+#### Changed
+
+- **Breaking:** the `generatedPaths` default guards the OpenAPI contract at any depth
+  (`**/openapi.json`, `**/openapi.yaml`, `**/openapi.yml`), not only at the repo root. A repo that
+  writes a spec below its root by hand and relies on the defaults sets its own list without it.
+- Only `show.sh`, `set.sh`, `envfile.py` and the `scripts/env/` folder itself are locked. A project's
+  own tool beside them is ordinary code again: `show.sh` and `set.sh` start `envfile.py` with
+  `python3 -I`, which imports nothing from that folder.
+- `/agent-core:promote` resolves each thread it answered, a declined one included, as
+  `/agent-core:resolve-pr-review` already did: `pr-ready.sh` counts unresolved threads, so an answered
+  thread left open held the promotion.
+
+#### Fixed
+
+- safety-check no longer reads a `$` that expands nothing as an unresolved word, so a pattern that
+  only looks for a `.env` name (`grep -E "(^|/)\.env(\.|$)"`) passes. zsh's `$=x`, `$~x`, `$^x`, `$+x`
+  and `$#x` still count.
+- A glob is judged by what it can match. A `[` with no closing `]` is a plain character, so jq's
+  `.[].name` no longer counts as a `.env*` read; `.[e]nv`, `.e*` and `.env.[s]taging` still do.
+- With neither python3 nor jq, the plain-text rules refuse `rm -r` on every default protected path.
+  They knew six of them, so `app`, `components`, `content`, `tests`, `.agent`, `.agents` and the
+  top-level instruction files could be deleted.
+
+### agent-ai-fastapi 1.5.0
+
+#### Changed
+
+- **Breaking:** migration-guard judges a path whether or not its folder exists yet, so the first
+  generated migration comes from its tool too. A repo that keeps something else under a default
+  `migrationsDirs` folder sets its own list, and `"migrationsDirs": []` empties it.
+- `lib.sh` follows agent-core 1.4.0.
+
+### agent-be-hono 2.2.0
+
+#### Changed
+
+- **Breaking:** migration-guard judges a path whether or not its folder exists yet, as in
+  agent-ai-fastapi 1.5.0.
+- `lib.sh` follows agent-core 1.4.0.
+
+### agent-be-axum 0.3.0
+
+#### Changed
+
+- migration-guard judges a path whether or not its folder exists yet. For
+  `appendOnlyMigrationsDirs` that means a file a protected branch has stays refused on a branch that
+  lost the folder.
+- generated-guard takes `**/name` in `generatedPaths`. `lib.sh` follows agent-core 1.4.0.
+
+### agent-be-go 0.3.0
+
+#### Changed
+
+- migration-guard and generated-guard as in agent-be-axum 0.3.0. `lib.sh` follows agent-core 1.4.0.
+
+### agent-docs-nextra 1.4.0
+
+#### Changed
+
+- generated-guard takes `**/name` in `generatedPaths`. `lib.sh` follows agent-core 1.4.0.
+
+### agent-fe-nextjs 1.5.0
+
+#### Changed
+
+- generated-guard takes `**/name` in `generatedPaths`. `lib.sh` follows agent-core 1.4.0.
+
+### agent-ios-swiftui 1.2.0
+
+#### Changed
+
+- generated-guard takes `**/name` in `generatedPaths`. `lib.sh` follows agent-core 1.4.0.
 
 ### agent-core 1.3.0
 

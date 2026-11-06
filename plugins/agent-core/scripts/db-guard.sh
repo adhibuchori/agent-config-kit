@@ -6,7 +6,8 @@
 # a matcher that covers it. explain_query and analyze_query_indexes run the SQL they are given inside
 # EXPLAIN over the same connection (explain_query with analyze executes it, and a stacked statement
 # runs either way), so they are judged like execute_sql: every SQL field (sql, query, statement, and
-# each of queries) must be a read.
+# each of queries) must be a read. In workspace mode, a session at the workspace root accepts any
+# repo's db unlock.
 #
 # Read-only is one statement of SELECT, SHOW, VALUES, TABLE, DESCRIBE, WITH ... SELECT with no
 # data-modifying part, or EXPLAIN (EXPLAIN ANALYZE runs its statement, so only of a read). A
@@ -260,7 +261,7 @@ why = next((w for w in map(verdict, texts or [None]) if w), "")
 if not why:
     print("READ")
     sys.exit(0)
-end = unlock_until(root, "db")
+end = unlock_until_any(root, "db")
 if end:
     print(f"OPEN\tThe user has unlocked database writes until {time.strftime('%H:%M', time.localtime(end))}, so this "
           f"call, which may write ({why}), runs now. Tell the user what it changed.")

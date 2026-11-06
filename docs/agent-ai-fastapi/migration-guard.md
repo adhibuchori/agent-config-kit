@@ -27,8 +27,8 @@ other code instead.
 ## What it blocks
 
 Defaults for `migrationsDirs`: `src/db/migrations`, `drizzle`, `src/app/db/migrations/versions`,
-`alembic/versions`, `migrations/versions`. A folder your repo does not have guards nothing, so the
-hook switches itself off in a repo without migrations.
+`alembic/versions`, `migrations/versions`. A path is judged whether or not its folder exists yet, so
+the first migration comes from its tool too. `"migrationsDirs": []` empties the list.
 
 | What | Why it is blocked | Do this instead |
 | --- | --- | --- |
@@ -63,9 +63,6 @@ d=$(mktemp -d) && mkdir -p "$d/alembic/versions" \
 ```
 
 ## Common questions
-
-**Why does the example create a temp folder?**
-A folder the repo does not have guards nothing, and this repository has no `alembic/versions/`.
 
 **Can Claude still delete a migration with `rm`?**
 safety-check refuses recursive deletes of protected paths; a single-file shell edit is not this guard's job. Review migrations in the pull request like any other code.

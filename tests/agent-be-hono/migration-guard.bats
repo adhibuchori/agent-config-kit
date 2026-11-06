@@ -69,8 +69,18 @@ setup() {
   [ "$status" -eq 0 ]
 }
 
-@test "a migrations folder the repo does not have guards nothing" {
+@test "a migrations folder that does not exist yet is judged like one that does" {
   rm -rf "$PROJ/src/db/migrations"
+  run_guard "$(edit_payload Write "$PROJ/src/db/migrations/0000_init.sql")"
+  [ "$status" -eq 2 ]
+  [[ "$stderr" == *"[migration-guard] BLOCKED: src/db/migrations/0000_init.sql is drizzle-kit output"* ]] || false
+  run_guard "$(edit_payload Write "$PROJ/src/db/migrations-notes/0000.md")"
+  [ "$status" -eq 0 ]
+}
+
+@test "an empty migrationsDirs guards nothing, with or without the folder" {
+  rm -rf "$PROJ/src/db/migrations"
+  mkdir -p "$PROJ/.claude" && echo '{"migrationsDirs": []}' >"$PROJ/.claude/agent-config.json"
   run_guard "$(edit_payload Write "$PROJ/src/db/migrations/0000_init.sql")"
   [ "$status" -eq 0 ]
 }
@@ -304,4 +314,15 @@ PY
     [ -x "$f" ]
     "$HOOK_BASH" -n "$f"
   done
+}
+
+@test "append-only: a branch without the folder still may not rewrite a merged migration" {
+  make_append_project
+  git -C "$PROJ" rm -rq db/migrations
+  git -C "$PROJ" -c user.name=t -c user.email=t@t.invalid commit -q -m gone
+  run_guard "$(edit_payload Write "$PROJ/db/migrations/00001_init.sql")"
+  [ "$status" -eq 2 ]
+  [[ "$stderr" == *"db/migrations/00001_init.sql is already on main"* ]] || false
+  run_guard "$(edit_payload Write "$PROJ/db/migrations/00009_new.sql")"
+  [ "$status" -eq 0 ]
 }

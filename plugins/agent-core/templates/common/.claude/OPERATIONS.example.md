@@ -58,7 +58,9 @@ whole:
 
 `commandWrappers` names commands that run another command (a secrets loader, an output filter), so
 the analyzer judges the command they wrap. Multi-repo workspaces stay off unless
-`AGENT_WORKSPACE_ROOT` names the folder that holds the repos.
+`AGENT_WORKSPACE_ROOT` names the folder that holds the repos. A session at that folder, which is no
+repo, can run each repo's `scripts/env/` helpers; `set.sh` answers to the unlock of the repo that
+owns it, and any repo's `db` unlock counts there.
 
 **How the guards fail.** They fail closed: a payload that is not a JSON object, a `python3` that
 crashes or runs past its cap, or SQL `db-guard` cannot read refuses the call; only a machine with no

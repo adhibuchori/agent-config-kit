@@ -6,8 +6,9 @@
 #                             to write and edit until it merges; a file a protected branch already has
 #                             may have run against a database, so it never changes again (ADR 0007).
 #                             Empty by default: a stack's setup seeds it.
-# A folder the repo does not have guards nothing, so the hook turns itself off in a repo without
-# migrations. Optional: wire it in backends and data pipelines.
+# A path is judged whether or not its folder exists yet, so the first generated migration comes from
+# its tool too. Optional: wire it in backends and data pipelines; "migrationsDirs": [] empties the
+# generated list in a repo that keeps something else under a default folder.
 #
 # A symlink is judged as named and as the file it points to, since a write lands there.
 #
@@ -76,7 +77,7 @@ judge() {
   rel="${1#"$ROOT"/}"
   [[ "$ROOT" == "$DIRS_ROOT" ]] || dirs
   for d in ${DIRS[@]+"${DIRS[@]}"}; do
-    [[ -d "$d" && "$rel" == "$d"/* ]] || continue
+    [[ "$rel" == "$d"/* ]] || continue
     if [[ "$rel" == *.py && -f alembic.ini ]]; then
       block "[migration-guard] BLOCKED: $rel is an Alembic revision. Change the models, run" \
         "'alembic revision --autogenerate -m \"<description>\"' (through the project's runner), then review the generated revision."
@@ -89,7 +90,7 @@ judge() {
     fi
   done
   for d in ${APPEND_DIRS[@]+"${APPEND_DIRS[@]}"}; do
-    [[ -d "$d" && "$rel" == "$d"/* ]] || continue
+    [[ "$rel" == "$d"/* ]] || continue
     on="$(merged_on "$rel")" || hook_fail "git could not say whether a protected branch already has $rel."
     [[ -n "$on" ]] || continue
     block "[migration-guard] BLOCKED: $rel is already on $on, so a database may have run it." \
