@@ -352,6 +352,25 @@ block	-	bun run u2 env
 allow	-	bun test src
 allow	-	bun run test
 block	-	bun dump
+# Words that only look like a .env* name or a variable stay open. A glob is judged by what it can
+# match: a [ with no closing ] is a plain character, so jq's '.[].name' names no file. A $ that bash
+# and zsh both leave as it is (grep's '(\.|$)', 'keep$') expands nothing; zsh's $=x, $~x, $^x, $+x do.
+allow	-	gh pr list --state open --json headRefName --jq '.[].headRefName'
+allow	-	jq '.[].name' notes/keep.txt
+allow	-	git diff --cached --name-only | grep -E "(^|/)\\.env(\\.|$)"
+allow	-	grep -n 'keep$' notes/keep.txt
+allow	-	git log --format='%h$' -1 notes/keep.txt
+block	-	jq '.[].name' .env
+block	-	cat .[!x]nv
+block	-	cat .[a-f]nv
+block	-	cat .[e]nv
+block	-	cat .e*
+block	-	cat .en?
+block	-	cat .env.stag*
+block	-	cat .env.[s]taging
+block	-	grep -E "(^|/)x$" .env.production
+block	-	F=.env; cat $=F
+block	-	F=.env; cat $~F
 block	-	bash -c 'bash scripts/ops/unlock.sh env'
 block	-	echo 'bash scripts/ops/unlock.sh env' | bash
 block	-	bash < scripts/ops/unlock.sh
@@ -435,6 +454,18 @@ block	-	rsync -a @TMP@/helpers/ scripts/env/
 block	-	cp -r @TMP@/forged-helpers/scripts .
 block	-	cp -r @TMP@/forged-helpers/scripts "$DEST"
 allow	-	cp -r scripts/env "$DEST"
+# Trusted in scripts/env/ are show.sh, set.sh, envfile.py and the folder itself. A project's own tool
+# beside them is ordinary code: formatting or changing it stays open; a glob that can name a trusted
+# file does not.
+allow	-	oxfmt 'scripts/**/*.ts'
+allow	-	touch scripts/env/init.ts
+allow	-	sed -i '' 's/a/b/' scripts/env/init.ts
+allow	-	rm scripts/env/init.ts
+block	-	sed -i '' 's/a/b/' scripts/env/*
+block	-	sed -i '' 's/a/b/' scripts/env/[s]et.sh
+block	-	touch scripts/env/set.sh
+block	-	rm scripts/env/envfile.py
+block	-	mv scripts/env @TMP@/moved
 block	-	timeout 5 bash scripts/ops/unlock.sh env
 block	-	npm exec -- bash scripts/ops/unlock.sh env
 block	-	git -c alias.u='!bash scripts/ops/unlock.sh' u env

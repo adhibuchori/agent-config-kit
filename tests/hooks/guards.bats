@@ -181,3 +181,15 @@ EOF
   run -0 --separate-stderr hook mcp-guard.sh "$(tool_payload mcp__github__push_files '{"branch": "x"}')" "${CP[@]}"
   [ -z "$output" ]
 }
+
+@test "without python3 or jq, rm -r still refuses every default protected path" {
+  env=("${CP[@]}" PATH="$(tool_kit nojson "$BATS_TEST_TMPDIR")")
+  paths="$(sed -n "/^HOOK_DEFAULTS=/,/^}'/p" "$CORE/scripts/lib.sh" | sed -e "1s/^HOOK_DEFAULTS='//" -e "\$s/'\$//" | jq -r '.protectedPaths[]')"
+  [ "$(wc -l <<<"$paths")" -gt 10 ]
+  while IFS= read -r p; do
+    run -2 --separate-stderr hook safety-check.sh "$(bash_payload "$P" "rm -rf $p")" "${env[@]}"
+    [[ "$stderr" == *"rm -r on a protected path"* ]] || { echo "$p: $stderr" >&2; return 1; }
+  done <<<"$paths"
+  run -0 --separate-stderr hook safety-check.sh "$(bash_payload "$P" "rm -rf build")" "${env[@]}"
+  run -0 --separate-stderr hook safety-check.sh "$(bash_payload "$P" "rm -rf appendix")" "${env[@]}"
+}

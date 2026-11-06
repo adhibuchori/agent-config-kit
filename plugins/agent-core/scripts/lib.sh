@@ -29,7 +29,7 @@ HOOK_DEFAULTS='{
   "protectedPaths": ["src", "app", "components", "content", "tests", "scripts", ".claude", ".agent",
                      ".agents", "_workflow-source", ".github", ".git",
                      "AGENTS.md", "SSOT.md", "CLAUDE.md", "PRODUCT.md", "DESIGN.md"],
-  "generatedPaths": ["src/lib/api/generated", "src/generated", "openapi.json", "openapi.yaml", "openapi.yml"],
+  "generatedPaths": ["src/lib/api/generated", "src/generated", "**/openapi.json", "**/openapi.yaml", "**/openapi.yml"],
   "commandWrappers": [],
   "localePairs": [],
   "migrationsDirs": ["src/db/migrations", "drizzle", "src/app/db/migrations/versions", "alembic/versions",
@@ -408,9 +408,28 @@ def unlock_until(root, target):
     return 0 if tracked.returncode == 0 and tracked.stdout.strip() else until
 
 
+def at_workspace_root(root):
+    """Whether a session in root sits at the workspace root, which is no repo of its own (workspace
+    mode only)."""
+    ws = workspace_root()
+    return bool(ws) and os.path.realpath(root) == ws and not os.path.exists(os.path.join(root, ".git"))
+
+
+def unlock_until_any(root, target):
+    """unlock_until for root; at the workspace root, the latest end any repo's unlock of target has
+    as well, since an unlock is made inside a repo."""
+    own = unlock_until(root, target)
+    if not at_workspace_root(root):
+        return own
+    return max([own] + [unlock_until(r, target) for r in workspace_repos(workspace_root())])
+
+
 def unlock_hint(root, target):
     """What the user types to unlock target here: the package.json alias, run by the package
-    manager the lockfile names, when the repo has the alias; the script itself otherwise."""
+    manager the lockfile names, when the repo has the alias; the script itself otherwise. At the
+    workspace root, the script inside the repo concerned."""
+    if at_workspace_root(root) and not os.path.isfile(os.path.join(root, "package.json")):
+        return f"! cd <repo> && ./scripts/ops/unlock.sh {target}"
     try:
         with open(os.path.join(root, "package.json"), encoding="utf-8") as fh:
             scripts = json.load(fh).get("scripts") or {}
@@ -493,6 +512,17 @@ def ignored(path):
     return subprocess.run(["git", "-C", repo, "check-ignore", "-q", "--", path]).returncode == 0
 
 
+def any_depth(repo, g):
+    """The files a `**/name` entry reaches: git's list, which never walks an ignored folder such as
+    node_modules; a walk where repo has no git."""
+    r = subprocess.run(["git", "-C", repo, "ls-files", "-co", "--exclude-standard", "-z", "--",
+                        ":(glob)" + g, ":(glob)" + g + "/**"], capture_output=True, text=True,
+                       errors="surrogateescape")
+    if r.returncode == 0:
+        return [os.path.join(repo, f) for f in r.stdout.split("\0") if f]
+    return glob.glob(os.path.join(repo, g), recursive=True) + glob.glob(os.path.join(repo, g, "**"), recursive=True)
+
+
 def matches(path):
     """Whether the needle is in the file, read as Serena reads it (Python re, DOTALL and MULTILINE,
     in regex mode). An unreadable file or a needle Python cannot compile counts as a match."""
@@ -518,7 +548,10 @@ for repo in repos:
         scope = os.path.realpath(scope)
     for g in guarded:
         base = os.path.join(repo, g)
-        files = [base] if os.path.isfile(base) else [os.path.join(d, f) for d, _, fs in os.walk(base) for f in fs]
+        if g.startswith("**/"):
+            files = any_depth(repo, g)
+        else:
+            files = [base] if os.path.isfile(base) else [os.path.join(d, f) for d, _, fs in os.walk(base) for f in fs]
         for f in files:
             if scope and not inside(f, scope):
                 continue
@@ -1249,8 +1282,14 @@ def existing(p):
 
 def unresolved(word, glob=False):
     """A word the analyzer could not expand: a $( ) placeholder, a variable, xargs' {}, or, for a
-    folder or a message, a glob no shell expanded for it. A pathspec keeps its glob: git reads it."""
-    return any(m in word for m in ("__SUBST", "$", "`", "{}")) or (glob and any(c in word for c in "*?["))
+    folder or a message, a glob no shell expanded for it. A pathspec keeps its glob: git reads it.
+    A $ that bash and zsh both print as it stands (before ), |, /, ., a space or the word's end, as
+    in grep's '(\\.|$)') expands nothing; zsh does expand $=x, $~x, $^x, $+x and $#x."""
+    return (any(m in word for m in ("__SUBST", "`", "{}")) or LIVE_DOLLAR.search(word) is not None
+            or (glob and any(c in word for c in "*?[")))
+
+
+LIVE_DOLLAR = re.compile(r"\$(?![)|/.\s]|\Z)")
 
 
 def subject(rest):
@@ -1375,7 +1414,10 @@ def token_parent(p):
     return p in TOKEN_PARENTS or p.endswith(("/.claude/state", "/.claude"))
 
 
-ENV_SCRIPTS = {os.path.join(ROOT, "scripts", "env", n): n for n in ("show.sh", "set.sh")}
+# Each repo's own helpers: this one's and, in workspace mode, its siblings'. set.sh is held to the
+# unlock of the repo it belongs to.
+ENV_SCRIPTS = {os.path.join(r, "scripts", "env", n): n for r in [ROOT] + (workspace_repos(WORKSPACE) if WORKSPACE else [])
+               for n in ("show.sh", "set.sh")}
 # scripts/env/ holds the only code the rules trust with a .env* file, so the shell only reads it.
 HELPERS = os.path.join(ROOT, "scripts", "env").lower()
 
@@ -1383,6 +1425,23 @@ HELPERS = os.path.join(ROOT, "scripts", "env").lower()
 def helper_area(p):
     """Whether a lower-cased path is scripts/env/ or in it: this repo's, or another checkout's."""
     return inside(p, HELPERS) or p.endswith("/scripts/env") or "/scripts/env/" in p
+
+
+# The files in scripts/env/ that the hooks and helpers run. show.sh and set.sh start envfile.py with
+# python3 -I, which never imports from their folder, so a project's own tools beside them are
+# ordinary code the shell may format, lint or change.
+TRUSTED_HELPERS = ("show.sh", "set.sh", "envfile.py")
+
+
+def helper_file(p):
+    """Whether a lower-cased path, possibly a glob, is scripts/env/ itself or can name one of its
+    trusted files."""
+    if not helper_area(p):
+        return False
+    tail = p.rstrip("/")
+    if tail == HELPERS or tail.endswith("/scripts/env"):
+        return True
+    return any(fnmatch.fnmatchcase(n, os.path.basename(tail)) for n in TRUSTED_HELPERS)
 
 
 # The files that switch the guards on and set what they protect: a .claude folder's settings.json,
@@ -1972,8 +2031,6 @@ def landing(p):
 ENV_NAME = re.compile(r"\.env(?:rc)?(?:[._-].*)?\Z", re.I | re.S)
 # The same name in code or free text, after no word character (process.env and os.environ are not).
 ENV_TEXT = re.compile(r"(?<![\w$.])\.env(?:rc)?(?:[._-][\w.*?-]*)?(?!\w)", re.I)
-# What a name can start with and still grow into a .env* name: ".", ".e", ".en", ".envr", ".env.x".
-ENV_PREFIX = re.compile(r"\.(?:e(?:n(?:v(?:r(?:c(?:[._-].*)?)?|[._-].*)?)?)?)?\Z", re.I | re.S)
 # Commands that look at a name, never at the text behind it; the token folder may also be read.
 NAME_ONLY = {"ls", "stat", "test", "[", "[[", "file", "wc", "du", "echo", "printf", "realpath", "readlink",
              "basename", "dirname", "true", "false", ":", "which", "type"}
@@ -2252,11 +2309,65 @@ def env_name(base):
     return bool(ENV_NAME.match(base)) and ".example" not in base.lower()
 
 
+# ENV_NAME as a state machine, for globs: state -> {char: next state}; ANY_STATE takes every char.
+# .env and .envrc accept, and after .env[._-] or .envrc[._-] any tail does.
+ENV_STEPS = {0: {".": 1}, 1: {"e": 2}, 2: {"n": 3}, 3: {"v": 4}, 4: {"r": 5, ".": 7, "_": 7, "-": 7},
+             5: {"c": 6}, 6: {".": 7, "_": 7, "-": 7}}
+ANY_STATE, ENV_ACCEPT = 7, {4, 6, 7}
+# One char of each kind ENV_STEPS tells apart (both cases), and one it never names.
+ENV_ALPHABET = ".eEnNvVrRcC_-x"
+
+
+def glob_can_name_env(pattern):
+    """Whether a glob (*, ?, [set]) can match some .env* name. A [ with no closing ] is a plain
+    character, as in the shell, so jq's '.[].name' names no file; '.[e]nv' and '.e*' do."""
+    def step(states, chars):
+        out = set()
+        for s in states:
+            for ch in chars:
+                nxt = ANY_STATE if s == ANY_STATE else ENV_STEPS.get(s, {}).get(ch.lower())
+                if nxt is not None:
+                    out.add(nxt)
+        return out
+
+    states, i = {0}, 0
+    while i < len(pattern) and states:
+        ch = pattern[i]
+        if ch == "*":
+            todo = set(states)
+            while todo:
+                new = step(todo, ENV_ALPHABET) - states
+                states |= new
+                todo = new
+            i += 1
+        elif ch == "?":
+            states, i = step(states, ENV_ALPHABET), i + 1
+        elif ch == "[":
+            j = i + 1
+            if j < len(pattern) and pattern[j] in "!^":
+                j += 1
+            if j < len(pattern) and pattern[j] == "]":
+                j += 1
+            end = pattern.find("]", j)
+            if end < 0:
+                states, i = step(states, "["), i + 1
+            else:
+                cls = "[" + ("!" + pattern[i + 2:end] if pattern[i + 1] == "^" else pattern[i + 1:end]) + "]"
+                # ANY_STATE survives whatever the set holds: it may name only chars outside ENV_ALPHABET.
+                states, i = (step(states, [c for c in ENV_ALPHABET if fnmatch.fnmatchcase(c, cls)])
+                             | (states & {ANY_STATE})), end + 1
+        else:
+            if ch == "\\" and i + 1 < len(pattern):
+                i += 1
+            states, i = step(states, pattern[i]), i + 1
+    return bool(states & ENV_ACCEPT)
+
+
 def env_named(word, cwd):
     """The .env* file a word names, or "": a path, the value of --opt=path, @path or rev:path, or a
-    glob or brace list that can expand to one, whether or not such a file exists yet: its literal
-    start must be able to grow into a .env* name. As in the shell, only a pattern whose last part
-    starts with a dot matches a dot file. Anything in .claude/state/env-backups/ counts too."""
+    glob or brace list that can expand to one, whether or not such a file exists yet
+    (glob_can_name_env). As in the shell, only a pattern whose last part starts with a dot matches
+    a dot file. Anything in .claude/state/env-backups/ counts too."""
     if len(word) > 4096:
         return ""
     for w in brace_forms(word):
@@ -2273,7 +2384,7 @@ def env_named(word, cwd):
             if not base.startswith(".") and not (DOTGLOB[0] and globbing):
                 continue
             if globbing:
-                hits = [base] if ENV_PREFIX.match(re.split(r"[*?\[]", base)[0]) else []
+                hits = [base] if glob_can_name_env(base) else []
                 if not unresolved(c):
                     hits += [os.path.basename(g) for g in glob.glob(os.path.join(cwd, c))
                              if env_name(os.path.basename(g))]
@@ -2314,7 +2425,7 @@ def script_run(ws, raw, cwd):
 
 def kit_word(word, cwd, parents=False, path=False):
     """What a path word names: "unlock" for an unlock.sh (any copy), "helpers" for scripts/env/ or
-    a file in it (with parents, scripts/ as well), "config" for a guard file (with parents, a
+    a trusted file in it (with parents, scripts/ as well), "config" for a guard file (with parents, a
     folder holding the opt-in record as well), "hooks" for a guard script or its folder (with
     parents, a folder holding one directly), else "". A glob counts by what it can expand to here;
     a word holding a space is text, not a path, unless it starts at / or ~ or path says it is one
@@ -2334,7 +2445,7 @@ def kit_word(word, cwd, parents=False, path=False):
                 p = path.lower()
                 if os.path.basename(p) == "unlock.sh":
                     return "unlock"
-                if helper_area(p) or (parents and p == os.path.dirname(HELPERS)):
+                if helper_file(p) or (parents and p == os.path.dirname(HELPERS)):
                     return "helpers"
                 if config_area(path, parents):
                     return "config"
@@ -3285,9 +3396,13 @@ def secrets(words, ws, raw, env, redirects, fed, prev, before, xargs, cwd, depth
                 break
 
     # .env* files: only the two helper scripts open them, set.sh only while env is unlocked.
-    if runner == "set.sh" and not unlock_until(ROOT, "env"):
+    owner = os.path.dirname(os.path.dirname(os.path.dirname(script))) if runner else ROOT
+    if runner == "set.sh" and not unlock_until(owner, "env"):
+        hint = unlock_hint(owner, "env")
+        if owner != ROOT:
+            hint = f"! cd {shlex.quote(os.path.relpath(owner, ROOT))} && {hint[2:]}"
         block(f"[safety] BLOCKED: .env* files are locked, so scripts/env/set.sh may not change them now. Ask the user "
-              f"to run `{unlock_hint(ROOT, 'env')}` themselves (it stays open 20 minutes), then run set.sh again.")
+              f"to run `{hint}` themselves (it stays open 20 minutes), then run set.sh again.")
     if runner:
         return
     for text in reads_code:

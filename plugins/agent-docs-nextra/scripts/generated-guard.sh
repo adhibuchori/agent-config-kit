@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # PreToolUse(Write|Edit|MultiEdit and Serena's writes): generated output changes only through its
 # generator. The guarded paths are generatedPaths in .claude/agent-config.json (repo-relative files
-# or folders); the default covers a generated API client and a copied OpenAPI contract. Optional:
-# wire it where the repo has generated files (frontends, docs sites, Go and Rust services).
+# or folders, or **/name for that name at any depth); the default covers a generated API client and
+# a copied OpenAPI contract at any depth. A spec written by hand stays yours: list your paths without
+# it. Optional: wire it where the repo has generated files (frontends, docs sites, Go and Rust
+# services).
 #
 # A file can also say it is generated in its own header, wherever it lives: a Go file whose
 # "// Code generated ... DO NOT EDIT." line comes before the package clause (go help generate), and
@@ -74,6 +76,17 @@ marked() {
   return 1
 }
 
+# 0 when $1, a path relative to the repo, is what the generatedPaths entry $2 names: that file or
+# folder, or for **/name that name at any depth.
+covers() {
+  local name="${2#\*\*/}"
+  if [[ "$name" == "$2" ]]; then
+    [[ "$1" == "$2" || "$1" == "$2"/* ]]
+  else
+    [[ "$1" == "$name" || "$1" == "$name"/* || "$1" == */"$name" || "$1" == */"$name"/* ]]
+  fi
+}
+
 # $1, an absolute path: refused when it is generated output of its repo. Workspace mode: a file in
 # another repo follows that repo's configuration.
 judge() {
@@ -83,7 +96,7 @@ judge() {
   rel="${1#"$ROOT"/}"
   [[ "$ROOT" == "$GUARDED_ROOT" ]] || guarded
   for p in ${GUARDED[@]+"${GUARDED[@]}"}; do
-    [[ "$rel" == "$p" || "$rel" == "$p"/* ]] || continue
+    covers "$rel" "$p" || continue
     case "$p" in
     openapi.* | */openapi.*)
       block "[generated-guard] BLOCKED: $rel is the API contract, exported by this service or copied from the one that owns it." \

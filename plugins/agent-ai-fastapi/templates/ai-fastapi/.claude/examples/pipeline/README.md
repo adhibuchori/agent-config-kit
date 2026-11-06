@@ -128,12 +128,11 @@ The plugins wire every hook (`hooks/hooks.json`; nothing goes in `.claude/settin
 layout switches them on:
 
 - **`migration-guard`** (agent-ai-fastapi) refuses Write, Edit and Serena writes under a migrations
-  folder that exists. The defaults in `migrationsDirs` include `src/app/db/migrations/versions`,
+  folder, whether or not it exists yet. The defaults in `migrationsDirs` include `src/app/db/migrations/versions`,
   `alembic/versions` and `migrations/versions`; set `migrationsDirs` in
   `.claude/agent-config.json` if yours lives elsewhere (the key replaces the default list whole).
-  With `alembic.ini` present, its message names `alembic revision --autogenerate`. A repo with no
-  migrations folder is never affected; `"migrationsDirs": []` turns the guard off in one that has
-  them.
+  With `alembic.ini` present, its message names `alembic revision --autogenerate`.
+  `"migrationsDirs": []` turns the guard off in a repo that keeps something else in those folders.
 - **`safety-check`** (agent-core) refuses `alembic downgrade` once `alembic.ini` exists.
 - **`post-edit`** (agent-core) notes an edit to `env.py` or `script.py.mako`, which shape every
   future revision.

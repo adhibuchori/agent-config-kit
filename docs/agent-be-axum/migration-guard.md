@@ -24,7 +24,7 @@ new migration with `sqlx migrate add <name>` instead, as the `db-migration` skil
 `/agent-be-axum:setup` writes `"appendOnlyMigrationsDirs": ["migrations"]` into
 `.claude/agent-config.json` when the service owns its schema. The protected branches are
 agent-core's `protectedBranches` (`dev`, `prod`, `main`, `master`), local or as last fetched from
-`origin`. A folder your repo does not have guards nothing.
+`origin`, whether or not this checkout still has the folder.
 
 | What | Why it is blocked | Do this instead |
 | --- | --- | --- |

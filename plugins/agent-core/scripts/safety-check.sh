@@ -39,7 +39,8 @@ else
   names="$(hook_config protectedPaths 2>/dev/null | sed -e 's#/*$##' -e 's/[][\.*^$(){}+?|]/\\&/g' | paste -sd'|' -)"
   # shellcheck disable=SC2016 # sed expression: $ is a character to escape
   branches="$(hook_config protectedBranches 2>/dev/null | sed -e 's/[][\.*^$(){}+?|]/\\&/g' | paste -sd'|' -)"
-  names="${names:-src|scripts|\\.claude|\\.git|\\.github|_workflow-source}"
+  # With neither python3 nor jq no list can be read: the protectedPaths default of lib.sh, spelled out.
+  names="${names:-src|app|components|content|tests|scripts|\\.claude|\\.agents?|_workflow-source|\\.github|\\.git|AGENTS\\.md|SSOT\\.md|CLAUDE\\.md|PRODUCT\\.md|DESIGN\\.md}"
   branches="${branches:-dev|prod|main|master}"
   RM='(^|[;&|[:space:]])rm[[:space:]]+-[[:alpha:]]*[rR]'
   if grep -qE "$RM" <<<"$CMD" && grep -qE "(^|[[:space:]/\"'])($names)(/|[[:space:]\"']|$)" <<<"$CMD"; then

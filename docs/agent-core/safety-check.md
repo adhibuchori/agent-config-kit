@@ -31,8 +31,8 @@ the Bash sandbox that setup can turn on instead.
 ## What it blocks
 
 The settings that shape it live in `.claude/agent-config.json`: `protectedBranches`,
-`protectedPaths` and `commandWrappers`. Every rule has probes that prove it both ways: 845 rows in
-`scripts/check/hook-probes.tsv` (569 must block, 276 must pass), run by
+`protectedPaths` and `commandWrappers`. Every rule has probes that prove it both ways: 885 rows in
+`scripts/check/hook-probes.tsv` (594 must block, 291 must pass), run by
 [tests/hooks/safety-probes.bats](../../tests/hooks/safety-probes.bats).
 
 | What | Why it is blocked | Do this instead |
@@ -45,7 +45,7 @@ The settings that shape it live in `.claude/agent-config.json`: `protectedBranch
 | `gh pr merge --delete-branch` | It can delete a protected head branch | Merge, then delete the work branch by name |
 | Any shell read or write of a real `.env*` file (`cat`, `grep`, `source`, redirects, copies, `python -c`, `bun -e 'console.log(process.env)'`) | Secret values would land in the transcript | `bash scripts/env/show.sh <file>` (secrets masked); `scripts/env/set.sh` after you run `! bun unlock env` |
 | Claude running the unlock script or its `unlock` package script, or touching `.claude/state/unlock/` | Only you may unlock | Claude asks you to run `! bun unlock env` (or `db`) |
-| Changing `scripts/env/` or `scripts/ops/unlock.sh` from the shell | Those files are the lock itself | Change them with the Edit tool, which asks you first |
+| Changing `scripts/env/show.sh`, `set.sh`, `envfile.py` or `scripts/ops/unlock.sh` from the shell (a project's own tool in `scripts/env/` stays open) | Those files are the lock itself | Change them with the Edit tool, which asks you first |
 | Changing, moving, linking or deleting the files that turn the guards on from the shell: `.claude/settings.json`, `settings.local.json`, `agent-config.json`, `agent-config-kit.lock`, and the plugin's record of opted-in projects (`rm`, `mv`, `ln`, `cp` over, redirects, `truncate`, `sed -i`, `chmod`, `git rm`/`checkout`/`restore`) | Claude could switch its own guards off | Read them freely (`cat`, `jq`, `git diff`); change them with the Edit tool, which asks you first |
 | Changing the guard scripts from the shell: the hooks (the plugin's own `scripts/` and `hooks/`, the plugins in `~/.claude/plugins/`, any `.claude/hooks/`), `scripts/check/hook-probes.*` and `scripts/ops/unlock.sh`, or a folder that holds them (`rm`, `mv`, `ln`, `cp` over, redirects, `tee`, `truncate`, `sed -i`, `perl -i`, `chmod`, `git rm`/`checkout`/`restore`/`stash`/`mv`) | A guard Claude can rewrite guards nothing | Read, run and copy them out freely; change one with the Edit tool, or run the command yourself with `!` |
 | A program that names the file it writes, reads or runs inside its own code: a `sed` `w`, `r` or `e`, an `awk` `print >`, `getline <` or `system()`, inline `python -c` or `node -e` that changes a file or runs a command | The file it reaches is in the program, not on the command line | Use the plain command (`rm`, `mv`, `cp`, a redirect), which the hook can read |

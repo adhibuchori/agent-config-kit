@@ -137,3 +137,33 @@ left() { echo $(($(cat "$T/$1") - $(date +%s))); }
   rm "$T/db" && (umask 077 && echo $(($(date +%s) + 600)) >"$BATS_TEST_TMPDIR/real") && ln -s "$BATS_TEST_TMPDIR/real" "$T/db"
   run -2 --separate-stderr hook db-guard.sh "$q" "${PLUGIN[@]}"
 }
+
+@test "at the workspace root set.sh answers to the repo that owns it, and the hint goes there" {
+  W="$BATS_TEST_TMPDIR" && mkdir -p "$W/.claude" && touch "$W/.claude/agent-config-kit.lock"
+  ROOT_ENV=(CLAUDE_PLUGIN_ROOT="$CORE" CLAUDE_PROJECT_DIR="$W" AGENT_WORKSPACE_ROOT="$W")
+  set_env="$(bash_payload "$W" "printf x | bash proj/scripts/env/set.sh proj/.env PORT")"
+  run -2 --separate-stderr hook safety-check.sh "$set_env" "${ROOT_ENV[@]}"
+  [[ "$stderr" == *'`! cd proj && ./scripts/ops/unlock.sh env`'* ]] || { echo "$stderr" >&2; return 1; }
+  unlock env >/dev/null
+  run -0 --separate-stderr hook safety-check.sh "$set_env" "${ROOT_ENV[@]}"
+}
+
+@test "at the workspace root any repo's db unlock counts, and the hint names no folder it cannot know" {
+  W="$BATS_TEST_TMPDIR" && mkdir -p "$W/.claude" && touch "$W/.claude/agent-config-kit.lock"
+  ROOT_ENV=(CLAUDE_PLUGIN_ROOT="$CORE" CLAUDE_PROJECT_DIR="$W" AGENT_WORKSPACE_ROOT="$W")
+  q="$(sql_payload mcp__db-prod__execute_sql "DELETE FROM t")"
+  run -2 --separate-stderr hook db-guard.sh "$q" "${ROOT_ENV[@]}"
+  [[ "$stderr" == *'`! cd <repo> && ./scripts/ops/unlock.sh db`'* ]] || { echo "$stderr" >&2; return 1; }
+  unlock db >/dev/null
+  run -0 --separate-stderr hook db-guard.sh "$q" "${ROOT_ENV[@]}"
+  [[ "$output" == *additionalContext* ]]
+  run -2 --separate-stderr hook db-guard.sh "$q" CLAUDE_PLUGIN_ROOT="$CORE" CLAUDE_PROJECT_DIR="$W"
+}
+
+@test "a workspace root that is a repo itself keeps to its own db unlock" {
+  W="$BATS_TEST_TMPDIR" && new_repo "$W" feature/work
+  mkdir -p "$W/.claude" && touch "$W/.claude/agent-config-kit.lock"
+  unlock db >/dev/null
+  q="$(sql_payload mcp__db-prod__execute_sql "DELETE FROM t")"
+  run -2 --separate-stderr hook db-guard.sh "$q" CLAUDE_PLUGIN_ROOT="$CORE" CLAUDE_PROJECT_DIR="$W" AGENT_WORKSPACE_ROOT="$W"
+}

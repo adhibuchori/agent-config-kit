@@ -124,6 +124,11 @@ reads as "missed it", and the next reviewer raises it again.
 gh pr comment {PR} --body "<what was applied, what was declined, and why>"
 ```
 
+Then resolve each thread you answered, a declined one included once its reply states the reason:
+`pr-ready.sh` counts unresolved threads, so the promotion waits until none is open. The call is in
+`/agent-core:resolve-pr-review`; leave a thread open only when you asked the reviewer a question in
+it.
+
 Re-run the quality gate after applying any fix.
 
 ### 1.5 Merge to `dev`

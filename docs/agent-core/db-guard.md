@@ -84,6 +84,9 @@ printf '%s' '{"tool_name":"mcp__db-prod__execute_sql","tool_input":{"sql":"DELET
 **Why does it name `./scripts/ops/unlock.sh` and not `bun unlock`?**
 It names the form your repo supports: the package-manager form when `package.json` has the `unlock` script, the script path otherwise. This repo has no `package.json`.
 
+**Which unlock counts in a multi-repo workspace?**
+With `AGENT_WORKSPACE_ROOT` set, a session at that folder accepts any repo's `db` unlock, and the refusal tells you to run the script inside a repo. A session inside a repo keeps to that repo's own unlock.
+
 **Can a `SELECT` still write?**
 A `SELECT` that calls a function of your own which writes looks like a read. That is why the kit's production server starts read-only (`--access-mode=restricted`): the server is the layer below this hook.
 
